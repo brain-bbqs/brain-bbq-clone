@@ -4,7 +4,7 @@ const Header = () => {
   const navLinks = [
     { label: "About", href: "#" },
     { label: "Projects", href: "/projects" },
-    { label: "SFN 2025", href: "#" },
+    { label: "SFN 2025", href: "/sfn-2025" },
     { label: "Working Groups", href: "#" },
     { label: "Resources", href: "#" },
     { label: "Announcements", href: "#" },
