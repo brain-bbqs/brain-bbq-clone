@@ -8,6 +8,7 @@ import Projects from "./pages/Projects";
 import SFN2025 from "./pages/SFN2025";
 import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
+import Announcements from "./pages/Announcements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/sfn-2025" element={<SFN2025 />} />
           <Route path="/working-groups" element={<WorkingGroups />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/announcements" element={<Announcements />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
