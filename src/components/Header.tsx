@@ -7,7 +7,7 @@ const Header = () => {
     { label: "SFN 2025", href: "/sfn-2025" },
     { label: "Working Groups", href: "/working-groups" },
     { label: "Resources", href: "/resources" },
-    { label: "Announcements", href: "#" },
+    { label: "Announcements", href: "/announcements" },
     { label: "Job Board", href: "#" },
     { label: "Calendar", href: "#" },
   ];
