@@ -14,7 +14,7 @@ jobs:
         with:
           script: |
             // Add the GitHub usernames you want to auto-assign bugs to
-            const assignees = ['your-github-username'];
+            const assignees = ['Sulstice'];
             
             await github.rest.issues.addAssignees({
               owner: context.repo.owner,
