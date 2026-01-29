@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Header from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,8 +65,7 @@ const Resources = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="px-6 py-8 max-w-5xl mx-auto">
+      <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-foreground mb-8">Resources</h1>
 
         {/* Overview */}
@@ -165,7 +163,7 @@ const Resources = () => {
             We are working on integrating a chatbot that will connect to a database of JSON-organized resources, making it even easier to find the information you need. We are also working on an ingestion tool that will make it easier to add and update entries! Stay tuned for updates.
           </p>
         </section>
-      </main>
+      </div>
     </div>
   );
 };

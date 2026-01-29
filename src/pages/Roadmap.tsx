@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, ExternalLink, Calendar, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -69,9 +68,7 @@ export default function Roadmap() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-4 py-12">
-        {/* Header */}
+      <div className="container mx-auto px-4 py-12">
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold mb-4">Roadmap</h1>
           <p className="text-lg text-muted-foreground mb-6">
@@ -294,7 +291,7 @@ export default function Roadmap() {
             )}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -6,8 +5,7 @@ import { Separator } from "@/components/ui/separator";
 const SFN2025 = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="px-6 py-8 max-w-5xl mx-auto">
+      <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-foreground mb-4">Join BBQS at SFN 2025!</h1>
         
         <h3 className="text-xl text-muted-foreground mb-2">Society for Neuroscience Annual Meeting</h3>
@@ -582,7 +580,7 @@ const SFN2025 = () => {
           <p className="italic">Page last updated: November 2025</p>
           <p className="mt-2 font-semibold">Looking forward to seeing you in San Diego!</p>
         </footer>
-      </main>
+      </div>
     </div>
   );
 };
