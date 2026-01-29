@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import ProjectCard from "@/components/ProjectCard";
 
 const r34Projects = [
@@ -317,8 +316,7 @@ const r24Projects = [
 const Projects = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="px-6 py-8 max-w-5xl mx-auto">
+      <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold text-foreground mb-8">Projects</h1>
 
         {/* R34 Projects */}
@@ -380,7 +378,7 @@ const Projects = () => {
             ))}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 };

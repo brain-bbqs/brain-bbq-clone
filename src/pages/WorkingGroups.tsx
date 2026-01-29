@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
 
@@ -39,8 +38,7 @@ const WorkingGroups = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="px-6 py-8 max-w-5xl mx-auto">
+      <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-foreground mb-8">Working Groups</h1>
 
         {/* Why Working Groups */}
@@ -105,7 +103,7 @@ const WorkingGroups = () => {
             ))}
           </div>
         </section>
-      </main>
+      </div>
     </div>
   );
 };

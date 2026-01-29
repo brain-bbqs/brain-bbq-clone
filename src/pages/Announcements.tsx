@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
@@ -29,8 +28,7 @@ const Announcements = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="px-6 py-8 max-w-5xl mx-auto">
+      <div className="px-6 py-8 max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-foreground mb-2">BBQS Announcements</h1>
         <p className="text-muted-foreground mb-8">
           New hires, publications, awards, conferences, etc.
@@ -59,7 +57,7 @@ const Announcements = () => {
             </Card>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
