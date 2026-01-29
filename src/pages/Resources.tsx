@@ -7,6 +7,7 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import { resources, Resource } from "@/data/resources";
 import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from "lucide-react";
 
 const CategoryBadge = ({ value }: { value: string }) => {
   const colorMap: Record<string, string> = {
@@ -20,6 +21,20 @@ const CategoryBadge = ({ value }: { value: string }) => {
     <Badge variant="outline" className={`${colorMap[value] || ""} text-xs`}>
       {value}
     </Badge>
+  );
+};
+
+const NameLink = ({ value, data }: { value: string; data: Resource }) => {
+  return (
+    <a
+      href={data.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors"
+    >
+      {value}
+      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+    </a>
   );
 };
 
@@ -49,9 +64,9 @@ const Resources = () => {
     {
       field: "name",
       headerName: "Name",
-      width: 220,
+      width: 260,
       flex: 0,
-      cellStyle: { fontWeight: 600 },
+      cellRenderer: NameLink,
     },
     {
       field: "algorithm",
