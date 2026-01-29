@@ -11,14 +11,14 @@ import { ExternalLink } from "lucide-react";
 
 const CategoryBadge = ({ value }: { value: string }) => {
   const colorMap: Record<string, string> = {
-    "General Tools": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    "Models": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    "Datasets": "bg-green-500/20 text-green-400 border-green-500/30",
-    "Benchmarks": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    "Papers & Protocols": "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    "General Tools": "bg-primary/20 text-primary border-primary/30",
+    "Models": "bg-accent/20 text-accent border-accent/30",
+    "Datasets": "bg-muted text-muted-foreground border-border",
+    "Benchmarks": "bg-secondary text-secondary-foreground border-border",
+    "Papers & Protocols": "bg-primary/10 text-primary/80 border-primary/20",
   };
   return (
-    <Badge variant="outline" className={`${colorMap[value] || ""} text-xs`}>
+    <Badge variant="outline" className={`${colorMap[value] || "bg-muted text-muted-foreground"} text-xs`}>
       {value}
     </Badge>
   );
