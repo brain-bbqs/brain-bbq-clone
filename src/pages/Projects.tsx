@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ExternalLink, Download, Loader2, RefreshCw, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import PublicationsGrid, { Publication } from "@/components/projects/PublicationsGrid";
+import PublicationsGrid, { Publication, formatAuthors } from "@/components/projects/PublicationsGrid";
 
 interface ProjectRow {
   grantNumber: string;
@@ -211,7 +211,7 @@ const Projects = () => {
         grant.grantNumber,
         pub.pmid,
         pub.title,
-        pub.authors,
+        formatAuthors(pub.authors),
         pub.year.toString(),
         pub.journal,
         pub.citations.toString(),
