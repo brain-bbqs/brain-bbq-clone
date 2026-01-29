@@ -10,6 +10,8 @@ import {
   Briefcase,
   CalendarDays,
   Info,
+  FileText,
+  FlaskConical,
 } from "lucide-react";
 
 import {
@@ -32,11 +34,19 @@ const mainItems = [
   { title: "About", url: "#", icon: Info },
 ];
 
-const researchItems = [
+const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Resources", url: "/resources", icon: BookOpen },
   { title: "Roadmap", url: "/roadmap", icon: Map },
+];
+
+const assertionsItems = [
+  { title: "Assertions", url: "/assertions", icon: FileText },
+];
+
+const evidenceItems = [
+  { title: "Evidence", url: "/evidence", icon: FlaskConical },
 ];
 
 const communityItems = [
@@ -101,8 +111,18 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Research</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(researchItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Assertions</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(assertionsItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Evidence</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(evidenceItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
