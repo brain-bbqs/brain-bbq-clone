@@ -27,6 +27,56 @@ interface NIHProject {
   core_project_num: string;
 }
 
+interface NIHPublication {
+  pmid: string;
+  pub_title: string;
+  pub_year: number;
+  journal_title: string;
+  authors: Array<{ author_name: string }>;
+  cited_by_clin: number;
+  relative_citation_ratio: number;
+}
+
+async function fetchPublications(coreProjectNum: string): Promise<any[]> {
+  try {
+    const response = await fetch("https://api.reporter.nih.gov/v2/publications/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        criteria: {
+          core_project_nums: [coreProjectNum]
+        },
+        include_fields: [
+          "pmid", "pub_title", "pub_year", "journal_title", "authors",
+          "cited_by_clin", "relative_citation_ratio"
+        ],
+        offset: 0,
+        limit: 100
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`Publications API error for ${coreProjectNum}: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    return (data.results || []).map((pub: NIHPublication) => ({
+      pmid: pub.pmid || "",
+      title: pub.pub_title || "Unknown",
+      year: pub.pub_year || 0,
+      journal: pub.journal_title || "Unknown",
+      authors: (pub.authors || []).map(a => a.author_name).join(", "),
+      citations: pub.cited_by_clin || 0,
+      rcr: pub.relative_citation_ratio || 0,
+      pubmedLink: pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""
+    }));
+  } catch (err) {
+    console.error(`Error fetching publications for ${coreProjectNum}:`, err);
+    return [];
+  }
+}
+
 async function fetchGrantData(grantNumber: string): Promise<any | null> {
   try {
     const response = await fetch("https://api.reporter.nih.gov/v2/projects/search", {
@@ -59,6 +109,10 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
 
     const project: NIHProject = data.results[0];
     const pis = project.principal_investigators || [];
+    const coreProjectNum = project.core_project_num || grantNumber.replace(/\d$/, "");
+    
+    // Fetch publications for this grant
+    const publications = await fetchPublications(coreProjectNum);
     
     return {
       grantNumber: project.project_num || grantNumber,
@@ -69,6 +123,8 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
       fiscalYear: project.fiscal_year || 0,
       awardAmount: project.award_amount || 0,
       nihLink: `https://reporter.nih.gov/project-details/${project.project_num?.replace(/[^a-zA-Z0-9]/g, "") || grantNumber}`,
+      publications,
+      publicationCount: publications.length
     };
   } catch (err) {
     console.error(`Error fetching ${grantNumber}:`, err);
@@ -77,7 +133,6 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -87,7 +142,6 @@ serve(async (req) => {
     const singleGrant = url.searchParams.get("grant");
 
     if (singleGrant) {
-      // Fetch a single grant
       const result = await fetchGrantData(singleGrant);
       return new Response(
         JSON.stringify({ success: true, data: result ? [result] : [] }),
@@ -95,7 +149,6 @@ serve(async (req) => {
       );
     }
 
-    // Fetch all grants
     console.log(`Fetching ${GRANT_NUMBERS.length} grants from NIH Reporter...`);
     
     const results = [];
@@ -104,11 +157,10 @@ serve(async (req) => {
       if (projectData) {
         results.push(projectData);
       }
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
-    console.log(`Successfully fetched ${results.length} grants`);
+    console.log(`Successfully fetched ${results.length} grants with publications`);
 
     return new Response(
       JSON.stringify({ success: true, data: results }),
