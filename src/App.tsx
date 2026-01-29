@@ -11,6 +11,8 @@ import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
 import Roadmap from "./pages/Roadmap";
+import Assertions from "./pages/Assertions";
+import Evidence from "./pages/Evidence";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
             <Route path="/resources" element={<Resources />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/roadmap" element={<Roadmap />} />
+            <Route path="/assertions" element={<Assertions />} />
+            <Route path="/evidence" element={<Evidence />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
