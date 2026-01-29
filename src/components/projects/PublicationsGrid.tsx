@@ -10,7 +10,7 @@ export interface Publication {
   title: string;
   year: number;
   journal: string;
-  authors: string;
+  authors: unknown;
   citations: number;
   rcr: number;
   pubmedLink: string;
@@ -34,6 +34,35 @@ const TitleLink = ({ value, data }: { value: string; data: Publication }) => {
       <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
     </a>
   );
+};
+
+export const formatAuthors = (value: unknown): string => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+
+  if (Array.isArray(value)) {
+    return value
+      .map((a) => {
+        if (!a) return "";
+        if (typeof a === "string") return a;
+        if (typeof a === "object") {
+          const obj = a as Record<string, unknown>;
+          const fullName = obj.fullName ?? obj.full_name ?? obj.author_name ?? obj.name;
+          if (typeof fullName === "string") return fullName;
+        }
+        return String(a);
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    // Handle cases like { authors: [...] }
+    if (obj.authors) return formatAuthors(obj.authors);
+  }
+
+  return String(value);
 };
 
 const RCRCell = ({ value }: { value: number }) => {
@@ -73,6 +102,7 @@ export const PublicationsGrid = ({ publications, grantNumber }: PublicationsGrid
       headerName: "Authors",
       minWidth: 200,
       flex: 1,
+      valueFormatter: (params) => formatAuthors(params.value),
     },
     {
       field: "year",
