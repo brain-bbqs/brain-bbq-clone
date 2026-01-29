@@ -5,8 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GITHUB_OWNER = 'BBQS';
-const GITHUB_REPO = 'brain-bbqs-clone';
+const GITHUB_OWNER = 'brain-bbqs';
+const GITHUB_REPO = 'brain-bbq-clone';
 
 interface GitHubMilestone {
   id: number;
