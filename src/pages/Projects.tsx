@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
+import type { ColDef, RowClickedEvent, GridReadyEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Download, Loader2, RefreshCw } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import PublicationsGrid, { Publication } from "@/components/projects/PublicationsGrid";
 
 interface ProjectRow {
   grantNumber: string;
@@ -21,6 +22,8 @@ interface ProjectRow {
   fiscalYear: number;
   awardAmount: number;
   nihLink: string;
+  publications: Publication[];
+  publicationCount: number;
 }
 
 const GrantTypeBadge = ({ value }: { value: string }) => {
@@ -63,10 +66,22 @@ const CurrencyCell = ({ value }: { value: number }) => {
   return <span className="font-mono">${value.toLocaleString()}</span>;
 };
 
+const PublicationCountCell = ({ value }: { value: number }) => {
+  return (
+    <div className="flex items-center gap-1.5">
+      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className={value > 0 ? "text-primary font-medium" : "text-muted-foreground"}>
+        {value}
+      </span>
+    </div>
+  );
+};
+
 const Projects = () => {
   const [rowData, setRowData] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [expandedGrant, setExpandedGrant] = useState<string | null>(null);
   const { toast } = useToast();
 
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -124,6 +139,13 @@ const Projects = () => {
       flex: 0,
       cellRenderer: CurrencyCell,
     },
+    {
+      field: "publicationCount",
+      headerName: "Pubs",
+      width: 80,
+      flex: 0,
+      cellRenderer: PublicationCountCell,
+    },
   ], []);
 
   const fetchAllGrants = useCallback(async () => {
@@ -142,9 +164,10 @@ const Projects = () => {
 
       if (data?.data) {
         setRowData(data.data);
+        const totalPubs = data.data.reduce((sum: number, g: ProjectRow) => sum + (g.publicationCount || 0), 0);
         toast({
           title: "Data loaded",
-          description: `Successfully loaded ${data.data.length} grants from NIH Reporter.`,
+          description: `Loaded ${data.data.length} grants with ${totalPubs} publications.`,
         });
       }
     } catch (err) {
@@ -162,8 +185,9 @@ const Projects = () => {
   const exportToCSV = useCallback(() => {
     if (rowData.length === 0) return;
 
-    const headers = ["Grant Number", "Title", "Contact PI", "All PIs", "Institution", "Fiscal Year", "Award Amount", "NIH Link"];
-    const rows = rowData.map(row => [
+    // Export grants
+    const grantHeaders = ["Grant Number", "Title", "Contact PI", "All PIs", "Institution", "Fiscal Year", "Award Amount", "Publications", "NIH Link"];
+    const grantRows = rowData.map(row => [
       row.grantNumber,
       row.title,
       row.contactPi,
@@ -171,27 +195,66 @@ const Projects = () => {
       row.institution,
       row.fiscalYear.toString(),
       row.awardAmount.toString(),
+      row.publicationCount.toString(),
       row.nihLink
     ]);
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+    const grantCSV = [
+      grantHeaders.join(","),
+      ...grantRows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "bbqs_grants.csv";
-    a.click();
-    window.URL.revokeObjectURL(url);
+    // Export publications
+    const pubHeaders = ["Grant Number", "PMID", "Title", "Authors", "Year", "Journal", "Citations", "RCR", "PubMed Link"];
+    const pubRows = rowData.flatMap(grant => 
+      grant.publications.map(pub => [
+        grant.grantNumber,
+        pub.pmid,
+        pub.title,
+        pub.authors,
+        pub.year.toString(),
+        pub.journal,
+        pub.citations.toString(),
+        pub.rcr.toString(),
+        pub.pubmedLink
+      ])
+    );
+
+    const pubCSV = [
+      pubHeaders.join(","),
+      ...pubRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const downloadCSV = (content: string, filename: string) => {
+      const blob = new Blob([content], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    };
+
+    downloadCSV(grantCSV, "bbqs_grants.csv");
+    downloadCSV(pubCSV, "bbqs_publications.csv");
 
     toast({
       title: "Export complete",
-      description: `Exported ${rowData.length} grants to CSV.`,
+      description: `Exported ${rowData.length} grants and ${pubRows.length} publications.`,
     });
   }, [rowData, toast]);
+
+  const handleRowClick = useCallback((event: RowClickedEvent<ProjectRow>) => {
+    const grantNumber = event.data?.grantNumber;
+    if (grantNumber) {
+      setExpandedGrant(prev => prev === grantNumber ? null : grantNumber);
+    }
+  }, []);
+
+  const selectedProject = useMemo(() => 
+    rowData.find(r => r.grantNumber === expandedGrant),
+    [rowData, expandedGrant]
+  );
 
   useEffect(() => {
     fetchAllGrants();
@@ -203,7 +266,7 @@ const Projects = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">BBQS Projects</h1>
           <p className="text-muted-foreground mb-4">
-            NIH-funded Brain Behavior Quantification and Synchronization grants. Data fetched live from NIH Reporter.
+            NIH-funded Brain Behavior Quantification and Synchronization grants with publications. Click a row to view publications.
           </p>
           
           <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -243,14 +306,14 @@ const Projects = () => {
             </Button>
 
             <span className="text-sm text-muted-foreground ml-auto">
-              {rowData.length} projects loaded
+              {rowData.length} projects • {rowData.reduce((sum, g) => sum + (g.publicationCount || 0), 0)} publications
             </span>
           </div>
         </div>
 
         <div 
           className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 260px)" }}
+          style={{ height: expandedGrant ? "calc(50vh - 130px)" : "calc(100vh - 260px)" }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
@@ -263,6 +326,15 @@ const Projects = () => {
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
+            onRowClicked={handleRowClick}
+            rowSelection="single"
+            rowStyle={{ cursor: "pointer" }}
+            getRowStyle={(params) => {
+              if (params.data?.grantNumber === expandedGrant) {
+                return { backgroundColor: "hsl(var(--primary) / 0.1)" };
+              }
+              return undefined;
+            }}
             loadingOverlayComponent={() => (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -271,6 +343,33 @@ const Projects = () => {
             )}
           />
         </div>
+
+        {expandedGrant && selectedProject && (
+          <div className="mt-4 bg-card rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <ChevronDown className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  Publications for {expandedGrant}
+                </h3>
+                <Badge variant="secondary">
+                  {selectedProject.publicationCount} papers
+                </Badge>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setExpandedGrant(null)}
+              >
+                Close
+              </Button>
+            </div>
+            <PublicationsGrid 
+              publications={selectedProject.publications} 
+              grantNumber={expandedGrant}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
