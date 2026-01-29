@@ -42,16 +42,6 @@ const Header = () => {
               </a>
             )
           ))}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-secondary text-foreground text-sm px-3 py-1.5 rounded border border-border w-32 focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-              ⌘K
-            </span>
-          </div>
         </nav>
       </div>
     </header>
