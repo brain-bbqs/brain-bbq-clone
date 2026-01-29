@@ -1,1 +1,7 @@
 project_id = "vpexxhfpvghlejljwpvt"
+
+[functions.github-roadmap]
+verify_jwt = false
+
+[functions.create-github-issue]
+verify_jwt = false
