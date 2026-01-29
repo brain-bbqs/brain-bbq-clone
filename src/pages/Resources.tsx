@@ -1,168 +1,134 @@
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { useState, useMemo, useCallback } from "react";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
+import { resources, Resource } from "@/data/resources";
 import { Badge } from "@/components/ui/badge";
-import { X, Search } from "lucide-react";
+
+const CategoryBadge = ({ value }: { value: string }) => {
+  const colorMap: Record<string, string> = {
+    "General Tools": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    "Models": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    "Datasets": "bg-green-500/20 text-green-400 border-green-500/30",
+    "Benchmarks": "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    "Papers & Protocols": "bg-pink-500/20 text-pink-400 border-pink-500/30",
+  };
+  return (
+    <Badge variant="outline" className={`${colorMap[value] || ""} text-xs`}>
+      {value}
+    </Badge>
+  );
+};
 
 const Resources = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [quickFilterText, setQuickFilterText] = useState("");
 
-  // Placeholder resources - to be populated with actual data
-  const resources = [
-    {
-      title: "Neurodata Without Borders (NWB)",
-      description: "A data standard for neurophysiology data storage and sharing.",
-      category: "Standards",
-      species: ["All"],
-      workingGroup: "WG-Standards",
-      url: "https://www.nwb.org/",
-    },
-    {
-      title: "DANDI Archive",
-      description: "Distributed Archives for Neurophysiology Data Integration - a public archive for neurophysiology data.",
-      category: "Data Platform",
-      species: ["All"],
-      workingGroup: "WG-Standards",
-      url: "https://dandiarchive.org/",
-    },
-    {
-      title: "BossDB",
-      description: "Block Object Storage Service Database for large-scale neuroscience data.",
-      category: "Data Platform",
-      species: ["All"],
-      workingGroup: "WG-Analytics",
-      url: "https://bossdb.org/",
-    },
-    {
-      title: "SLEAP",
-      description: "Social LEAP Estimates Animal Poses - a deep learning framework for multi-animal pose tracking.",
-      category: "Software",
-      species: ["Mouse", "Rat", "Fly", "Other"],
-      workingGroup: "WG-Analytics",
-      url: "https://sleap.ai/",
-    },
-    {
-      title: "DeepLabCut",
-      description: "Markerless pose estimation of user-defined body parts with deep learning.",
-      category: "Software",
-      species: ["All"],
-      workingGroup: "WG-Analytics",
-      url: "http://www.mackenziemathislab.org/deeplabcut",
-    },
-  ];
+  const defaultColDef = useMemo<ColDef>(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+    floatingFilter: true,
+    flex: 1,
+    minWidth: 120,
+    wrapText: true,
+    autoHeight: true,
+    cellStyle: { lineHeight: "1.6", padding: "8px" },
+  }), []);
 
-  const filteredResources = resources.filter((resource) => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      resource.title.toLowerCase().includes(searchLower) ||
-      resource.description.toLowerCase().includes(searchLower) ||
-      resource.category.toLowerCase().includes(searchLower) ||
-      resource.species.some((s) => s.toLowerCase().includes(searchLower)) ||
-      resource.workingGroup.toLowerCase().includes(searchLower)
-    );
-  });
+  const columnDefs = useMemo<ColDef<Resource>[]>(() => [
+    {
+      field: "category",
+      headerName: "Category",
+      width: 150,
+      flex: 0,
+      cellRenderer: CategoryBadge,
+    },
+    {
+      field: "name",
+      headerName: "Name",
+      width: 220,
+      flex: 0,
+      cellStyle: { fontWeight: 600 },
+    },
+    {
+      field: "algorithm",
+      headerName: "Algorithm",
+      minWidth: 200,
+    },
+    {
+      field: "computational",
+      headerName: "Computational",
+      minWidth: 200,
+    },
+    {
+      field: "neuralNetworkArchitecture",
+      headerName: "NN Architecture",
+      minWidth: 180,
+    },
+    {
+      field: "mlPipeline",
+      headerName: "ML Pipeline",
+      minWidth: 250,
+    },
+    {
+      field: "implementation",
+      headerName: "Implementation",
+      minWidth: 180,
+    },
+    {
+      field: "species",
+      headerName: "Species/Taxa",
+      minWidth: 180,
+    },
+  ], []);
+
+  const onGridReady = useCallback(() => {
+    // Grid is ready
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-6 py-8 max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold text-foreground mb-8">Resources</h1>
-
-        {/* Overview */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4">Overview</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            This page provides a curated collection of resources relevant to BBQS projects and working groups. You'll find software tools and libraries for analysis, pre-trained ML models, multimodal datasets, evaluation benchmarks, academic publications, data platforms, and standards for consistent data sharing. Use the search below to filter resources by keywords, categories, target species, or working groups.
+      <div className="px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Resources</h1>
+          <p className="text-muted-foreground mb-4">
+            Browse tools, models, datasets, benchmarks, and papers for behavioral neuroscience research.
           </p>
-        </section>
-
-        {/* Search */}
-        <section className="mb-8">
-          <div className="relative max-w-xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
+          <div className="flex items-center gap-4 mb-4">
+            <input
               type="text"
-              placeholder="Search resources by keyword, category, or animal..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10"
+              placeholder="Quick filter..."
+              value={quickFilterText}
+              onChange={(e) => setQuickFilterText(e.target.value)}
+              className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
+            <span className="text-sm text-muted-foreground">
+              {resources.length} resources
+            </span>
           </div>
-        </section>
+        </div>
 
-        {/* Resource List */}
-        <section className="mb-12">
-          {filteredResources.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No matching resources found. Try a different search term.
-            </p>
-          ) : (
-            <div className="grid gap-4">
-              {filteredResources.map((resource) => (
-                <Card key={resource.title} className="hover:border-primary/50 transition-colors">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <CardTitle className="text-lg">
-                          <a
-                            href={resource.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {resource.title}
-                          </a>
-                        </CardTitle>
-                        <CardDescription className="mt-1">{resource.description}</CardDescription>
-                      </div>
-                      <Badge variant="secondary">{resource.category}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      <span className="text-muted-foreground">Species:</span>
-                      {resource.species.map((species) => (
-                        <Badge key={species} variant="outline" className="text-xs">
-                          {species}
-                        </Badge>
-                      ))}
-                      <span className="text-muted-foreground ml-4">Working Group:</span>
-                      <Badge variant="outline" className="text-xs">
-                        {resource.workingGroup}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Contribution */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4">Contribution</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            To add resources or update existing entries, please reach out to the BBQS team.
-          </p>
-        </section>
-
-        {/* Future Plans */}
-        <section>
-          <h2 className="text-2xl font-semibold text-foreground mb-4">Future Plans</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            We are working on integrating a chatbot that will connect to a database of JSON-organized resources, making it even easier to find the information you need. We are also working on an ingestion tool that will make it easier to add and update entries! Stay tuned for updates.
-          </p>
-        </section>
+        <div 
+          className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
+          style={{ height: "calc(100vh - 220px)" }}
+        >
+          <AgGridReact<Resource>
+            rowData={resources}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            quickFilterText={quickFilterText}
+            onGridReady={onGridReady}
+            animateRows={true}
+            pagination={true}
+            paginationPageSize={25}
+            paginationPageSizeSelector={[10, 25, 50, 100]}
+            suppressCellFocus={true}
+            enableCellTextSelection={true}
+          />
+        </div>
       </div>
     </div>
   );
