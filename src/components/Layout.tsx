@@ -11,7 +11,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-col flex-1">
-          <header className="h-12 flex items-center border-b border-border px-4 bg-background">
+          <header className="h-12 flex items-center px-4 bg-background">
             <SidebarTrigger />
           </header>
           <main className="flex-1">

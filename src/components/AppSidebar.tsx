@@ -80,7 +80,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader>
         <Link to="/" className="flex items-center gap-3 px-2 py-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex-shrink-0" />
           {!collapsed && (
