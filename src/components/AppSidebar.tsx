@@ -36,20 +36,14 @@ const mainItems = [
 
 const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
-  { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Resources", url: "/resources", icon: BookOpen },
   { title: "Roadmap", url: "/roadmap", icon: Map },
-];
-
-const assertionsItems = [
   { title: "Assertions", url: "/assertions", icon: FileText },
-];
-
-const evidenceItems = [
   { title: "Evidence", url: "/evidence", icon: FlaskConical },
 ];
 
 const communityItems = [
+  { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "#", icon: Briefcase },
@@ -113,16 +107,6 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Assertions</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(assertionsItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Evidence</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(evidenceItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
