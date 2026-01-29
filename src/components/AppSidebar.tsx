@@ -60,16 +60,17 @@ export function AppSidebar() {
             asChild
             isActive={isActive(item.url)}
             tooltip={collapsed ? item.title : undefined}
+            className="py-3 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
           >
             {item.url.startsWith("/") ? (
               <Link to={item.url}>
-                <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
+                <item.icon className="h-5 w-5" />
+                <span className="text-base">{item.title}</span>
               </Link>
             ) : (
               <a href={item.url}>
-                <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
+                <item.icon className="h-5 w-5" />
+                <span className="text-base">{item.title}</span>
               </a>
             )}
           </SidebarMenuButton>
@@ -93,17 +94,17 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Main</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(mainItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Research</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Research</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(researchItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Community</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Community</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(communityItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
