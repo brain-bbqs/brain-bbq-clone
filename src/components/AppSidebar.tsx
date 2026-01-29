@@ -22,8 +22,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ReportIssueDialog } from "@/components/ReportIssueDialog";
 
 const mainItems = [
   { title: "Home", url: "/", icon: Home },
@@ -108,6 +110,10 @@ export function AppSidebar() {
           <SidebarGroupContent>{renderMenuItems(communityItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <ReportIssueDialog />
+      </SidebarFooter>
     </Sidebar>
   );
 }
