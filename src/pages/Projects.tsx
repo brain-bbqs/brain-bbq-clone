@@ -10,18 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, Download, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface NIHProject {
-  project_num: string;
-  project_title: string;
-  contact_pi_name: string;
-  principal_investigators: Array<{ full_name: string; email?: string }>;
-  organization: { org_name: string } | null;
-  fiscal_year: number;
-  award_amount: number;
-  abstract_text: string;
-  core_project_num: string;
-}
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectRow {
   grantNumber: string;
@@ -33,16 +22,6 @@ interface ProjectRow {
   awardAmount: number;
   nihLink: string;
 }
-
-const GRANT_NUMBERS = [
-  "R34DA059510", "R34DA059509", "R34DA059513", "R34DA059507",
-  "R34DA059718", "R34DA059506", "R34DA059512", "R34DA059716",
-  "R34DA059723", "R34DA059514", "R34DA059500", "R34DA061984",
-  "R34DA061924", "R34DA061925", "R34DA062119", "R61MH135106",
-  "R61MH135109", "R61MH135114", "R61MH135405", "R61MH135407",
-  "R61MH138966", "R61MH138713", "R61MH138705", "1U01DA063534",
-  "U24MH136628", "R24MH136632"
-];
 
 const GrantTypeBadge = ({ value }: { value: string }) => {
   const grantType = value.match(/^[A-Z]\d+/)?.[0] || value.substring(0, 3);
@@ -88,7 +67,6 @@ const Projects = () => {
   const [rowData, setRowData] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState("");
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const { toast } = useToast();
 
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -148,77 +126,38 @@ const Projects = () => {
     },
   ], []);
 
-  const fetchGrantData = useCallback(async (grantNumber: string): Promise<ProjectRow | null> => {
-    try {
-      const response = await fetch("https://api.reporter.nih.gov/v2/projects/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          criteria: {
-            project_nums: [grantNumber]
-          },
-          include_fields: [
-            "ProjectNum", "ProjectTitle", "ContactPiName", "PrincipalInvestigators",
-            "Organization", "FiscalYear", "AwardAmount", "AbstractText", "CoreProjectNum"
-          ],
-          offset: 0,
-          limit: 1
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!data.results || data.results.length === 0) {
-        return null;
-      }
-
-      const project: NIHProject = data.results[0];
-      const pis = project.principal_investigators || [];
-      
-      return {
-        grantNumber: project.project_num || grantNumber,
-        title: project.project_title || "Unknown",
-        contactPi: project.contact_pi_name || "Unknown",
-        allPis: pis.map(pi => pi.full_name).join(", ") || project.contact_pi_name || "Unknown",
-        institution: project.organization?.org_name || "Unknown",
-        fiscalYear: project.fiscal_year || 0,
-        awardAmount: project.award_amount || 0,
-        nihLink: `https://reporter.nih.gov/search/lVXfsunpaUqfmTQW0jRXmA/project-details/${project.project_num?.replace(/[^a-zA-Z0-9]/g, "") || grantNumber}`,
-      };
-    } catch (err) {
-      console.error(`Error fetching ${grantNumber}:`, err);
-      return null;
-    }
-  }, []);
-
   const fetchAllGrants = useCallback(async () => {
     setLoading(true);
-    setProgress({ current: 0, total: GRANT_NUMBERS.length });
-    const results: ProjectRow[] = [];
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("nih-grants");
 
-    for (let i = 0; i < GRANT_NUMBERS.length; i++) {
-      const grant = GRANT_NUMBERS[i];
-      setProgress({ current: i + 1, total: GRANT_NUMBERS.length });
-      
-      const projectRow = await fetchGrantData(grant);
-      if (projectRow) {
-        results.push(projectRow);
-        // Update the grid incrementally
-        setRowData([...results]);
+      if (error) {
+        throw new Error(error.message || "Failed to fetch grants");
       }
 
-      // Small delay to avoid rate limiting
-      if (i < GRANT_NUMBERS.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+      if (data?.error) {
+        throw new Error(data.error);
       }
+
+      if (data?.data) {
+        setRowData(data.data);
+        toast({
+          title: "Data loaded",
+          description: `Successfully loaded ${data.data.length} grants from NIH Reporter.`,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching grants:", err);
+      toast({
+        title: "Error loading data",
+        description: err instanceof Error ? err.message : "Failed to fetch grant data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    toast({
-      title: "Data loaded",
-      description: `Successfully loaded ${results.length} of ${GRANT_NUMBERS.length} grants from NIH Reporter.`,
-    });
-  }, [fetchGrantData, toast]);
+  }, [toast]);
 
   const exportToCSV = useCallback(() => {
     if (rowData.length === 0) return;
@@ -284,7 +223,7 @@ const Projects = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading {progress.current}/{progress.total}
+                  Loading...
                 </>
               ) : (
                 <>

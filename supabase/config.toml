@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.create-github-issue]
 verify_jwt = false
+
+[functions.nih-grants]
+verify_jwt = false
