@@ -37,8 +37,43 @@ interface NIHPublication {
   relative_citation_ratio: number;
 }
 
+async function fetchPubMedDetails(pmids: string[]): Promise<Map<string, any>> {
+  const detailsMap = new Map<string, any>();
+  if (pmids.length === 0) return detailsMap;
+
+  try {
+    // Use iCite API to get publication details including RCR
+    const response = await fetch(`https://icite.od.nih.gov/api/pubs?pmids=${pmids.join(",")}`);
+    
+    if (!response.ok) {
+      console.error(`iCite API error: ${response.status}`);
+      return detailsMap;
+    }
+
+    const data = await response.json();
+    const pubs = data.data || data;
+    
+    for (const pub of pubs) {
+      detailsMap.set(String(pub.pmid), {
+        title: pub.title || "Unknown",
+        year: pub.year || 0,
+        journal: pub.journal || "Unknown",
+        authors: pub.authors || "",
+        citations: pub.citation_count || 0,
+        rcr: pub.relative_citation_ratio || 0,
+        doi: pub.doi || ""
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching iCite details:", err);
+  }
+
+  return detailsMap;
+}
+
 async function fetchPublications(coreProjectNum: string): Promise<any[]> {
   try {
+    // First get PMIDs from NIH Reporter
     const response = await fetch("https://api.reporter.nih.gov/v2/publications/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,10 +81,6 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
         criteria: {
           core_project_nums: [coreProjectNum]
         },
-        include_fields: [
-          "pmid", "pub_title", "pub_year", "journal_title", "authors",
-          "cited_by_clin", "relative_citation_ratio"
-        ],
         offset: 0,
         limit: 100
       })
@@ -61,16 +92,29 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
     }
 
     const data = await response.json();
-    return (data.results || []).map((pub: NIHPublication) => ({
-      pmid: pub.pmid || "",
-      title: pub.pub_title || "Unknown",
-      year: pub.pub_year || 0,
-      journal: pub.journal_title || "Unknown",
-      authors: (pub.authors || []).map(a => a.author_name).join(", "),
-      citations: pub.cited_by_clin || 0,
-      rcr: pub.relative_citation_ratio || 0,
-      pubmedLink: pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""
-    }));
+    const nihPubs = data.results || [];
+    
+    if (nihPubs.length === 0) return [];
+
+    // Extract PMIDs and fetch details from iCite
+    const pmids = nihPubs.map((p: any) => String(p.pmid)).filter(Boolean);
+    const detailsMap = await fetchPubMedDetails(pmids);
+
+    return nihPubs.map((pub: any) => {
+      const pmid = String(pub.pmid);
+      const details = detailsMap.get(pmid) || {};
+      
+      return {
+        pmid,
+        title: details.title || "Unknown",
+        year: details.year || 0,
+        journal: details.journal || "Unknown",
+        authors: details.authors || "",
+        citations: details.citations || 0,
+        rcr: details.rcr || 0,
+        pubmedLink: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : ""
+      };
+    });
   } catch (err) {
     console.error(`Error fetching publications for ${coreProjectNum}:`, err);
     return [];
