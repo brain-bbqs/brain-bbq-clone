@@ -8,6 +8,7 @@ const Header = () => {
     { label: "Working Groups", href: "/working-groups" },
     { label: "Resources", href: "/resources" },
     { label: "Announcements", href: "/announcements" },
+    { label: "Roadmap", href: "/roadmap" },
     { label: "Job Board", href: "#" },
     { label: "Calendar", href: "#" },
   ];
