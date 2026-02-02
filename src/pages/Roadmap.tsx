@@ -92,8 +92,8 @@ const TYPE_CONFIG: Record<
   task: {
     label: "Tasks",
     icon: ListTodo,
-    color: "text-foreground",
-    bgColor: "bg-muted",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
   },
 };
 
