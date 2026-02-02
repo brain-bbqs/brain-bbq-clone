@@ -8,8 +8,19 @@ import "ag-grid-community/styles/ag-theme-quartz.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, RefreshCw, Brain, Zap, Cpu, Download, ExternalLink } from "lucide-react";
+import { Loader2, RefreshCw, Brain, Zap, Cpu, Download, ExternalLink, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,24 +55,24 @@ const MarrLevelBadge = ({ value }: { value: string }) => {
     L1: { 
       icon: <Brain className="h-3 w-3" />, 
       color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      label: "Computational"
+      label: "L1: Computational"
     },
     L2: { 
       icon: <Zap className="h-3 w-3" />, 
       color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      label: "Algorithmic"
+      label: "L2: Algorithmic"
     },
     L3: { 
       icon: <Cpu className="h-3 w-3" />, 
       color: "bg-green-500/20 text-green-400 border-green-500/30",
-      label: "Implementational"
+      label: "L3: Implementational"
     },
   };
   
   const { icon, color, label } = config[value] || config.L3;
   
   return (
-    <Badge variant="outline" className={`${color} text-xs flex items-center gap-1`}>
+    <Badge variant="outline" className={`${color} text-xs flex items-center gap-1 whitespace-nowrap`}>
       {icon}
       {label}
     </Badge>
@@ -395,6 +406,43 @@ const Assertions = () => {
     });
   }, [entities, toast]);
 
+  const clearExtractions = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // Delete all entities first (due to foreign key constraint)
+      const { error: entitiesError } = await supabase
+        .from("ner_entities")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+
+      if (entitiesError) throw entitiesError;
+
+      // Delete all extractions for this user
+      const { error: extractionsError } = await supabase
+        .from("ner_extractions")
+        .delete()
+        .eq("extracted_by", user.id);
+
+      if (extractionsError) throw extractionsError;
+
+      toast({
+        title: "Extractions cleared",
+        description: "All NER extraction data has been removed",
+      });
+
+      // Refresh data
+      await fetchEntities();
+    } catch (err) {
+      console.error("Error clearing extractions:", err);
+      toast({
+        title: "Error clearing data",
+        description: err instanceof Error ? err.message : "Failed to clear extractions",
+        variant: "destructive",
+      });
+    }
+  }, [user, toast, fetchEntities]);
+
   useEffect(() => {
     fetchEntities();
   }, []);
@@ -493,6 +541,31 @@ const Assertions = () => {
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
+
+            {user && entities.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear All
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear all extractions?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete all {entities.length} extracted entities and {stats.total} extractions. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={clearExtractions} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Clear All
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
 
           {!user && (
