@@ -1,24 +1,22 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, RefreshCw, Circle, CheckCircle2, Milestone } from "lucide-react";
+import { ExternalLink, RefreshCw, Circle, CheckCircle2, Bug, Sparkles, ListTodo, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-interface RoadmapMilestone {
-  id: number;
-  number: number;
-  title: string;
-  description: string | null;
-  state: string;
-  dueOn: string | null;
-  createdAt: string;
-  url: string;
-  openIssues: number;
-  closedIssues: number;
-  progress: number;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface RoadmapIssue {
   id: number;
@@ -35,12 +33,37 @@ interface RoadmapIssue {
 }
 
 interface RoadmapData {
-  milestones: RoadmapMilestone[];
+  milestones: unknown[];
   issues: RoadmapIssue[];
 }
 
-// Major labels to filter for - add more as needed
-const MAJOR_LABELS = ['epic', 'major', 'milestone', 'feature', 'enhancement'];
+type IssueType = 'all' | 'bug' | 'feature' | 'task';
+
+const TYPE_CONFIG: Record<Exclude<IssueType, 'all'>, { 
+  label: string; 
+  icon: typeof Bug;
+  color: string;
+  bgColor: string;
+}> = {
+  bug: { 
+    label: 'Bugs', 
+    icon: Bug, 
+    color: 'text-red-500',
+    bgColor: 'bg-red-500/10'
+  },
+  feature: { 
+    label: 'Features', 
+    icon: Sparkles, 
+    color: 'text-violet-500',
+    bgColor: 'bg-violet-500/10'
+  },
+  task: { 
+    label: 'Tasks', 
+    icon: ListTodo, 
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10'
+  },
+};
 
 async function fetchRoadmap(): Promise<RoadmapData> {
   const { data, error } = await supabase.functions.invoke('github-roadmap');
@@ -55,54 +78,28 @@ async function fetchRoadmap(): Promise<RoadmapData> {
   };
 }
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatQuarter(dateString: string | null): string {
-  if (!dateString) return 'TBD';
-  const date = new Date(dateString);
-  const quarter = Math.floor(date.getMonth() / 3) + 1;
-  return `Q${quarter} ${date.getFullYear()}`;
-}
-
-// Category colors
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  'SS': { bg: 'bg-rose-500/20', text: 'text-rose-400' },
-  'NN': { bg: 'bg-indigo-500/20', text: 'text-indigo-400' },
-  'SG': { bg: 'bg-emerald-500/20', text: 'text-emerald-400' },
-  'default': { bg: 'bg-slate-500/20', text: 'text-slate-400' },
-};
-
-function getCategoryFromTitle(title: string): string {
-  const match = title.match(/^([A-Z]{2})-\d+/);
-  return match ? match[1] : 'default';
-}
-
-function getCategoryColors(category: string) {
-  return CATEGORY_COLORS[category] || CATEGORY_COLORS['default'];
-}
-
-// Issue row component
-function IssueRow({ issue }: { issue: RoadmapIssue }) {
+function getIssueType(issue: RoadmapIssue): Exclude<IssueType, 'all'> {
   const labels = issue.labels || [];
+  const labelNames = labels.map(l => l.name.toLowerCase());
+  
+  if (labelNames.includes('bug')) return 'bug';
+  if (labelNames.includes('feature') || labelNames.includes('enhancement')) return 'feature';
+  return 'task';
+}
+
+function IssueRow({ issue }: { issue: RoadmapIssue }) {
   const isClosed = issue.state === "closed";
-  const category = getCategoryFromTitle(issue.title);
-  const colors = getCategoryColors(category);
+  const labels = (issue.labels || []).filter(l => 
+    !['bug', 'feature', 'enhancement', 'task'].includes(l.name.toLowerCase())
+  );
   
   return (
     <a
       href={issue.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-center gap-4 py-3 px-4 hover:bg-muted/30 transition-colors border-b border-border/50 last:border-b-0"
+      className="group flex items-center gap-3 py-2.5 px-3 hover:bg-muted/50 transition-colors rounded-md"
     >
-      {/* Status */}
       <div className={cn(
         "flex-shrink-0",
         isClosed ? "text-purple-500" : "text-green-500"
@@ -114,22 +111,13 @@ function IssueRow({ issue }: { issue: RoadmapIssue }) {
         )}
       </div>
       
-      {/* Category badge */}
-      {category !== 'default' && (
-        <Badge variant="outline" className={cn("text-xs", colors.bg, colors.text, "border-0")}>
-          {category}
-        </Badge>
-      )}
-      
-      {/* Title */}
       <span className={cn(
-        "flex-1 text-sm truncate",
+        "flex-1 text-sm",
         isClosed && "text-muted-foreground line-through"
       )}>
         {issue.title}
       </span>
       
-      {/* Labels */}
       <div className="hidden sm:flex gap-1.5">
         {labels.slice(0, 2).map((label) => (
           <Badge 
@@ -147,153 +135,100 @@ function IssueRow({ issue }: { issue: RoadmapIssue }) {
         ))}
       </div>
       
-      {/* Issue number */}
       <span className="text-xs text-muted-foreground">#{issue.number}</span>
-      
-      {/* Link icon */}
       <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
     </a>
   );
 }
 
-// Milestone card component
-function MilestoneCard({ 
-  milestone, 
-  issues 
+function TypeSection({ 
+  type, 
+  issues,
+  defaultOpen = true
 }: { 
-  milestone: RoadmapMilestone; 
+  type: Exclude<IssueType, 'all'>; 
   issues: RoadmapIssue[];
+  defaultOpen?: boolean;
 }) {
-  const isComplete = milestone.state === 'closed';
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const config = TYPE_CONFIG[type];
+  const Icon = config.icon;
+  
+  const openCount = issues.filter(i => i.state === 'open').length;
+  const closedCount = issues.filter(i => i.state === 'closed').length;
+  
+  if (issues.length === 0) return null;
   
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b bg-muted/30">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Milestone className={cn(
-                "w-4 h-4",
-                isComplete ? "text-purple-500" : "text-primary"
-              )} />
-              <h3 className="font-semibold">{milestone.title}</h3>
-              <Badge variant={isComplete ? "secondary" : "default"} className="text-xs">
-                {milestone.progress}%
-              </Badge>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button className={cn(
+          "w-full flex items-center justify-between p-4 rounded-lg border transition-colors",
+          "hover:bg-muted/30",
+          isOpen && "rounded-b-none border-b-0"
+        )}>
+          <div className="flex items-center gap-3">
+            <div className={cn("p-2 rounded-md", config.bgColor)}>
+              <Icon className={cn("w-5 h-5", config.color)} />
             </div>
-            {milestone.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {milestone.description}
+            <div className="text-left">
+              <h3 className="font-semibold">{config.label}</h3>
+              <p className="text-xs text-muted-foreground">
+                {openCount} open · {closedCount} closed
               </p>
-            )}
+            </div>
           </div>
-          <div className="text-right text-sm text-muted-foreground flex-shrink-0">
-            {milestone.dueOn ? (
-              <div>
-                <div className="font-medium">{formatQuarter(milestone.dueOn)}</div>
-                <div className="text-xs">{formatDate(milestone.dueOn)}</div>
-              </div>
-            ) : (
-              <span>No due date</span>
-            )}
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{issues.length}</Badge>
+            <ChevronDown className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform",
+              isOpen && "rotate-180"
+            )} />
           </div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="mt-3">
-          <Progress value={milestone.progress} className="h-1.5" />
-        </div>
-        
-        <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-          <span>{milestone.closedIssues} of {milestone.openIssues + milestone.closedIssues} tasks</span>
-          <a 
-            href={milestone.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="hover:text-primary flex items-center gap-1"
-          >
-            View on GitHub
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
-      </div>
-      
-      {/* Issues */}
-      {issues.length > 0 && (
-        <div className="divide-y divide-border/50">
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="border border-t-0 rounded-b-lg p-2 space-y-0.5">
           {issues.map((issue) => (
             <IssueRow key={issue.id} issue={issue} />
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-// Issues without milestone
-function UnassignedIssues({ issues }: { issues: RoadmapIssue[] }) {
-  if (issues.length === 0) return null;
-  
-  return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="p-4 border-b bg-muted/30">
-        <div className="flex items-center gap-2">
-          <Circle className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold">Backlog</h3>
-          <Badge variant="secondary" className="text-xs">{issues.length}</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">Issues not yet assigned to a milestone</p>
-      </div>
-      <div className="divide-y divide-border/50">
-        {issues.map((issue) => (
-          <IssueRow key={issue.id} issue={issue} />
-        ))}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
 export default function Roadmap() {
+  const [filter, setFilter] = useState<IssueType>('all');
+  
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['roadmap'],
     queryFn: fetchRoadmap,
     staleTime: 5 * 60 * 1000,
   });
 
-  const milestones = data?.milestones || [];
   const issues = data?.issues || [];
   
-  // Filter major issues (by label) - if no labels match, show all
-  const hasMajorLabels = issues.some(i => 
-    i.labels?.some(l => MAJOR_LABELS.includes(l.name.toLowerCase()))
-  );
-  
-  const filteredIssues = hasMajorLabels
-    ? issues.filter(i => i.labels?.some(l => MAJOR_LABELS.includes(l.name.toLowerCase())))
-    : issues;
-  
-  // Group issues by milestone
-  const issuesByMilestone = new Map<number | null, RoadmapIssue[]>();
-  for (const issue of filteredIssues) {
-    const key = issue.milestoneNumber;
-    if (!issuesByMilestone.has(key)) {
-      issuesByMilestone.set(key, []);
-    }
-    issuesByMilestone.get(key)!.push(issue);
-  }
-  
-  const unassignedIssues = issuesByMilestone.get(null) || [];
+  // Group issues by type
+  const groupedIssues = {
+    bug: issues.filter(i => getIssueType(i) === 'bug'),
+    feature: issues.filter(i => getIssueType(i) === 'feature'),
+    task: issues.filter(i => getIssueType(i) === 'task'),
+  };
   
   const openCount = issues.filter(i => i.state === "open").length;
   const closedCount = issues.filter(i => i.state === "closed").length;
 
+  const typesToShow = filter === 'all' 
+    ? (['feature', 'bug', 'task'] as const)
+    : [filter] as const;
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Development Roadmap</h1>
             <div className="flex items-center gap-2">
               <Button 
@@ -306,7 +241,7 @@ export default function Roadmap() {
                 Refresh
               </Button>
               <a
-                href="https://github.com/brain-bbqs/brain-bbq-clone/milestones"
+                href="https://github.com/brain-bbqs/brain-bbq-clone/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -317,40 +252,47 @@ export default function Roadmap() {
               </a>
             </div>
           </div>
-          <p className="text-muted-foreground">
-            Track our progress across major milestones
-          </p>
           
-          {/* Stats */}
+          {/* Stats and Filter */}
           {data && (
-            <div className="flex items-center gap-6 mt-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Milestone className="w-4 h-4 text-primary" />
-                <span>{milestones.length} Milestones</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Circle className="w-3 h-3 text-green-500" />
+                  {openCount} Open
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3 h-3 text-purple-500" />
+                  {closedCount} Closed
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Circle className="w-4 h-4 text-green-500" />
-                <span>{openCount} Open</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-purple-500" />
-                <span>{closedCount} Closed</span>
-              </div>
+              
+              <Select value={filter} onValueChange={(v) => setFilter(v as IssueType)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="feature">Features</SelectItem>
+                  <SelectItem value="bug">Bugs</SelectItem>
+                  <SelectItem value="task">Tasks</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
 
         {/* Loading */}
         {isLoading && (
-          <div className="space-y-6 animate-pulse">
-            {[1, 2].map((i) => (
+          <div className="space-y-4 animate-pulse">
+            {[1, 2, 3].map((i) => (
               <div key={i} className="rounded-lg border p-4">
-                <div className="h-6 bg-muted rounded w-1/3 mb-3" />
-                <div className="h-2 bg-muted rounded w-full mb-4" />
-                <div className="space-y-3">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="h-10 bg-muted rounded" />
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-muted rounded-md" />
+                  <div className="flex-1">
+                    <div className="h-5 bg-muted rounded w-24 mb-1" />
+                    <div className="h-3 bg-muted rounded w-16" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -371,26 +313,22 @@ export default function Roadmap() {
 
         {/* Content */}
         {data && (
-          <div className="space-y-6">
-            {/* Milestones with their issues */}
-            {milestones.map((milestone) => (
-              <MilestoneCard 
-                key={milestone.id} 
-                milestone={milestone} 
-                issues={issuesByMilestone.get(milestone.number) || []} 
+          <div className="space-y-4">
+            {typesToShow.map((type) => (
+              <TypeSection 
+                key={type} 
+                type={type} 
+                issues={groupedIssues[type]}
+                defaultOpen={filter !== 'all' || type === 'feature'}
               />
             ))}
             
-            {/* Unassigned issues */}
-            <UnassignedIssues issues={unassignedIssues} />
-            
-            {/* Empty state */}
-            {milestones.length === 0 && unassignedIssues.length === 0 && (
+            {issues.length === 0 && (
               <div className="text-center py-12 rounded-lg border">
-                <Milestone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">No milestones yet</h2>
+                <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">No issues yet</h2>
                 <p className="text-muted-foreground">
-                  Create milestones on GitHub to organize your roadmap
+                  Create issues on GitHub to populate the roadmap
                 </p>
               </div>
             )}
