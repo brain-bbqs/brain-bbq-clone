@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, RefreshCw, Brain, Zap, Cpu, Download, ExternalLink } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -128,6 +129,7 @@ const Assertions = () => {
   const [entities, setEntities] = useState<NerEntity[]>([]);
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState({ current: 0, total: 0, entities: 0 });
   const [quickFilterText, setQuickFilterText] = useState("");
   const [stats, setStats] = useState<ExtractionStats>({ total: 0, completed: 0, processing: 0, failed: 0 });
   const { toast } = useToast();
@@ -285,6 +287,7 @@ const Assertions = () => {
     }
 
     setExtracting(true);
+    setExtractionProgress({ current: 0, total: 0, entities: 0 });
     try {
       // First fetch papers from NIH grants
       const { data: grantsData, error: grantsError } = await supabase.functions.invoke("nih-grants");
@@ -325,6 +328,8 @@ const Assertions = () => {
         description: `Processing ${publications.length} grant publications...`,
       });
 
+      setExtractionProgress({ current: 0, total: publications.length, entities: 0 });
+
       // Call NER extraction in batches
       const batchSize = 5;
       let totalExtracted = 0;
@@ -342,11 +347,13 @@ const Assertions = () => {
         }
 
         totalExtracted += data?.summary?.total_entities || 0;
+        const processed = Math.min(i + batchSize, publications.length);
 
-        // Update progress
-        toast({
-          title: "Extraction progress",
-          description: `Processed ${Math.min(i + batchSize, publications.length)}/${publications.length} grant publications (${totalExtracted} entities)`,
+        // Update progress state
+        setExtractionProgress({ 
+          current: processed, 
+          total: publications.length, 
+          entities: totalExtracted 
         });
       }
 
@@ -354,6 +361,8 @@ const Assertions = () => {
         title: "Extraction complete",
         description: `Extracted ${totalExtracted} entities from ${publications.length} grant publications`,
       });
+
+      setExtractionProgress({ current: 0, total: 0, entities: 0 });
 
       // Refresh the grid
       await fetchEntities();
@@ -367,6 +376,7 @@ const Assertions = () => {
       });
     } finally {
       setExtracting(false);
+      setExtractionProgress({ current: 0, total: 0, entities: 0 });
     }
   }, [user, toast, fetchEntities]);
 
@@ -476,18 +486,22 @@ const Assertions = () => {
                 disabled={extracting}
                 className="bg-primary"
               >
-                {extracting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Extracting...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="mr-2 h-4 w-4" />
-                    Run NER Extraction
-                  </>
-                )}
+                <Brain className="mr-2 h-4 w-4" />
+                Run NER Extraction
               </Button>
+            )}
+
+            {/* Extraction Progress Bar */}
+            {extracting && extractionProgress.total > 0 && (
+              <div className="flex items-center gap-3 min-w-[300px]">
+                <Progress 
+                  value={(extractionProgress.current / extractionProgress.total) * 100} 
+                  className="flex-1 h-2"
+                />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  {extractionProgress.current}/{extractionProgress.total} • {extractionProgress.entities} entities
+                </span>
+              </div>
             )}
 
             <Button
