@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, RefreshCw, Circle, CheckCircle2, Bug, Sparkles, ListTodo, ChevronDown } from "lucide-react";
+import {
+  ExternalLink,
+  RefreshCw,
+  Circle,
+  CheckCircle2,
+  Bug,
+  Sparkles,
+  ListTodo,
+  ChevronDown,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -48,20 +59,20 @@ const TYPE_CONFIG: Record<Exclude<IssueType, 'all'>, {
   bug: { 
     label: 'Bugs', 
     icon: Bug, 
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/10'
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10'
   },
   feature: { 
     label: 'Features', 
     icon: Sparkles, 
-    color: 'text-violet-500',
-    bgColor: 'bg-violet-500/10'
+    color: 'text-primary',
+    bgColor: 'bg-primary/10'
   },
   task: { 
     label: 'Tasks', 
     icon: ListTodo, 
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10'
+    color: 'text-foreground',
+    bgColor: 'bg-muted'
   },
 };
 
@@ -78,20 +89,56 @@ async function fetchRoadmap(): Promise<RoadmapData> {
   };
 }
 
+function normalizeLabelName(name: string): string {
+  const lower = name.trim().toLowerCase();
+  return lower.startsWith('type:') ? lower.replace(/^type:\s*/i, '').trim() : lower;
+}
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  const normalized = hex.replace('#', '').trim();
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
+  const r = parseInt(normalized.slice(0, 2), 16) / 255;
+  const g = parseInt(normalized.slice(2, 4), 16) / 255;
+  const b = parseInt(normalized.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+
+  let h = 0;
+  if (delta !== 0) {
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  const l = (max + min) / 2;
+  const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+  return {
+    h: Math.round(h),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100),
+  };
+}
+
+function isTypeLabel(labelName: string): boolean {
+  const n = normalizeLabelName(labelName);
+  return ['bug', 'feature', 'enhancement', 'task'].includes(n);
+}
+
 function getIssueType(issue: RoadmapIssue): Exclude<IssueType, 'all'> {
-  const labels = issue.labels || [];
-  const labelNames = labels.map(l => l.name.toLowerCase());
-  
+  const labelNames = (issue.labels || []).map((l) => normalizeLabelName(l.name));
   if (labelNames.includes('bug')) return 'bug';
   if (labelNames.includes('feature') || labelNames.includes('enhancement')) return 'feature';
+  if (labelNames.includes('task')) return 'task';
+  // If nothing explicitly typed, treat as task by default.
   return 'task';
 }
 
 function IssueRow({ issue }: { issue: RoadmapIssue }) {
   const isClosed = issue.state === "closed";
-  const labels = (issue.labels || []).filter(l => 
-    !['bug', 'feature', 'enhancement', 'task'].includes(l.name.toLowerCase())
-  );
+  const labels = (issue.labels || []).filter((l) => !isTypeLabel(l.name));
   
   return (
     <a
@@ -102,7 +149,7 @@ function IssueRow({ issue }: { issue: RoadmapIssue }) {
     >
       <div className={cn(
         "flex-shrink-0",
-        isClosed ? "text-purple-500" : "text-green-500"
+        isClosed ? "text-muted-foreground" : "text-primary"
       )}>
         {isClosed ? (
           <CheckCircle2 className="w-4 h-4" />
@@ -120,18 +167,26 @@ function IssueRow({ issue }: { issue: RoadmapIssue }) {
       
       <div className="hidden sm:flex gap-1.5">
         {labels.slice(0, 2).map((label) => (
+          (() => {
+            const hsl = hexToHsl(label.color);
+            const borderColor = hsl ? `hsl(${hsl.h} ${hsl.s}% ${hsl.l}% / 0.9)` : undefined;
+            const foregroundColor = hsl ? `hsl(${hsl.h} ${hsl.s}% ${hsl.l}% / 0.95)` : undefined;
+            const bgColor = hsl ? `hsl(${hsl.h} ${hsl.s}% ${hsl.l}% / 0.12)` : undefined;
+            return (
           <Badge 
             key={label.name} 
             variant="outline" 
             className="text-xs py-0"
             style={{
-              borderColor: `#${label.color}`,
-              color: `#${label.color}`,
-              backgroundColor: `#${label.color}15`,
+              borderColor,
+              color: foregroundColor,
+              backgroundColor: bgColor,
             }}
           >
             {label.name}
           </Badge>
+            );
+          })()
         ))}
       </div>
       
@@ -144,11 +199,13 @@ function IssueRow({ issue }: { issue: RoadmapIssue }) {
 function TypeSection({ 
   type, 
   issues,
-  defaultOpen = true
+  defaultOpen = true,
+  allowEmpty = false,
 }: { 
   type: Exclude<IssueType, 'all'>; 
   issues: RoadmapIssue[];
   defaultOpen?: boolean;
+  allowEmpty?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const config = TYPE_CONFIG[type];
@@ -157,7 +214,7 @@ function TypeSection({
   const openCount = issues.filter(i => i.state === 'open').length;
   const closedCount = issues.filter(i => i.state === 'closed').length;
   
-  if (issues.length === 0) return null;
+  if (issues.length === 0 && !allowEmpty) return null;
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -189,9 +246,13 @@ function TypeSection({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="border border-t-0 rounded-b-lg p-2 space-y-0.5">
-          {issues.map((issue) => (
-            <IssueRow key={issue.id} issue={issue} />
-          ))}
+          {issues.length === 0 ? (
+            <div className="py-6 px-3 text-sm text-muted-foreground">
+              No issues labeled as <span className="font-medium text-foreground">{config.label}</span> yet.
+            </div>
+          ) : (
+            issues.map((issue) => <IssueRow key={issue.id} issue={issue} />)
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -200,6 +261,7 @@ function TypeSection({
 
 export default function Roadmap() {
   const [filter, setFilter] = useState<IssueType>('all');
+  const [search, setSearch] = useState("");
   
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['roadmap'],
@@ -208,16 +270,27 @@ export default function Roadmap() {
   });
 
   const issues = data?.issues || [];
+
+  const visibleIssues = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return issues;
+    return issues.filter((i) => {
+      const inTitle = i.title?.toLowerCase().includes(q);
+      const inNumber = `#${i.number}`.includes(q) || `${i.number}`.includes(q);
+      const inLabels = (i.labels || []).some((l) => l.name.toLowerCase().includes(q));
+      return inTitle || inNumber || inLabels;
+    });
+  }, [issues, search]);
   
   // Group issues by type
   const groupedIssues = {
-    bug: issues.filter(i => getIssueType(i) === 'bug'),
-    feature: issues.filter(i => getIssueType(i) === 'feature'),
-    task: issues.filter(i => getIssueType(i) === 'task'),
+    bug: visibleIssues.filter(i => getIssueType(i) === 'bug'),
+    feature: visibleIssues.filter(i => getIssueType(i) === 'feature'),
+    task: visibleIssues.filter(i => getIssueType(i) === 'task'),
   };
   
-  const openCount = issues.filter(i => i.state === "open").length;
-  const closedCount = issues.filter(i => i.state === "closed").length;
+  const openCount = visibleIssues.filter(i => i.state === "open").length;
+  const closedCount = visibleIssues.filter(i => i.state === "closed").length;
 
   const typesToShow = filter === 'all' 
     ? (['feature', 'bug', 'task'] as const)
@@ -258,26 +331,38 @@ export default function Roadmap() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Circle className="w-3 h-3 text-green-500" />
+                  <Circle className="w-3 h-3 text-primary" />
                   {openCount} Open
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-purple-500" />
+                  <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
                   {closedCount} Closed
                 </span>
               </div>
               
-              <Select value={filter} onValueChange={(v) => setFilter(v as IssueType)}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="feature">Features</SelectItem>
-                  <SelectItem value="bug">Bugs</SelectItem>
-                  <SelectItem value="task">Tasks</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <div className="relative w-[220px] hidden sm:block">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search issues…"
+                    className="pl-9"
+                  />
+                </div>
+
+                <Select value={filter} onValueChange={(v) => setFilter(v as IssueType)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="feature">Features</SelectItem>
+                    <SelectItem value="bug">Bugs</SelectItem>
+                    <SelectItem value="task">Tasks</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
         </div>
@@ -320,15 +405,16 @@ export default function Roadmap() {
                 type={type} 
                 issues={groupedIssues[type]}
                 defaultOpen={filter !== 'all' || type === 'feature'}
+                allowEmpty={filter === 'all' || filter === type}
               />
             ))}
             
-            {issues.length === 0 && (
+            {visibleIssues.length === 0 && (
               <div className="text-center py-12 rounded-lg border">
                 <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">No issues yet</h2>
+                <h2 className="text-xl font-semibold mb-2">No matching issues</h2>
                 <p className="text-muted-foreground">
-                  Create issues on GitHub to populate the roadmap
+                  Try clearing your search or adjusting the type filter.
                 </p>
               </div>
             )}
