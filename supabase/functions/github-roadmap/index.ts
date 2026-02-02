@@ -55,6 +55,7 @@ interface RoadmapIssue {
   state: string;
   url: string;
   labels: Array<{ name: string; color: string }>;
+  issueType: string | null; // bug, feature, task from GitHub's issue type field
   milestoneNumber: number | null;
   milestoneTitle: string | null;
   createdAt: string;
@@ -81,6 +82,84 @@ async function fetchFromGitHub(endpoint: string, token?: string): Promise<any> {
   }
   
   return response.json();
+}
+
+async function fetchIssueTypesViaGraphQL(token: string): Promise<Map<number, string>> {
+  const issueTypeMap = new Map<number, string>();
+  
+  // GraphQL query to fetch issue types from the repository
+  const query = `
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        issues(first: 100, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            number
+            issueType {
+              name
+            }
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    let hasNextPage = true;
+    let cursor: string | null = null;
+    
+    while (hasNextPage) {
+      const response: Response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'BrainBBQS-Roadmap',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            owner: GITHUB_OWNER,
+            repo: GITHUB_REPO,
+            cursor,
+          },
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('GraphQL request failed:', await response.text());
+        break;
+      }
+      
+      const data: { errors?: unknown[]; data?: { repository?: { issues?: { pageInfo: { hasNextPage: boolean; endCursor: string }; nodes: Array<{ number: number; issueType?: { name: string } | null }> } } } } = await response.json();
+      
+      if (data.errors) {
+        console.error('GraphQL errors:', data.errors);
+        break;
+      }
+      
+      const issues = data.data?.repository?.issues;
+      if (!issues) break;
+      
+      for (const issue of issues.nodes) {
+        if (issue.issueType?.name) {
+          issueTypeMap.set(issue.number, issue.issueType.name.toLowerCase());
+        }
+      }
+      
+      hasNextPage = issues.pageInfo.hasNextPage;
+      cursor = issues.pageInfo.endCursor;
+    }
+    
+    console.log(`Fetched issue types for ${issueTypeMap.size} issues via GraphQL`);
+  } catch (err) {
+    console.error('Error fetching issue types via GraphQL:', err);
+  }
+  
+  return issueTypeMap;
 }
 
 async function fetchAllIssues(token?: string): Promise<GitHubIssue[]> {
@@ -118,9 +197,11 @@ serve(async (req) => {
     
     console.log('Fetching milestones and issues from GitHub...');
     
-    const [allMilestones, allIssues] = await Promise.all([
+    // Fetch everything in parallel
+    const [allMilestones, allIssues, issueTypeMap] = await Promise.all([
       fetchMilestones(githubToken),
       fetchAllIssues(githubToken),
+      githubToken ? fetchIssueTypesViaGraphQL(githubToken) : Promise.resolve(new Map<number, string>()),
     ]);
     
     console.log(`Found ${allMilestones.length} milestones, ${allIssues.length} issues`);
@@ -151,7 +232,7 @@ serve(async (req) => {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
     
-    // Transform issues
+    // Transform issues with issue type from GraphQL
     const issues: RoadmapIssue[] = allIssues.map(issue => ({
       id: issue.id,
       number: issue.number,
@@ -159,6 +240,7 @@ serve(async (req) => {
       state: issue.state,
       url: issue.html_url,
       labels: (issue.labels || []).map(l => ({ name: l.name, color: l.color })),
+      issueType: issueTypeMap.get(issue.number) || null,
       milestoneNumber: issue.milestone?.number || null,
       milestoneTitle: issue.milestone?.title || null,
       createdAt: issue.created_at,
