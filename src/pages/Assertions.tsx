@@ -43,6 +43,18 @@ interface NerEntity {
   grant_number?: string;
 }
 
+// Row structure for the pivoted grid (one row per grant)
+interface GrantMarrRow {
+  grant_number: string;
+  paper_title: string;
+  l1_entities: string[];
+  l1_rationale: string;
+  l2_entities: string[];
+  l2_rationale: string;
+  l3_entities: string[];
+  l3_rationale: string;
+}
+
 interface ExtractionStats {
   total: number;
   completed: number;
@@ -146,67 +158,135 @@ const Assertions = () => {
     resizable: true,
     floatingFilter: true,
     flex: 1,
-    minWidth: 100,
+    minWidth: 120,
     wrapText: true,
     autoHeight: true,
     cellStyle: { lineHeight: "1.5", padding: "8px" },
   }), []);
 
-  const columnDefs = useMemo<ColDef<NerEntity>[]>(() => [
-    {
-      field: "entity",
-      headerName: "Entity",
-      minWidth: 150,
-      cellStyle: { fontWeight: 500 },
-    },
-    {
-      field: "label",
-      headerName: "Type",
-      width: 180,
-      flex: 0,
-      cellRenderer: LabelBadge,
-    },
-    {
-      field: "marr_level",
-      headerName: "Marr Level",
-      width: 150,
-      flex: 0,
-      cellRenderer: MarrLevelBadge,
-    },
-    {
-      field: "ontology_id",
-      headerName: "Ontology ID",
-      width: 140,
-      flex: 0,
-      cellRenderer: OntologyLink,
-    },
-    {
-      field: "marr_rationale",
-      headerName: "Rationale",
-      minWidth: 200,
-      flex: 2,
-    },
-    {
-      field: "pmid",
-      headerName: "PMID",
-      width: 100,
-      flex: 0,
-      cellRenderer: ({ value }: { value: string }) => value ? (
-        <a
-          href={`https://pubmed.ncbi.nlm.nih.gov/${value}/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          {value}
-        </a>
-      ) : "—",
-    },
+  // Pivot entities by grant into L1, L2, L3 columns
+  const grantRows = useMemo<GrantMarrRow[]>(() => {
+    const grantMap = new Map<string, GrantMarrRow>();
+    
+    for (const entity of entities) {
+      const grantNum = entity.grant_number || "Unknown";
+      
+      if (!grantMap.has(grantNum)) {
+        grantMap.set(grantNum, {
+          grant_number: grantNum,
+          paper_title: entity.paper_title || "",
+          l1_entities: [],
+          l1_rationale: "",
+          l2_entities: [],
+          l2_rationale: "",
+          l3_entities: [],
+          l3_rationale: "",
+        });
+      }
+      
+      const row = grantMap.get(grantNum)!;
+      
+      if (entity.marr_level === "L1") {
+        row.l1_entities.push(entity.entity);
+        if (entity.marr_rationale && !row.l1_rationale) {
+          row.l1_rationale = entity.marr_rationale;
+        }
+      } else if (entity.marr_level === "L2") {
+        row.l2_entities.push(entity.entity);
+        if (entity.marr_rationale && !row.l2_rationale) {
+          row.l2_rationale = entity.marr_rationale;
+        }
+      } else if (entity.marr_level === "L3") {
+        row.l3_entities.push(entity.entity);
+        if (entity.marr_rationale && !row.l3_rationale) {
+          row.l3_rationale = entity.marr_rationale;
+        }
+      }
+    }
+    
+    return Array.from(grantMap.values());
+  }, [entities]);
+
+  // Cell renderer for entity lists
+  const EntityListCell = ({ value }: { value: string[] }) => {
+    if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {value.slice(0, 5).map((e, i) => (
+          <Badge key={i} variant="outline" className="text-xs bg-muted/50">
+            {e}
+          </Badge>
+        ))}
+        {value.length > 5 && (
+          <Badge variant="outline" className="text-xs bg-muted/30">
+            +{value.length - 5} more
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const columnDefs = useMemo<ColDef<GrantMarrRow>[]>(() => [
     {
       field: "grant_number",
       headerName: "Grant",
       width: 150,
       flex: 0,
+      pinned: "left",
+    },
+    {
+      field: "paper_title",
+      headerName: "Title",
+      minWidth: 200,
+      flex: 1,
+    },
+    {
+      headerName: "L1: Computational",
+      children: [
+        {
+          field: "l1_entities",
+          headerName: "Entities",
+          minWidth: 180,
+          cellRenderer: EntityListCell,
+        },
+        {
+          field: "l1_rationale",
+          headerName: "Rationale",
+          minWidth: 200,
+        },
+      ],
+    },
+    {
+      headerName: "L2: Algorithmic",
+      children: [
+        {
+          field: "l2_entities",
+          headerName: "Entities",
+          minWidth: 180,
+          cellRenderer: EntityListCell,
+        },
+        {
+          field: "l2_rationale",
+          headerName: "Rationale",
+          minWidth: 200,
+        },
+      ],
+    },
+    {
+      headerName: "L3: Implementational",
+      children: [
+        {
+          field: "l3_entities",
+          headerName: "Entities",
+          minWidth: 180,
+          cellRenderer: EntityListCell,
+        },
+        {
+          field: "l3_rationale",
+          headerName: "Rationale",
+          minWidth: 200,
+        },
+      ],
     },
   ], []);
 
@@ -373,18 +453,18 @@ const Assertions = () => {
   }, [user, toast, fetchEntities]);
 
   const exportToCSV = useCallback(() => {
-    if (entities.length === 0) return;
+    if (grantRows.length === 0) return;
 
-    const headers = ["Entity", "Type", "Marr Level", "Ontology ID", "Rationale", "PMID", "Grant", "Confidence"];
-    const rows = entities.map(e => [
-      e.entity,
-      e.label,
-      `${e.marr_level} - ${e.marr_level_name}`,
-      e.ontology_id || "",
-      e.marr_rationale || "",
-      e.pmid || "",
-      e.grant_number || "",
-      ((e.judge_scores?.[0] || 0) * 100).toFixed(0) + "%"
+    const headers = ["Grant", "Title", "L1 Entities", "L1 Rationale", "L2 Entities", "L2 Rationale", "L3 Entities", "L3 Rationale"];
+    const rows = grantRows.map(row => [
+      row.grant_number,
+      row.paper_title,
+      row.l1_entities.join("; "),
+      row.l1_rationale,
+      row.l2_entities.join("; "),
+      row.l2_rationale,
+      row.l3_entities.join("; "),
+      row.l3_rationale,
     ]);
 
     const csv = [
@@ -396,15 +476,15 @@ const Assertions = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "ner_entities.csv";
+    a.download = "ner_by_grant.csv";
     a.click();
     window.URL.revokeObjectURL(url);
 
     toast({
       title: "Export complete",
-      description: `Exported ${entities.length} entities`,
+      description: `Exported ${grantRows.length} grants with Marr level analysis`,
     });
-  }, [entities, toast]);
+  }, [grantRows, toast]);
 
   const clearExtractions = useCallback(async () => {
     if (!user) return;
@@ -477,7 +557,7 @@ const Assertions = () => {
               <span className="text-sm">L3 Implementational: <strong>{levelCounts.L3}</strong></span>
             </div>
             <div className="ml-auto text-sm text-muted-foreground">
-              {stats.completed} extractions • {entities.length} entities
+              {grantRows.length} grants • {entities.length} entities
             </div>
           </div>
 
@@ -533,14 +613,10 @@ const Assertions = () => {
               </div>
             )}
 
-            <Button
-              variant="outline"
-              onClick={exportToCSV}
-              disabled={entities.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
+              <Button variant="outline" onClick={exportToCSV} disabled={grantRows.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
 
             {user && entities.length > 0 && (
               <AlertDialog>
@@ -579,21 +655,21 @@ const Assertions = () => {
           className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
           style={{ height: "calc(100vh - 320px)" }}
         >
-          <AgGridReact<NerEntity>
-            rowData={entities}
+          <AgGridReact<GrantMarrRow>
+            rowData={grantRows}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}
             animateRows={true}
             pagination={true}
-            paginationPageSize={50}
-            paginationPageSizeSelector={[25, 50, 100, 200]}
+            paginationPageSize={25}
+            paginationPageSizeSelector={[10, 25, 50]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
             loadingOverlayComponent={() => (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                Loading entities...
+                Loading grants...
               </div>
             )}
           />
