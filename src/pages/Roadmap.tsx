@@ -67,6 +67,7 @@ function groupIssuesByStage(issues: RoadmapIssue[]): Record<StageId, RoadmapIssu
 
 // Issue card component
 function IssueCard({ issue }: { issue: RoadmapIssue }) {
+  const labels = issue.labels || [];
   // Extract a short prefix from the title if it has one (e.g., "SS-1:", "NN-2:")
   const prefixMatch = issue.title.match(/^([A-Z]{1,3}-\d+):\s*/);
   const prefix = prefixMatch ? prefixMatch[1] : null;
@@ -92,9 +93,10 @@ function IssueCard({ issue }: { issue: RoadmapIssue }) {
       </p>
 
       {/* Labels */}
-      {issue.labels.length > 0 && (
+      {/* Labels */}
+      {labels.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {issue.labels.slice(0, 3).map((label) => (
+          {labels.slice(0, 3).map((label) => (
             <span
               key={label.name}
               className="text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[100px]"
