@@ -12,7 +12,12 @@ import {
   Info,
   FileText,
   FlaskConical,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 import {
   Sidebar,
@@ -55,6 +60,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { user, signOut, loading } = useAuth();
 
   const isActive = (path: string) => currentPath === path;
 
@@ -115,8 +121,32 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 space-y-2">
         <ReportIssueDialog />
+        {!loading && (
+          user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              {!collapsed && <span>Sign Out</span>}
+            </Button>
+          ) : (
+            <Link to="/auth">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <LogIn className="h-4 w-4" />
+                {!collapsed && <span>Sign In</span>}
+              </Button>
+            </Link>
+          )
+        )}
       </SidebarFooter>
     </Sidebar>
   );
