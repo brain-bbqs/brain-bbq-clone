@@ -161,6 +161,7 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
     return {
       grantNumber: project.project_num || grantNumber,
       title: project.project_title || "Unknown",
+      abstract: data.results[0].abstract_text || "",
       contactPi: project.contact_pi_name || "Unknown",
       allPis: pis.map(pi => pi.full_name).join(", ") || project.contact_pi_name || "Unknown",
       institution: project.organization?.org_name || "Unknown",
