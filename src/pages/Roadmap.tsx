@@ -37,7 +37,8 @@ async function fetchRoadmap(): Promise<RoadmapIssue[]> {
 
 // Determine stage from issue labels or state
 function getIssueStage(issue: RoadmapIssue): StageId {
-  const labelNames = issue.labels.map(l => l.name.toLowerCase());
+  const labels = issue.labels || [];
+  const labelNames = labels.map(l => l.name?.toLowerCase() || "");
   
   if (issue.state === "closed") return "done";
   if (labelNames.some(l => l.includes("in review") || l.includes("review"))) return "in-review";
