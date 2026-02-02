@@ -15,6 +15,7 @@ import Roadmap from "./pages/Roadmap";
 import Assertions from "./pages/Assertions";
 import Evidence from "./pages/Evidence";
 import Auth from "./pages/Auth";
+import NeuroMCP from "./pages/NeuroMCP";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/assertions" element={<Assertions />} />
               <Route path="/evidence" element={<Evidence />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/neuromcp" element={<NeuroMCP />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

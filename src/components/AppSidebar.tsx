@@ -15,6 +15,8 @@ import {
   LogIn,
   LogOut,
   User,
+  Brain,
+  Bot,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,10 @@ const communityItems = [
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "#", icon: Briefcase },
   { title: "Calendar", url: "#", icon: CalendarDays },
+];
+
+const aiItems = [
+  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
 ];
 
 export function AppSidebar() {
@@ -118,6 +124,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Community</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(communityItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Artificial Intelligence</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
