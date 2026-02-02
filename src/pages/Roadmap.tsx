@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, RefreshCw, Circle, MoreHorizontal } from "lucide-react";
+import { ExternalLink, RefreshCw, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface RoadmapIssue {
@@ -13,42 +12,27 @@ interface RoadmapIssue {
   state: string;
   url: string;
   labels: Array<{ name: string; color: string }>;
-  assignee?: { login: string; avatar_url: string } | null;
 }
 
-interface RoadmapMilestone {
-  id: number;
-  number: number;
-  title: string;
-  description: string | null;
-  state: string;
-  dueOn: string | null;
-  url: string;
-  openIssues: number;
-  closedIssues: number;
-  progress: number;
-  issues: RoadmapIssue[];
-}
-
-// Define Kanban stages with colors matching the reference
+// Define Kanban stages with colors
 const STAGES = [
   { id: "backlog", label: "Backlog", description: "This item hasn't been started", color: "text-muted-foreground" },
-  { id: "ready", label: "Ready", description: "This is ready to be picked up", color: "text-yellow-500" },
-  { id: "in-progress", label: "In progress", description: "This is actively being worked on", color: "text-blue-500" },
+  { id: "ready", label: "Ready", description: "Ready to be picked up", color: "text-yellow-500" },
+  { id: "in-progress", label: "In progress", description: "Actively being worked on", color: "text-blue-500" },
   { id: "in-review", label: "In review", description: "This item is in review", color: "text-purple-500" },
   { id: "done", label: "Done", description: "This has been completed", color: "text-green-500" },
 ] as const;
 
 type StageId = typeof STAGES[number]["id"];
 
-async function fetchRoadmap(): Promise<RoadmapMilestone[]> {
+async function fetchRoadmap(): Promise<RoadmapIssue[]> {
   const { data, error } = await supabase.functions.invoke('github-roadmap');
   
   if (error) {
     throw new Error(error.message || 'Failed to fetch roadmap');
   }
   
-  return data.roadmap;
+  return data.issues || [];
 }
 
 // Determine stage from issue labels or state
@@ -63,8 +47,8 @@ function getIssueStage(issue: RoadmapIssue): StageId {
 }
 
 // Group all issues by stage
-function groupIssuesByStage(milestones: RoadmapMilestone[]): Record<StageId, (RoadmapIssue & { repo: string })[]> {
-  const grouped: Record<StageId, (RoadmapIssue & { repo: string })[]> = {
+function groupIssuesByStage(issues: RoadmapIssue[]): Record<StageId, RoadmapIssue[]> {
+  const grouped: Record<StageId, RoadmapIssue[]> = {
     backlog: [],
     ready: [],
     "in-progress": [],
@@ -72,18 +56,16 @@ function groupIssuesByStage(milestones: RoadmapMilestone[]): Record<StageId, (Ro
     done: [],
   };
 
-  for (const milestone of milestones) {
-    for (const issue of milestone.issues) {
-      const stage = getIssueStage(issue);
-      grouped[stage].push({ ...issue, repo: "brain-bbq-clone" });
-    }
+  for (const issue of issues) {
+    const stage = getIssueStage(issue);
+    grouped[stage].push(issue);
   }
 
   return grouped;
 }
 
 // Issue card component
-function IssueCard({ issue }: { issue: RoadmapIssue & { repo: string } }) {
+function IssueCard({ issue }: { issue: RoadmapIssue }) {
   // Extract a short prefix from the title if it has one (e.g., "SS-1:", "NN-2:")
   const prefixMatch = issue.title.match(/^([A-Z]{1,3}-\d+):\s*/);
   const prefix = prefixMatch ? prefixMatch[1] : null;
@@ -94,27 +76,27 @@ function IssueCard({ issue }: { issue: RoadmapIssue & { repo: string } }) {
       href={issue.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors group"
+      className="block p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors"
     >
       {/* Repo label */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
         <Circle className="w-3 h-3 text-green-500 fill-green-500/20" />
-        <span>{issue.repo} #{issue.number}</span>
+        <span>brain-bbq-clone #{issue.number}</span>
       </div>
       
       {/* Title */}
-      <p className="text-sm font-medium text-foreground mb-2 line-clamp-2">
+      <p className="text-sm font-medium text-foreground mb-2 line-clamp-3">
         {prefix && <span className="text-muted-foreground">{prefix}: </span>}
         {title}
       </p>
 
-      {/* Footer with labels and assignee */}
-      <div className="flex items-center justify-between mt-2">
-        <div className="flex flex-wrap gap-1 flex-1">
-          {issue.labels.slice(0, 2).map((label) => (
+      {/* Labels */}
+      {issue.labels.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {issue.labels.slice(0, 3).map((label) => (
             <span
               key={label.name}
-              className="text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[80px]"
+              className="text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[100px]"
               style={{
                 backgroundColor: `#${label.color}20`,
                 color: `#${label.color}`,
@@ -124,14 +106,7 @@ function IssueCard({ issue }: { issue: RoadmapIssue & { repo: string } }) {
             </span>
           ))}
         </div>
-        {issue.assignee && (
-          <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px] bg-muted">
-              {issue.assignee.login.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        )}
-      </div>
+      )}
     </a>
   );
 }
@@ -139,28 +114,20 @@ function IssueCard({ issue }: { issue: RoadmapIssue & { repo: string } }) {
 // Stage column component
 function StageColumn({ 
   stage, 
-  issues, 
-  totalCount 
+  issues 
 }: { 
   stage: typeof STAGES[number]; 
-  issues: (RoadmapIssue & { repo: string })[]; 
-  totalCount: number;
+  issues: RoadmapIssue[]; 
 }) {
   return (
     <div className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0">
       {/* Column header */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <div className="flex items-center gap-2">
-          <Circle className={cn("w-3 h-3", stage.color)} />
-          <span className="font-semibold text-sm">{stage.label}</span>
-          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            {issues.length} / {totalCount}
-          </span>
-          <span className="text-xs text-muted-foreground">Estimate: 0</span>
-        </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <Circle className={cn("w-3 h-3", stage.color)} />
+        <span className="font-semibold text-sm">{stage.label}</span>
+        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+          {issues.length}
+        </span>
       </div>
 
       {/* Description */}
@@ -173,29 +140,23 @@ function StageColumn({
         ))}
         
         {issues.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-sm border border-dashed rounded-lg">
+          <div className="text-center py-8 text-muted-foreground text-xs border border-dashed rounded-lg">
             No items
           </div>
         )}
       </div>
-
-      {/* Add item button */}
-      <Button variant="ghost" className="mt-3 justify-start text-muted-foreground" size="sm">
-        <span className="mr-2">+</span> Add item
-      </Button>
     </div>
   );
 }
 
 export default function Roadmap() {
-  const { data: milestones, isLoading, error, refetch, isFetching } = useQuery({
+  const { data: issues, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['roadmap'],
     queryFn: fetchRoadmap,
     staleTime: 5 * 60 * 1000,
   });
 
-  const groupedIssues = milestones ? groupIssuesByStage(milestones) : null;
-  const totalIssues = milestones?.reduce((acc, m) => acc + m.issues.length, 0) || 0;
+  const groupedIssues = issues ? groupIssuesByStage(issues) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -205,7 +166,7 @@ export default function Roadmap() {
           <div>
             <h1 className="text-2xl font-bold mb-1">Development Roadmap</h1>
             <p className="text-sm text-muted-foreground">
-              Track progress across all development stages. Synced live from GitHub.
+              Track progress across all stages. Synced from GitHub.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -225,7 +186,7 @@ export default function Roadmap() {
             >
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4 mr-2" />
-                View on GitHub
+                GitHub
               </Button>
             </a>
           </div>
@@ -266,7 +227,6 @@ export default function Roadmap() {
                   key={stage.id} 
                   stage={stage} 
                   issues={groupedIssues[stage.id]} 
-                  totalCount={totalIssues}
                 />
               ))}
             </div>
@@ -275,14 +235,14 @@ export default function Roadmap() {
         )}
 
         {/* Empty state */}
-        {milestones && milestones.length === 0 && (
+        {issues && issues.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <Circle className="w-8 h-8 text-muted-foreground" />
             </div>
             <h2 className="text-xl font-semibold mb-2">No issues yet</h2>
             <p className="text-muted-foreground">
-              Check back soon for updates on our development roadmap.
+              Check back soon for updates.
             </p>
           </div>
         )}

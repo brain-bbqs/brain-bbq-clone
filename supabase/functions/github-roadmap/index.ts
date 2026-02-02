@@ -2,23 +2,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const GITHUB_OWNER = 'brain-bbqs';
 const GITHUB_REPO = 'brain-bbq-clone';
-
-interface GitHubMilestone {
-  id: number;
-  number: number;
-  title: string;
-  description: string | null;
-  state: string;
-  due_on: string | null;
-  html_url: string;
-  open_issues: number;
-  closed_issues: number;
-}
 
 interface GitHubIssue {
   id: number;
@@ -27,23 +15,8 @@ interface GitHubIssue {
   state: string;
   html_url: string;
   labels: Array<{ name: string; color: string }>;
-  milestone: { number: number } | null;
   created_at: string;
   updated_at: string;
-}
-
-interface RoadmapMilestone {
-  id: number;
-  number: number;
-  title: string;
-  description: string | null;
-  state: string;
-  dueOn: string | null;
-  url: string;
-  openIssues: number;
-  closedIssues: number;
-  progress: number;
-  issues: RoadmapIssue[];
 }
 
 interface RoadmapIssue {
@@ -76,8 +49,45 @@ async function fetchFromGitHub(endpoint: string, token?: string): Promise<any> {
   return response.json();
 }
 
+async function fetchAllIssues(token?: string): Promise<GitHubIssue[]> {
+  const allIssues: GitHubIssue[] = [];
+  let page = 1;
+  const perPage = 100;
+  
+  // Fetch open issues with pagination
+  while (true) {
+    const openIssues = await fetchFromGitHub(
+      `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=open&per_page=${perPage}&page=${page}`,
+      token
+    );
+    
+    // Filter out pull requests (they also appear in the issues endpoint)
+    const issuesOnly = openIssues.filter((issue: any) => !issue.pull_request);
+    allIssues.push(...issuesOnly);
+    
+    if (openIssues.length < perPage) break;
+    page++;
+  }
+  
+  // Fetch closed issues with pagination
+  page = 1;
+  while (true) {
+    const closedIssues = await fetchFromGitHub(
+      `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=closed&per_page=${perPage}&page=${page}`,
+      token
+    );
+    
+    const issuesOnly = closedIssues.filter((issue: any) => !issue.pull_request);
+    allIssues.push(...issuesOnly);
+    
+    if (closedIssues.length < perPage) break;
+    page++;
+  }
+  
+  return allIssues;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -85,82 +95,32 @@ serve(async (req) => {
   try {
     const githubToken = Deno.env.get('GITHUB_TOKEN');
     
-    console.log('Fetching milestones from GitHub...');
+    console.log('Fetching all issues from GitHub...');
     
-    // Fetch all milestones (both open and closed)
-    const [openMilestones, closedMilestones] = await Promise.all([
-      fetchFromGitHub(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/milestones?state=open&per_page=100`, githubToken),
-      fetchFromGitHub(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/milestones?state=closed&per_page=100`, githubToken),
-    ]);
+    const allIssues = await fetchAllIssues(githubToken);
+    console.log(`Found ${allIssues.length} issues (excluding PRs)`);
     
-    const allMilestones: GitHubMilestone[] = [...openMilestones, ...closedMilestones];
-    console.log(`Found ${allMilestones.length} milestones`);
+    // Transform to roadmap format
+    const issues: RoadmapIssue[] = allIssues.map(issue => ({
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      state: issue.state,
+      url: issue.html_url,
+      labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+    }));
     
-    // Fetch all issues (both open and closed)
-    const [openIssues, closedIssues] = await Promise.all([
-      fetchFromGitHub(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=open&per_page=100`, githubToken),
-      fetchFromGitHub(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues?state=closed&per_page=100`, githubToken),
-    ]);
-    
-    const allIssues: GitHubIssue[] = [...openIssues, ...closedIssues];
-    console.log(`Found ${allIssues.length} issues`);
-    
-    // Group issues by milestone
-    const issuesByMilestone = new Map<number, RoadmapIssue[]>();
-    
-    for (const issue of allIssues) {
-      if (issue.milestone) {
-        const milestoneNumber = issue.milestone.number;
-        if (!issuesByMilestone.has(milestoneNumber)) {
-          issuesByMilestone.set(milestoneNumber, []);
-        }
-        issuesByMilestone.get(milestoneNumber)!.push({
-          id: issue.id,
-          number: issue.number,
-          title: issue.title,
-          state: issue.state,
-          url: issue.html_url,
-          labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
-        });
-      }
-    }
-    
-    // Build roadmap data
-    const roadmap: RoadmapMilestone[] = allMilestones.map(milestone => {
-      const total = milestone.open_issues + milestone.closed_issues;
-      const progress = total > 0 ? Math.round((milestone.closed_issues / total) * 100) : 0;
-      
-      return {
-        id: milestone.id,
-        number: milestone.number,
-        title: milestone.title,
-        description: milestone.description,
-        state: milestone.state,
-        dueOn: milestone.due_on,
-        url: milestone.html_url,
-        openIssues: milestone.open_issues,
-        closedIssues: milestone.closed_issues,
-        progress,
-        issues: issuesByMilestone.get(milestone.number) || [],
-      };
-    });
-    
-    // Sort: open milestones first (by due date), then closed
-    roadmap.sort((a, b) => {
+    // Sort: open issues first, then by number descending
+    issues.sort((a, b) => {
       if (a.state !== b.state) {
         return a.state === 'open' ? -1 : 1;
       }
-      if (a.dueOn && b.dueOn) {
-        return new Date(a.dueOn).getTime() - new Date(b.dueOn).getTime();
-      }
-      if (a.dueOn) return -1;
-      if (b.dueOn) return 1;
-      return a.title.localeCompare(b.title);
+      return b.number - a.number;
     });
     
     console.log('Roadmap data built successfully');
     
-    return new Response(JSON.stringify({ roadmap }), {
+    return new Response(JSON.stringify({ issues }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
