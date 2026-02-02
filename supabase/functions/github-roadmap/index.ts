@@ -26,6 +26,17 @@ interface RoadmapIssue {
   state: string;
   url: string;
   labels: Array<{ name: string; color: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RoadmapIssue {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  url: string;
+  labels: Array<{ name: string; color: string }>;
 }
 
 async function fetchFromGitHub(endpoint: string, token?: string): Promise<any> {
@@ -107,7 +118,9 @@ serve(async (req) => {
       title: issue.title,
       state: issue.state,
       url: issue.html_url,
-      labels: issue.labels.map(l => ({ name: l.name, color: l.color })),
+      labels: (issue.labels || []).map(l => ({ name: l.name, color: l.color })),
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
     }));
     
     // Sort: open issues first, then by number descending

@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, RefreshCw, Circle } from "lucide-react";
+import { ExternalLink, RefreshCw, Circle, CheckCircle2, GitPullRequest } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface RoadmapIssue {
@@ -12,18 +12,9 @@ interface RoadmapIssue {
   state: string;
   url: string;
   labels: Array<{ name: string; color: string }>;
+  createdAt: string;
+  updatedAt: string;
 }
-
-// Define Kanban stages with colors
-const STAGES = [
-  { id: "backlog", label: "Backlog", description: "This item hasn't been started", color: "text-muted-foreground" },
-  { id: "ready", label: "Ready", description: "Ready to be picked up", color: "text-yellow-500" },
-  { id: "in-progress", label: "In progress", description: "Actively being worked on", color: "text-blue-500" },
-  { id: "in-review", label: "In review", description: "This item is in review", color: "text-purple-500" },
-  { id: "done", label: "Done", description: "This has been completed", color: "text-green-500" },
-] as const;
-
-type StageId = typeof STAGES[number]["id"];
 
 async function fetchRoadmap(): Promise<RoadmapIssue[]> {
   const { data, error } = await supabase.functions.invoke('github-roadmap');
@@ -35,120 +26,109 @@ async function fetchRoadmap(): Promise<RoadmapIssue[]> {
   return data.issues || [];
 }
 
-// Determine stage from issue labels or state
-function getIssueStage(issue: RoadmapIssue): StageId {
-  const labels = issue.labels || [];
-  const labelNames = labels.map(l => l.name?.toLowerCase() || "");
+function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
-  if (issue.state === "closed") return "done";
-  if (labelNames.some(l => l.includes("in review") || l.includes("review"))) return "in-review";
-  if (labelNames.some(l => l.includes("in progress") || l.includes("wip") || l.includes("doing"))) return "in-progress";
-  if (labelNames.some(l => l.includes("ready") || l.includes("todo"))) return "ready";
-  return "backlog";
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  return `${Math.floor(diffDays / 365)} years ago`;
 }
 
-// Group all issues by stage
-function groupIssuesByStage(issues: RoadmapIssue[]): Record<StageId, RoadmapIssue[]> {
-  const grouped: Record<StageId, RoadmapIssue[]> = {
-    backlog: [],
-    ready: [],
-    "in-progress": [],
-    "in-review": [],
-    done: [],
-  };
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
+// Group issues by date (month/year)
+function groupByMonth(issues: RoadmapIssue[]): Map<string, RoadmapIssue[]> {
+  const groups = new Map<string, RoadmapIssue[]>();
+  
   for (const issue of issues) {
-    const stage = getIssueStage(issue);
-    grouped[stage].push(issue);
+    const date = new Date(issue.updatedAt);
+    const key = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
+    
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(issue);
   }
-
-  return grouped;
+  
+  return groups;
 }
 
-// Issue card component
-function IssueCard({ issue }: { issue: RoadmapIssue }) {
+function IssueItem({ issue }: { issue: RoadmapIssue }) {
   const labels = issue.labels || [];
-  // Extract a short prefix from the title if it has one (e.g., "SS-1:", "NN-2:")
-  const prefixMatch = issue.title.match(/^([A-Z]{1,3}-\d+):\s*/);
-  const prefix = prefixMatch ? prefixMatch[1] : null;
-  const title = prefixMatch ? issue.title.slice(prefixMatch[0].length) : issue.title;
-
+  const isClosed = issue.state === "closed";
+  
   return (
     <a
       href={issue.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors"
+      className="group flex items-start gap-4 py-4 px-4 -mx-4 rounded-lg hover:bg-muted/50 transition-colors"
     >
-      {/* Repo label */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-        <Circle className="w-3 h-3 text-green-500 fill-green-500/20" />
-        <span>brain-bbq-clone #{issue.number}</span>
-      </div>
-      
-      {/* Title */}
-      <p className="text-sm font-medium text-foreground mb-2 line-clamp-3">
-        {prefix && <span className="text-muted-foreground">{prefix}: </span>}
-        {title}
-      </p>
-
-      {/* Labels */}
-      {/* Labels */}
-      {labels.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {labels.slice(0, 3).map((label) => (
-            <span
-              key={label.name}
-              className="text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[100px]"
-              style={{
-                backgroundColor: `#${label.color}20`,
-                color: `#${label.color}`,
-              }}
-            >
-              {label.name}
-            </span>
-          ))}
-        </div>
-      )}
-    </a>
-  );
-}
-
-// Stage column component
-function StageColumn({ 
-  stage, 
-  issues 
-}: { 
-  stage: typeof STAGES[number]; 
-  issues: RoadmapIssue[]; 
-}) {
-  return (
-    <div className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0">
-      {/* Column header */}
-      <div className="flex items-center gap-2 mb-2 px-1">
-        <Circle className={cn("w-3 h-3", stage.color)} />
-        <span className="font-semibold text-sm">{stage.label}</span>
-        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-          {issues.length}
-        </span>
-      </div>
-
-      {/* Description */}
-      <p className="text-xs text-muted-foreground mb-3 px-1">{stage.description}</p>
-
-      {/* Issues list */}
-      <div className="flex flex-col gap-2 flex-1">
-        {issues.map((issue) => (
-          <IssueCard key={issue.id} issue={issue} />
-        ))}
-        
-        {issues.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground text-xs border border-dashed rounded-lg">
-            No items
-          </div>
+      {/* Status icon */}
+      <div className={cn(
+        "mt-0.5 flex-shrink-0",
+        isClosed ? "text-purple-500" : "text-green-500"
+      )}>
+        {isClosed ? (
+          <CheckCircle2 className="w-5 h-5" />
+        ) : (
+          <Circle className="w-5 h-5" />
         )}
       </div>
-    </div>
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <p className={cn(
+            "font-medium leading-snug",
+            isClosed && "text-muted-foreground"
+          )}>
+            {issue.title}
+          </p>
+          <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 mt-0.5" />
+        </div>
+        
+        {/* Meta info */}
+        <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+          <span>#{issue.number}</span>
+          <span>·</span>
+          <span>{formatRelativeDate(issue.updatedAt)}</span>
+          
+          {labels.length > 0 && (
+            <>
+              <span>·</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {labels.slice(0, 3).map((label) => (
+                  <Badge 
+                    key={label.name} 
+                    variant="outline" 
+                    className="text-xs py-0 h-5"
+                    style={{
+                      borderColor: `#${label.color}`,
+                      color: `#${label.color}`,
+                    }}
+                  >
+                    {label.name}
+                  </Badge>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </a>
   );
 }
 
@@ -159,51 +139,74 @@ export default function Roadmap() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const groupedIssues = issues ? groupIssuesByStage(issues) : null;
+  // Sort by updated date and group by month
+  const sortedIssues = issues?.slice().sort((a, b) => 
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  const groupedIssues = sortedIssues ? groupByMonth(sortedIssues) : null;
+
+  const openCount = issues?.filter(i => i.state === "open").length || 0;
+  const closedCount = issues?.filter(i => i.state === "closed").length || 0;
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold mb-1">Development Roadmap</h1>
-            <p className="text-sm text-muted-foreground">
-              Track progress across all stages. Synced from GitHub.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <a
-              href="https://github.com/orgs/brain-bbqs/projects/1"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                GitHub
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold">Development Roadmap</h1>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            </a>
+              <a
+                href="https://github.com/brain-bbqs/brain-bbq-clone/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" size="sm">
+                  <GitPullRequest className="w-4 h-4 mr-2" />
+                  GitHub
+                </Button>
+              </a>
+            </div>
           </div>
+          <p className="text-muted-foreground">
+            Recent activity from our GitHub repository
+          </p>
+          
+          {/* Stats */}
+          {issues && (
+            <div className="flex items-center gap-4 mt-4 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Circle className="w-4 h-4 text-green-500" />
+                <span>{openCount} Open</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                <span>{closedCount} Closed</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex gap-4 animate-pulse">
-            {STAGES.map((stage) => (
-              <div key={stage.id} className="min-w-[280px] space-y-3">
-                <div className="h-6 bg-muted rounded w-1/2" />
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-24 bg-muted rounded" />
-                <div className="h-24 bg-muted rounded" />
+          <div className="space-y-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-32" />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex gap-4">
+                <div className="w-5 h-5 bg-muted rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-5 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                </div>
               </div>
             ))}
           </div>
@@ -221,20 +224,22 @@ export default function Roadmap() {
           </div>
         )}
 
-        {/* Kanban Board */}
+        {/* Timeline */}
         {groupedIssues && (
-          <ScrollArea className="w-full">
-            <div className="flex gap-4 pb-4">
-              {STAGES.map((stage) => (
-                <StageColumn 
-                  key={stage.id} 
-                  stage={stage} 
-                  issues={groupedIssues[stage.id]} 
-                />
-              ))}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          <div className="space-y-8">
+            {Array.from(groupedIssues.entries()).map(([month, monthIssues]) => (
+              <div key={month}>
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 sticky top-0 bg-background py-2">
+                  {month}
+                </h2>
+                <div className="divide-y divide-border">
+                  {monthIssues.map((issue) => (
+                    <IssueItem key={issue.id} issue={issue} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Empty state */}
