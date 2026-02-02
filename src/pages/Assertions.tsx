@@ -293,15 +293,14 @@ const Assertions = () => {
 
       const grants = grantsData?.data || [];
       
-      // Collect all papers with abstracts
-      const papers: { pmid: string; title: string; abstract: string; grant_number: string }[] = [];
+      // Collect all grant publications with metadata
+      const publications: { pmid: string; title: string; abstract: string; grant_number: string }[] = [];
       
       for (const grant of grants) {
         for (const pub of grant.publications || []) {
-          // We need abstracts - for now we'll use the title as a placeholder
-          // In production, you'd fetch abstracts from PubMed
+          // Using publication metadata as context since full abstracts require PubMed fetch
           if (pub.pmid && pub.title) {
-            papers.push({
+            publications.push({
               pmid: pub.pmid,
               title: pub.title,
               abstract: `This paper titled "${pub.title}" was published in ${pub.journal || "unknown journal"} in ${pub.year || "unknown year"}. Authors: ${pub.authors || "unknown"}.`,
@@ -311,10 +310,10 @@ const Assertions = () => {
         }
       }
 
-      if (papers.length === 0) {
+      if (publications.length === 0) {
         toast({
-          title: "No papers found",
-          description: "No publications with abstracts available for extraction",
+          title: "No publications found",
+          description: "No grant publications available for extraction",
           variant: "destructive",
         });
         setExtracting(false);
@@ -323,15 +322,15 @@ const Assertions = () => {
 
       toast({
         title: "Starting NER extraction",
-        description: `Processing ${papers.length} papers...`,
+        description: `Processing ${publications.length} grant publications...`,
       });
 
       // Call NER extraction in batches
       const batchSize = 5;
       let totalExtracted = 0;
 
-      for (let i = 0; i < papers.length; i += batchSize) {
-        const batch = papers.slice(i, i + batchSize);
+      for (let i = 0; i < publications.length; i += batchSize) {
+        const batch = publications.slice(i, i + batchSize);
         
         const { data, error } = await supabase.functions.invoke("ner-extract", {
           body: { papers: batch },
@@ -347,13 +346,13 @@ const Assertions = () => {
         // Update progress
         toast({
           title: "Extraction progress",
-          description: `Processed ${Math.min(i + batchSize, papers.length)}/${papers.length} papers (${totalExtracted} entities)`,
+          description: `Processed ${Math.min(i + batchSize, publications.length)}/${publications.length} grant publications (${totalExtracted} entities)`,
         });
       }
 
       toast({
         title: "Extraction complete",
-        description: `Extracted ${totalExtracted} entities from ${papers.length} papers`,
+        description: `Extracted ${totalExtracted} entities from ${publications.length} grant publications`,
       });
 
       // Refresh the grid
