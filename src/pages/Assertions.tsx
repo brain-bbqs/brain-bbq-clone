@@ -119,12 +119,6 @@ const OntologyLink = ({ value, data }: { value: string | null; data: NerEntity }
   return <span className="font-mono text-xs">{value}</span>;
 };
 
-const ConfidenceCell = ({ data }: { data: NerEntity }) => {
-  const score = data.judge_scores?.[0] ?? 0;
-  const color = score >= 0.8 ? "text-green-400" : score >= 0.5 ? "text-yellow-400" : "text-red-400";
-  return <span className={`font-mono ${color}`}>{(score * 100).toFixed(0)}%</span>;
-};
-
 const Assertions = () => {
   const [entities, setEntities] = useState<NerEntity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -200,15 +194,8 @@ const Assertions = () => {
     {
       field: "grant_number",
       headerName: "Grant",
-      width: 130,
+      width: 150,
       flex: 0,
-    },
-    {
-      headerName: "Confidence",
-      width: 100,
-      flex: 0,
-      cellRenderer: ConfidenceCell,
-      valueGetter: (params) => params.data?.judge_scores?.[0] ?? 0,
     },
   ], []);
 
@@ -289,53 +276,47 @@ const Assertions = () => {
     setExtracting(true);
     setExtractionProgress({ current: 0, total: 0, entities: 0 });
     try {
-      // First fetch papers from NIH grants
+      // First fetch grants from NIH (with abstracts)
       const { data: grantsData, error: grantsError } = await supabase.functions.invoke("nih-grants");
 
       if (grantsError) throw grantsError;
 
       const grants = grantsData?.data || [];
       
-      // Collect all grant publications with metadata
-      const publications: { pmid: string; title: string; abstract: string; grant_number: string }[] = [];
-      
-      for (const grant of grants) {
-        for (const pub of grant.publications || []) {
-          // Using publication metadata as context since full abstracts require PubMed fetch
-          if (pub.pmid && pub.title) {
-            publications.push({
-              pmid: pub.pmid,
-              title: pub.title,
-              abstract: `This paper titled "${pub.title}" was published in ${pub.journal || "unknown journal"} in ${pub.year || "unknown year"}. Authors: ${pub.authors || "unknown"}.`,
-              grant_number: grant.grantNumber,
-            });
-          }
-        }
-      }
+      // Extract NER from each grant's abstract (not publications)
+      const grantsWithAbstracts = grants.filter((g: any) => g.abstract && g.abstract.trim().length > 0);
 
-      if (publications.length === 0) {
+      if (grantsWithAbstracts.length === 0) {
         toast({
-          title: "No publications found",
-          description: "No grant publications available for extraction",
+          title: "No abstracts found",
+          description: "No grant abstracts available for extraction",
           variant: "destructive",
         });
         setExtracting(false);
         return;
       }
 
+      // Format grants as papers for the NER extraction endpoint
+      const grantAbstracts = grantsWithAbstracts.map((grant: any) => ({
+        pmid: grant.grantNumber, // Using grant number as identifier
+        title: grant.title,
+        abstract: grant.abstract,
+        grant_number: grant.grantNumber,
+      }));
+
       toast({
         title: "Starting NER extraction",
-        description: `Processing ${publications.length} grant publications...`,
+        description: `Processing ${grantAbstracts.length} grant abstracts...`,
       });
 
-      setExtractionProgress({ current: 0, total: publications.length, entities: 0 });
+      setExtractionProgress({ current: 0, total: grantAbstracts.length, entities: 0 });
 
       // Call NER extraction in batches
       const batchSize = 5;
       let totalExtracted = 0;
 
-      for (let i = 0; i < publications.length; i += batchSize) {
-        const batch = publications.slice(i, i + batchSize);
+      for (let i = 0; i < grantAbstracts.length; i += batchSize) {
+        const batch = grantAbstracts.slice(i, i + batchSize);
         
         const { data, error } = await supabase.functions.invoke("ner-extract", {
           body: { papers: batch },
@@ -347,19 +328,19 @@ const Assertions = () => {
         }
 
         totalExtracted += data?.summary?.total_entities || 0;
-        const processed = Math.min(i + batchSize, publications.length);
+        const processed = Math.min(i + batchSize, grantAbstracts.length);
 
         // Update progress state
         setExtractionProgress({ 
           current: processed, 
-          total: publications.length, 
+          total: grantAbstracts.length, 
           entities: totalExtracted 
         });
       }
 
       toast({
         title: "Extraction complete",
-        description: `Extracted ${totalExtracted} entities from ${publications.length} grant publications`,
+        description: `Extracted ${totalExtracted} entities from ${grantAbstracts.length} grant abstracts`,
       });
 
       setExtractionProgress({ current: 0, total: 0, entities: 0 });
