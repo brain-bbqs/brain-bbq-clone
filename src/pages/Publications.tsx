@@ -1,12 +1,16 @@
-import { useMemo, useCallback, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, GridReadyEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, ExternalLink } from "lucide-react";
+import { Download, RefreshCw, ExternalLink, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -82,33 +86,36 @@ export default function Publications() {
     gcTime: 30 * 60 * 1000, // 30 minutes cache
   });
 
-  const TruncatedCell = ({ value, maxLength = 80 }: { value: string; maxLength?: number }) => {
-    if (!value) return <span className="text-muted-foreground">—</span>;
-    const truncated = value.length > maxLength;
-    const displayText = truncated ? value.slice(0, maxLength) + "..." : value;
-    
-    if (truncated) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-help">{displayText}</span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-md text-sm">
-            {value}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-    return <span>{displayText}</span>;
+  const TitleRenderer = (props: { value: string; data: Publication }) => {
+    if (!props.value) return <span className="text-muted-foreground">—</span>;
+    return (
+      <HoverCard openDelay={200}>
+        <HoverCardTrigger asChild>
+          <span className="cursor-help truncate block">{props.value}</span>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-96 z-[9999]" side="bottom" align="start">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{props.value}</p>
+            <p className="text-xs text-muted-foreground">{props.data?.journal} • {props.data?.year}</p>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
   };
 
-  const TitleRenderer = (props: { value: string }) => (
-    <TruncatedCell value={props.value} maxLength={60} />
-  );
-
-  const AuthorsRenderer = (props: { value: string }) => (
-    <TruncatedCell value={props.value} maxLength={40} />
-  );
+  const AuthorsRenderer = (props: { value: string }) => {
+    if (!props.value) return <span className="text-muted-foreground">—</span>;
+    return (
+      <HoverCard openDelay={200}>
+        <HoverCardTrigger asChild>
+          <span className="cursor-help truncate block">{props.value}</span>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80 z-[9999]" side="bottom" align="start">
+          <p className="text-sm">{props.value}</p>
+        </HoverCardContent>
+      </HoverCard>
+    );
+  };
 
   const LinkRenderer = (props: { value: string; data: Publication }) => {
     if (!props.data?.pubmedLink) return <span>{props.value}</span>;
@@ -222,14 +229,37 @@ export default function Publications() {
       </div>
 
       <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-muted-foreground">
           <span>{publications.length} publications</span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-green-200"></span> High RCR (≥2)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-amber-200"></span> Above Avg (≥1)
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded bg-green-200"></span> High Impact
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded bg-amber-200"></span> Above Avg
+            </span>
+          </div>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <button className="flex items-center gap-1 text-primary hover:underline">
+                <Info className="h-3.5 w-3.5" />
+                What is RCR?
+              </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80 z-[9999]" side="bottom">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Relative Citation Ratio (RCR)</h4>
+                <p className="text-xs text-muted-foreground">
+                  RCR is an NIH metric measuring a paper's citation impact compared to others in the same field.
+                </p>
+                <ul className="text-xs space-y-1">
+                  <li><strong>RCR = 1.0:</strong> Average citation impact for field</li>
+                  <li><strong className="text-amber-600">RCR ≥ 1:</strong> Above average impact</li>
+                  <li><strong className="text-green-600">RCR ≥ 2:</strong> High impact (2x average)</li>
+                </ul>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
         </div>
 
         {isLoading ? (
