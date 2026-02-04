@@ -16,6 +16,7 @@ import {
   LogOut,
   Bot,
   Brain,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const knowledgeBaseItems = [
   { title: "ML Models", url: "/assertions", icon: Brain },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
+  { title: "Tools", url: "/resources", icon: Wrench },
   { title: "Knowledge Graph", url: "/evidence", icon: FlaskConical },
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
 ];
