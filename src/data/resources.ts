@@ -25,7 +25,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning with identity re-identification",
     implementation: "Python",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning; user annotates behaviors → trains classifier (Random Forest, XGBoost, etc.) → predicts on new data",
     implementation: "Python",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 3,
@@ -51,7 +51,7 @@ export const resources: Resource[] = [
     mlPipeline: "N/A (infrastructure tool)",
     implementation: ".NET",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 4,
@@ -90,7 +90,7 @@ export const resources: Resource[] = [
     mlPipeline: "Transfer learning: Pre-trained ImageNet weights → fine-tune on user-labeled frames (~200 frames) → predict keypoints on new videos → optional active learning iteration",
     implementation: "Python (TensorFlow/PyTorch)",
     species: "Multi-species (mice, rats, primates, horses, birds, fish, humans, etc.)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 7,
@@ -103,7 +103,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: User labels frames → trains centroid + instance models → predicts poses → tracks identities across frames",
     implementation: "Python (TensorFlow)",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 8,
@@ -116,7 +116,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: User annotates keypoints → trains encoder-decoder network → predicts on new frames",
     implementation: "Python (TensorFlow/Keras)",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 9,
@@ -142,7 +142,7 @@ export const resources: Resource[] = [
     mlPipeline: "Two-stage: (1) Pose estimation (CNN) → (2) Action classification (temporal model on pose sequences) with behavior annotations",
     implementation: "Python (PyTorch)",
     species: "Mouse (Mus musculus)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 11,
@@ -168,7 +168,7 @@ export const resources: Resource[] = [
     mlPipeline: "Unsupervised learning: Extract 3D pose from depth video → PCA dimensionality reduction → AR-HMM identifies behavioral syllables → characterize syllable usage",
     implementation: "Python",
     species: "Mouse (Mus musculus) - primarily; adaptable to small rodents",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 13,
@@ -207,7 +207,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: Convert audio to spectrograms → CNN detects USV regions → classify call types → user can retrain with custom annotations",
     implementation: "MATLAB",
     species: "Mouse (Mus musculus), Rat (Rattus norvegicus)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 16,
@@ -220,7 +220,7 @@ export const resources: Resource[] = [
     mlPipeline: "N/A (geometric triangulation; ML used only if 2D poses from DLC/SLEAP)",
     implementation: "Python",
     species: "Multi-species (general purpose)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   // Models
   {
@@ -234,7 +234,7 @@ export const resources: Resource[] = [
     mlPipeline: "Pre-trained models ready for transfer learning or direct inference; user can fine-tune on their data",
     implementation: "Python (TensorFlow/PyTorch)",
     species: "Quadrupeds, mice, birds, humans, macaques, primates, horses",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 18,
@@ -247,7 +247,7 @@ export const resources: Resource[] = [
     mlPipeline: "Pre-trained models for direct use or fine-tuning",
     implementation: "Python",
     species: "Quadrupeds, birds, humans, multi-species",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 19,
@@ -260,7 +260,7 @@ export const resources: Resource[] = [
     mlPipeline: "Self-supervised/semi-supervised contrastive learning: Neural data + behavior labels → learn low-dimensional embeddings that separate behavioral states",
     implementation: "Python (PyTorch)",
     species: "Multi-species (general purpose for neural data)",
-    neuroMcpStatus: "pending",
+    neuroMcpStatus: "not-started",
   },
   // Datasets
   {
@@ -274,7 +274,7 @@ export const resources: Resource[] = [
     mlPipeline: "Training dataset: 80K labeled images for supervised pose estimation model training",
     implementation: "Dataset",
     species: "Quadrupeds (dogs, cats, horses, etc.)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 21,
@@ -287,7 +287,7 @@ export const resources: Resource[] = [
     mlPipeline: "Training dataset: 5K labeled images for supervised pose estimation",
     implementation: "Dataset",
     species: "Mouse (Mus musculus)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   // Benchmarks
   {
@@ -341,7 +341,7 @@ export const resources: Resource[] = [
     mlPipeline: "Protocol: Train 2D pose models per camera → calibrate cameras → triangulate to 3D coordinates",
     implementation: "Protocol",
     species: "Multi-species (general methodology)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 26,
@@ -354,7 +354,7 @@ export const resources: Resource[] = [
     mlPipeline: "Transfer learning methodology for pose estimation",
     implementation: "Paper",
     species: "Multi-species (general methodology)",
-    neuroMcpStatus: "trained",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 27,
