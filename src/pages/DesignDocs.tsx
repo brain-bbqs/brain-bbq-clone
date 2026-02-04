@@ -1,15 +1,28 @@
 import { Database, Server, Globe, Brain, FileText, Layers, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SoftwareArchitectureFlow from "@/components/diagrams/SoftwareArchitectureFlow";
 
 export default function DesignDocs() {
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-6 py-8 max-w-5xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Design Documentation</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Software Architecture</h1>
         <p className="text-muted-foreground">
           High-level overview of the BBQS platform architecture and integrations
         </p>
       </div>
+
+      {/* Interactive Architecture Diagram */}
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Layers className="h-5 w-5 text-primary" />
+          System Architecture
+        </h2>
+        <SoftwareArchitectureFlow />
+        <p className="text-sm text-muted-foreground mt-3 text-center">
+          Interactive diagram — drag to pan, scroll to zoom
+        </p>
+      </section>
 
       {/* Architecture Overview */}
       <section className="mb-10">

@@ -2,10 +2,11 @@ import { Bot, Wrench, RefreshCw, Brain, Sparkles, GitBranch, ArrowRight, Zap, Da
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import AgenticFrameworkFlow from "@/components/diagrams/AgenticFrameworkFlow";
 
 export default function AgenticFramework() {
   return (
-    <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <div className="container mx-auto px-6 py-8 max-w-5xl">
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -17,6 +18,18 @@ export default function AgenticFramework() {
           How we leverage AI-powered development tools to build self-healing, continuously improving software
         </p>
       </div>
+
+      {/* Interactive Diagram */}
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Agentic Development Pipeline
+        </h2>
+        <AgenticFrameworkFlow />
+        <p className="text-sm text-muted-foreground mt-3 text-center">
+          Interactive diagram — drag to pan, scroll to zoom
+        </p>
+      </section>
 
       {/* Overview */}
       <section className="mb-10">
