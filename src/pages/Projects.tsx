@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,11 +40,41 @@ interface ProjectRow {
   publicationCount: number;
 }
 
-const TitleCell = ({ value }: { value: string }) => {
+const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
   return (
-    <span className="font-medium text-foreground line-clamp-1">
-      {value}
-    </span>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href={data.nihLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground hover:text-primary hover:underline truncate block max-w-full"
+          >
+            {value}
+          </a>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-md">
+          <p className="font-medium">{value}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const TruncatedCell = ({ value }: { value: string }) => {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="truncate block max-w-full">{value}</span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>{value}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
@@ -105,9 +136,9 @@ const Projects = () => {
     {
       field: "grantNumber",
       headerName: "Type",
-      width: 75,
-      minWidth: 75,
-      maxWidth: 75,
+      width: 80,
+      minWidth: 80,
+      maxWidth: 80,
       cellRenderer: GrantTypeBadge,
       suppressSizeToFit: true,
     },
@@ -115,31 +146,36 @@ const Projects = () => {
       field: "title",
       headerName: "Title",
       flex: 1,
-      minWidth: 300,
+      minWidth: 250,
       cellRenderer: TitleCell,
+      cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     },
     {
       field: "contactPi",
       headerName: "PI",
-      width: 140,
-      minWidth: 140,
-      maxWidth: 180,
+      width: 150,
+      minWidth: 150,
+      maxWidth: 150,
       suppressSizeToFit: true,
+      cellRenderer: TruncatedCell,
+      cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     },
     {
       field: "institution",
       headerName: "Organization",
       width: 200,
-      minWidth: 180,
-      maxWidth: 250,
+      minWidth: 200,
+      maxWidth: 200,
       suppressSizeToFit: true,
+      cellRenderer: TruncatedCell,
+      cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     },
     {
       field: "awardAmount",
       headerName: "Funding",
       width: 110,
       minWidth: 110,
-      maxWidth: 130,
+      maxWidth: 110,
       cellRenderer: CurrencyCell,
       suppressSizeToFit: true,
     },
