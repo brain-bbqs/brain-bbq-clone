@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -178,8 +176,8 @@ export default function NeuroMCP() {
             >
               {message.role === "assistant" ? (
                 <div className="max-w-[85%] space-y-2">
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <div className="text-muted-foreground whitespace-pre-wrap">
+                    {message.content}
                   </div>
                   {message.contextSources && message.contextSources.length > 0 && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
