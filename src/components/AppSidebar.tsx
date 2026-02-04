@@ -35,6 +35,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ReportIssueDialog } from "@/components/ReportIssueDialog";
@@ -108,23 +109,26 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <Link to="/" className="flex items-center gap-3 px-2 py-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-            <video 
-              src={bbqsLogoVideo} 
-              autoPlay 
-              loop 
-              muted 
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {!collapsed && (
-            <span className="font-semibold text-sidebar-foreground text-sm leading-tight">
-              BBQS
-            </span>
-          )}
-        </Link>
+        <div className="flex items-center justify-between px-2 py-2">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+              <video 
+                src={bbqsLogoVideo} 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {!collapsed && (
+              <span className="font-semibold text-sidebar-foreground text-sm leading-tight">
+                BBQS
+              </span>
+            )}
+          </Link>
+          <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent rounded-md" />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
