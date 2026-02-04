@@ -65,7 +65,7 @@ const conferencesItems = [
 
 const developmentItems = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Design Docs", url: "/design-docs", icon: FileText },
+  { title: "Software Architecture", url: "/design-docs", icon: FileText },
   { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
 ];
 
