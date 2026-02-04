@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import bbqsLogo from "@/assets/bbqs-logo.png";
+import bbqsLogoVideo from "@/assets/bbqs-logo-animated.mp4";
 
 import {
   Sidebar,
@@ -109,7 +110,14 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link to="/" className="flex items-center gap-3 px-2 py-2">
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-            <img src={bbqsLogo} alt="BBQS" className="w-full h-full object-cover" />
+            <video 
+              src={bbqsLogoVideo} 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="w-full h-full object-cover"
+            />
           </div>
           {!collapsed && (
             <span className="font-semibold text-sidebar-foreground text-sm leading-tight">
