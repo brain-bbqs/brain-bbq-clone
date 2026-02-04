@@ -60,7 +60,7 @@ const conferencesItems = [
 
 const developmentItems = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Design Docs", url: "#", icon: FileText },
+  { title: "Design Docs", url: "/design-docs", icon: FileText },
 ];
 
 export function AppSidebar() {
