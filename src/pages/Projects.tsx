@@ -407,10 +407,17 @@ const Projects = () => {
             enableCellTextSelection={true}
             rowHeight={36}
             headerHeight={40}
+            loading={loading}
             loadingOverlayComponent={() => (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Loading grant data from NIH Reporter...
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Loading grant data from NIH Reporter...</span>
+              </div>
+            )}
+            noRowsOverlayComponent={() => (
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Fetching projects...</span>
               </div>
             )}
           />

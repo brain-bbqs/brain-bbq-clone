@@ -209,6 +209,12 @@ export default function Publications() {
               domLayout="normal"
               onCellMouseOver={onCellMouseOver}
               onCellMouseOut={onCellMouseOut}
+              noRowsOverlayComponent={() => (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                  <span>Fetching publications...</span>
+                </div>
+              )}
             />
 
             {/* Row hover detail card */}
