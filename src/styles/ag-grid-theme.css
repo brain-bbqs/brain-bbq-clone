@@ -1,0 +1,70 @@
+/* Bluevine-inspired AG Grid Theme Override */
+.ag-theme-alpine {
+  --ag-background-color: hsl(0 0% 100%);
+  --ag-foreground-color: hsl(222 47% 15%);
+  --ag-header-background-color: hsl(229 50% 15%);
+  --ag-header-foreground-color: hsl(0 0% 100%);
+  --ag-odd-row-background-color: hsl(220 20% 98%);
+  --ag-row-hover-color: hsl(220 15% 95%);
+  --ag-selected-row-background-color: hsl(38 90% 95%);
+  --ag-range-selection-border-color: hsl(38 90% 50%);
+  --ag-border-color: hsl(220 15% 88%);
+  --ag-secondary-border-color: hsl(220 15% 92%);
+  --ag-header-cell-hover-background-color: hsl(229 45% 22%);
+  --ag-header-cell-moving-background-color: hsl(229 45% 25%);
+  --ag-input-focus-border-color: hsl(38 90% 50%);
+  --ag-checkbox-checked-color: hsl(38 90% 50%);
+  --ag-range-selection-background-color: hsla(38, 90%, 50%, 0.1);
+  --ag-font-family: inherit;
+  --ag-font-size: 14px;
+  --ag-row-height: 44px;
+  --ag-header-height: 48px;
+  --ag-cell-horizontal-padding: 16px;
+}
+
+.ag-theme-alpine .ag-header {
+  border-bottom: 2px solid hsl(229 50% 12%);
+}
+
+.ag-theme-alpine .ag-header-cell {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.ag-theme-alpine .ag-row {
+  border-bottom-color: hsl(220 15% 92%);
+}
+
+.ag-theme-alpine .ag-cell {
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+}
+
+.ag-theme-alpine .ag-paging-panel {
+  background-color: hsl(220 20% 97%);
+  border-top: 1px solid hsl(220 15% 88%);
+}
+
+.ag-theme-alpine .ag-filter-toolpanel-header,
+.ag-theme-alpine .ag-filter-toolpanel-search {
+  background-color: hsl(220 20% 97%);
+}
+
+.ag-theme-alpine input[type="text"],
+.ag-theme-alpine input[type="number"] {
+  border-radius: 4px;
+}
+
+.ag-theme-alpine .ag-menu {
+  background-color: hsl(0 0% 100%);
+  border: 1px solid hsl(220 15% 88%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px hsla(222, 47%, 15%, 0.15);
+}
+
+.ag-theme-alpine .ag-popup-child {
+  border-radius: 8px;
+}
