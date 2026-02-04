@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useMemo, useCallback, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, GridReadyEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, ExternalLink } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -29,78 +31,84 @@ const getRowStyle = (params: { data: Publication }) => {
     return { backgroundColor: "hsl(142 70% 95%)" }; // High impact - green
   } else if (rcr >= 1) {
     return { backgroundColor: "hsl(38 90% 95%)" }; // Above average - gold
-  } else if (rcr > 0) {
-    return { backgroundColor: "hsl(220 20% 98%)" }; // Normal - light gray
   }
   return {};
 };
 
-export default function Publications() {
-  const [publications, setPublications] = useState<Publication[]>([]);
-  const [loading, setLoading] = useState(false);
-  const gridRef = useRef<AgGridReact>(null);
-  const { toast } = useToast();
+const fetchPublications = async (): Promise<Publication[]> => {
+  const { data, error } = await supabase.functions.invoke("nih-grants", {
+    body: { grantNumbers: [] },
+  });
 
-  const fetchPublications = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("nih-grants", {
-        body: { grantNumbers: [] },
-      });
+  if (error) throw error;
 
-      if (error) throw error;
+  const allPubs: Publication[] = [];
+  if (data?.data) {
+    for (const grant of data.data) {
+      if (grant.publications) {
+        for (const pub of grant.publications) {
+          const authorList = pub.authors
+            ?.map((a: { fullName?: string }) => a.fullName || "")
+            .filter(Boolean)
+            .join(", ");
 
-      const allPubs: Publication[] = [];
-      if (data?.data) {
-        for (const grant of data.data) {
-          if (grant.publications) {
-            for (const pub of grant.publications) {
-              const authorList = pub.authors
-                ?.map((a: { fullName?: string }) => a.fullName || "")
-                .filter(Boolean)
-                .join(", ");
-
-              allPubs.push({
-                pmid: pub.pmid,
-                title: pub.title,
-                year: pub.year,
-                journal: pub.journal,
-                authors: authorList || "",
-                citations: pub.citations || 0,
-                rcr: pub.rcr || 0,
-                grantNumber: grant.grantNumber,
-                pubmedLink: pub.pubmedLink,
-              });
-            }
-          }
+          allPubs.push({
+            pmid: pub.pmid,
+            title: pub.title,
+            year: pub.year,
+            journal: pub.journal,
+            authors: authorList || "",
+            citations: pub.citations || 0,
+            rcr: pub.rcr || 0,
+            grantNumber: grant.grantNumber,
+            pubmedLink: pub.pubmedLink,
+          });
         }
       }
-
-      // Deduplicate by PMID
-      const uniquePubs = Array.from(
-        new Map(allPubs.map((p) => [p.pmid, p])).values()
-      );
-
-      setPublications(uniquePubs);
-      toast({
-        title: "Publications loaded",
-        description: `Found ${uniquePubs.length} unique publications`,
-      });
-    } catch (err) {
-      console.error("Error fetching publications:", err);
-      toast({
-        title: "Error",
-        description: "Failed to fetch publications",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
-  }, [toast]);
+  }
 
-  useEffect(() => {
-    fetchPublications();
-  }, [fetchPublications]);
+  // Deduplicate by PMID
+  return Array.from(new Map(allPubs.map((p) => [p.pmid, p])).values());
+};
+
+export default function Publications() {
+  const gridRef = useRef<AgGridReact>(null);
+
+  const { data: publications = [], isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["publications"],
+    queryFn: fetchPublications,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
+  });
+
+  const TruncatedCell = ({ value, maxLength = 80 }: { value: string; maxLength?: number }) => {
+    if (!value) return <span className="text-muted-foreground">—</span>;
+    const truncated = value.length > maxLength;
+    const displayText = truncated ? value.slice(0, maxLength) + "..." : value;
+    
+    if (truncated) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help">{displayText}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-md text-sm">
+            {value}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return <span>{displayText}</span>;
+  };
+
+  const TitleRenderer = (props: { value: string }) => (
+    <TruncatedCell value={props.value} maxLength={60} />
+  );
+
+  const AuthorsRenderer = (props: { value: string }) => (
+    <TruncatedCell value={props.value} maxLength={40} />
+  );
 
   const LinkRenderer = (props: { value: string; data: Publication }) => {
     if (!props.data?.pubmedLink) return <span>{props.value}</span>;
@@ -131,38 +139,36 @@ export default function Publications() {
         field: "title",
         headerName: "Title",
         flex: 2,
-        minWidth: 300,
-        wrapText: true,
-        autoHeight: true,
+        minWidth: 250,
+        cellRenderer: TitleRenderer,
       },
       { field: "year", headerName: "Year", width: 90, sort: "desc" },
-      { field: "journal", headerName: "Journal", flex: 1, minWidth: 150 },
+      { field: "journal", headerName: "Journal", width: 150 },
       {
         field: "authors",
         headerName: "Authors",
         flex: 1,
-        minWidth: 200,
-        wrapText: true,
-        autoHeight: true,
+        minWidth: 180,
+        cellRenderer: AuthorsRenderer,
       },
       {
         field: "citations",
         headerName: "Citations",
-        width: 100,
+        width: 95,
         type: "numericColumn",
       },
       {
         field: "rcr",
         headerName: "RCR",
-        width: 90,
+        width: 80,
         type: "numericColumn",
         cellRenderer: RcrRenderer,
       },
-      { field: "grantNumber", headerName: "Grant", width: 180 },
+      { field: "grantNumber", headerName: "Grant", width: 170 },
       {
         field: "pmid",
         headerName: "PubMed",
-        width: 120,
+        width: 110,
         cellRenderer: LinkRenderer,
       },
     ],
@@ -202,10 +208,10 @@ export default function Publications() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchPublications}
-            disabled={loading}
+            onClick={() => refetch()}
+            disabled={isFetching}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           <Button variant="outline" size="sm" onClick={exportToCSV}>
@@ -226,23 +232,34 @@ export default function Publications() {
           </span>
         </div>
 
-        <div
-          className="ag-theme-alpine"
-          style={{ height: "calc(100vh - 300px)", width: "100%" }}
-        >
-          <AgGridReact
-            ref={gridRef}
-            rowData={publications}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            onGridReady={onGridReady}
-            getRowStyle={getRowStyle}
-            animateRows
-            pagination
-            paginationPageSize={50}
-            domLayout="normal"
-          />
-        </div>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : (
+          <div
+            className="ag-theme-alpine"
+            style={{ height: "calc(100vh - 300px)", width: "100%" }}
+          >
+            <AgGridReact
+              ref={gridRef}
+              rowData={publications}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              onGridReady={onGridReady}
+              getRowStyle={getRowStyle}
+              rowHeight={48}
+              animateRows
+              pagination
+              paginationPageSize={50}
+              domLayout="normal"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
