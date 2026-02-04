@@ -1,16 +1,11 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, GridReadyEvent } from "ag-grid-community";
+import { ColDef, GridReadyEvent, CellMouseOverEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, ExternalLink, Info } from "lucide-react";
+import { Download, RefreshCw, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -78,67 +73,15 @@ const fetchPublications = async (): Promise<Publication[]> => {
 
 export default function Publications() {
   const gridRef = useRef<AgGridReact>(null);
+  const [hoveredRow, setHoveredRow] = useState<Publication | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   const { data: publications = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["publications"],
     queryFn: fetchPublications,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes cache
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
-
-  const TitleRenderer = (props: { value: string; data: Publication }) => {
-    if (!props.value) return <span className="text-muted-foreground">—</span>;
-    return (
-      <HoverCard openDelay={200}>
-        <HoverCardTrigger asChild>
-          <span className="cursor-help truncate block">{props.value}</span>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-96 z-[9999]" side="bottom" align="start">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{props.value}</p>
-            <p className="text-xs text-muted-foreground">{props.data?.journal} • {props.data?.year}</p>
-          </div>
-        </HoverCardContent>
-      </HoverCard>
-    );
-  };
-
-  const AuthorsRenderer = (props: { value: string }) => {
-    if (!props.value) return <span className="text-muted-foreground">—</span>;
-    return (
-      <HoverCard openDelay={200}>
-        <HoverCardTrigger asChild>
-          <span className="cursor-help truncate block">{props.value}</span>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-80 z-[9999]" side="bottom" align="start">
-          <p className="text-sm">{props.value}</p>
-        </HoverCardContent>
-      </HoverCard>
-    );
-  };
-
-  const LinkRenderer = (props: { value: string; data: Publication }) => {
-    if (!props.data?.pubmedLink) return <span>{props.value}</span>;
-    return (
-      <a
-        href={props.data.pubmedLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary hover:underline inline-flex items-center gap-1"
-      >
-        {props.value}
-        <ExternalLink className="h-3 w-3" />
-      </a>
-    );
-  };
-
-  const RcrRenderer = (props: { value: number }) => {
-    const rcr = props.value || 0;
-    let className = "text-muted-foreground";
-    if (rcr >= 2) className = "text-green-600 font-semibold";
-    else if (rcr >= 1) className = "text-amber-600 font-medium";
-    return <span className={className}>{rcr.toFixed(2)}</span>;
-  };
 
   const columnDefs: ColDef<Publication>[] = useMemo(
     () => [
@@ -146,37 +89,13 @@ export default function Publications() {
         field: "title",
         headerName: "Title",
         flex: 2,
-        minWidth: 250,
-        cellRenderer: TitleRenderer,
+        minWidth: 300,
       },
-      { field: "year", headerName: "Year", width: 90, sort: "desc" },
-      { field: "journal", headerName: "Journal", width: 150 },
       {
         field: "authors",
         headerName: "Authors",
         flex: 1,
-        minWidth: 180,
-        cellRenderer: AuthorsRenderer,
-      },
-      {
-        field: "citations",
-        headerName: "Citations",
-        width: 95,
-        type: "numericColumn",
-      },
-      {
-        field: "rcr",
-        headerName: "RCR",
-        width: 80,
-        type: "numericColumn",
-        cellRenderer: RcrRenderer,
-      },
-      { field: "grantNumber", headerName: "Grant", width: 170 },
-      {
-        field: "pmid",
-        headerName: "PubMed",
-        width: 110,
-        cellRenderer: LinkRenderer,
+        minWidth: 200,
       },
     ],
     []
@@ -196,10 +115,28 @@ export default function Publications() {
     params.api.sizeColumnsToFit();
   };
 
+  const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
+    if (event.data && event.event) {
+      const mouseEvent = event.event as MouseEvent;
+      setHoveredRow(event.data);
+      setHoverPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }
+  }, []);
+
+  const onCellMouseOut = useCallback(() => {
+    setHoveredRow(null);
+  }, []);
+
   const exportToCSV = () => {
     gridRef.current?.api.exportDataAsCsv({
       fileName: "publications.csv",
     });
+  };
+
+  const getRcrLabel = (rcr: number) => {
+    if (rcr >= 2) return { text: "High Impact", className: "text-green-600 font-semibold" };
+    if (rcr >= 1) return { text: "Above Avg", className: "text-amber-600 font-medium" };
+    return { text: "Below Avg", className: "text-muted-foreground" };
   };
 
   return (
@@ -233,33 +170,15 @@ export default function Publications() {
           <span>{publications.length} publications</span>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-green-200"></span> High Impact
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(142 70% 85%)" }}></span> High Impact (RCR ≥ 2)
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-amber-200"></span> Above Avg
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(38 90% 85%)" }}></span> Above Avg (RCR ≥ 1)
             </span>
           </div>
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <button className="flex items-center gap-1 text-primary hover:underline">
-                <Info className="h-3.5 w-3.5" />
-                What is RCR?
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80 z-[9999]" side="bottom">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">Relative Citation Ratio (RCR)</h4>
-                <p className="text-xs text-muted-foreground">
-                  RCR is an NIH metric measuring a paper's citation impact compared to others in the same field.
-                </p>
-                <ul className="text-xs space-y-1">
-                  <li><strong>RCR = 1.0:</strong> Average citation impact for field</li>
-                  <li><strong className="text-amber-600">RCR ≥ 1:</strong> Above average impact</li>
-                  <li><strong className="text-green-600">RCR ≥ 2:</strong> High impact (2x average)</li>
-                </ul>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
+          <span className="text-xs italic">
+            RCR = Relative Citation Ratio, an NIH metric comparing citation impact to field average
+          </span>
         </div>
 
         {isLoading ? (
@@ -272,7 +191,7 @@ export default function Publications() {
           </div>
         ) : (
           <div
-            className="ag-theme-alpine"
+            className="ag-theme-alpine relative"
             style={{ height: "calc(100vh - 300px)", width: "100%" }}
           >
             <AgGridReact
@@ -287,7 +206,60 @@ export default function Publications() {
               pagination
               paginationPageSize={50}
               domLayout="normal"
+              onCellMouseOver={onCellMouseOver}
+              onCellMouseOut={onCellMouseOut}
             />
+
+            {/* Row hover detail card */}
+            {hoveredRow && (
+              <div
+                className="fixed z-[9999] bg-popover border border-border rounded-lg shadow-lg p-4 max-w-md pointer-events-none"
+                style={{
+                  left: Math.min(hoverPosition.x + 16, window.innerWidth - 420),
+                  top: Math.min(hoverPosition.y + 16, window.innerHeight - 300),
+                }}
+              >
+                <h4 className="font-semibold text-sm mb-2 line-clamp-2">{hoveredRow.title}</h4>
+                <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{hoveredRow.authors}</p>
+                
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Year:</span>{" "}
+                    <span className="font-medium">{hoveredRow.year}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Journal:</span>{" "}
+                    <span className="font-medium">{hoveredRow.journal}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Citations:</span>{" "}
+                    <span className="font-medium">{hoveredRow.citations}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">RCR:</span>{" "}
+                    <span className={getRcrLabel(hoveredRow.rcr).className}>
+                      {hoveredRow.rcr.toFixed(2)} ({getRcrLabel(hoveredRow.rcr).text})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Grant:</span>{" "}
+                    <span className="font-medium">{hoveredRow.grantNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">PMID:</span>{" "}
+                    <a
+                      href={hoveredRow.pubmedLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline inline-flex items-center gap-1 pointer-events-auto"
+                    >
+                      {hoveredRow.pmid}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
