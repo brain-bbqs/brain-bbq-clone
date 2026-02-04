@@ -19,6 +19,7 @@ import NeuroMCP from "./pages/NeuroMCP";
 import DesignDocs from "./pages/DesignDocs";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
+import AgenticFramework from "./pages/AgenticFramework";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
               <Route path="/design-docs" element={<DesignDocs />} />
+              <Route path="/agentic-framework" element={<AgenticFramework />} />
               <Route path="/publications" element={<Publications />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
