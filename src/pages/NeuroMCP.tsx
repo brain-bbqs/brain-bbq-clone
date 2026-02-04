@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -18,7 +16,7 @@ export default function NeuroMCP() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm NeuroMCP, your AI assistant for neuroscience research. How can I help you today?",
+      content: "Hello! I'm NeuroMCP, your research assistant.\n\nAsk me about neuroscience models, brain data analysis, or any research in your library.",
       timestamp: new Date(),
     },
   ]);
@@ -46,7 +44,7 @@ export default function NeuroMCP() {
     setInput("");
     setIsLoading(true);
 
-    // Placeholder for actual AI response - will be implemented later
+    // Placeholder for actual AI response
     setTimeout(() => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -67,94 +65,94 @@ export default function NeuroMCP() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-4xl mx-auto px-6">
       {/* Header */}
-      <div className="border-b px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Bot className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold">NeuroMCP</h1>
-            <p className="text-sm text-muted-foreground">AI-powered neuroscience assistant</p>
-          </div>
+      <div className="pt-8 pb-4">
+        <h1 className="text-2xl font-semibold text-foreground">NeuroMCP</h1>
+        <p className="text-muted-foreground">Your AI research assistant with access to the library</p>
+      </div>
+
+      {/* Audio Waveform Visualization */}
+      <div className="flex justify-center py-8">
+        <div className="flex items-center gap-[2px] h-8">
+          {Array.from({ length: 60 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-[3px] bg-primary/60 rounded-full"
+              style={{
+                height: `${Math.random() * 24 + 8}px`,
+                opacity: 0.4 + Math.random() * 0.6,
+              }}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 px-6" ref={scrollRef}>
-        <div className="py-4 space-y-6">
+      {/* Subtitle */}
+      <p className="text-center text-muted-foreground text-sm mb-6">
+        Ask NeuroMCP anything about your research
+      </p>
+
+      {/* Chat Area */}
+      <div 
+        ref={scrollRef}
+        className="flex-1 bg-card rounded-xl border border-border overflow-y-auto"
+      >
+        <div className="p-6 space-y-4">
           {messages.map((message) => (
             <div
               key={message.id}
               className={cn(
-                "flex gap-3",
-                message.role === "user" ? "flex-row-reverse" : "flex-row"
+                message.role === "user" ? "text-right" : "text-center"
               )}
             >
-              <Avatar className="h-8 w-8 shrink-0">
-                <AvatarFallback
-                  className={cn(
-                    message.role === "assistant"
-                      ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
-                      : "bg-secondary"
-                  )}
-                >
-                  {message.role === "assistant" ? (
-                    <Bot className="h-4 w-4" />
-                  ) : (
-                    <User className="h-4 w-4" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-2.5 max-w-[80%]",
-                  message.role === "assistant"
-                    ? "bg-muted text-foreground"
-                    : "bg-primary text-primary-foreground"
-                )}
-              >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {message.role === "assistant" ? (
+                <div className="text-muted-foreground whitespace-pre-wrap">
                   {message.content}
-                </p>
-              </div>
+                </div>
+              ) : (
+                <div className="inline-block bg-primary text-primary-foreground rounded-2xl px-4 py-2 max-w-[80%] text-left">
+                  {message.content}
+                </div>
+              )}
             </div>
           ))}
           {isLoading && (
-            <div className="flex gap-3">
-              <Avatar className="h-8 w-8 shrink-0">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-muted rounded-2xl px-4 py-2.5">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" />
-                </div>
+            <div className="text-center">
+              <div className="inline-flex gap-1">
+                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" />
               </div>
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
-      <div className="border-t px-6 py-4">
-        <div className="flex gap-3">
+      <div className="py-4">
+        <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+          <div className="w-px h-6 bg-border" />
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask NeuroMCP anything..."
+            placeholder="Type your question or click the mic..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
+            className="shrink-0 rounded-lg bg-accent hover:bg-accent/90"
           >
             <Send className="h-4 w-4" />
           </Button>

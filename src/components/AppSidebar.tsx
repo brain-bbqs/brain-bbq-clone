@@ -14,9 +14,9 @@ import {
   FlaskConical,
   LogIn,
   LogOut,
-  User,
-  Brain,
   Bot,
+  Brain,
+  Code,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -41,12 +41,15 @@ const mainItems = [
   { title: "About", url: "#", icon: Info },
 ];
 
-const knowledgeBaseItems = [
+const mlModelsItems = [
+  { title: "Assertions", url: "/assertions", icon: FileText },
+  { title: "Evidence", url: "/evidence", icon: FlaskConical },
+];
+
+const softwareItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Resources", url: "/resources", icon: BookOpen },
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Assertions", url: "/assertions", icon: FileText },
-  { title: "Evidence", url: "/evidence", icon: FlaskConical },
 ];
 
 const communityItems = [
@@ -117,8 +120,19 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Brain className="h-3 w-3" />
+            ML Models
+          </SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(mlModelsItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Code className="h-3 w-3" />
+            Software
+          </SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(softwareItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
