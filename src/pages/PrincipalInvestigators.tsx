@@ -217,10 +217,17 @@ export default function PrincipalInvestigators() {
             enableCellTextSelection={true}
             rowHeight={48}
             headerHeight={40}
+            loading={isLoading}
             loadingOverlayComponent={() => (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Loading investigators...
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Loading investigators...</span>
+              </div>
+            )}
+            noRowsOverlayComponent={() => (
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Fetching data...</span>
               </div>
             )}
           />
