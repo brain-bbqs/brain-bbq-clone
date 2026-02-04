@@ -20,6 +20,7 @@ import DesignDocs from "./pages/DesignDocs";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
 import AgenticFramework from "./pages/AgenticFramework";
+import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/design-docs" element={<DesignDocs />} />
               <Route path="/agentic-framework" element={<AgenticFramework />} />
               <Route path="/publications" element={<Publications />} />
+              <Route path="/investigators" element={<PrincipalInvestigators />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
