@@ -65,61 +65,41 @@ export default function NeuroMCP() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-4xl mx-auto px-6">
+    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl mx-auto px-6">
       {/* Header */}
-      <div className="pt-8 pb-4">
+      <div className="pt-8 pb-6 text-center">
         <h1 className="text-2xl font-semibold text-foreground">NeuroMCP</h1>
-        <p className="text-muted-foreground">Your AI research assistant with access to the library</p>
+        <p className="text-muted-foreground text-sm mt-1">Your AI research assistant</p>
       </div>
-
-      {/* Audio Waveform Visualization */}
-      <div className="flex justify-center py-8">
-        <div className="flex items-center gap-[2px] h-8">
-          {Array.from({ length: 60 }).map((_, i) => (
-            <div
-              key={i}
-              className="w-[3px] bg-primary/60 rounded-full"
-              style={{
-                height: `${Math.random() * 24 + 8}px`,
-                opacity: 0.4 + Math.random() * 0.6,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Subtitle */}
-      <p className="text-center text-muted-foreground text-sm mb-6">
-        Ask NeuroMCP anything about your research
-      </p>
 
       {/* Chat Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 bg-card rounded-xl border border-border overflow-y-auto"
+        className="flex-1 overflow-y-auto px-2"
       >
-        <div className="p-6 space-y-4">
+        <div className="space-y-6 py-4">
           {messages.map((message) => (
             <div
               key={message.id}
               className={cn(
-                message.role === "user" ? "text-right" : "text-center"
+                "flex",
+                message.role === "user" ? "justify-end" : "justify-start"
               )}
             >
               {message.role === "assistant" ? (
-                <div className="text-muted-foreground whitespace-pre-wrap">
+                <div className="text-muted-foreground whitespace-pre-wrap max-w-[85%]">
                   {message.content}
                 </div>
               ) : (
-                <div className="inline-block bg-primary text-primary-foreground rounded-2xl px-4 py-2 max-w-[80%] text-left">
+                <div className="bg-secondary text-foreground rounded-2xl px-4 py-2.5 max-w-[85%]">
                   {message.content}
                 </div>
               )}
             </div>
           ))}
           {isLoading && (
-            <div className="text-center">
-              <div className="inline-flex gap-1">
+            <div className="flex justify-start">
+              <div className="inline-flex gap-1 px-2">
                 <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
                 <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
                 <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" />
@@ -131,28 +111,27 @@ export default function NeuroMCP() {
 
       {/* Input */}
       <div className="py-4">
-        <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2">
+        <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-2 py-1.5">
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary"
           >
-            <Mic className="h-5 w-5" />
+            <Mic className="h-4 w-4" />
           </Button>
-          <div className="w-px h-6 bg-border" />
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your question or click the mic..."
+            placeholder="Type your message..."
             disabled={isLoading}
-            className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+            className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="shrink-0 rounded-lg bg-accent hover:bg-accent/90"
+            className="shrink-0 h-9 w-9 rounded-full bg-primary hover:bg-primary/90"
           >
             <Send className="h-4 w-4" />
           </Button>

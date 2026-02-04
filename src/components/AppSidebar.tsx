@@ -16,7 +16,6 @@ import {
   LogOut,
   Bot,
   Brain,
-  Code,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -41,27 +40,27 @@ const mainItems = [
   { title: "About", url: "#", icon: Info },
 ];
 
-const mlModelsItems = [
-  { title: "Assertions", url: "/assertions", icon: FileText },
-  { title: "Evidence", url: "/evidence", icon: FlaskConical },
-];
-
-const softwareItems = [
+const knowledgeBaseItems = [
+  { title: "ML Models", url: "/assertions", icon: Brain },
   { title: "Projects", url: "/projects", icon: FolderOpen },
-  { title: "Resources", url: "/resources", icon: BookOpen },
-  { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Knowledge Graph", url: "/evidence", icon: FlaskConical },
+  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
 ];
 
 const communityItems = [
   { title: "Working Groups", url: "/working-groups", icon: Users },
-  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "#", icon: Briefcase },
   { title: "Calendar", url: "#", icon: CalendarDays },
 ];
 
-const aiItems = [
-  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
+const conferencesItems = [
+  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
+];
+
+const developmentItems = [
+  { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Design Docs", url: "#", icon: FileText },
 ];
 
 export function AppSidebar() {
@@ -120,19 +119,8 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Brain className="h-3 w-3" />
-            ML Models
-          </SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(mlModelsItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <Code className="h-3 w-3" />
-            Software
-          </SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(softwareItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
@@ -141,8 +129,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Artificial Intelligence</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Conferences</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(conferencesItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Development</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(developmentItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
