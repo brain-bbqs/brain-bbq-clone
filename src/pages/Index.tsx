@@ -7,7 +7,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero with Video Background */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden h-[50vh] min-h-[400px]">
         {/* Background Video */}
         <div className="absolute inset-0 z-0">
           <video
@@ -22,8 +22,8 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         </div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 px-6">
+        {/* Hero Content - centered vertically */}
+        <div className="relative z-10 px-6 h-full flex items-center justify-center">
           <HeroSection />
         </div>
       </div>
