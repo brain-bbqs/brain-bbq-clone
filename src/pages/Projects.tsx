@@ -1,17 +1,29 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
-import type { ColDef, RowClickedEvent, GridReadyEvent } from "ag-grid-community";
+import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Download, Loader2, RefreshCw, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import PublicationsGrid, { Publication, formatAuthors } from "@/components/projects/PublicationsGrid";
+import { formatAuthors } from "@/components/projects/PublicationsGrid";
+import "@/styles/ag-grid-theme.css";
+
+interface Publication {
+  pmid: string;
+  title: string;
+  authors: string | { name: string }[];
+  year: number;
+  journal: string;
+  citations: number;
+  rcr: number;
+  pubmedLink: string;
+}
 
 interface ProjectRow {
   grantNumber: string;
@@ -26,34 +38,13 @@ interface ProjectRow {
   publicationCount: number;
 }
 
-const GrantTypeBadge = ({ value }: { value: string }) => {
-  const grantType = value.match(/^[A-Z]\d+/)?.[0] || value.substring(0, 3);
-  const colorMap: Record<string, string> = {
-    "R34": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    "R61": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    "U01": "bg-green-500/20 text-green-400 border-green-500/30",
-    "U24": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    "R24": "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  };
-  const colorClass = colorMap[grantType] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
-  
-  return (
-    <div className="flex items-center gap-2">
-      <Badge variant="outline" className={`${colorClass} text-xs`}>
-        {grantType}
-      </Badge>
-      <span className="font-mono text-sm">{value}</span>
-    </div>
-  );
-};
-
 const TitleLink = ({ value, data }: { value: string; data: ProjectRow }) => {
   return (
     <a
       href={data.nihLink}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors"
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors"
     >
       {value}
       <ExternalLink className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
@@ -63,17 +54,24 @@ const TitleLink = ({ value, data }: { value: string; data: ProjectRow }) => {
 
 const CurrencyCell = ({ value }: { value: number }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
-  return <span className="font-mono">${value.toLocaleString()}</span>;
+  return <span className="font-mono text-green-400">${value.toLocaleString()}</span>;
 };
 
-const PublicationCountCell = ({ value }: { value: number }) => {
+const GrantTypeBadge = ({ value }: { value: string }) => {
+  const grantType = value.match(/^[A-Z]\d+/)?.[0] || value.substring(0, 3);
+  const colorMap: Record<string, string> = {
+    "R34": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    "R61": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    "U01": "bg-green-500/20 text-green-400 border-green-500/30",
+    "U24": "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    "R24": "bg-pink-500/20 text-pink-400 border-pink-500/30",
+  };
+  const colorClass = colorMap[grantType] || "bg-muted/50 text-muted-foreground border-border";
+  
   return (
-    <div className="flex items-center gap-1.5">
-      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className={value > 0 ? "text-primary font-medium" : "text-muted-foreground"}>
-        {value}
-      </span>
-    </div>
+    <Badge variant="outline" className={`${colorClass} text-xs`}>
+      {grantType}
+    </Badge>
   );
 };
 
@@ -81,72 +79,58 @@ const Projects = () => {
   const [rowData, setRowData] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState("");
-  const [expandedGrant, setExpandedGrant] = useState<string | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
-    filter: true,
     resizable: true,
-    floatingFilter: true,
-    flex: 1,
-    minWidth: 120,
-    wrapText: true,
-    autoHeight: true,
-    cellStyle: { lineHeight: "1.6", padding: "8px" },
   }), []);
 
   const columnDefs = useMemo<ColDef<ProjectRow>[]>(() => [
     {
       field: "grantNumber",
-      headerName: "Grant",
-      width: 180,
-      flex: 0,
+      headerName: "Type",
+      width: 80,
       cellRenderer: GrantTypeBadge,
     },
     {
       field: "title",
-      headerName: "Project Title",
-      minWidth: 300,
+      headerName: "Title",
       flex: 2,
+      minWidth: 250,
       cellRenderer: TitleLink,
     },
     {
       field: "contactPi",
-      headerName: "Contact PI",
-      minWidth: 150,
-    },
-    {
-      field: "allPis",
-      headerName: "All PIs",
-      minWidth: 200,
+      headerName: "PI",
+      width: 150,
     },
     {
       field: "institution",
-      headerName: "Institution",
-      minWidth: 200,
-    },
-    {
-      field: "fiscalYear",
-      headerName: "FY",
-      width: 100,
-      flex: 0,
+      headerName: "Organization",
+      width: 180,
     },
     {
       field: "awardAmount",
-      headerName: "Award",
-      width: 140,
-      flex: 0,
+      headerName: "Funding",
+      width: 120,
       cellRenderer: CurrencyCell,
     },
-    {
-      field: "publicationCount",
-      headerName: "Pubs",
-      width: 80,
-      flex: 0,
-      cellRenderer: PublicationCountCell,
-    },
   ], []);
+
+  const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
+    if (event.data && event.event) {
+      const mouseEvent = event.event as MouseEvent;
+      setHoveredRow(event.data);
+      setHoverPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }
+  }, []);
+
+  const onCellMouseOut = useCallback(() => {
+    setHoveredRow(null);
+  }, []);
 
   const fetchAllGrants = useCallback(async () => {
     setLoading(true);
@@ -185,7 +169,6 @@ const Projects = () => {
   const exportToCSV = useCallback(() => {
     if (rowData.length === 0) return;
 
-    // Export grants
     const grantHeaders = ["Grant Number", "Title", "Contact PI", "All PIs", "Institution", "Fiscal Year", "Award Amount", "Publications", "NIH Link"];
     const grantRows = rowData.map(row => [
       row.grantNumber,
@@ -204,7 +187,6 @@ const Projects = () => {
       ...grantRows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
     ].join("\n");
 
-    // Export publications
     const pubHeaders = ["Grant Number", "PMID", "Title", "Authors", "Year", "Journal", "Citations", "RCR", "PubMed Link"];
     const pubRows = rowData.flatMap(grant => 
       grant.publications.map(pub => [
@@ -244,18 +226,6 @@ const Projects = () => {
     });
   }, [rowData, toast]);
 
-  const handleRowClick = useCallback((event: RowClickedEvent<ProjectRow>) => {
-    const grantNumber = event.data?.grantNumber;
-    if (grantNumber) {
-      setExpandedGrant(prev => prev === grantNumber ? null : grantNumber);
-    }
-  }, []);
-
-  const selectedProject = useMemo(() => 
-    rowData.find(r => r.grantNumber === expandedGrant),
-    [rowData, expandedGrant]
-  );
-
   useEffect(() => {
     fetchAllGrants();
   }, []);
@@ -264,9 +234,9 @@ const Projects = () => {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">BBQS Projects</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Projects</h1>
           <p className="text-muted-foreground mb-4">
-            NIH-funded Brain Behavior Quantification and Synchronization grants with publications. Click a row to view publications.
+            NIH-funded Brain Behavior Quantification and Synchronization grants.
           </p>
           
           <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -280,6 +250,7 @@ const Projects = () => {
             
             <Button
               variant="outline"
+              size="sm"
               onClick={fetchAllGrants}
               disabled={loading}
             >
@@ -291,18 +262,19 @@ const Projects = () => {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh Data
+                  Refresh
                 </>
               )}
             </Button>
 
             <Button
               variant="outline"
+              size="sm"
               onClick={exportToCSV}
               disabled={rowData.length === 0}
             >
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              Export
             </Button>
 
             <span className="text-sm text-muted-foreground ml-auto">
@@ -312,29 +284,24 @@ const Projects = () => {
         </div>
 
         <div 
-          className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
-          style={{ height: expandedGrant ? "calc(50vh - 130px)" : "calc(100vh - 260px)" }}
+          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
+          style={{ height: "calc(100vh - 240px)" }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}
+            onCellMouseOver={onCellMouseOver}
+            onCellMouseOut={onCellMouseOut}
             animateRows={true}
             pagination={true}
             paginationPageSize={25}
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
-            onRowClicked={handleRowClick}
-            rowSelection="single"
-            rowStyle={{ cursor: "pointer" }}
-            getRowStyle={(params) => {
-              if (params.data?.grantNumber === expandedGrant) {
-                return { backgroundColor: "hsl(var(--primary) / 0.1)" };
-              }
-              return undefined;
-            }}
+            rowHeight={36}
+            headerHeight={40}
             loadingOverlayComponent={() => (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -344,30 +311,54 @@ const Projects = () => {
           />
         </div>
 
-        {expandedGrant && selectedProject && (
-          <div className="mt-4 bg-card rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <ChevronDown className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">
-                  Publications for {expandedGrant}
-                </h3>
-                <Badge variant="secondary">
-                  {selectedProject.publicationCount} papers
-                </Badge>
+        {/* Hover Detail Card */}
+        {hoveredRow && (
+          <div
+            className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-lg pointer-events-none"
+            style={{
+              left: Math.min(hoverPosition.x + 15, window.innerWidth - 520),
+              top: Math.min(hoverPosition.y + 10, window.innerHeight - 350),
+            }}
+          >
+            <h3 className="font-semibold text-foreground mb-3 line-clamp-2">{hoveredRow.title}</h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Grant: </span>
+                <span className="text-foreground font-mono">{hoveredRow.grantNumber}</span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setExpandedGrant(null)}
-              >
-                Close
-              </Button>
+              <div>
+                <span className="text-muted-foreground">All PIs: </span>
+                <span className="text-foreground">{hoveredRow.allPis || hoveredRow.contactPi}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Fiscal Year: </span>
+                <span className="text-foreground">{hoveredRow.fiscalYear}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">Publications: </span>
+                <span className={hoveredRow.publicationCount > 0 ? "text-primary font-medium" : "text-muted-foreground"}>
+                  {hoveredRow.publicationCount}
+                </span>
+              </div>
+              {hoveredRow.publications.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <span className="text-muted-foreground text-xs uppercase tracking-wide">Recent Papers:</span>
+                  <ul className="mt-2 space-y-1">
+                    {hoveredRow.publications.slice(0, 3).map((pub, i) => (
+                      <li key={i} className="text-xs text-foreground/80 line-clamp-1">
+                        • {pub.title}
+                      </li>
+                    ))}
+                    {hoveredRow.publications.length > 3 && (
+                      <li className="text-xs text-muted-foreground">
+                        +{hoveredRow.publications.length - 3} more...
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
-            <PublicationsGrid 
-              publications={selectedProject.publications} 
-              grantNumber={expandedGrant}
-            />
           </div>
         )}
       </div>
