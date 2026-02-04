@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
+import { useQuery } from "@tanstack/react-query";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Badge } from "@/components/ui/badge";
@@ -104,13 +105,31 @@ const GrantTypeBadge = ({ value }: { value: string }) => {
   );
 };
 
+const fetchGrants = async (): Promise<ProjectRow[]> => {
+  const { data, error } = await supabase.functions.invoke("nih-grants");
+  
+  if (error) {
+    throw new Error(error.message || "Failed to fetch grants");
+  }
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+  return data?.data || [];
+};
+
 const Projects = () => {
-  const [rowData, setRowData] = useState<ProjectRow[]>([]);
-  const [loading, setLoading] = useState(false);
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
+
+  // Fetch grants with caching (stale for 5 minutes, cache for 30 minutes)
+  const { data: rowData = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["nih-grants"],
+    queryFn: fetchGrants,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
+  });
 
   // Calculate metrics
   const totalFunding = useMemo(() => 
@@ -193,39 +212,14 @@ const Projects = () => {
     setHoveredRow(null);
   }, []);
 
-  const fetchAllGrants = useCallback(async () => {
-    setLoading(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("nih-grants");
-
-      if (error) {
-        throw new Error(error.message || "Failed to fetch grants");
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      if (data?.data) {
-        setRowData(data.data);
-        const totalPubs = data.data.reduce((sum: number, g: ProjectRow) => sum + (g.publicationCount || 0), 0);
-        toast({
-          title: "Data loaded",
-          description: `Loaded ${data.data.length} grants with ${totalPubs} publications.`,
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching grants:", err);
+  const handleRefresh = useCallback(() => {
+    refetch().then(() => {
       toast({
-        title: "Error loading data",
-        description: err instanceof Error ? err.message : "Failed to fetch grant data",
-        variant: "destructive",
+        title: "Data refreshed",
+        description: `Loaded ${rowData.length} grants.`,
       });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+    });
+  }, [refetch, rowData.length, toast]);
 
   const exportToCSV = useCallback(() => {
     if (rowData.length === 0) return;
@@ -286,10 +280,6 @@ const Projects = () => {
       description: `Exported ${rowData.length} grants and ${pubRows.length} publications.`,
     });
   }, [rowData, toast]);
-
-  useEffect(() => {
-    fetchAllGrants();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -370,7 +360,7 @@ const Projects = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchAllGrants}
+              onClick={handleRefresh}
               disabled={loading}
             >
               {loading ? (
