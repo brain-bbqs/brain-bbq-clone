@@ -7,7 +7,7 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { resources, Resource } from "@/data/resources";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Check, Clock, Circle } from "lucide-react";
+import { ExternalLink, Check, Circle, Box } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
@@ -49,7 +49,7 @@ const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) =
     pending: {
       label: "Pending",
       className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      icon: Clock,
+      icon: Circle,
     },
     "not-started": {
       label: "Not Started",
@@ -69,6 +69,23 @@ const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) =
   );
 };
 
+const ContainerizedBadge = ({ value }: { value: boolean }) => {
+  if (value) {
+    return (
+      <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs gap-1">
+        <Box className="h-3 w-3" />
+        Yes
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs gap-1">
+      <Circle className="h-3 w-3" />
+      No
+    </Badge>
+  );
+};
+
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
@@ -77,36 +94,37 @@ const Resources = () => {
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
     resizable: true,
-    flex: 1,
-    minWidth: 100,
   }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
     {
       field: "category",
       headerName: "Category",
-      width: 140,
-      flex: 0,
+      width: 130,
       cellRenderer: CategoryBadge,
     },
     {
       field: "name",
       headerName: "Name",
-      flex: 2,
-      minWidth: 250,
+      flex: 1,
+      minWidth: 180,
       cellRenderer: NameLink,
     },
     {
       field: "implementation",
       headerName: "Software",
-      width: 160,
-      flex: 0,
+      width: 100,
+    },
+    {
+      field: "containerized",
+      headerName: "Container",
+      width: 100,
+      cellRenderer: ContainerizedBadge,
     },
     {
       field: "neuroMcpStatus",
       headerName: "NeuroMCP",
-      width: 130,
-      flex: 0,
+      width: 120,
       cellRenderer: NeuroMcpStatusBadge,
     },
   ], []);
