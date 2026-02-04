@@ -26,7 +26,7 @@ export default function NeuroMCP() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm NeuroMCP, your research assistant for the BBQS consortium.\n\nI can help you with:\n- **Projects & Grants** - Information about BBQS research projects\n- **Publications** - Find papers from consortium members\n- **Principal Investigators** - Learn about researchers and their work\n\nWhat would you like to know?",
+      content: "Hi, I'm Hannah. Ask me anything about BBQS projects, publications, or investigators.",
       timestamp: new Date(),
     },
   ]);
@@ -156,8 +156,8 @@ export default function NeuroMCP() {
     <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl mx-auto px-6">
       {/* Header */}
       <div className="pt-8 pb-6 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">NeuroMCP</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your AI research assistant for BBQS</p>
+        <h1 className="text-2xl font-semibold text-foreground">Hannah</h1>
+        <p className="text-muted-foreground text-sm mt-1">Your BBQS research assistant</p>
       </div>
 
       {/* Chat Area */}

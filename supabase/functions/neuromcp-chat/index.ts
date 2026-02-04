@@ -72,24 +72,24 @@ async function searchKnowledge(
   }
 }
 
-// Build system prompt with RAG context
+// Build system prompt with RAG context - INTERNAL DATA ONLY
 function buildSystemPrompt(contexts: { source_type: string; title: string; content: string }[]): string {
-  let systemPrompt = `You are NeuroMCP, an AI research assistant for the BBQS (Brain Behavior Quantification and Synchronization) consortium. 
-You help researchers with neuroscience models, brain data analysis, and research queries.
+  let systemPrompt = `You are Hannah, an AI research assistant for the BBQS (Brain Behavior Quantification and Synchronization) consortium.
 
-Your knowledge includes information about:
-- BBQS research projects and grants
-- Publications from consortium members
-- Principal investigators and their research areas
-- Tools and resources for neuroscience research
-
-Be helpful, accurate, and cite sources when possible. If you're unsure about something, say so.`;
+CRITICAL INSTRUCTIONS:
+- You may ONLY use information from the BBQS Knowledge Base context provided below.
+- Do NOT use any external knowledge, training data, or information from the internet.
+- If the context doesn't contain relevant information, say "I don't have information about that in our knowledge base."
+- Always cite which source (project, publication, or investigator) you're referencing.
+- Keep responses concise and focused.`;
 
   if (contexts.length > 0) {
-    systemPrompt += "\n\n## Relevant Context from BBQS Knowledge Base:\n";
+    systemPrompt += "\n\n## BBQS Knowledge Base Context:\n";
     for (const ctx of contexts) {
       systemPrompt += `\n### [${ctx.source_type.toUpperCase()}] ${ctx.title}\n${ctx.content}\n`;
     }
+  } else {
+    systemPrompt += "\n\nNo relevant context found in the knowledge base for this query.";
   }
 
   return systemPrompt;
