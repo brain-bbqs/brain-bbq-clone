@@ -9,6 +9,7 @@ export interface Resource {
   mlPipeline: string;
   implementation: string;
   species: string;
+  neuroMcpStatus: "trained" | "pending" | "not-started";
 }
 
 export const resources: Resource[] = [
@@ -22,8 +23,9 @@ export const resources: Resource[] = [
     computational: "Deep learning-based individual identification without markers (up to 100 animals)",
     neuralNetworkArchitecture: "CNN (Convolutional Neural Network)",
     mlPipeline: "Supervised learning with identity re-identification",
-    implementation: "Open-source software",
+    implementation: "Python",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "pending",
   },
   {
     id: 2,
@@ -34,8 +36,9 @@ export const resources: Resource[] = [
     computational: "Machine learning classifiers trained on user-annotated behaviors",
     neuralNetworkArchitecture: "N/A (uses traditional ML classifiers)",
     mlPipeline: "Supervised learning; user annotates behaviors → trains classifier (Random Forest, XGBoost, etc.) → predicts on new data",
-    implementation: "Python with GUI; supports DLC, DeepPoseKit, SLEAP, MARS inputs",
+    implementation: "Python",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 3,
@@ -46,8 +49,9 @@ export const resources: Resource[] = [
     computational: "Visual dataflow programming with reactive extensions",
     neuralNetworkArchitecture: "N/A (infrastructure tool)",
     mlPipeline: "N/A (infrastructure tool)",
-    implementation: "Visual programming language (.NET-based)",
+    implementation: ".NET",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "pending",
   },
   {
     id: 4,
@@ -58,8 +62,9 @@ export const resources: Resource[] = [
     computational: "Network-based middleware for time-stamped data alignment",
     neuralNetworkArchitecture: "N/A (infrastructure tool)",
     mlPipeline: "N/A (infrastructure tool)",
-    implementation: "Cross-platform C++ library with language bindings",
+    implementation: "C++",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 5,
@@ -70,8 +75,9 @@ export const resources: Resource[] = [
     computational: "Modular signal processing pipeline for neural recordings",
     neuralNetworkArchitecture: "N/A (hardware/acquisition tool)",
     mlPipeline: "N/A (hardware/acquisition tool)",
-    implementation: "Open-source hardware and C++ software platform",
+    implementation: "C++",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 6,
@@ -82,8 +88,9 @@ export const resources: Resource[] = [
     computational: "Transfer learning with ResNet-based CNNs for keypoint detection",
     neuralNetworkArchitecture: "CNN (ResNet-50, ResNet-101, EfficientNet variants)",
     mlPipeline: "Transfer learning: Pre-trained ImageNet weights → fine-tune on user-labeled frames (~200 frames) → predict keypoints on new videos → optional active learning iteration",
-    implementation: "Python (TensorFlow/PyTorch); GUI available",
+    implementation: "Python (TensorFlow/PyTorch)",
     species: "Multi-species (mice, rats, primates, horses, birds, fish, humans, etc.)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 7,
@@ -94,8 +101,9 @@ export const resources: Resource[] = [
     computational: "Deep learning (top-down and bottom-up approaches) for body landmark estimation",
     neuralNetworkArchitecture: "CNN (LEAP CNN, UNet, ResNet backbones)",
     mlPipeline: "Supervised learning: User labels frames → trains centroid + instance models → predicts poses → tracks identities across frames",
-    implementation: "Python (TensorFlow); GUI and API",
+    implementation: "Python (TensorFlow)",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 8,
@@ -108,6 +116,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: User annotates keypoints → trains encoder-decoder network → predicts on new frames",
     implementation: "Python (TensorFlow/Keras)",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "pending",
   },
   {
     id: 9,
@@ -120,6 +129,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: Extract per-frame features (motion, posture) → user annotates behaviors → trains Gentle AdaBoost classifier → predicts behavior labels → iterative refinement",
     implementation: "MATLAB",
     species: "Drosophila (fruit flies) - originally developed; adaptable to others",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 10,
@@ -132,6 +142,7 @@ export const resources: Resource[] = [
     mlPipeline: "Two-stage: (1) Pose estimation (CNN) → (2) Action classification (temporal model on pose sequences) with behavior annotations",
     implementation: "Python (PyTorch)",
     species: "Mouse (Mus musculus)",
+    neuroMcpStatus: "pending",
   },
   {
     id: 11,
@@ -142,8 +153,9 @@ export const resources: Resource[] = [
     computational: "Time-aligned integration of video, pose, neural, and audio streams",
     neuralNetworkArchitecture: "N/A (visualization/analysis tool)",
     mlPipeline: "N/A (visualization/analysis tool)",
-    implementation: "MATLAB interface",
+    implementation: "MATLAB",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 12,
@@ -154,8 +166,9 @@ export const resources: Resource[] = [
     computational: "Autoregressive hidden Markov models on 3D depth-video motion features",
     neuralNetworkArchitecture: "N/A (uses AR-HMM, not neural networks)",
     mlPipeline: "Unsupervised learning: Extract 3D pose from depth video → PCA dimensionality reduction → AR-HMM identifies behavioral syllables → characterize syllable usage",
-    implementation: "Python; depth camera hardware for data capture",
+    implementation: "Python",
     species: "Mouse (Mus musculus) - primarily; adaptable to small rodents",
+    neuroMcpStatus: "pending",
   },
   {
     id: 13,
@@ -166,8 +179,9 @@ export const resources: Resource[] = [
     computational: "Part Affinity Fields (PAFs) with CNNs for keypoint detection and association",
     neuralNetworkArchitecture: "CNN (VGG-19 or MobileNet backbone with multi-stage refinement)",
     mlPipeline: "Supervised learning: Pre-trained on COCO/MPII datasets → predicts confidence maps for keypoints + PAFs for limb connections → greedy parsing for multi-person association",
-    implementation: "C++ with Python API; GPU-accelerated",
+    implementation: "C++/Python",
     species: "Human (Homo sapiens)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 14,
@@ -178,8 +192,9 @@ export const resources: Resource[] = [
     computational: "Constrained Local Neural Fields (CLNF) and regression models for facial features",
     neuralNetworkArchitecture: "CNN (for some components) + CLNF (hybrid model)",
     mlPipeline: "Pre-trained models: Facial landmark detection → head pose estimation → eye gaze tracking → AU intensity estimation",
-    implementation: "C++ with command-line tools",
+    implementation: "C++",
     species: "Human (Homo sapiens)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 15,
@@ -192,6 +207,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: Convert audio to spectrograms → CNN detects USV regions → classify call types → user can retrain with custom annotations",
     implementation: "MATLAB",
     species: "Mouse (Mus musculus), Rat (Rattus norvegicus)",
+    neuroMcpStatus: "pending",
   },
   {
     id: 16,
@@ -204,6 +220,7 @@ export const resources: Resource[] = [
     mlPipeline: "N/A (geometric triangulation; ML used only if 2D poses from DLC/SLEAP)",
     implementation: "Python",
     species: "Multi-species (general purpose)",
+    neuroMcpStatus: "pending",
   },
   // Models
   {
@@ -215,8 +232,9 @@ export const resources: Resource[] = [
     computational: "Transfer learning models (ResNet backbones) trained on species-specific datasets",
     neuralNetworkArchitecture: "CNN (ResNet-50, ResNet-101, EfficientNet variants)",
     mlPipeline: "Pre-trained models ready for transfer learning or direct inference; user can fine-tune on their data",
-    implementation: "Python-compatible models (TensorFlow/PyTorch) hosted on Hugging Face",
+    implementation: "Python (TensorFlow/PyTorch)",
     species: "Quadrupeds, mice, birds, humans, macaques, primates, horses",
+    neuroMcpStatus: "trained",
   },
   {
     id: 18,
@@ -227,8 +245,9 @@ export const resources: Resource[] = [
     computational: "Pre-trained neural networks for animal pose across species",
     neuralNetworkArchitecture: "CNN (various ResNet and EfficientNet architectures)",
     mlPipeline: "Pre-trained models for direct use or fine-tuning",
-    implementation: "Hugging Face model hub (Python-accessible)",
+    implementation: "Python",
     species: "Quadrupeds, birds, humans, multi-species",
+    neuroMcpStatus: "trained",
   },
   {
     id: 19,
@@ -241,6 +260,7 @@ export const resources: Resource[] = [
     mlPipeline: "Self-supervised/semi-supervised contrastive learning: Neural data + behavior labels → learn low-dimensional embeddings that separate behavioral states",
     implementation: "Python (PyTorch)",
     species: "Multi-species (general purpose for neural data)",
+    neuroMcpStatus: "pending",
   },
   // Datasets
   {
@@ -252,8 +272,9 @@ export const resources: Resource[] = [
     computational: "Aggregated labeled images for transfer learning",
     neuralNetworkArchitecture: "N/A (dataset)",
     mlPipeline: "Training dataset: 80K labeled images for supervised pose estimation model training",
-    implementation: "Image dataset (compatible with DLC/SLEAP)",
+    implementation: "Dataset",
     species: "Quadrupeds (dogs, cats, horses, etc.)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 21,
@@ -264,8 +285,9 @@ export const resources: Resource[] = [
     computational: "Labeled mouse images for model training",
     neuralNetworkArchitecture: "N/A (dataset)",
     mlPipeline: "Training dataset: 5K labeled images for supervised pose estimation",
-    implementation: "Image dataset",
+    implementation: "Dataset",
     species: "Mouse (Mus musculus)",
+    neuroMcpStatus: "trained",
   },
   // Benchmarks
   {
@@ -277,8 +299,9 @@ export const resources: Resource[] = [
     computational: "Ground-truth labeled test sets (TRI-MOUSE, PARENTING-MOUSE, etc.)",
     neuralNetworkArchitecture: "N/A (evaluation benchmark)",
     mlPipeline: "Test/validation datasets with ground truth for model evaluation (PCK, RMSE metrics)",
-    implementation: "Public datasets with evaluation metrics",
+    implementation: "Web Platform",
     species: "Mouse (Mus musculus), Marmoset, Fish, Horse",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 23,
@@ -289,8 +312,9 @@ export const resources: Resource[] = [
     computational: "Standardized metrics (PCK, RMSE) across benchmark datasets",
     neuralNetworkArchitecture: "N/A (evaluation platform)",
     mlPipeline: "Standardized evaluation protocol for comparing model performance",
-    implementation: "Web-based leaderboard",
+    implementation: "Web Platform",
     species: "Multi-species (varies by benchmark)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 24,
@@ -301,8 +325,9 @@ export const resources: Resource[] = [
     computational: "Benchmark-specific accuracy metrics",
     neuralNetworkArchitecture: "N/A (evaluation platform)",
     mlPipeline: "Standardized evaluation for DLC variants",
-    implementation: "Online leaderboard platform",
+    implementation: "Web Platform",
     species: "Multi-species (varies by benchmark)",
+    neuroMcpStatus: "not-started",
   },
   // Papers & Protocols
   {
@@ -314,8 +339,9 @@ export const resources: Resource[] = [
     computational: "Triangulation of 2D poses with camera calibration",
     neuralNetworkArchitecture: "CNN (for 2D pose); geometric methods for 3D",
     mlPipeline: "Protocol: Train 2D pose models per camera → calibrate cameras → triangulate to 3D coordinates",
-    implementation: "Protocol documentation (DLC-based)",
+    implementation: "Protocol",
     species: "Multi-species (general methodology)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 26,
@@ -326,8 +352,9 @@ export const resources: Resource[] = [
     computational: "Transfer learning with ResNets for keypoint localization",
     neuralNetworkArchitecture: "CNN (ResNet)",
     mlPipeline: "Transfer learning methodology for pose estimation",
-    implementation: "Academic paper (methodology)",
+    implementation: "Paper",
     species: "Multi-species (general methodology)",
+    neuroMcpStatus: "trained",
   },
   {
     id: 27,
@@ -338,8 +365,9 @@ export const resources: Resource[] = [
     computational: "Integer linear programming for part-to-person association",
     neuralNetworkArchitecture: "CNN (ResNet backbone)",
     mlPipeline: "Two-stage: CNN detects body parts → ILP solves association problem for multi-person pose",
-    implementation: "Research paper (human pose)",
+    implementation: "Paper",
     species: "Human (Homo sapiens)",
+    neuroMcpStatus: "not-started",
   },
   {
     id: 28,
@@ -350,7 +378,8 @@ export const resources: Resource[] = [
     computational: "Comparative evaluation of FAIR principles across 7 repositories",
     neuralNetworkArchitecture: "N/A (policy paper)",
     mlPipeline: "N/A (policy paper)",
-    implementation: "Policy and systems analysis paper",
+    implementation: "Paper",
     species: "Multi-species (infrastructure for all neuroscience data)",
+    neuroMcpStatus: "not-started",
   },
 ];
