@@ -2,8 +2,8 @@ import bbqsLogo from "@/assets/bbqs-logo.png";
 
 const HeroSection = () => {
   return (
-    <section className="text-center py-10">
-      <div className="inline-flex items-center justify-center gap-4 mb-4 bg-background/80 backdrop-blur-sm rounded-xl px-8 py-4 shadow-lg">
+    <section className="text-center">
+      <div className="inline-flex items-center justify-center gap-4 bg-background/80 backdrop-blur-sm rounded-xl px-8 py-4 shadow-lg">
         <div className="w-14 h-14">
           <img 
             src={bbqsLogo} 
