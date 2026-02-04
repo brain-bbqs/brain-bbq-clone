@@ -7,7 +7,7 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { resources, Resource } from "@/data/resources";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Check, Clock, Circle } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
@@ -39,6 +39,36 @@ const NameLink = ({ value, data }: { value: string; data: Resource }) => {
   );
 };
 
+const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) => {
+  const statusConfig = {
+    trained: {
+      label: "Trained",
+      className: "bg-green-500/20 text-green-400 border-green-500/30",
+      icon: Check,
+    },
+    pending: {
+      label: "Pending",
+      className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+      icon: Clock,
+    },
+    "not-started": {
+      label: "Not Started",
+      className: "bg-muted/50 text-muted-foreground border-border",
+      icon: Circle,
+    },
+  };
+
+  const config = statusConfig[value] || statusConfig["not-started"];
+  const Icon = config.icon;
+
+  return (
+    <Badge variant="outline" className={`${config.className} text-xs gap-1`}>
+      <Icon className="h-3 w-3" />
+      {config.label}
+    </Badge>
+  );
+};
+
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
@@ -48,14 +78,14 @@ const Resources = () => {
     sortable: true,
     resizable: true,
     flex: 1,
-    minWidth: 120,
+    minWidth: 100,
   }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
     {
       field: "category",
       headerName: "Category",
-      width: 150,
+      width: 140,
       flex: 0,
       cellRenderer: CategoryBadge,
     },
@@ -63,8 +93,21 @@ const Resources = () => {
       field: "name",
       headerName: "Name",
       flex: 2,
-      minWidth: 300,
+      minWidth: 250,
       cellRenderer: NameLink,
+    },
+    {
+      field: "implementation",
+      headerName: "Software",
+      width: 160,
+      flex: 0,
+    },
+    {
+      field: "neuroMcpStatus",
+      headerName: "NeuroMCP",
+      width: 130,
+      flex: 0,
+      cellRenderer: NeuroMcpStatusBadge,
     },
   ], []);
 
@@ -147,10 +190,6 @@ const Resources = () => {
               <div>
                 <span className="text-muted-foreground">Computational: </span>
                 <span className="text-foreground">{hoveredRow.computational}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Implementation: </span>
-                <span className="text-foreground">{hoveredRow.implementation}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Species: </span>
