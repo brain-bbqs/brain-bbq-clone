@@ -16,10 +16,10 @@
   --ag-checkbox-checked-color: hsl(38 90% 50%);
   --ag-range-selection-background-color: hsla(38, 90%, 50%, 0.1);
   --ag-font-family: inherit;
-  --ag-font-size: 14px;
-  --ag-row-height: 44px;
-  --ag-header-height: 48px;
-  --ag-cell-horizontal-padding: 16px;
+  --ag-font-size: 13px;
+  --ag-row-height: 36px;
+  --ag-header-height: 40px;
+  --ag-cell-horizontal-padding: 12px;
 }
 
 .ag-theme-alpine .ag-header {

@@ -192,7 +192,7 @@ export default function Publications() {
         ) : (
           <div
             className="ag-theme-alpine relative"
-            style={{ height: "calc(100vh - 300px)", width: "100%" }}
+            style={{ height: "calc(100vh - 240px)", width: "100%" }}
           >
             <AgGridReact
               ref={gridRef}
@@ -201,7 +201,8 @@ export default function Publications() {
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
               getRowStyle={getRowStyle}
-              rowHeight={48}
+              rowHeight={36}
+              headerHeight={40}
               animateRows
               pagination
               paginationPageSize={50}
