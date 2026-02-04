@@ -4,45 +4,45 @@
 
 @layer base {
   :root {
-    --background: 210 15% 18%;
-    --foreground: 210 10% 95%;
+    --background: 220 20% 97%;
+    --foreground: 222 47% 15%;
 
-    --card: 210 15% 22%;
-    --card-foreground: 210 10% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 15%;
 
-    --popover: 210 15% 22%;
-    --popover-foreground: 210 10% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 15%;
 
-    --primary: 174 55% 42%;
+    --primary: 222 47% 20%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 12% 26%;
-    --secondary-foreground: 210 10% 92%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 222 47% 20%;
 
-    --muted: 210 12% 28%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 174 55% 42%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 38 90% 50%;
+    --accent-foreground: 222 47% 15%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 12% 28%;
-    --input: 210 12% 28%;
-    --ring: 174 55% 42%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 222 47% 20%;
 
     --radius: 0.5rem;
 
-    /* Sidebar tokens */
-    --sidebar-background: 210 18% 14%;
-    --sidebar-foreground: 210 10% 80%;
-    --sidebar-primary: 174 55% 42%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 15% 20%;
-    --sidebar-accent-foreground: 210 10% 95%;
-    --sidebar-border: 210 12% 22%;
-    --sidebar-ring: 174 55% 42%;
+    /* Sidebar tokens - dark navy */
+    --sidebar-background: 229 50% 15%;
+    --sidebar-foreground: 220 20% 85%;
+    --sidebar-primary: 38 90% 50%;
+    --sidebar-primary-foreground: 222 47% 15%;
+    --sidebar-accent: 229 45% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 229 45% 20%;
+    --sidebar-ring: 38 90% 50%;
   }
 }
 
