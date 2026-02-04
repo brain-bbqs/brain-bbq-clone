@@ -1,18 +1,19 @@
-import consortiumIllustration from "@/assets/bbqs-consortium-illustration.png";
+import bbqsLogo from "@/assets/bbqs-logo.png";
 
 const HeroSection = () => {
   return (
-    <section className="text-center py-12">
-      <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-8">
-        BBQS: Brain Behavior Quantification and Synchronization
-      </h1>
-      
-      <div className="w-64 h-64 mx-auto mb-12">
-        <img 
-          src={consortiumIllustration} 
-          alt="BBQS Consortium - Connected nodes representing brain behavior data synchronization"
-          className="w-full h-full object-contain"
-        />
+    <section className="text-center py-6">
+      <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="w-16 h-16">
+          <img 
+            src={bbqsLogo} 
+            alt="BBQS Consortium"
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+          Brain Behavior Quantification & Synchronization
+        </h1>
       </div>
     </section>
   );
