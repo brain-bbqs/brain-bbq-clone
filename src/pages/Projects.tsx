@@ -8,7 +8,8 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
@@ -38,33 +39,30 @@ interface ProjectRow {
   publicationCount: number;
 }
 
-const TitleLink = ({ value, data }: { value: string; data: ProjectRow }) => {
+const TitleCell = ({ value }: { value: string }) => {
   return (
-    <a
-      href={data.nihLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors"
-    >
+    <span className="font-medium text-foreground line-clamp-1">
       {value}
-      <ExternalLink className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
-    </a>
+    </span>
   );
 };
 
 const CurrencyCell = ({ value }: { value: number }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
-  return <span className="font-mono text-green-400">${value.toLocaleString()}</span>;
+  return <span className="font-mono text-emerald-600">${value.toLocaleString()}</span>;
 };
 
 const GrantTypeBadge = ({ value }: { value: string }) => {
   const grantType = value.match(/^[A-Z]\d+/)?.[0] || value.substring(0, 3);
   const colorMap: Record<string, string> = {
-    "R34": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    "R61": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    "U01": "bg-green-500/20 text-green-400 border-green-500/30",
-    "U24": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    "R24": "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    "R34": "bg-blue-500/20 text-blue-600 border-blue-500/30",
+    "R61": "bg-purple-500/20 text-purple-600 border-purple-500/30",
+    "U01": "bg-green-500/20 text-green-600 border-green-500/30",
+    "U24": "bg-orange-500/20 text-orange-600 border-orange-500/30",
+    "R24": "bg-pink-500/20 text-pink-600 border-pink-500/30",
+    "5R3": "bg-blue-500/20 text-blue-600 border-blue-500/30",
+    "1R3": "bg-cyan-500/20 text-cyan-600 border-cyan-500/30",
+    "5R6": "bg-indigo-500/20 text-indigo-600 border-indigo-500/30",
   };
   const colorClass = colorMap[grantType] || "bg-muted/50 text-muted-foreground border-border";
   
@@ -83,40 +81,67 @@ const Projects = () => {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
 
+  // Calculate metrics
+  const totalFunding = useMemo(() => 
+    rowData.reduce((sum, g) => sum + (g.awardAmount || 0), 0), 
+    [rowData]
+  );
+  const totalPublications = useMemo(() => 
+    rowData.reduce((sum, g) => sum + (g.publicationCount || 0), 0), 
+    [rowData]
+  );
+  const uniqueInstitutions = useMemo(() => 
+    new Set(rowData.map(g => g.institution)).size, 
+    [rowData]
+  );
+
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
     resizable: true,
+    suppressMovable: true,
   }), []);
 
   const columnDefs = useMemo<ColDef<ProjectRow>[]>(() => [
     {
       field: "grantNumber",
       headerName: "Type",
-      width: 80,
+      width: 75,
+      minWidth: 75,
+      maxWidth: 75,
       cellRenderer: GrantTypeBadge,
+      suppressSizeToFit: true,
     },
     {
       field: "title",
       headerName: "Title",
-      flex: 2,
-      minWidth: 250,
-      cellRenderer: TitleLink,
+      flex: 1,
+      minWidth: 300,
+      cellRenderer: TitleCell,
     },
     {
       field: "contactPi",
       headerName: "PI",
-      width: 150,
+      width: 140,
+      minWidth: 140,
+      maxWidth: 180,
+      suppressSizeToFit: true,
     },
     {
       field: "institution",
       headerName: "Organization",
-      width: 180,
+      width: 200,
+      minWidth: 180,
+      maxWidth: 250,
+      suppressSizeToFit: true,
     },
     {
       field: "awardAmount",
       headerName: "Funding",
-      width: 120,
+      width: 110,
+      minWidth: 110,
+      maxWidth: 130,
       cellRenderer: CurrencyCell,
+      suppressSizeToFit: true,
     },
   ], []);
 
@@ -235,9 +260,67 @@ const Projects = () => {
       <div className="px-6 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Projects</h1>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-6">
             NIH-funded Brain Behavior Quantification and Synchronization grants.
           </p>
+
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
+                    <p className="text-xl font-bold text-foreground">
+                      ${(totalFunding / 1000000).toFixed(1)}M
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <FolderOpen className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Projects</p>
+                    <p className="text-xl font-bold text-foreground">{rowData.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Publications</p>
+                    <p className="text-xl font-bold text-foreground">{totalPublications}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <Users className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Institutions</p>
+                    <p className="text-xl font-bold text-foreground">{uniqueInstitutions}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
@@ -276,16 +359,12 @@ const Projects = () => {
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-
-            <span className="text-sm text-muted-foreground ml-auto">
-              {rowData.length} projects • {rowData.reduce((sum, g) => sum + (g.publicationCount || 0), 0)} publications
-            </span>
           </div>
         </div>
 
         <div 
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 240px)" }}
+          style={{ height: "calc(100vh - 380px)" }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
@@ -314,13 +393,23 @@ const Projects = () => {
         {/* Hover Detail Card */}
         {hoveredRow && (
           <div
-            className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-lg pointer-events-none"
+            className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-md pointer-events-none"
             style={{
-              left: Math.min(hoverPosition.x + 15, window.innerWidth - 520),
-              top: Math.min(hoverPosition.y + 10, window.innerHeight - 350),
+              left: Math.min(hoverPosition.x + 15, window.innerWidth - 420),
+              top: Math.min(hoverPosition.y + 10, window.innerHeight - 320),
             }}
           >
-            <h3 className="font-semibold text-foreground mb-3 line-clamp-2">{hoveredRow.title}</h3>
+            <div className="flex items-start gap-2 mb-3">
+              <a
+                href={hoveredRow.nihLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:underline line-clamp-2 pointer-events-auto"
+              >
+                {hoveredRow.title}
+                <ExternalLink className="inline h-3 w-3 ml-1 opacity-60" />
+              </a>
+            </div>
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Grant: </span>
