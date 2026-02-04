@@ -21,6 +21,20 @@ interface Publication {
   pubmedLink: string;
 }
 
+// Color-code rows based on RCR (Relative Citation Ratio)
+const getRowStyle = (params: { data: Publication }) => {
+  if (!params.data) return {};
+  const rcr = params.data.rcr;
+  if (rcr >= 2) {
+    return { backgroundColor: "hsl(142 70% 95%)" }; // High impact - green
+  } else if (rcr >= 1) {
+    return { backgroundColor: "hsl(38 90% 95%)" }; // Above average - gold
+  } else if (rcr > 0) {
+    return { backgroundColor: "hsl(220 20% 98%)" }; // Normal - light gray
+  }
+  return {};
+};
+
 export default function Publications() {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,7 +103,7 @@ export default function Publications() {
   }, [fetchPublications]);
 
   const LinkRenderer = (props: { value: string; data: Publication }) => {
-    if (!props.data?.pubmedLink) return null;
+    if (!props.data?.pubmedLink) return <span>{props.value}</span>;
     return (
       <a
         href={props.data.pubmedLink}
@@ -103,14 +117,16 @@ export default function Publications() {
     );
   };
 
+  const RcrRenderer = (props: { value: number }) => {
+    const rcr = props.value || 0;
+    let className = "text-muted-foreground";
+    if (rcr >= 2) className = "text-green-600 font-semibold";
+    else if (rcr >= 1) className = "text-amber-600 font-medium";
+    return <span className={className}>{rcr.toFixed(2)}</span>;
+  };
+
   const columnDefs: ColDef<Publication>[] = useMemo(
     () => [
-      {
-        field: "pmid",
-        headerName: "PMID",
-        width: 100,
-        cellRenderer: LinkRenderer,
-      },
       {
         field: "title",
         headerName: "Title",
@@ -119,7 +135,7 @@ export default function Publications() {
         wrapText: true,
         autoHeight: true,
       },
-      { field: "year", headerName: "Year", width: 80 },
+      { field: "year", headerName: "Year", width: 90, sort: "desc" },
       { field: "journal", headerName: "Journal", flex: 1, minWidth: 150 },
       {
         field: "authors",
@@ -138,11 +154,17 @@ export default function Publications() {
       {
         field: "rcr",
         headerName: "RCR",
-        width: 80,
+        width: 90,
         type: "numericColumn",
-        valueFormatter: (params) => params.value?.toFixed(2) || "0.00",
+        cellRenderer: RcrRenderer,
       },
       { field: "grantNumber", headerName: "Grant", width: 180 },
+      {
+        field: "pmid",
+        headerName: "PubMed",
+        width: 120,
+        cellRenderer: LinkRenderer,
+      },
     ],
     []
   );
@@ -152,6 +174,7 @@ export default function Publications() {
       sortable: true,
       filter: true,
       resizable: true,
+      floatingFilter: true,
     }),
     []
   );
@@ -195,11 +218,17 @@ export default function Publications() {
       <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
           <span>{publications.length} publications</span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-green-200"></span> High RCR (≥2)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-amber-200"></span> Above Avg (≥1)
+          </span>
         </div>
 
         <div
           className="ag-theme-alpine"
-          style={{ height: "calc(100vh - 280px)", width: "100%" }}
+          style={{ height: "calc(100vh - 300px)", width: "100%" }}
         >
           <AgGridReact
             ref={gridRef}
@@ -207,6 +236,7 @@ export default function Publications() {
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             onGridReady={onGridReady}
+            getRowStyle={getRowStyle}
             animateRows
             pagination
             paginationPageSize={50}

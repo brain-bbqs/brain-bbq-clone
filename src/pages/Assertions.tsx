@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -652,7 +652,7 @@ const Assertions = () => {
         </div>
 
         <div 
-          className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
+          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
           style={{ height: "calc(100vh - 320px)" }}
         >
           <AgGridReact<GrantMarrRow>
