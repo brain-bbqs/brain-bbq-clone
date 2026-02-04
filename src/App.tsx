@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import NeuroMCP from "./pages/NeuroMCP";
 import DesignDocs from "./pages/DesignDocs";
 import Publications from "./pages/Publications";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/sfn-2025" element={<SFN2025 />} />
               <Route path="/working-groups" element={<WorkingGroups />} />
