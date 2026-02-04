@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
+import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import { resources, Resource } from "@/data/resources";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
+import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
   const colorMap: Record<string, string> = {
@@ -40,17 +41,14 @@ const NameLink = ({ value, data }: { value: string; data: Resource }) => {
 
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
-    filter: true,
     resizable: true,
-    floatingFilter: true,
     flex: 1,
     minWidth: 120,
-    wrapText: true,
-    autoHeight: true,
-    cellStyle: { lineHeight: "1.6", padding: "8px" },
   }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
@@ -64,41 +62,23 @@ const Resources = () => {
     {
       field: "name",
       headerName: "Name",
-      width: 260,
-      flex: 0,
+      flex: 2,
+      minWidth: 300,
       cellRenderer: NameLink,
     },
-    {
-      field: "algorithm",
-      headerName: "Algorithm",
-      minWidth: 200,
-    },
-    {
-      field: "computational",
-      headerName: "Computational",
-      minWidth: 200,
-    },
-    {
-      field: "neuralNetworkArchitecture",
-      headerName: "NN Architecture",
-      minWidth: 180,
-    },
-    {
-      field: "mlPipeline",
-      headerName: "ML Pipeline",
-      minWidth: 250,
-    },
-    {
-      field: "implementation",
-      headerName: "Implementation",
-      minWidth: 180,
-    },
-    {
-      field: "species",
-      headerName: "Species/Taxa",
-      minWidth: 180,
-    },
   ], []);
+
+  const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
+    if (event.data && event.event) {
+      const mouseEvent = event.event as MouseEvent;
+      setHoveredRow(event.data);
+      setHoverPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }
+  }, []);
+
+  const onCellMouseOut = useCallback((event: CellMouseOutEvent) => {
+    setHoveredRow(null);
+  }, []);
 
   const onGridReady = useCallback(() => {
     // Grid is ready
@@ -108,9 +88,9 @@ const Resources = () => {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Resources</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Tools</h1>
           <p className="text-muted-foreground mb-4">
-            Browse tools, models, datasets, benchmarks, and papers for behavioral neuroscience research.
+            Browse tools, models, datasets, and benchmarks for behavioral neuroscience research.
           </p>
           <div className="flex items-center gap-4 mb-4">
             <input
@@ -121,14 +101,14 @@ const Resources = () => {
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
             <span className="text-sm text-muted-foreground">
-              {resources.length} resources
+              {resources.length} tools
             </span>
           </div>
         </div>
 
         <div 
-          className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 220px)" }}
+          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
+          style={{ height: "calc(100vh - 240px)" }}
         >
           <AgGridReact<Resource>
             rowData={resources}
@@ -136,14 +116,49 @@ const Resources = () => {
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}
             onGridReady={onGridReady}
+            onCellMouseOver={onCellMouseOver}
+            onCellMouseOut={onCellMouseOut}
             animateRows={true}
             pagination={true}
             paginationPageSize={25}
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
+            rowHeight={36}
+            headerHeight={40}
           />
         </div>
+
+        {/* Hover Detail Card */}
+        {hoveredRow && (
+          <div
+            className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-md pointer-events-none"
+            style={{
+              left: Math.min(hoverPosition.x + 15, window.innerWidth - 420),
+              top: Math.min(hoverPosition.y + 10, window.innerHeight - 300),
+            }}
+          >
+            <h3 className="font-semibold text-foreground mb-3">{hoveredRow.name}</h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Algorithm: </span>
+                <span className="text-foreground">{hoveredRow.algorithm}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Computational: </span>
+                <span className="text-foreground">{hoveredRow.computational}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Implementation: </span>
+                <span className="text-foreground">{hoveredRow.implementation}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Species: </span>
+                <span className="text-foreground">{hoveredRow.species}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
