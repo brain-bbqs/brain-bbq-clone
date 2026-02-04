@@ -222,7 +222,7 @@ export const resources: Resource[] = [
     mlPipeline: "Supervised learning: Convert audio to spectrograms → CNN detects USV regions → classify call types → user can retrain with custom annotations",
     implementation: "MATLAB",
     species: "Mouse (Mus musculus), Rat (Rattus norvegicus)",
-    neuroMcpStatus: "not-started",
+    neuroMcpStatus: "pending",
     containerized: false,
   },
   {
