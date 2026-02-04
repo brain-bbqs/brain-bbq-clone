@@ -1,16 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Lock } from "lucide-react";
+import { Send, Mic, Lock, Loader2, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  contextSources?: { type: string; title: string }[];
 }
 
 const isMitEmail = (email: string | undefined): boolean => {
@@ -19,17 +23,18 @@ const isMitEmail = (email: string | undefined): boolean => {
 };
 
 export default function NeuroMCP() {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm NeuroMCP, your research assistant.\n\nAsk me about neuroscience models, brain data analysis, or any research in your library.",
+      content: "Hello! I'm NeuroMCP, your research assistant for the BBQS consortium.\n\nI can help you with:\n- **Projects & Grants** - Information about BBQS research projects\n- **Publications** - Find papers from consortium members\n- **Principal Investigators** - Learn about researchers and their work\n\nWhat would you like to know?",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const hasAccess = user && isMitEmail(user.email);
@@ -41,7 +46,7 @@ export default function NeuroMCP() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !session) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -54,17 +59,54 @@ export default function NeuroMCP() {
     setInput("");
     setIsLoading(true);
 
-    // Placeholder for actual AI response
-    setTimeout(() => {
+    try {
+      const response = await fetch(
+        `https://vpexxhfpvghlejljwpvt.supabase.co/functions/v1/neuromcp-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            message: userMessage.content,
+            conversationId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get response");
+      }
+
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "This is a placeholder response. The AI backend will be connected soon.",
+        content: data.message,
         timestamp: new Date(),
+        contextSources: data.contextSources,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to send message");
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I apologize, but I encountered an error processing your request. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -78,7 +120,7 @@ export default function NeuroMCP() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-3rem)] max-w-3xl mx-auto px-6">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -117,7 +159,7 @@ export default function NeuroMCP() {
       {/* Header */}
       <div className="pt-8 pb-6 text-center">
         <h1 className="text-2xl font-semibold text-foreground">NeuroMCP</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your AI research assistant</p>
+        <p className="text-muted-foreground text-sm mt-1">Your AI research assistant for BBQS</p>
       </div>
 
       {/* Chat Area */}
@@ -135,8 +177,19 @@ export default function NeuroMCP() {
               )}
             >
               {message.role === "assistant" ? (
-                <div className="text-muted-foreground whitespace-pre-wrap max-w-[85%]">
-                  {message.content}
+                <div className="max-w-[85%] space-y-2">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                  {message.contextSources && message.contextSources.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                      <Database className="h-3 w-3" />
+                      <span>
+                        Sources: {message.contextSources.map(s => s.title).slice(0, 2).join(", ")}
+                        {message.contextSources.length > 2 && ` +${message.contextSources.length - 2} more`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-secondary text-foreground rounded-2xl px-4 py-2.5 max-w-[85%]">
@@ -171,7 +224,7 @@ export default function NeuroMCP() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
+            placeholder="Ask about BBQS projects, publications, or investigators..."
             disabled={isLoading}
             className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
           />
