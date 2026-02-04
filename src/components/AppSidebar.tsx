@@ -38,7 +38,7 @@ import { ReportIssueDialog } from "@/components/ReportIssueDialog";
 
 const mainItems = [
   { title: "Home", url: "/", icon: Home },
-  { title: "About", url: "#", icon: Info },
+  { title: "About", url: "/about", icon: Info },
 ];
 
 const knowledgeBaseItems = [
