@@ -43,6 +43,7 @@ const mainItems = [
 const knowledgeBaseItems = [
   { title: "ML Models", url: "/assertions", icon: Brain },
   { title: "Projects", url: "/projects", icon: FolderOpen },
+  { title: "Publications", url: "/publications", icon: FileText },
   { title: "Knowledge Graph", url: "/evidence", icon: FlaskConical },
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
 ];

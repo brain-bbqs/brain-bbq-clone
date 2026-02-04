@@ -17,6 +17,7 @@ import Evidence from "./pages/Evidence";
 import Auth from "./pages/Auth";
 import NeuroMCP from "./pages/NeuroMCP";
 import DesignDocs from "./pages/DesignDocs";
+import Publications from "./pages/Publications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
               <Route path="/design-docs" element={<DesignDocs />} />
+              <Route path="/publications" element={<Publications />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
