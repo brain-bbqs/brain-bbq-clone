@@ -7,13 +7,13 @@ const MissionSection = () => {
   ];
 
   return (
-    <section className="max-w-3xl mx-auto py-8">
-      <h2 className="text-3xl font-bold text-center text-foreground mb-2">Mission</h2>
-      <div className="border-t border-border mb-6" />
+    <section className="max-w-3xl mx-auto py-4">
+      <h2 className="text-xl font-bold text-foreground mb-2">Mission</h2>
+      <div className="border-t border-border mb-3" />
       
-      <ul className="list-disc list-inside space-y-3">
+      <ul className="list-disc list-inside space-y-2">
         {missions.map((mission, index) => (
-          <li key={index} className="text-foreground">
+          <li key={index} className="text-foreground text-sm">
             {mission}
           </li>
         ))}

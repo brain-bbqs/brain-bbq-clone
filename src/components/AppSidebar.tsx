@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import bbqsLogo from "@/assets/bbqs-logo.png";
 
 import {
   Sidebar,
@@ -107,7 +108,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link to="/" className="flex items-center gap-3 px-2 py-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex-shrink-0" />
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+            <img src={bbqsLogo} alt="BBQS" className="w-full h-full object-cover" />
+          </div>
           {!collapsed && (
             <span className="font-semibold text-sidebar-foreground text-sm leading-tight">
               BBQS
