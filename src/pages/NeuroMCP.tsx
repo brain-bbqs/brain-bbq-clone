@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { AdminPanel } from "@/components/neuromcp/AdminPanel";
 
 interface Message {
   id: string;
@@ -159,6 +160,9 @@ export default function NeuroMCP() {
         <h1 className="text-2xl font-semibold text-foreground">Hannah</h1>
         <p className="text-muted-foreground text-sm mt-1">Your BBQS research assistant</p>
       </div>
+
+      {/* Admin Panel - MIT users only */}
+      {session && <AdminPanel accessToken={session.access_token} />}
 
       {/* Chat Area */}
       <div 
