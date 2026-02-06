@@ -52,19 +52,19 @@ export function AdminPanel({ accessToken }: AdminPanelProps) {
   };
 
   return (
-    <div className="border border-dashed border-muted-foreground/30 rounded-lg p-4 mb-6 bg-muted/20">
-      <div className="flex items-center justify-between">
+    <div className="border border-dashed border-muted-foreground/30 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 bg-muted/20">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Database className="h-4 w-4" />
+          <Database className="h-4 w-4 shrink-0" />
           <span className="font-medium">Admin: Knowledge Base</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           {lastResult && (
             <div className="flex items-center gap-1.5 text-xs">
               {lastResult.success ? (
-                <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
               ) : (
-                <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
               )}
               <span className={lastResult.success ? "text-primary" : "text-destructive"}>
                 {lastResult.message}
@@ -76,7 +76,7 @@ export function AdminPanel({ accessToken }: AdminPanelProps) {
             size="sm"
             onClick={triggerIngestion}
             disabled={isIngesting}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isIngesting ? "animate-spin" : ""}`} />
             {isIngesting ? "Ingesting..." : "Sync NIH Data"}
