@@ -118,7 +118,7 @@ export default function NeuroMCP() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-3rem)] max-w-3xl mx-auto px-6">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-3rem)] max-w-3xl mx-auto px-4 sm:px-6">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -127,12 +127,12 @@ export default function NeuroMCP() {
   // Show access restricted message if not authenticated or not MIT email
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-3rem)] max-w-lg mx-auto px-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-6">
-          <Lock className="h-8 w-8 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-3rem)] max-w-lg mx-auto px-4 sm:px-6 text-center">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-muted flex items-center justify-center mb-4 sm:mb-6">
+          <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
         </div>
-        <h1 className="text-2xl font-semibold text-foreground mb-3">Access Restricted</h1>
-        <p className="text-muted-foreground mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-2 sm:mb-3">Access Restricted</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
           NeuroMCP is only available to users with an MIT email address. 
           {!user 
             ? " Please sign in with your @mit.edu email to access this feature."
@@ -140,12 +140,12 @@ export default function NeuroMCP() {
         </p>
         {!user ? (
           <Link to="/auth">
-            <Button className="gap-2">
+            <Button className="gap-2 w-full sm:w-auto">
               Sign In with MIT Email
             </Button>
           </Link>
         ) : (
-          <Button variant="outline" onClick={() => window.location.href = "/auth"}>
+          <Button variant="outline" onClick={() => window.location.href = "/auth"} className="w-full sm:w-auto">
             Sign In with Different Account
           </Button>
         )}
@@ -154,11 +154,11 @@ export default function NeuroMCP() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl mx-auto px-6">
+    <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl mx-auto px-3 sm:px-6">
       {/* Header */}
-      <div className="pt-8 pb-6 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Hannah</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your BBQS research assistant</p>
+      <div className="pt-4 sm:pt-8 pb-4 sm:pb-6 text-center">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Hannah</h1>
+        <p className="text-muted-foreground text-xs sm:text-sm mt-1">Your BBQS research assistant</p>
       </div>
 
       {/* Admin Panel - MIT users only */}
@@ -179,14 +179,14 @@ export default function NeuroMCP() {
               )}
             >
               {message.role === "assistant" ? (
-                <div className="max-w-[85%] space-y-2">
-                  <div className="text-muted-foreground whitespace-pre-wrap">
+                <div className="max-w-[90%] sm:max-w-[85%] space-y-2">
+                  <div className="text-muted-foreground whitespace-pre-wrap text-sm sm:text-base">
                     {message.content}
                   </div>
                   {message.contextSources && message.contextSources.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                      <Database className="h-3 w-3" />
-                      <span>
+                    <div className="flex items-start sm:items-center gap-1.5 text-xs text-muted-foreground/70">
+                      <Database className="h-3 w-3 shrink-0 mt-0.5 sm:mt-0" />
+                      <span className="break-words">
                         Sources: {message.contextSources.map(s => s.title).slice(0, 2).join(", ")}
                         {message.contextSources.length > 2 && ` +${message.contextSources.length - 2} more`}
                       </span>
@@ -194,7 +194,7 @@ export default function NeuroMCP() {
                   )}
                 </div>
               ) : (
-                <div className="bg-secondary text-foreground rounded-2xl px-4 py-2.5 max-w-[85%]">
+                <div className="bg-secondary text-foreground rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 max-w-[90%] sm:max-w-[85%] text-sm sm:text-base">
                   {message.content}
                 </div>
               )}
@@ -213,12 +213,12 @@ export default function NeuroMCP() {
       </div>
 
       {/* Input */}
-      <div className="py-4">
-        <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-2 py-1.5">
+      <div className="py-3 sm:py-4">
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-secondary/50 rounded-full px-1.5 sm:px-2 py-1 sm:py-1.5">
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary"
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary"
           >
             <Mic className="h-4 w-4" />
           </Button>
@@ -226,7 +226,7 @@ export default function NeuroMCP() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about BBQS projects, publications, or investigators..."
+            placeholder="Ask about BBQS..."
             disabled={isLoading}
             className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
           />
@@ -234,7 +234,7 @@ export default function NeuroMCP() {
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="shrink-0 h-9 w-9 rounded-full bg-primary hover:bg-primary/90"
+            className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-primary hover:bg-primary/90"
           >
             <Send className="h-4 w-4" />
           </Button>
