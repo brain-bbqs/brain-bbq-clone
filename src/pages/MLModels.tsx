@@ -96,7 +96,7 @@ const MLModels = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {models.map((model, idx) => {
+            {filtered.map((model, idx) => {
               const status = statusConfig[model.status];
               return (
                 <TableRow key={idx}>
