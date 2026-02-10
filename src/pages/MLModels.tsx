@@ -92,7 +92,7 @@ const MLModels = () => {
                         className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                       >
                         <ExternalLink className="h-3 w-3" />
-                        Open Space
+                        Try Model
                       </a>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
