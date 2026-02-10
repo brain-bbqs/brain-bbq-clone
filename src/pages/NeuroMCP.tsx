@@ -330,7 +330,15 @@ export default function NeuroMCP() {
               )}
             </div>
           ))}
-          {isLoading && !messages.some((m) => m.isProcessing) && (
+          {uploadProgress !== null && (
+            <div className="flex justify-start">
+              <div className="max-w-[70%] sm:max-w-[60%] space-y-1">
+                <div className="text-xs text-muted-foreground">Uploading… {uploadProgress}%</div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            </div>
+          )}
+          {isLoading && !messages.some((m) => m.isProcessing) && uploadProgress === null && (
             <div className="flex justify-start">
               <div className="inline-flex gap-1 px-2">
                 <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
