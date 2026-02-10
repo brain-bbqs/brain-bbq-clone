@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.neuromcp-ingest]
 verify_jwt = false
+
+[functions.neuromcp-audio]
+verify_jwt = false
