@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ExternalLink, Search } from "lucide-react";
 
 interface MLModel {
   name: string;
@@ -44,6 +46,22 @@ const statusConfig = {
 };
 
 const MLModels = () => {
+  const [search, setSearch] = useState("");
+
+  const filtered = models.filter((m) => {
+    const q = search.toLowerCase();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      m.architecture.toLowerCase().includes(q) ||
+      m.species.toLowerCase().includes(q) ||
+      m.strain.toLowerCase().includes(q) ||
+      m.task.toLowerCase().includes(q) ||
+      m.behaviour.toLowerCase().includes(q) ||
+      m.pi.toLowerCase().includes(q) ||
+      m.status.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
       <div className="mb-8">
@@ -51,6 +69,16 @@ const MLModels = () => {
         <p className="text-muted-foreground">
           A catalog of ML models used across BBQS projects.
         </p>
+      </div>
+
+      <div className="relative mb-4 max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search models..."
+          className="pl-9"
+        />
       </div>
 
       <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
@@ -68,7 +96,7 @@ const MLModels = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {models.map((model, idx) => {
+            {filtered.map((model, idx) => {
               const status = statusConfig[model.status];
               return (
                 <TableRow key={idx}>
