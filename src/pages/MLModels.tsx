@@ -25,6 +25,7 @@ const models: MLModel[] = [
     behaviour: "Oestrus interaction (Male–oestrus female, 10 min + 3 min)",
     pi: "Elodie Ey",
     status: "pending",
+    hfUrl: "https://huggingface.co/spaces/sensein/Mouse_ProSAP1_Shank2_Male_Female_Oestrus",
     dois: [
       { id: "10.5281/zenodo.5772630", url: "https://doi.org/10.5281/zenodo.5772630" },
       { id: "10.5281/zenodo.5772722", url: "https://doi.org/10.5281/zenodo.5772722" },
