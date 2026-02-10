@@ -84,6 +84,21 @@ const MLModels = () => {
                     <Badge variant="outline" className={status.className}>{status.label}</Badge>
                   </TableCell>
                   <TableCell>
+                    {model.hfUrl ? (
+                      <a
+                        href={model.hfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Open Space
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-col gap-1">
                       {model.dois.map((doi) => (
                         <a
