@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Lock, Loader2, Database, Paperclip } from "lucide-react";
+import { Send, Lock, Loader2, Database, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { AdminPanel } from "@/components/neuromcp/AdminPanel";
 import { supabase } from "@/integrations/supabase/client";
+import * as tus from "tus-js-client";
 
 interface Message {
   id: string;
