@@ -14,7 +14,6 @@ interface MLModel {
   pi: string;
   status: "trained" | "pending" | "not-started";
   dois: { id: string; url: string }[];
-  hfUrl?: string;
 }
 
 const models: MLModel[] = [
@@ -27,7 +26,6 @@ const models: MLModel[] = [
     behaviour: "Oestrus interaction (Male–oestrus female, 10 min + 3 min)",
     pi: "Elodie Ey",
     status: "pending",
-    hfUrl: "https://sensein-mouse-prosap1-shank2-male-female-oestrus-4021ab0.hf.space",
     dois: [
       { id: "10.5281/zenodo.5772630", url: "https://doi.org/10.5281/zenodo.5772630" },
       { id: "10.5281/zenodo.5772722", url: "https://doi.org/10.5281/zenodo.5772722" },
@@ -88,10 +86,10 @@ const MLModels = () => {
               <TableHead>Model Name</TableHead>
               <TableHead>Architecture</TableHead>
               <TableHead>Species / Strain</TableHead>
+              <TableHead>Task</TableHead>
               <TableHead>Behaviour</TableHead>
               <TableHead>PI</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>AI Model</TableHead>
               <TableHead>Data Sources</TableHead>
             </TableRow>
           </TableHeader>
@@ -106,25 +104,11 @@ const MLModels = () => {
                     <div>{model.species}</div>
                     <div className="text-xs text-muted-foreground">{model.strain}</div>
                   </TableCell>
+                  <TableCell>{model.task}</TableCell>
                   <TableCell className="max-w-[200px]">{model.behaviour}</TableCell>
                   <TableCell>{model.pi}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={status.className}>{status.label}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {model.hfUrl ? (
-                      <a
-                        href={model.hfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Try Model
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
