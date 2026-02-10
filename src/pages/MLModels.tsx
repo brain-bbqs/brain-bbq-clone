@@ -12,6 +12,7 @@ interface MLModel {
   pi: string;
   status: "trained" | "pending" | "not-started";
   dois: { id: string; url: string }[];
+  hfUrl?: string;
 }
 
 const models: MLModel[] = [
@@ -24,6 +25,7 @@ const models: MLModel[] = [
     behaviour: "Oestrus interaction (Male–oestrus female, 10 min + 3 min)",
     pi: "Elodie Ey",
     status: "pending",
+    hfUrl: "https://huggingface.co/spaces/sensein/Mouse_ProSAP1_Shank2_Male_Female_Oestrus",
     dois: [
       { id: "10.5281/zenodo.5772630", url: "https://doi.org/10.5281/zenodo.5772630" },
       { id: "10.5281/zenodo.5772722", url: "https://doi.org/10.5281/zenodo.5772722" },
@@ -61,6 +63,7 @@ const MLModels = () => {
               <TableHead>Behaviour</TableHead>
               <TableHead>PI</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>HF Space</TableHead>
               <TableHead>Data Sources</TableHead>
             </TableRow>
           </TableHeader>
@@ -79,6 +82,21 @@ const MLModels = () => {
                   <TableCell>{model.pi}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {model.hfUrl ? (
+                      <a
+                        href={model.hfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Open Space
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
