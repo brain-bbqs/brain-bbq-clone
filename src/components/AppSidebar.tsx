@@ -51,6 +51,7 @@ const knowledgeBaseItems = [
   { title: "Tools", url: "/resources", icon: Wrench },
   { title: "Knowledge Graph", url: "/evidence", icon: FlaskConical },
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
+  { title: "ML Models", url: "/ml-models", icon: Brain },
 ];
 
 const communityItems = [

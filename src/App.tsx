@@ -21,6 +21,7 @@ import Publications from "./pages/Publications";
 import About from "./pages/About";
 import AgenticFramework from "./pages/AgenticFramework";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
+import MLModels from "./pages/MLModels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/agentic-framework" element={<AgenticFramework />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
+              <Route path="/ml-models" element={<MLModels />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
