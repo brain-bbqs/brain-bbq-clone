@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Lock, Loader2, Database, Paperclip } from "lucide-react";
+import { Send, Lock, Loader2, Database, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { AdminPanel } from "@/components/neuromcp/AdminPanel";
 import { supabase } from "@/integrations/supabase/client";
+import * as tus from "tus-js-client";
 
 interface Message {
   id: string;
@@ -37,6 +39,7 @@ export default function NeuroMCP() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,13 +78,45 @@ export default function NeuroMCP() {
     setIsLoading(true);
 
     try {
-      // Upload to Supabase Storage
+      // Resumable upload via tus protocol
       const audioPath = `uploads/${user.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("neuromcp-audio")
-        .upload(audioPath, file, { contentType: "audio/wav" });
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: `https://${projectId}.supabase.co/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${session.access_token}`,
+            "x-upsert": "false",
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: "neuromcp-audio",
+            objectName: audioPath,
+            contentType: "audio/wav",
+            cacheControl: "3600",
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            console.error("Upload error:", error);
+            reject(new Error(`Upload failed: ${error.message}`));
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(pct);
+          },
+          onSuccess: () => {
+            setUploadProgress(null);
+            resolve();
+          },
+        });
+        upload.findPreviousUploads().then((prev) => {
+          if (prev.length) upload.resumeFromPreviousUpload(prev[0]);
+          upload.start();
+        });
+      });
 
       // Call audio processing edge function
       const response = await fetch(
@@ -295,7 +330,15 @@ export default function NeuroMCP() {
               )}
             </div>
           ))}
-          {isLoading && !messages.some((m) => m.isProcessing) && (
+          {uploadProgress !== null && (
+            <div className="flex justify-start">
+              <div className="max-w-[70%] sm:max-w-[60%] space-y-1">
+                <div className="text-xs text-muted-foreground">Uploading… {uploadProgress}%</div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            </div>
+          )}
+          {isLoading && !messages.some((m) => m.isProcessing) && uploadProgress === null && (
             <div className="flex justify-start">
               <div className="inline-flex gap-1 px-2">
                 <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
