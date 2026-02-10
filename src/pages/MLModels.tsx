@@ -63,7 +63,7 @@ const MLModels = () => {
               <TableHead>Behaviour</TableHead>
               <TableHead>PI</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>HF Space</TableHead>
+              <TableHead>AI Model</TableHead>
               <TableHead>Data Sources</TableHead>
             </TableRow>
           </TableHeader>
