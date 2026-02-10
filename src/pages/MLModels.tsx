@@ -12,6 +12,7 @@ interface MLModel {
   pi: string;
   status: "trained" | "pending" | "not-started";
   dois: { id: string; url: string }[];
+  hfUrl?: string;
 }
 
 const models: MLModel[] = [
