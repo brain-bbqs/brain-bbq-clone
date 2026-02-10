@@ -48,15 +48,18 @@ const mainItems = [
 const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
+  { title: "ML Models", url: "/ml-models", icon: Brain },
   { title: "Tools", url: "/resources", icon: Wrench },
   { title: "Knowledge Graph", url: "/evidence", icon: FlaskConical },
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
-  { title: "ML Models", url: "/ml-models", icon: Brain },
+];
+
+const directoryItems = [
+  { title: "Investigators", url: "/investigators", icon: Users },
+  { title: "Working Groups", url: "/working-groups", icon: Users },
 ];
 
 const communityItems = [
-  { title: "Investigators", url: "/investigators", icon: Users },
-  { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "#", icon: Briefcase },
   { title: "Calendar", url: "#", icon: CalendarDays },
@@ -142,6 +145,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Directory</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(directoryItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
