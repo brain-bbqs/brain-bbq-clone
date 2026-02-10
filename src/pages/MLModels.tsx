@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ExternalLink, Search } from "lucide-react";
 
 interface MLModel {
   name: string;
