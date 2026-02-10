@@ -78,13 +78,45 @@ export default function NeuroMCP() {
     setIsLoading(true);
 
     try {
-      // Upload to Supabase Storage
+      // Resumable upload via tus protocol
       const audioPath = `uploads/${user.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("neuromcp-audio")
-        .upload(audioPath, file, { contentType: "audio/wav" });
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: `https://${projectId}.supabase.co/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${session.access_token}`,
+            "x-upsert": "false",
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: "neuromcp-audio",
+            objectName: audioPath,
+            contentType: "audio/wav",
+            cacheControl: "3600",
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            console.error("Upload error:", error);
+            reject(new Error(`Upload failed: ${error.message}`));
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(pct);
+          },
+          onSuccess: () => {
+            setUploadProgress(null);
+            resolve();
+          },
+        });
+        upload.findPreviousUploads().then((prev) => {
+          if (prev.length) upload.resumeFromPreviousUpload(prev[0]);
+          upload.start();
+        });
+      });
 
       // Call audio processing edge function
       const response = await fetch(
