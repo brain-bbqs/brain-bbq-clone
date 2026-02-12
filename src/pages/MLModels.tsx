@@ -37,6 +37,19 @@ const models: MLModel[] = [
       { id: "10.5281/zenodo.5776298", url: "https://doi.org/10.5281/zenodo.5776298" },
     ],
   },
+  {
+    name: "Family Vocal Usage",
+    architecture: "DeepSqueak",
+    species: "Mongolian Gerbil (Meriones unguiculatus)",
+    strain: "Wild-type",
+    task: "USV Detection",
+    behaviour: "Family vocal usage discovery (unsupervised)",
+    pi: "Dan Sanes",
+    status: "not-started",
+    dois: [
+      { id: "10.5061/dryad.m905qfv68", url: "https://doi.org/10.5061/dryad.m905qfv68" },
+    ],
+  },
 ];
 
 const statusConfig = {
