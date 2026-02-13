@@ -25,7 +25,7 @@ export function MarrChordDiagram() {
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
-        const w = Math.min(containerRef.current.clientWidth, 800);
+        const w = Math.min(containerRef.current.clientWidth, 650);
         setDimensions({ width: w, height: w });
       }
     };
@@ -38,7 +38,7 @@ export function MarrChordDiagram() {
     if (!svgRef.current) return;
 
     const { width, height } = dimensions;
-    const outerRadius = Math.min(width, height) * 0.42;
+    const outerRadius = Math.min(width, height) * 0.34;
     const innerRadius = outerRadius - 20;
 
     const svg = d3.select(svgRef.current);
