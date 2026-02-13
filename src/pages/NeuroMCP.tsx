@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { AdminPanel } from "@/components/neuromcp/AdminPanel";
 import { WorkflowRecommender } from "@/components/neuromcp/WorkflowRecommender";
+import { ChatHistory } from "@/components/neuromcp/ChatHistory";
 
 interface Message {
   id: string;
@@ -160,53 +161,55 @@ export default function NeuroMCP() {
         <p className="text-muted-foreground text-xs sm:text-sm mt-1">Your BBQS research assistant</p>
       </div>
 
-      {/* Admin Panel */}
-      {session && <AdminPanel accessToken={session.access_token} />}
-
-      {/* Workflow Recommender */}
-      <WorkflowRecommender onAskHannah={(question) => {
-        setInput(question);
-        // Auto-send the question
-        const userMessage: Message = {
-          id: Date.now().toString(),
-          role: "user",
-          content: question,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, userMessage]);
-        setIsLoading(true);
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/neuromcp-chat`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session!.access_token}`,
-            },
-            body: JSON.stringify({ message: question, conversationId }),
-          }
-        ).then(r => r.json()).then(data => {
-          if (data.conversationId && !conversationId) setConversationId(data.conversationId);
-          setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: data.message || "Sorry, I couldn't process that.",
-            timestamp: new Date(),
-            contextSources: data.contextSources,
-          }]);
-        }).catch(() => {
-          setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: "I encountered an error. Please try again.",
-            timestamp: new Date(),
-          }]);
-        }).finally(() => {
-          setIsLoading(false);
-          setInput("");
-        });
-      }} />
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-2">
+        {/* Admin Panel */}
+        {session && <AdminPanel accessToken={session.access_token} />}
+
+        {/* Consortium Chat History */}
+        {session && <ChatHistory accessToken={session.access_token} />}
+
+        {/* Workflow Recommender */}
+        <WorkflowRecommender onAskHannah={(question) => {
+          setInput(question);
+          const userMessage: Message = {
+            id: Date.now().toString(),
+            role: "user",
+            content: question,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, userMessage]);
+          setIsLoading(true);
+          fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/neuromcp-chat`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session!.access_token}`,
+              },
+              body: JSON.stringify({ message: question, conversationId }),
+            }
+          ).then(r => r.json()).then(data => {
+            if (data.conversationId && !conversationId) setConversationId(data.conversationId);
+            setMessages(prev => [...prev, {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: data.message || "Sorry, I couldn't process that.",
+              timestamp: new Date(),
+              contextSources: data.contextSources,
+            }]);
+          }).catch(() => {
+            setMessages(prev => [...prev, {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: "I encountered an error. Please try again.",
+              timestamp: new Date(),
+            }]);
+          }).finally(() => {
+            setIsLoading(false);
+            setInput("");
+          });
+        }} />
         <div className="space-y-6 py-4">
           {messages.map((message) => (
             <div
