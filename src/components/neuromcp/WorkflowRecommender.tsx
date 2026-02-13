@@ -4,11 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
+interface StandardRecommendation {
+  name: string;
+  description: string;
+  relevance: string;
+}
+
 interface WorkflowResult {
   pipeline: string;
   tools: string[];
   relatedProjects: { pi: string; species: string; title: string }[];
   tips: string;
+  standards: StandardRecommendation[];
 }
 
 const SPECIES_OPTIONS = [
@@ -136,12 +143,87 @@ function recommendWorkflow(
   // Find related projects
   const relatedProjects = findRelatedProjects(species, sensors, behaviors);
 
+  // Recommend data standards
+  const standards = recommendStandards(species, sensors, behaviors, hasNeural, hasVideo, hasAudio, hasPhysiology);
+
   return {
     pipeline: pipelineSteps.join("\n\n→ Then: ") || "No specific pipeline matched. Try asking Hannah for a custom recommendation.",
     tools: uniqueTools,
     relatedProjects,
     tips: allTips.join("\n\n") || "Ask Hannah for detailed guidance on your specific setup.",
+    standards,
   };
+}
+
+function recommendStandards(
+  species: string[],
+  sensors: string[],
+  behaviors: string[],
+  hasNeural: boolean,
+  hasVideo: boolean,
+  hasAudio: boolean,
+  hasPhysiology: boolean
+): StandardRecommendation[] {
+  const standards: StandardRecommendation[] = [];
+  const isHuman = species.some(s => s.toLowerCase() === "human");
+
+  // NWB — always recommended for neural data
+  if (hasNeural) {
+    standards.push({
+      name: "Neurodata Without Borders (NWB)",
+      description: "Open standard for neurophysiology data including neural recordings, behavioral events, and stimuli.",
+      relevance: "Your neural recordings (spike trains, LFP, EEG) should be stored in NWB format for reproducibility and sharing.",
+    });
+  }
+
+  // BIDS — recommended for neuroimaging / human EEG
+  if (isHuman || hasNeural) {
+    standards.push({
+      name: "Brain Imaging Data Structure (BIDS)",
+      description: "Standard for organizing neuroscience datasets to facilitate sharing and automated analysis.",
+      relevance: isHuman
+        ? "Organize your human neurophysiology sessions in BIDS-compatible directory structures."
+        : "BIDS extensions (BIDS-animal) can structure your animal neural datasets.",
+    });
+  }
+
+  // NBO — always relevant for behavior studies
+  if (behaviors.length > 0) {
+    standards.push({
+      name: "Neuro Behavior Ontology (NBO)",
+      description: "Ontology of human and animal behaviors and behavioral phenotypes.",
+      relevance: "Use NBO terms to annotate your behavioral categories for cross-study comparability.",
+    });
+  }
+
+  // HED — for event-rich experiments
+  if (hasVideo || hasAudio || hasNeural) {
+    standards.push({
+      name: "Hierarchical Event Descriptors (HED)",
+      description: "Standardized tagging system for events and metadata in time-series experiments.",
+      relevance: "Tag your experimental events (stimuli, behavioral onsets, trial markers) using HED for machine-readable metadata.",
+    });
+  }
+
+  // ndx-pose for pose data
+  if (hasVideo) {
+    standards.push({
+      name: "ndx-pose (NWB Extension)",
+      description: "NWB extension for storing pose estimation data from DeepLabCut, SLEAP, etc.",
+      relevance: "Store your pose estimation outputs (keypoints, confidence scores) alongside neural data in NWB.",
+    });
+  }
+
+  // DANDI for sharing
+  if (hasNeural || (isHuman && hasPhysiology)) {
+    standards.push({
+      name: "DANDI Archive",
+      description: "Public archive for publishing neurophysiology datasets in NWB format.",
+      relevance: "Publish your finalized datasets on DANDI for NIH compliance and community access.",
+    });
+  }
+
+  return standards;
 }
 
 function findRelatedProjects(species: string[], sensors: string[], behaviors: string[]) {
@@ -259,6 +341,21 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
           <p className="text-xs font-medium text-muted-foreground mb-1.5">TIPS</p>
           <p className="text-xs text-muted-foreground whitespace-pre-line">{result.tips}</p>
         </div>
+
+        {result.standards.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">RECOMMENDED STANDARDS & ONTOLOGIES</p>
+            <div className="space-y-2.5">
+              {result.standards.map((s, i) => (
+                <div key={i} className="border border-border rounded-md p-2.5 bg-background/50">
+                  <p className="text-xs font-semibold text-foreground">{s.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
+                  <p className="text-xs text-primary mt-1 italic">{s.relevance}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Button size="sm" onClick={handleDeepDive} className="w-full gap-2 text-xs h-8">
           <Sparkles className="h-3 w-3" /> Ask Hannah for deeper analysis
