@@ -12,6 +12,7 @@ import {
   Info,
   FileText,
   FlaskConical,
+  MessageSquare,
   LogIn,
   LogOut,
   Bot,
@@ -55,6 +56,7 @@ const knowledgeBaseItems = [
 
 const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
+  { title: "Consortia History", url: "/consortia-history", icon: MessageSquare },
 ];
 
 const directoryItems = [

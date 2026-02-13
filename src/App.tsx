@@ -16,6 +16,7 @@ import Assertions from "./pages/Assertions";
 import Evidence from "./pages/Evidence";
 import Auth from "./pages/Auth";
 import NeuroMCP from "./pages/NeuroMCP";
+import ConsortiaHistory from "./pages/ConsortiaHistory";
 import DesignDocs from "./pages/DesignDocs";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/evidence" element={<Evidence />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
+              <Route path="/consortia-history" element={<ConsortiaHistory />} />
               <Route path="/design-docs" element={<DesignDocs />} />
               <Route path="/agentic-framework" element={<AgenticFramework />} />
               <Route path="/publications" element={<Publications />} />
