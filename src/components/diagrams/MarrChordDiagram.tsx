@@ -38,8 +38,11 @@ export function MarrChordDiagram() {
     if (!svgRef.current) return;
 
     const { width, height } = dimensions;
+    const padding = 120;
+    const svgWidth = width + padding * 2;
+    const svgHeight = height + padding * 2;
     const outerRadius = Math.min(width, height) * 0.34;
-    const innerRadius = outerRadius - 20;
+    const innerRadius = outerRadius - 18;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -63,9 +66,9 @@ export function MarrChordDiagram() {
       .radius(innerRadius);
 
     const g = svg
-      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
       .append("g")
-      .attr("transform", `translate(${width / 2},${height / 2})`);
+      .attr("transform", `translate(${svgWidth / 2},${svgHeight / 2})`);
 
     // Draw arcs (project segments)
     const group = g
