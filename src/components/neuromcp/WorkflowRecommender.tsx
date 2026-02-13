@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { FlaskConical, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
+import { FlaskConical, ArrowRight, RotateCcw, Sparkles, Beaker, Radio, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface StandardRecommendation {
@@ -137,13 +136,8 @@ function recommendWorkflow(
     allTips.push(wf.tips);
   }
 
-  // Deduplicate tools
   const uniqueTools = [...new Set(tools)];
-
-  // Find related projects
   const relatedProjects = findRelatedProjects(species, sensors, behaviors);
-
-  // Recommend data standards
   const standards = recommendStandards(species, sensors, behaviors, hasNeural, hasVideo, hasAudio, hasPhysiology);
 
   return {
@@ -167,7 +161,6 @@ function recommendStandards(
   const standards: StandardRecommendation[] = [];
   const isHuman = species.some(s => s.toLowerCase() === "human");
 
-  // NWB — always recommended for neural data
   if (hasNeural) {
     standards.push({
       name: "Neurodata Without Borders (NWB)",
@@ -176,7 +169,6 @@ function recommendStandards(
     });
   }
 
-  // BIDS — recommended for neuroimaging / human EEG
   if (isHuman || hasNeural) {
     standards.push({
       name: "Brain Imaging Data Structure (BIDS)",
@@ -187,7 +179,6 @@ function recommendStandards(
     });
   }
 
-  // NBO — always relevant for behavior studies
   if (behaviors.length > 0) {
     standards.push({
       name: "Neuro Behavior Ontology (NBO)",
@@ -196,7 +187,6 @@ function recommendStandards(
     });
   }
 
-  // HED — for event-rich experiments
   if (hasVideo || hasAudio || hasNeural) {
     standards.push({
       name: "Hierarchical Event Descriptors (HED)",
@@ -205,7 +195,6 @@ function recommendStandards(
     });
   }
 
-  // ndx-pose for pose data
   if (hasVideo) {
     standards.push({
       name: "ndx-pose (NWB Extension)",
@@ -214,7 +203,6 @@ function recommendStandards(
     });
   }
 
-  // DANDI for sharing
   if (hasNeural || (isHuman && hasPhysiology)) {
     standards.push({
       name: "DANDI Archive",
@@ -262,6 +250,12 @@ function findRelatedProjects(species: string[], sensors: string[], behaviors: st
     .slice(0, 4);
 }
 
+const STEP_COLORS = [
+  { bg: "from-emerald-500/10 to-teal-500/10", border: "border-emerald-500/30", accent: "text-emerald-600 dark:text-emerald-400", icon: Beaker, pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/20" },
+  { bg: "from-blue-500/10 to-indigo-500/10", border: "border-blue-500/30", accent: "text-blue-600 dark:text-blue-400", icon: Radio, pill: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/20" },
+  { bg: "from-violet-500/10 to-purple-500/10", border: "border-violet-500/30", accent: "text-violet-600 dark:text-violet-400", icon: Activity, pill: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/20" },
+];
+
 export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: string) => void }) {
   const [step, setStep] = useState(0);
   const [selectedSpecies, setSelectedSpecies] = useState<string[]>([]);
@@ -298,39 +292,49 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
 
   if (step === 3 && result) {
     return (
-      <div className="border border-border rounded-lg p-4 mb-4 space-y-4 bg-card/50">
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 p-5 mb-4 space-y-5 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-sm">Recommended Workflow</h3>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-foreground">Recommended Workflow</h3>
+              <p className="text-[11px] text-muted-foreground">{selectedSpecies.join(", ")} · {selectedSensors.length} sensors · {selectedBehaviors.length} behaviors</p>
+            </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs">
-            <RotateCcw className="h-3 w-3" /> Start over
+          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground">
+            <RotateCcw className="h-3 w-3" /> Reset
           </Button>
         </div>
 
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2">SUGGESTED TOOLS</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Suggested Tools</p>
           <div className="flex flex-wrap gap-1.5">
             {result.tools.map(t => (
-              <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+              <span key={t} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                {t}
+              </span>
             ))}
           </div>
         </div>
 
-        <div>
-          <p className="text-xs font-medium text-muted-foreground mb-1.5">PIPELINE</p>
+        <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pipeline</p>
           <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{result.pipeline}</p>
         </div>
 
         {result.relatedProjects.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">RELATED BBQS PROJECTS</p>
-            <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Related BBQS Projects</p>
+            <div className="space-y-2">
               {result.relatedProjects.map((p, i) => (
-                <div key={i} className="text-xs">
-                  <span className="font-medium text-foreground">{p.title}</span>
-                  <span className="text-muted-foreground"> — {p.pi} ({p.species})</span>
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-medium text-foreground">{p.title}</span>
+                    <span className="text-muted-foreground"> — {p.pi} ({p.species})</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -338,27 +342,27 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
         )}
 
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-1.5">TIPS</p>
-          <p className="text-xs text-muted-foreground whitespace-pre-line">{result.tips}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Tips</p>
+          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{result.tips}</p>
         </div>
 
         {result.standards.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">RECOMMENDED STANDARDS & ONTOLOGIES</p>
-            <div className="space-y-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recommended Standards & Ontologies</p>
+            <div className="grid gap-2">
               {result.standards.map((s, i) => (
-                <div key={i} className="border border-border rounded-md p-2.5 bg-background/50">
+                <div key={i} className="rounded-lg border border-border p-3 bg-background/60 hover:bg-background/80 transition-colors">
                   <p className="text-xs font-semibold text-foreground">{s.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
-                  <p className="text-xs text-primary mt-1 italic">{s.relevance}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{s.description}</p>
+                  <p className="text-[11px] text-primary mt-1 italic">{s.relevance}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <Button size="sm" onClick={handleDeepDive} className="w-full gap-2 text-xs h-8">
-          <Sparkles className="h-3 w-3" /> Ask Hannah for deeper analysis
+        <Button onClick={handleDeepDive} className="w-full gap-2 text-sm h-9 bg-primary hover:bg-primary/90 shadow-sm">
+          <Sparkles className="h-3.5 w-3.5" /> Ask Hannah for deeper analysis
         </Button>
       </div>
     );
@@ -371,38 +375,59 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
   ];
 
   const current = stepConfig[step];
+  const colors = STEP_COLORS[step];
+  const StepIcon = colors.icon;
 
   return (
-    <div className="border border-border rounded-lg p-4 mb-4 bg-card/50">
-      <div className="flex items-center gap-2 mb-3">
-        <FlaskConical className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm">Workflow Recommender</h3>
-        <span className="text-xs text-muted-foreground ml-auto">Step {step + 1}/3</span>
+    <div className={cn(
+      "rounded-xl border p-5 mb-4 bg-gradient-to-br transition-all duration-300 animate-in fade-in slide-in-from-bottom-2",
+      colors.bg, colors.border
+    )}>
+      {/* Progress bar */}
+      <div className="flex gap-1.5 mb-4">
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-all duration-500",
+              i <= step ? "bg-primary" : "bg-muted-foreground/15"
+            )}
+          />
+        ))}
       </div>
 
-      <p className="text-sm text-foreground mb-3">{current.title}</p>
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", `bg-background/80`)}>
+          <StepIcon className={cn("h-5 w-5", colors.accent)} />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-sm text-foreground">Workflow Recommender</h3>
+          <p className="text-[11px] text-muted-foreground">Step {step + 1} of 3</p>
+        </div>
+      </div>
 
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      <p className={cn("text-sm font-medium mb-3", colors.accent)}>{current.title}</p>
+
+      <div className="flex flex-wrap gap-1.5 mb-4">
         {current.options.map(opt => (
-          <Badge
+          <button
             key={opt}
-            variant={current.selected.includes(opt) ? "default" : "outline"}
-            className={cn(
-              "cursor-pointer text-xs transition-colors",
-              current.selected.includes(opt)
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-secondary"
-            )}
             onClick={() => toggleSelection(opt, current.selected, current.setter)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200",
+              current.selected.includes(opt)
+                ? cn(colors.pill, "shadow-sm scale-[1.02]")
+                : "bg-background/60 text-muted-foreground border-border hover:border-muted-foreground/30 hover:bg-background"
+            )}
           >
             {opt}
-          </Badge>
+          </button>
         ))}
       </div>
 
       <div className="flex gap-2">
         {step > 0 && (
-          <Button variant="outline" size="sm" onClick={() => setStep(step - 1)} className="text-xs h-7">
+          <Button variant="outline" size="sm" onClick={() => setStep(step - 1)} className="text-xs h-8">
             Back
           </Button>
         )}
@@ -410,9 +435,9 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
           size="sm"
           onClick={handleNext}
           disabled={current.selected.length === 0}
-          className="gap-1 text-xs h-7 ml-auto"
+          className="gap-1.5 text-xs h-8 ml-auto shadow-sm"
         >
-          {step < 2 ? "Next" : "Get Recommendation"} <ArrowRight className="h-3 w-3" />
+          {step < 2 ? "Next" : "Get Recommendation"} <ArrowRight className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
