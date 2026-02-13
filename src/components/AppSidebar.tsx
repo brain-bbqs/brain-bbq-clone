@@ -51,6 +51,9 @@ const knowledgeBaseItems = [
   { title: "Cross-Species Sync", url: "/ml-models", icon: Brain },
   { title: "Tools", url: "/resources", icon: Wrench },
   { title: "Knowledge Graph", url: "/knowledge-graph", icon: FlaskConical },
+];
+
+const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
 ];
 
@@ -140,6 +143,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Main</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(mainItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Artificial Intelligence</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
