@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FlaskConical, ArrowRight, RotateCcw, Sparkles, Beaker, Radio, Activity } from "lucide-react";
+import { FlaskConical, ArrowRight, RotateCcw, Sparkles, Beaker, Radio, Activity, FileText, FolderOpen, BookOpen, Tag, Archive, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -350,13 +350,33 @@ export function WorkflowRecommender({ onAskHannah }: { onAskHannah: (question: s
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recommended Standards & Ontologies</p>
             <div className="grid gap-2">
-              {result.standards.map((s, i) => (
-                <div key={i} className="rounded-lg border border-border p-3 bg-background/60 hover:bg-background/80 transition-colors">
-                  <p className="text-xs font-semibold text-foreground">{s.name}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{s.description}</p>
-                  <p className="text-[11px] text-primary mt-1 italic">{s.relevance}</p>
-                </div>
-              ))}
+              {result.standards.map((s, i) => {
+                const iconMap: Record<string, { icon: typeof FileText; color: string; bg: string }> = {
+                  "NWB": { icon: FileText, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                  "BIDS": { icon: FolderOpen, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+                  "NBO": { icon: BookOpen, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
+                  "HED": { icon: Tag, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                  "DANDI": { icon: Archive, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-500/10 border-rose-500/20" },
+                  "ndx-pose": { icon: Layers, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/20" },
+                };
+                const key = Object.keys(iconMap).find(k => s.name.includes(k)) || "";
+                const style = iconMap[key] || { icon: FileText, color: "text-primary", bg: "bg-primary/10 border-primary/20" };
+                const Icon = style.icon;
+                return (
+                  <div key={i} className={cn("rounded-lg border p-3 transition-all hover:scale-[1.01] hover:shadow-sm", style.bg)}>
+                    <div className="flex items-start gap-2.5">
+                      <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5", style.bg)}>
+                        <Icon className={cn("h-4 w-4", style.color)} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground">{s.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{s.description}</p>
+                        <p className={cn("text-[11px] mt-1 italic font-medium", style.color)}>{s.relevance}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
