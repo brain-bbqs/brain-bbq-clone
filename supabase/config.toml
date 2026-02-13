@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.neuromcp-ingest-workflows]
 verify_jwt = false
+
+[functions.neuromcp-history]
+verify_jwt = false
