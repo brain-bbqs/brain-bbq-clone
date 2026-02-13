@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.neuromcp-audio]
 verify_jwt = false
+
+[functions.neuromcp-ingest-workflows]
+verify_jwt = false
