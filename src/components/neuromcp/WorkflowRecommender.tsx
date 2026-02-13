@@ -58,6 +58,16 @@ const WORKFLOW_DB: Record<string, { tools: string[]; pipeline: string; tips: str
     pipeline: "Pose Data → Feature Extraction → Dimensionality Reduction (UMAP) → Clustering/Classification (A-SOID) → Temporal Sequence Analysis",
     tips: "A-SOID uses active learning for efficient labeling. So-Mo is specialized for social motif discovery. Start with UMAP visualization to understand your behavioral space.",
   },
+  "physiology+wearable": {
+    tools: ["MNE-Python", "Custom signal processing", "Accelerometer analysis", "EMG recording"],
+    pipeline: "Wearable/Physiological Recording → Signal Processing (filtering, artifact removal) → Feature Extraction (time/frequency domain) → Correlation with Behavioral Events → Statistical Analysis",
+    tips: "For accelerometer/IMU data, extract movement kinematics and activity levels. Combine with video for ground-truth behavioral labels. Heart rate and respiration can reveal internal states during social interactions.",
+  },
+  "eye+tracking": {
+    tools: ["Tobii Pro", "Eye tracker analysis", "Fixation detection", "Saccade analysis"],
+    pipeline: "Eye Tracking Recording → Fixation/Saccade Detection → Gaze Pattern Analysis → Attention Mapping → Behavioral Correlation",
+    tips: "For eye movement studies, combine with video or neural data for richer context. EEG hyperscanning can reveal neural correlates of gaze behavior in social interactions.",
+  },
 };
 
 function recommendWorkflow(
@@ -94,7 +104,7 @@ function recommendWorkflow(
     pipelineSteps.push(wf.pipeline);
     allTips.push(wf.tips);
   }
-  if ((hasVideo || hasAudio || hasNeural) && sensors.length >= 3) {
+  if ((hasVideo || hasAudio || hasNeural || hasPhysiology) && sensors.length >= 2) {
     const wf = WORKFLOW_DB["multimodal+sync"];
     tools.push(...wf.tools);
     pipelineSteps.push(wf.pipeline);
@@ -102,6 +112,19 @@ function recommendWorkflow(
   }
   if (hasVideo && (hasSocial || behaviors.length >= 2)) {
     const wf = WORKFLOW_DB["behavior+segmentation"];
+    tools.push(...wf.tools);
+    pipelineSteps.push(wf.pipeline);
+    allTips.push(wf.tips);
+  }
+  if (hasPhysiology) {
+    const wf = WORKFLOW_DB["physiology+wearable"];
+    tools.push(...wf.tools);
+    pipelineSteps.push(wf.pipeline);
+    allTips.push(wf.tips);
+  }
+  const hasEyeTracking = sensors.some(s => s.toLowerCase().includes("eye")) || behaviors.some(b => b.toLowerCase().includes("eye"));
+  if (hasEyeTracking) {
+    const wf = WORKFLOW_DB["eye+tracking"];
     tools.push(...wf.tools);
     pipelineSteps.push(wf.pipeline);
     allTips.push(wf.tips);
@@ -126,18 +149,20 @@ function findRelatedProjects(species: string[], sensors: string[], behaviors: st
     { pi: "Eva Dyer", species: "Cichlid", title: "Multi-Animal Behavior Arena", keywords: ["video", "pose", "social", "fish"] },
     { pi: "Pulkit Grover / Eric Yttri", species: "Mouse", title: "Multimodal Behavioral Segmentation", keywords: ["neuropixels", "sleap", "a-soid", "mouse", "stress"] },
     { pi: "Dan Sanes", species: "Gerbil", title: "Vocalization & Social Behavior", keywords: ["audio", "microphone", "vocalization", "gerbil", "deepsqueak"] },
-    { pi: "Firooz Aflatouni / Marc Schmidt", species: "Cowbird", title: "Smart Aviary Social Behavior", keywords: ["video", "audio", "bird", "rfid", "social"] },
-    { pi: "Nancy Padilla Coreano", species: "Mouse", title: "Social Motif Generator", keywords: ["respiration", "heart", "physiology", "social", "mouse"] },
-    { pi: "Timothy Dunn", species: "Rats/Mice", title: "3D Social Behavior Tracking", keywords: ["video", "3d", "pose", "social", "rat", "mouse"] },
-    { pi: "Cheryl Corcoran", species: "Human", title: "Dyadic Conversation Synchrony", keywords: ["eeg", "human", "speech", "emotion", "social", "eye"] },
+    { pi: "Firooz Aflatouni / Marc Schmidt", species: "Cowbird", title: "Smart Aviary Social Behavior", keywords: ["video", "audio", "bird", "cowbird", "rfid", "social", "accelerometer", "imu", "eye"] },
+    { pi: "Nancy Padilla Coreano", species: "Mouse", title: "Social Motif Generator", keywords: ["respiration", "heart", "physiology", "social", "mouse", "accelerometer", "imu"] },
+    { pi: "Timothy Dunn", species: "Rats/Mice", title: "3D Social Behavior Tracking", keywords: ["video", "3d", "pose", "social", "rat", "mouse", "locomotion", "gait"] },
+    { pi: "Cheryl Corcoran", species: "Human", title: "Dyadic Conversation Synchrony", keywords: ["eeg", "human", "speech", "emotion", "social", "eye", "facial", "heart"] },
     { pi: "Gordon Shepherd", species: "Mouse", title: "Oromanual Food-Handling", keywords: ["emg", "deeplabcut", "feeding", "mouse", "thermistor"] },
-    { pi: "Caleb Kemere", species: "Sheep", title: "Sheep Flocking Behavior", keywords: ["gps", "wireless", "neural", "sheep", "field"] },
-    { pi: "Katherine Nagel / David Schoppik", species: "Zebrafish/Fly", title: "Optical Navigation Imaging", keywords: ["zebrafish", "fly", "bioluminescence", "navigation"] },
+    { pi: "Caleb Kemere", species: "Sheep", title: "Sheep Flocking Behavior", keywords: ["gps", "wireless", "neural", "sheep", "field", "imu", "accelerometer"] },
+    { pi: "Katherine Nagel / David Schoppik", species: "Zebrafish/Fly", title: "Optical Navigation Imaging", keywords: ["zebrafish", "fly", "bioluminescence", "navigation", "eye", "locomotion"] },
     { pi: "Mansi Srivastava", species: "Acoel Worm", title: "Organism-Environment Interactions", keywords: ["worm", "deeplabcut", "sleap", "environment", "regeneration"] },
-    { pi: "Mengsen Zhang", species: "Ferret", title: "Multi-Scale Social Dynamics", keywords: ["ferret", "electrophysiology", "accelerometer", "social", "topology"] },
-    { pi: "Shelly Flagel", species: "Capuchin Monkey", title: "AI Forest for Wild Primates", keywords: ["primate", "monkey", "field", "deep learning", "remote"] },
-    { pi: "Nanthia Suthana", species: "Human", title: "Neural & Peripheral Biomarkers", keywords: ["ieeg", "human", "wearable", "biochemical", "stress", "vr"] },
-    { pi: "Joshua Jacobs", species: "Human", title: "CAMERA Platform (Anxiety/Memory)", keywords: ["ieeg", "human", "smartphone", "anxiety", "memory", "multimodal"] },
+    { pi: "Mengsen Zhang", species: "Ferret", title: "Multi-Scale Social Dynamics", keywords: ["ferret", "electrophysiology", "accelerometer", "imu", "social", "topology"] },
+    { pi: "Shelly Flagel", species: "Capuchin Monkey", title: "AI Forest for Wild Primates", keywords: ["primate", "monkey", "field", "deep learning", "remote", "cognitive"] },
+    { pi: "Nanthia Suthana", species: "Human", title: "Neural & Peripheral Biomarkers", keywords: ["ieeg", "human", "wearable", "biochemical", "stress", "vr", "eye", "accelerometer"] },
+    { pi: "Joshua Jacobs", species: "Human", title: "CAMERA Platform (Anxiety/Memory)", keywords: ["ieeg", "human", "smartphone", "anxiety", "memory", "multimodal", "eye", "heart", "accelerometer"] },
+    { pi: "Cory Inman", species: "Human", title: "CAPTURE App (Memory)", keywords: ["ieeg", "human", "gps", "accelerometer", "imu", "eye", "memory", "smartphone"] },
+    { pi: "Agatha Lenartowicz", species: "Human", title: "Attention State Tracking", keywords: ["eeg", "human", "eye", "attention", "accelerometer", "heart"] },
   ];
 
   const speciesLower = species.map(s => s.toLowerCase());
