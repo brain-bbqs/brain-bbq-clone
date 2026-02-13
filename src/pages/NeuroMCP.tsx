@@ -163,9 +163,9 @@ export default function NeuroMCP() {
         <div className="p-4 border-b border-border">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Bot className="h-4 w-4 text-primary" />
-            Consortium Activity
+            Consortia History
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">Recent conversations across the team</p>
+          <p className="text-xs text-muted-foreground mt-1">Search workflows & conversations across the team</p>
         </div>
         {session && <ChatHistory accessToken={session.access_token} mode="sidebar" />}
       </div>

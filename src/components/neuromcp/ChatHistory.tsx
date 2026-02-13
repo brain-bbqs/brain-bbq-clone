@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, User, Bot, Loader2, Clock, RefreshCw, MessageSquare } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronDown, ChevronRight, User, Bot, Loader2, Clock, RefreshCw, MessageSquare, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -35,6 +36,7 @@ export function ChatHistory({ accessToken, mode = "inline" }: ChatHistoryProps) 
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [visible, setVisible] = useState(mode === "sidebar");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -65,6 +67,16 @@ export function ChatHistory({ accessToken, mode = "inline" }: ChatHistoryProps) 
     }
   }, [visible]);
 
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+    const q = searchQuery.toLowerCase();
+    return conversations.filter((conv) => {
+      if (conv.title?.toLowerCase().includes(q)) return true;
+      if (conv.userEmail?.toLowerCase().includes(q)) return true;
+      return conv.messages.some((m) => m.content.toLowerCase().includes(q));
+    });
+  }, [conversations, searchQuery]);
+
   const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
     const now = new Date();
@@ -79,20 +91,58 @@ export function ChatHistory({ accessToken, mode = "inline" }: ChatHistoryProps) 
 
   const extractUsername = (email: string) => email.split("@")[0];
 
-  // Sidebar mode — fills its container
+  const uniqueUsers = useMemo(() => {
+    const emails = new Set(conversations.map((c) => c.userEmail));
+    return emails.size;
+  }, [conversations]);
+
+  // Sidebar mode
   if (mode === "sidebar") {
     return (
       <div className="flex-1 flex flex-col min-h-0">
+        {/* Search */}
+        <div className="p-3 border-b border-border/50">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search people, workflows..."
+              className="pl-8 pr-8 h-8 text-xs bg-background/60 border-border/60"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {uniqueUsers} members
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="h-3 w-3" />
+              {conversations.length} threads
+            </span>
+          </div>
+        </div>
+
         {loading && conversations.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : conversations.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No conversations yet.</p>
+        ) : filteredConversations.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {searchQuery ? "No matching conversations." : "No conversations yet."}
+          </p>
         ) : (
           <ScrollArea className="flex-1">
             <div className="divide-y divide-border/50">
-              {conversations.map((conv) => (
+              {filteredConversations.map((conv) => (
                 <div key={conv.id}>
                   <button
                     onClick={() => setExpanded(expanded === conv.id ? null : conv.id)}
