@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plug, Plus, Globe, ExternalLink, Package, Search, ChevronRight, Github, Loader2, Check, Clock } from "lucide-react";
+import { Plug, Plus, Globe, Package, Search, ChevronRight, Github, Loader2, Check, Clock, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ function SubmitForm({ onSubmitted }: { onSubmitted: () => void }) {
     }
   };
 
-  const inputClass = "w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(280_60%_50%/0.5)] focus:border-[hsl(280_60%_50%)] transition-colors";
+  const inputClass = "w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors";
   const labelClass = "block text-xs font-semibold text-foreground mb-1";
 
   return (
@@ -126,7 +126,7 @@ function SubmitForm({ onSubmitted }: { onSubmitted: () => void }) {
       </div>
       <div className="flex items-center justify-between pt-2">
         <p className="text-[11px] text-muted-foreground">Submissions are reviewed before appearing in the registry.</p>
-        <Button type="submit" disabled={submitting} className="bg-[hsl(280_60%_50%)] hover:bg-[hsl(280_60%_55%)] text-[hsl(0_0%_100%)]">
+        <Button type="submit" disabled={submitting} size="sm">
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
           Submit
         </Button>
@@ -146,20 +146,20 @@ function ServerCard({ server }: { server: McpServer }) {
   const [showConfig, setShowConfig] = useState(false);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-      <div className="px-5 py-4 bg-gradient-to-r from-[hsl(280_60%_50%/0.06)] to-transparent">
+    <div className="border border-border rounded-lg overflow-hidden">
+      <div className="px-5 py-3 bg-muted/40 border-b border-border">
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               {server.name}
               {server.status === "approved" && (
-                <Badge className="text-[10px] bg-[hsl(150_60%_40%)] text-[hsl(0_0%_100%)] border-0">
+                <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
                   <Check className="h-2.5 w-2.5 mr-0.5" /> Verified
                 </Badge>
               )}
               {server.status === "pending" && (
-                <Badge variant="outline" className="text-[10px] border-[hsl(38_90%_50%/0.5)] text-[hsl(38_90%_50%)]">
-                  <Clock className="h-2.5 w-2.5 mr-0.5" /> Pending Review
+                <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5 mr-0.5" /> Pending
                 </Badge>
               )}
             </h3>
@@ -189,13 +189,13 @@ function ServerCard({ server }: { server: McpServer }) {
         {server.species.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {server.species.map(s => (
-              <Badge key={s} className="text-[10px] bg-[hsl(222_47%_20%)] text-[hsl(0_0%_100%)] border-0">{s}</Badge>
+              <Badge key={s} variant="outline" className="text-[10px] border-border">{s}</Badge>
             ))}
           </div>
         )}
         <button
           onClick={() => setShowConfig(!showConfig)}
-          className="text-xs text-[hsl(280_60%_50%)] hover:text-[hsl(280_60%_60%)] font-semibold flex items-center gap-1 transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground font-semibold flex items-center gap-1 transition-colors"
         >
           <ChevronRight className={cn("h-3 w-3 transition-transform", showConfig && "rotate-90")} />
           {showConfig ? "Hide" : "Show"} connection config
@@ -228,7 +228,6 @@ export default function McpRegistry() {
 
   useEffect(() => { fetchServers(); }, []);
 
-  // Always include the official BBQS server at top
   const officialServer: McpServer = {
     id: "bbqs-official",
     name: "BBQS Official",
@@ -245,29 +244,21 @@ export default function McpRegistry() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      {/* Hero */}
-      <div className="mb-10 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(280_60%_25%)] via-[hsl(270_50%_20%)] to-[hsl(260_45%_18%)] p-8 sm:p-10 text-[hsl(0_0%_100%)]">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-[hsl(38_90%_50%/0.12)] rounded-full blur-3xl" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[hsl(280_60%_50%)] flex items-center justify-center">
-              <Plug className="h-6 w-6 text-[hsl(0_0%_100%)]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">MCP Registry</h1>
-              <p className="text-[hsl(280_60%_80%)] text-sm">Community MCP Servers</p>
-            </div>
-          </div>
-          <p className="text-[hsl(280_60%_85%)] text-sm sm:text-base max-w-2xl leading-relaxed">
-            Discover MCP servers built by the BBQS community. Connect them to Claude, Cursor, or any MCP-compatible AI agent to extend your neuroscience workflows.
-          </p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {/* Header — formal, minimal */}
+      <div className="mb-8 border-b-2 border-border pb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Plug className="h-6 w-6 text-foreground" />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">MCP Server Registry</h1>
         </div>
+        <p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">
+          Community-maintained directory of MCP servers for the BBQS ecosystem. Connect them to Claude, Cursor, or any MCP-compatible AI agent to extend neuroscience workflows.
+        </p>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between mb-8">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-xs text-muted-foreground">
           {servers.length + 1} server{servers.length !== 0 ? "s" : ""} registered
         </p>
         <div className="flex gap-3">
@@ -276,7 +267,7 @@ export default function McpRegistry() {
               <Package className="h-3.5 w-3.5 mr-1" /> Build Your Own
             </Button>
           </Link>
-          <Button size="sm" className="text-xs bg-[hsl(280_60%_50%)] hover:bg-[hsl(280_60%_55%)] text-[hsl(0_0%_100%)]" onClick={() => setShowForm(!showForm)}>
+          <Button size="sm" className="text-xs" onClick={() => setShowForm(!showForm)}>
             <Plus className="h-3.5 w-3.5 mr-1" /> Submit Server
           </Button>
         </div>
@@ -284,9 +275,9 @@ export default function McpRegistry() {
 
       {/* Submit Form */}
       {showForm && (
-        <div className="mb-8 border border-[hsl(280_60%_50%/0.3)] rounded-xl p-6 bg-gradient-to-br from-[hsl(280_60%_50%/0.04)] to-transparent">
+        <div className="mb-8 border border-border rounded-lg p-6 bg-muted/20">
           <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-            <Plus className="h-4 w-4 text-[hsl(280_60%_50%)]" /> Submit a New MCP Server
+            <Plus className="h-4 w-4 text-muted-foreground" /> Submit a New MCP Server
           </h3>
           {user ? (
             <SubmitForm onSubmitted={() => { fetchServers(); setShowForm(false); }} />
@@ -294,7 +285,7 @@ export default function McpRegistry() {
             <div className="text-center py-6">
               <p className="text-sm text-muted-foreground mb-3">You need to sign in to submit an MCP server.</p>
               <Link to="/auth">
-                <Button size="sm" className="bg-[hsl(222_47%_20%)] text-[hsl(0_0%_100%)]">Sign In</Button>
+                <Button size="sm">Sign In</Button>
               </Link>
             </div>
           )}
@@ -313,16 +304,35 @@ export default function McpRegistry() {
         )}
       </div>
 
-      {/* Empty state for community */}
+      {/* Empty state */}
       {!loading && servers.length === 0 && (
-        <div className="text-center py-10 border border-dashed border-border rounded-xl mt-4">
+        <div className="text-center py-10 border border-dashed border-border rounded-lg mt-4">
           <Package className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">No community servers yet. Be the first to submit one!</p>
-          <Link to="/mcp-tutorial" className="text-xs text-[hsl(280_60%_50%)] hover:underline mt-2 inline-block">
+          <Link to="/mcp-tutorial" className="text-xs text-muted-foreground hover:text-foreground hover:underline mt-2 inline-block">
             Learn how to build an MCP server →
           </Link>
         </div>
       )}
+
+      {/* Cross-link */}
+      <div className="mt-10">
+        <Link
+          to="/mcp-docs"
+          className="block border border-border rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Plug className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">BBQS MCP Server Documentation</h3>
+                <p className="text-xs text-muted-foreground">Connect to the official BBQS MCP server</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }
