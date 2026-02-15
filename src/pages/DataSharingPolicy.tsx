@@ -1,3 +1,9 @@
+import { useMemo } from "react";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import "@/styles/ag-grid-theme.css";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -15,6 +21,48 @@ const versionHistory = [
   { date: "Feb 11, 2026", step: "Draft Proposal V8", authors: "Suliman Sharif" },
 ];
 
+const VersionHistoryGrid = () => {
+  const defaultColDef = useMemo<ColDef>(() => ({
+    sortable: true,
+    resizable: true,
+    wrapText: true,
+    autoHeight: true,
+    cellStyle: { lineHeight: "1.5", padding: "8px" },
+  }), []);
+
+  const columnDefs = useMemo<ColDef[]>(() => [
+    { field: "date", headerName: "Date", width: 160, flex: 0 },
+    { field: "step", headerName: "Step", flex: 2, minWidth: 250 },
+    {
+      field: "authors",
+      headerName: "Author(s)",
+      flex: 1,
+      minWidth: 180,
+      valueFormatter: (params) => params.value || "—",
+    },
+  ], []);
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold text-foreground mb-3">Version History</h2>
+      <div
+        className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
+        style={{ height: Math.min(500, versionHistory.length * 52 + 56) }}
+      >
+        <AgGridReact
+          rowData={versionHistory}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          animateRows={true}
+          suppressCellFocus={true}
+          enableCellTextSelection={true}
+          domLayout={versionHistory.length <= 10 ? "autoHeight" : "normal"}
+        />
+      </div>
+    </section>
+  );
+};
+
 const DataSharingPolicy = () => {
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
@@ -29,29 +77,7 @@ const DataSharingPolicy = () => {
       </div>
 
       {/* Version History */}
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-foreground mb-3">Version History</h2>
-        <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="text-left p-3 font-medium text-muted-foreground">Date</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Step</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Author(s)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {versionHistory.map((v, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 whitespace-nowrap text-foreground">{v.date}</td>
-                  <td className="p-3 text-foreground">{v.step}</td>
-                  <td className="p-3 text-muted-foreground">{v.authors || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <VersionHistoryGrid />
 
       <Separator className="my-8" />
 
