@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.neuromcp-history]
 verify_jwt = false
+
+[functions.bbqs-api]
+verify_jwt = false

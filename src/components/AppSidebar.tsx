@@ -20,6 +20,7 @@ import {
   Wrench,
   Sparkles,
   ScrollText,
+  Code,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ const developmentItems = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Software Architecture", url: "/design-docs", icon: FileText },
   { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
+  { title: "API", url: "/api-docs", icon: Code },
 ];
 
 export function AppSidebar() {
