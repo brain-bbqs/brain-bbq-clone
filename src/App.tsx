@@ -27,6 +27,8 @@ import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
 import ApiDocs from "./pages/ApiDocs";
 import McpDocs from "./pages/McpDocs";
+import McpTutorial from "./pages/McpTutorial";
+import McpRegistry from "./pages/McpRegistry";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
               <Route path="/data-sharing-policy" element={<DataSharingPolicy />} />
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/mcp-docs" element={<McpDocs />} />
+              <Route path="/mcp-tutorial" element={<McpTutorial />} />
+              <Route path="/mcp-registry" element={<McpRegistry />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

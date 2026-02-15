@@ -85,6 +85,57 @@ export type Database = {
           },
         ]
       }
+      community_mcp_servers: {
+        Row: {
+          approved_at: string | null
+          author: string
+          description: string
+          github_url: string | null
+          id: string
+          name: string
+          pip_package: string | null
+          species: string[] | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          tools: string[]
+          transport: string
+          url: string
+        }
+        Insert: {
+          approved_at?: string | null
+          author: string
+          description: string
+          github_url?: string | null
+          id?: string
+          name: string
+          pip_package?: string | null
+          species?: string[] | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          tools?: string[]
+          transport?: string
+          url: string
+        }
+        Update: {
+          approved_at?: string | null
+          author?: string
+          description?: string
+          github_url?: string | null
+          id?: string
+          name?: string
+          pip_package?: string | null
+          species?: string[] | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          tools?: string[]
+          transport?: string
+          url?: string
+        }
+        Relationships: []
+      }
       knowledge_embeddings: {
         Row: {
           content: string
