@@ -304,7 +304,7 @@ export default function ApiDocs() {
       </div>
 
       {/* REST API Section */}
-      <div className="mb-6">
+      <div id="rest" className="mb-6 scroll-mt-8">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-8 h-8 rounded-lg bg-[hsl(222_47%_20%)] flex items-center justify-center">
             <BookOpen className="h-4 w-4 text-[hsl(0_0%_100%)]" />
@@ -321,7 +321,7 @@ export default function ApiDocs() {
       </div>
 
       {/* ─── MCP SERVER SECTION ─── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(150_60%_20%)] via-[hsl(160_50%_18%)] to-[hsl(170_45%_15%)] p-8 sm:p-10 text-[hsl(0_0%_100%)] mb-8">
+      <div id="mcp" className="scroll-mt-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(150_60%_20%)] via-[hsl(160_50%_18%)] to-[hsl(170_45%_15%)] p-8 sm:p-10 text-[hsl(0_0%_100%)] mb-8">
         <div className="absolute top-0 right-0 w-48 h-48 bg-[hsl(150_60%_50%/0.15)] rounded-full blur-3xl" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
