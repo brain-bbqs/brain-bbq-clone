@@ -93,8 +93,16 @@ export function SpeciesHeatmap() {
     { value: "all", label: "All Levels", color: "" },
     { value: "computational", label: "Computational", color: "#64b5f6" },
     { value: "algorithmic", label: "Algorithmic", color: "#81c784" },
-    { value: "implementation", label: "Implementation", color: "#ffb74d" },
+    { value: "implementation", label: "Implementation", color: "#a78bfa" },
   ];
+
+  // HSL base per filter: blue for computational, green for algorithmic, purple for implementation, gold for all
+  const filterHsl: Record<MarrFilter, { h: number; s: number; l: number }> = {
+    all: { h: 38, s: 90, l: 50 },
+    computational: { h: 210, s: 80, l: 60 },
+    algorithmic: { h: 142, s: 60, l: 50 },
+    implementation: { h: 263, s: 70, l: 65 },
+  };
 
   // Find max for color scale
   const maxVal = useMemo(() => {
@@ -106,8 +114,8 @@ export function SpeciesHeatmap() {
   const getColor = (val: number) => {
     if (val === 0) return "hsl(var(--muted))";
     const intensity = Math.max(0.15, val / maxVal);
-    // Warm gold gradient
-    return `hsla(38, 90%, 50%, ${intensity})`;
+    const { h, s, l } = filterHsl[filter];
+    return `hsla(${h}, ${s}%, ${l}%, ${intensity})`;
   };
 
   const getTextColor = (val: number) => {
@@ -209,9 +217,10 @@ export function SpeciesHeatmap() {
       <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
         <span>Fewer shared</span>
         <div className="flex h-3 rounded overflow-hidden">
-          {[0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((i) => (
-            <div key={i} className="w-6" style={{ backgroundColor: `hsla(38, 90%, 50%, ${i})` }} />
-          ))}
+          {[0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((i) => {
+            const { h, s, l } = filterHsl[filter];
+            return <div key={i} className="w-6" style={{ backgroundColor: `hsla(${h}, ${s}%, ${l}%, ${i})` }} />;
+          })}
         </div>
         <span>More shared</span>
       </div>
