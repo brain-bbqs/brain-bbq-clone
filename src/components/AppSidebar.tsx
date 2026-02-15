@@ -19,6 +19,7 @@ import {
   Brain,
   Wrench,
   Sparkles,
+  ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,10 @@ const communityItems = [
 
 const conferencesItems = [
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
+];
+
+const documentationItems = [
+  { title: "Data Sharing Policy", url: "/data-sharing-policy", icon: ScrollText },
 ];
 
 const developmentItems = [
@@ -170,6 +175,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Conferences</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(conferencesItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Documentation</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(documentationItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
