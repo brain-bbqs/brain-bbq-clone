@@ -27,17 +27,7 @@ function buildSankeyData() {
   const nodes: SNode[] = [];
   const links: SLink[] = [];
 
-  // Left: Marr levels
-  const levels = ["Computational", "Algorithmic", "Implementation"];
-  levels.forEach((l) => nodes.push({ name: l, category: "level", color: LEVEL_COLORS[l] }));
-
-  // Middle: Projects
-  const projectStartIdx = nodes.length;
-  MARR_PROJECTS.forEach((p) =>
-    nodes.push({ name: p.shortName, category: "project", color: p.color })
-  );
-
-  // Right: Species (unique)
+  // Left: Species (unique)
   const speciesSet = new Map<string, number>();
   const speciesColors = [
     "#4fc3f7", "#f06292", "#ce93d8", "#ffb74d", "#81c784",
@@ -54,21 +44,32 @@ function buildSankeyData() {
     }
   });
 
-  // Links: Level → Project
+  // Middle: Projects
+  const projectStartIdx = nodes.length;
+  MARR_PROJECTS.forEach((p) =>
+    nodes.push({ name: p.shortName, category: "project", color: p.color })
+  );
+
+  // Right: Marr levels
+  const levelStartIdx = nodes.length;
+  const levels = ["Computational", "Algorithmic", "Implementation"];
+  levels.forEach((l) => nodes.push({ name: l, category: "level", color: LEVEL_COLORS[l] }));
+
+  // Links: Species → Project
   MARR_PROJECTS.forEach((p, pi) => {
     const projIdx = projectStartIdx + pi;
+    const speciesIdx = speciesSet.get(p.species)!;
+    const totalFeatures = p.computational.length + p.algorithmic.length + p.implementation.length;
+    links.push({ source: speciesIdx, target: projIdx, value: totalFeatures });
+
+    // Links: Project → Level
     const levelKeys = ["computational", "algorithmic", "implementation"] as const;
     levelKeys.forEach((lk, li) => {
       const count = p[lk].length;
       if (count > 0) {
-        links.push({ source: li, target: projIdx, value: count });
+        links.push({ source: projIdx, target: levelStartIdx + li, value: count });
       }
     });
-
-    // Links: Project → Species
-    const speciesIdx = speciesSet.get(p.species)!;
-    const totalFeatures = p.computational.length + p.algorithmic.length + p.implementation.length;
-    links.push({ source: projIdx, target: speciesIdx, value: totalFeatures });
   });
 
   return { nodes, links };
