@@ -85,10 +85,13 @@ const legalItems = [
   { title: "Data Sharing Policy", url: "/data-sharing-policy", icon: Scale },
 ];
 
-const softwareDocItems = [
+const engineeringItems = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Software Architecture", url: "/design-docs", icon: FileText },
   { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
+];
+
+const softwareDocItems = [
   { title: "Public API", url: "/api-docs#rest", icon: Code },
   { title: "MCP Server", url: "/api-docs#mcp", icon: Plug },
 ];
@@ -196,7 +199,12 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Software Documentation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Engineering</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(engineeringItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Developer Tools</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(softwareDocItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
