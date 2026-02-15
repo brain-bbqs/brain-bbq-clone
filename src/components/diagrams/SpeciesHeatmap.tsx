@@ -1,0 +1,242 @@
+import { useMemo, useState } from "react";
+import { MARR_PROJECTS, type MarrProject } from "@/data/marr-projects";
+import { cn } from "@/lib/utils";
+
+interface SharedDetail {
+  level: string;
+  features: string[];
+}
+
+interface CellData {
+  speciesA: string;
+  speciesB: string;
+  total: number;
+  details: SharedDetail[];
+  projectsA: string[];
+  projectsB: string[];
+}
+
+function normalize(s: string) {
+  return s.toLowerCase().trim();
+}
+
+function getSpeciesFeatures(species: string) {
+  const projects = MARR_PROJECTS.filter((p) => p.species === species);
+  const computational = new Set<string>();
+  const algorithmic = new Set<string>();
+  const implementation = new Set<string>();
+
+  projects.forEach((p) => {
+    p.computational.forEach((f) => computational.add(normalize(f)));
+    p.algorithmic.forEach((f) => algorithmic.add(normalize(f)));
+    p.implementation.forEach((f) => implementation.add(normalize(f)));
+  });
+
+  return { computational, algorithmic, implementation, projects };
+}
+
+function buildHeatmapData() {
+  const speciesList = [...new Set(MARR_PROJECTS.map((p) => p.species))].sort();
+  const matrix: CellData[][] = [];
+
+  for (let i = 0; i < speciesList.length; i++) {
+    const row: CellData[] = [];
+    const a = getSpeciesFeatures(speciesList[i]);
+
+    for (let j = 0; j < speciesList.length; j++) {
+      const b = getSpeciesFeatures(speciesList[j]);
+      const details: SharedDetail[] = [];
+
+      const compShared = [...a.computational].filter((f) => b.computational.has(f));
+      if (compShared.length > 0) details.push({ level: "Computational", features: compShared });
+
+      const algoShared = [...a.algorithmic].filter((f) => b.algorithmic.has(f));
+      if (algoShared.length > 0) details.push({ level: "Algorithmic", features: algoShared });
+
+      const implShared = [...a.implementation].filter((f) => b.implementation.has(f));
+      if (implShared.length > 0) details.push({ level: "Implementation", features: implShared });
+
+      const total = compShared.length + algoShared.length + implShared.length;
+
+      row.push({
+        speciesA: speciesList[i],
+        speciesB: speciesList[j],
+        total: i === j ? 0 : total, // zero out diagonal for clarity
+        details: i === j ? [] : details,
+        projectsA: a.projects.map((p) => p.shortName),
+        projectsB: b.projects.map((p) => p.shortName),
+      });
+    }
+    matrix.push(row);
+  }
+
+  return { speciesList, matrix };
+}
+
+export function SpeciesHeatmap() {
+  const { speciesList, matrix } = useMemo(() => buildHeatmapData(), []);
+  const [hovered, setHovered] = useState<CellData | null>(null);
+  const [hoveredPos, setHoveredPos] = useState({ x: 0, y: 0 });
+
+  // Find max for color scale
+  const maxVal = useMemo(() => {
+    let max = 0;
+    matrix.forEach((row) => row.forEach((cell) => { if (cell.total > max) max = cell.total; }));
+    return max;
+  }, [matrix]);
+
+  const getColor = (val: number) => {
+    if (val === 0) return "hsl(var(--muted))";
+    const intensity = Math.max(0.15, val / maxVal);
+    // Warm gold gradient
+    return `hsla(38, 90%, 50%, ${intensity})`;
+  };
+
+  const getTextColor = (val: number) => {
+    if (val === 0) return "hsl(var(--muted-foreground))";
+    const intensity = val / maxVal;
+    return intensity > 0.6 ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))";
+  };
+
+  return (
+    <div className="relative">
+      <div className="overflow-x-auto">
+        <table className="border-collapse mx-auto">
+          <thead>
+            <tr>
+              <th className="p-2 text-xs font-medium text-muted-foreground" />
+              {speciesList.map((s) => (
+                <th
+                  key={s}
+                  className="p-1 text-xs font-medium text-foreground"
+                  style={{ writingMode: "vertical-lr", textOrientation: "mixed", minWidth: 40, height: 100 }}
+                >
+                  <span className="transform rotate-180" style={{ writingMode: "vertical-rl" }}>{s}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {speciesList.map((rowSpecies, i) => (
+              <tr key={rowSpecies}>
+                <td className="p-2 text-xs font-medium text-foreground text-right whitespace-nowrap pr-3">
+                  {rowSpecies}
+                </td>
+                {matrix[i].map((cell, j) => (
+                  <td
+                    key={`${i}-${j}`}
+                    className={cn(
+                      "text-center text-xs font-mono border border-border/30 transition-all duration-150 cursor-pointer",
+                      i === j && "bg-transparent"
+                    )}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: i === j ? "transparent" : getColor(cell.total),
+                      color: getTextColor(cell.total),
+                    }}
+                    onMouseEnter={(e) => {
+                      if (i !== j) {
+                        setHovered(cell);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const container = e.currentTarget.closest('.relative')?.getBoundingClientRect();
+                        if (container) {
+                          setHoveredPos({
+                            x: rect.left - container.left + rect.width / 2,
+                            y: rect.top - container.top,
+                          });
+                        }
+                      }
+                    }}
+                    onMouseLeave={() => setHovered(null)}
+                  >
+                    {i === j ? (
+                      <span className="text-muted-foreground/30">•</span>
+                    ) : (
+                      cell.total || ""
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Color scale legend */}
+      <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
+        <span>Fewer shared</span>
+        <div className="flex h-3 rounded overflow-hidden">
+          {[0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((i) => (
+            <div key={i} className="w-6" style={{ backgroundColor: `hsla(38, 90%, 50%, ${i})` }} />
+          ))}
+        </div>
+        <span>More shared</span>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs text-muted-foreground">
+        <span>Shared features include: <strong className="text-foreground">Computational</strong> (problems), <strong className="text-foreground">Algorithmic</strong> (approaches), and <strong className="text-foreground">Implementation</strong> (tools)</span>
+      </div>
+
+      {/* Hover tooltip */}
+      {hovered && hovered.total > 0 && (
+        <div
+          className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-xl p-4 max-w-sm text-xs"
+          style={{
+            left: Math.min(hoveredPos.x + 10, 600),
+            top: hoveredPos.y - 10,
+            transform: "translateY(-100%)",
+          }}
+        >
+          <div className="font-semibold text-foreground mb-2 text-sm">
+            {hovered.speciesA} ↔ {hovered.speciesB}
+          </div>
+          <div className="text-muted-foreground mb-2">
+            {hovered.total} shared feature{hovered.total !== 1 ? "s" : ""} across Marr levels
+          </div>
+
+          {hovered.details.map((d) => (
+            <div key={d.level} className="mt-2">
+              <span
+                className="font-medium uppercase tracking-wider"
+                style={{
+                  fontSize: 10,
+                  color:
+                    d.level === "Computational"
+                      ? "#64b5f6"
+                      : d.level === "Algorithmic"
+                      ? "#81c784"
+                      : "#ffb74d",
+                }}
+              >
+                {d.level}
+              </span>
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {d.features.map((f) => (
+                  <span key={f} className="bg-secondary px-1.5 py-0.5 rounded text-foreground capitalize" style={{ fontSize: 10 }}>
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="mt-3 pt-2 border-t border-border grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-muted-foreground block mb-1">{hovered.speciesA} projects:</span>
+              {hovered.projectsA.map((p) => (
+                <div key={p} className="text-foreground">{p}</div>
+              ))}
+            </div>
+            <div>
+              <span className="text-muted-foreground block mb-1">{hovered.speciesB} projects:</span>
+              {hovered.projectsB.map((p) => (
+                <div key={p} className="text-foreground">{p}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
