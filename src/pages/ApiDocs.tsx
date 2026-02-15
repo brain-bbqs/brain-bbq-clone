@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Code, Terminal, BookOpen, Zap, Database, MessageSquare, Plug, ChevronRight, ArrowRight, Globe, Settings } from "lucide-react";
+import { Terminal, BookOpen, Plug, ChevronRight, ArrowRight, Globe, Settings, Code } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CodeBlock } from "@/components/api-docs/CodeBlock";
+import { AgGridReact } from "ag-grid-react";
+import { ColDef, ICellRendererParams } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import "@/styles/ag-grid-theme.css";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const BASE_URL = `${SUPABASE_URL}/functions/v1/bbqs-api`;
@@ -105,48 +110,84 @@ const endpoints: Endpoint[] = [
   },
 ];
 
-function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
-  const [showResponse, setShowResponse] = useState(false);
-  const isPost = endpoint.method === "POST";
+// AG Grid row data from endpoints
+const gridRowData = endpoints.map((ep) => ({
+  method: ep.method,
+  path: ep.path,
+  description: ep.description,
+  parameters: ep.params
+    ? ep.params.map((p) => p.name).join(", ")
+    : ep.body
+      ? ep.body.map((p) => `${p.name}${p.required ? "*" : ""}`).join(", ")
+      : "—",
+  auth: "None",
+}));
+
+function MethodCellRenderer(params: ICellRendererParams) {
+  const isPost = params.value === "POST";
   return (
-    <div className="border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className={cn(
-        "px-5 py-4 border-b border-border",
+    <span
+      className={cn(
+        "font-mono text-[11px] font-bold px-2 py-0.5 rounded",
         isPost
-          ? "bg-gradient-to-r from-[hsl(38_90%_50%/0.08)] to-[hsl(38_90%_50%/0.02)]"
-          : "bg-gradient-to-r from-[hsl(222_47%_20%/0.06)] to-transparent"
-      )}>
-        <div className="flex items-center gap-3 mb-2">
-          <Badge
-            className={cn(
-              "text-[11px] font-mono font-bold px-2.5 py-0.5 border-0",
-              isPost
-                ? "bg-[hsl(38_90%_50%)] text-[hsl(222_47%_15%)]"
-                : "bg-[hsl(222_47%_20%)] text-[hsl(0_0%_100%)]"
-            )}
-          >
-            {endpoint.method}
-          </Badge>
-          <code className="text-sm font-mono font-semibold text-foreground">{endpoint.path}</code>
-        </div>
-        <p className="text-sm text-muted-foreground">{endpoint.description}</p>
+          ? "bg-[hsl(229_50%_15%)] text-[hsl(38_90%_50%)]"
+          : "bg-[hsl(229_50%_15%)] text-[hsl(0_0%_100%)]"
+      )}
+    >
+      {params.value}
+    </span>
+  );
+}
+
+function PathCellRenderer(params: ICellRendererParams) {
+  return <code className="font-mono text-xs text-foreground">{params.value}</code>;
+}
+
+function EndpointDetail({ endpoint }: { endpoint: Endpoint }) {
+  const [showResponse, setShowResponse] = useState(false);
+
+  return (
+    <div id={endpoint.path.replace(/[/:]/g, "-")} className="border border-border rounded-lg overflow-hidden">
+      <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center gap-3">
+        <span
+          className={cn(
+            "font-mono text-[11px] font-bold px-2 py-0.5 rounded",
+            endpoint.method === "POST"
+              ? "bg-[hsl(229_50%_15%)] text-[hsl(38_90%_50%)]"
+              : "bg-[hsl(229_50%_15%)] text-[hsl(0_0%_100%)]"
+          )}
+        >
+          {endpoint.method}
+        </span>
+        <code className="text-sm font-mono font-semibold text-foreground">{endpoint.path}</code>
       </div>
 
       <div className="px-5 py-4 space-y-4 bg-card">
+        <p className="text-sm text-muted-foreground">{endpoint.description}</p>
+
         {endpoint.params && endpoint.params.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <Settings className="h-3 w-3" /> Query Parameters
             </h4>
-            <div className="space-y-2 bg-muted/50 rounded-lg p-3">
-              {endpoint.params.map((p) => (
-                <div key={p.name} className="flex items-start gap-2 text-sm">
-                  <code className="text-xs font-mono bg-[hsl(222_47%_20%)] text-[hsl(0_0%_100%)] px-1.5 py-0.5 rounded shrink-0">{p.name}</code>
-                  <span className="text-[hsl(38_90%_50%)] text-xs font-medium">{p.type}</span>
-                  <span className="text-foreground/80 text-xs">— {p.description}</span>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-xs border border-border rounded overflow-hidden">
+              <thead>
+                <tr className="bg-muted/60">
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Name</th>
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Type</th>
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {endpoint.params.map((p) => (
+                  <tr key={p.name} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2 font-mono text-foreground">{p.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.type}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -155,22 +196,32 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <Code className="h-3 w-3" /> Request Body (JSON)
             </h4>
-            <div className="space-y-2 bg-muted/50 rounded-lg p-3">
-              {endpoint.body.map((p) => (
-                <div key={p.name} className="flex items-start gap-2 text-sm">
-                  <code className="text-xs font-mono bg-[hsl(222_47%_20%)] text-[hsl(0_0%_100%)] px-1.5 py-0.5 rounded shrink-0">{p.name}</code>
-                  <span className="text-[hsl(38_90%_50%)] text-xs font-medium">{p.type}</span>
-                  {p.required && <Badge className="text-[10px] px-1.5 py-0 bg-[hsl(0_70%_50%)] text-[hsl(0_0%_100%)] border-0">required</Badge>}
-                  <span className="text-foreground/80 text-xs">— {p.description}</span>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-xs border border-border rounded overflow-hidden">
+              <thead>
+                <tr className="bg-muted/60">
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Field</th>
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Type</th>
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Required</th>
+                  <th className="text-left px-3 py-2 font-semibold text-foreground border-b border-border">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {endpoint.body.map((p) => (
+                  <tr key={p.name} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2 font-mono text-foreground">{p.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.type}</td>
+                    <td className="px-3 py-2">{p.required ? "Yes" : "No"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Terminal className="h-3 w-3" /> Example
+            <Terminal className="h-3 w-3" /> Example Request
           </h4>
           <CodeBlock code={endpoint.example} />
         </div>
@@ -178,7 +229,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
         <div>
           <button
             onClick={() => setShowResponse(!showResponse)}
-            className="text-xs text-[hsl(38_90%_50%)] hover:text-[hsl(38_90%_60%)] font-semibold transition-colors flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground font-semibold transition-colors flex items-center gap-1"
           >
             <ChevronRight className={cn("h-3 w-3 transition-transform", showResponse && "rotate-90")} />
             {showResponse ? "Hide" : "Show"} example response
@@ -195,75 +246,107 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
 }
 
 export default function ApiDocs() {
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      {/* Hero Header */}
-      <div className="mb-10 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(222_47%_18%)] via-[hsl(229_50%_15%)] to-[hsl(222_47%_12%)] p-8 sm:p-10 text-[hsl(0_0%_100%)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(38_90%_50%/0.15)] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[hsl(222_47%_40%/0.2)] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[hsl(38_90%_50%)] flex items-center justify-center">
-              <Terminal className="h-6 w-6 text-[hsl(222_47%_15%)]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">BBQS Public API</h1>
-              <p className="text-[hsl(220_20%_75%)] text-sm">REST Endpoints</p>
-            </div>
-          </div>
-          <p className="text-[hsl(220_20%_80%)] text-sm sm:text-base max-w-2xl leading-relaxed">
-            Programmatic access to BBQS consortium data — projects, species, Marr-level ontology, and an AI-powered Q&A endpoint. <span className="text-[hsl(38_90%_50%)] font-semibold">No authentication required.</span>
-          </p>
-        </div>
-      </div>
+  const columnDefs = useMemo<ColDef[]>(() => [
+    {
+      headerName: "Method",
+      field: "method",
+      width: 100,
+      cellRenderer: MethodCellRenderer,
+      sortable: true,
+    },
+    {
+      headerName: "Endpoint",
+      field: "path",
+      flex: 1,
+      minWidth: 160,
+      cellRenderer: PathCellRenderer,
+      sortable: true,
+    },
+    {
+      headerName: "Description",
+      field: "description",
+      flex: 2,
+      minWidth: 250,
+      sortable: false,
+      wrapText: true,
+      autoHeight: true,
+    },
+    {
+      headerName: "Parameters",
+      field: "parameters",
+      width: 160,
+      sortable: false,
+      cellClass: "font-mono text-xs",
+    },
+    {
+      headerName: "Auth",
+      field: "auth",
+      width: 80,
+      sortable: false,
+    },
+  ], []);
 
-      {/* Quick overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        {[
-          { icon: Database, title: "Cross-Species Explorer", desc: "Query projects, species, and Marr-level features across the consortium.", gradient: "from-[hsl(222_47%_20%/0.1)] to-[hsl(222_47%_20%/0.03)]", iconBg: "bg-[hsl(222_47%_20%)]" },
-          { icon: MessageSquare, title: "AI-Powered Q&A", desc: "Ask natural-language questions grounded in the BBQS knowledge base.", gradient: "from-[hsl(38_90%_50%/0.12)] to-[hsl(38_90%_50%/0.03)]", iconBg: "bg-[hsl(38_90%_50%)]" },
-          { icon: Zap, title: "No Auth Required", desc: "All endpoints are publicly accessible. No API keys or tokens needed.", gradient: "from-[hsl(150_60%_40%/0.1)] to-[hsl(150_60%_40%/0.03)]", iconBg: "bg-[hsl(150_60%_40%)]" },
-        ].map((card) => (
-          <div key={card.title} className={cn("border border-border rounded-xl p-5 bg-gradient-to-br", card.gradient)}>
-            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
-              <card.icon className="h-4.5 w-4.5 text-[hsl(0_0%_100%)]" />
-            </div>
-            <h3 className="text-sm font-semibold text-foreground">{card.title}</h3>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{card.desc}</p>
-          </div>
-        ))}
+  const defaultColDef = useMemo<ColDef>(() => ({
+    resizable: true,
+  }), []);
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {/* Header — formal, minimal */}
+      <div className="mb-8 border-b-2 border-border pb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Terminal className="h-6 w-6 text-foreground" />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">BBQS Public API Reference</h1>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">
+          Programmatic access to BBQS consortium data — projects, species, Marr-level ontology, and an AI-powered Q&A endpoint. All endpoints are publicly accessible. No authentication required.
+        </p>
       </div>
 
       {/* Base URL */}
-      <div className="mb-10 border border-[hsl(38_90%_50%/0.3)] rounded-xl p-5 bg-gradient-to-r from-[hsl(38_90%_50%/0.06)] to-transparent">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(38_90%_50%)] mb-2 flex items-center gap-1.5">
+      <div className="mb-8 border border-border rounded-lg p-4 bg-muted/30">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
           <Globe className="h-3.5 w-3.5" /> Base URL
         </h3>
         <CodeBlock code={BASE_URL} />
-        <p className="text-xs text-muted-foreground mt-2">All REST endpoints are relative to this base URL. No API key or authentication header is needed.</p>
+        <p className="text-xs text-muted-foreground mt-2">All REST endpoints are relative to this base URL.</p>
       </div>
 
-      {/* Endpoints */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 rounded-lg bg-[hsl(222_47%_20%)] flex items-center justify-center">
-            <BookOpen className="h-4 w-4 text-[hsl(0_0%_100%)]" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground">Endpoints</h2>
+      {/* Endpoints Summary — AG Grid */}
+      <div className="mb-8">
+        <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+          <BookOpen className="h-4.5 w-4.5 text-muted-foreground" />
+          Endpoint Summary
+        </h2>
+        <p className="text-xs text-muted-foreground mb-4">Overview of all available API endpoints.</p>
+        <div className="ag-theme-alpine rounded-lg overflow-hidden border border-border" style={{ width: "100%", height: 230 }}>
+          <AgGridReact
+            rowData={gridRowData}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            domLayout="normal"
+            suppressCellFocus
+            suppressRowHoverHighlight={false}
+          />
         </div>
-        <p className="text-sm text-muted-foreground ml-11 mb-6">Standard HTTP endpoints for querying BBQS data. Works with any HTTP client — curl, fetch, Postman, etc.</p>
       </div>
 
-      <div className="space-y-6 mb-10">
+      {/* Detailed Endpoint Reference */}
+      <div className="mb-8">
+        <h2 className="text-lg font-bold text-foreground mb-1">Endpoint Reference</h2>
+        <p className="text-xs text-muted-foreground mb-4">Detailed documentation for each endpoint including parameters, examples, and responses.</p>
+      </div>
+
+      <div className="space-y-5 mb-10">
         {endpoints.map((ep) => (
-          <EndpointCard key={`${ep.method}-${ep.path}`} endpoint={ep} />
+          <EndpointDetail key={`${ep.method}-${ep.path}`} endpoint={ep} />
         ))}
       </div>
 
       {/* Usage Notes */}
-      <div className="mb-10 border border-border rounded-xl p-6 bg-gradient-to-br from-card to-muted/30">
+      <div className="mb-10 border border-border rounded-lg p-5 bg-muted/20">
         <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-[hsl(38_90%_50%)]" />
+          <BookOpen className="h-4 w-4 text-muted-foreground" />
           Usage Notes
         </h3>
         <ul className="text-xs text-muted-foreground space-y-2">
@@ -276,7 +359,7 @@ export default function ApiDocs() {
             "Endpoints are rate-limited to prevent abuse",
           ].map((note, i) => (
             <li key={i} className="flex items-start gap-2">
-              <ArrowRight className="h-3 w-3 text-[hsl(38_90%_50%)] shrink-0 mt-0.5" />
+              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
               <span>{note}</span>
             </li>
           ))}
@@ -286,19 +369,17 @@ export default function ApiDocs() {
       {/* Link to MCP */}
       <Link
         to="/mcp-docs"
-        className="block border border-[hsl(150_60%_40%/0.3)] rounded-xl p-5 bg-gradient-to-r from-[hsl(150_60%_40%/0.06)] to-transparent hover:shadow-md transition-shadow group"
+        className="block border border-border rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors group"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[hsl(150_60%_40%)] flex items-center justify-center">
-              <Plug className="h-5 w-5 text-[hsl(0_0%_100%)]" />
-            </div>
+            <Plug className="h-5 w-5 text-muted-foreground" />
             <div>
-              <h3 className="text-sm font-bold text-foreground">Looking for MCP Server docs?</h3>
-              <p className="text-xs text-muted-foreground">Connect BBQS to Claude, Cursor, Windsurf, and other AI agents →</p>
+              <h3 className="text-sm font-semibold text-foreground">MCP Server Documentation</h3>
+              <p className="text-xs text-muted-foreground">Connect BBQS to Claude, Cursor, Windsurf, and other AI agents</p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
         </div>
       </Link>
     </div>
