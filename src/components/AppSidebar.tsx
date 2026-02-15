@@ -21,6 +21,8 @@ import {
   Sparkles,
   ScrollText,
   Code,
+  Plug,
+  Scale,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -79,15 +81,16 @@ const conferencesItems = [
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
 ];
 
-const documentationItems = [
-  { title: "Data Sharing Policy", url: "/data-sharing-policy", icon: ScrollText },
+const legalItems = [
+  { title: "Data Sharing Policy", url: "/data-sharing-policy", icon: Scale },
 ];
 
-const developmentItems = [
+const softwareDocItems = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Software Architecture", url: "/design-docs", icon: FileText },
   { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
-  { title: "API", url: "/api-docs", icon: Code },
+  { title: "Public API", url: "/api-docs#rest", icon: Code },
+  { title: "MCP Server", url: "/api-docs#mcp", icon: Plug },
 ];
 
 export function AppSidebar() {
@@ -188,13 +191,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Documentation</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(documentationItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Legal</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(legalItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Development</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(developmentItems)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Software Documentation</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(softwareDocItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
