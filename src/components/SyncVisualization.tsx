@@ -5,9 +5,11 @@ interface SyncVisualizationProps {
   speciesB: string;
   sharedBehaviors: string[];
   sharedTools: string[];
+  imageA?: string;
+  imageB?: string;
 }
 
-export function SyncVisualization({ speciesA, speciesB, sharedBehaviors, sharedTools }: SyncVisualizationProps) {
+export function SyncVisualization({ speciesA, speciesB, sharedBehaviors, sharedTools, imageA, imageB }: SyncVisualizationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -184,15 +186,21 @@ export function SyncVisualization({ speciesA, speciesB, sharedBehaviors, sharedT
     <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Species labels */}
-      <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
-        <div className="text-left ml-12">
-          <p className="text-xs font-bold text-foreground">{speciesA.split(" (")[0]}</p>
-          <p className="text-[10px] text-muted-foreground italic">{speciesA.match(/\((.+)\)/)?.[1]}</p>
+      {/* Species labels with images */}
+      <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
+        <div className="flex items-center gap-2 ml-1">
+          {imageA && <img src={imageA} alt={speciesA} className="w-12 h-12 rounded-full object-cover border-2 border-accent/30 bg-background shadow-md" />}
+          <div className="text-left">
+            <p className="text-xs font-bold text-foreground">{speciesA.split(" (")[0]}</p>
+            <p className="text-[10px] text-muted-foreground italic">{speciesA.match(/\((.+)\)/)?.[1]}</p>
+          </div>
         </div>
-        <div className="text-right mr-12">
-          <p className="text-xs font-bold text-foreground">{speciesB.split(" (")[0]}</p>
-          <p className="text-[10px] text-muted-foreground italic">{speciesB.match(/\((.+)\)/)?.[1]}</p>
+        <div className="flex items-center gap-2 mr-1">
+          <div className="text-right">
+            <p className="text-xs font-bold text-foreground">{speciesB.split(" (")[0]}</p>
+            <p className="text-[10px] text-muted-foreground italic">{speciesB.match(/\((.+)\)/)?.[1]}</p>
+          </div>
+          {imageB && <img src={imageB} alt={speciesB} className="w-12 h-12 rounded-full object-cover border-2 border-accent/30 bg-background shadow-md" />}
         </div>
       </div>
       
