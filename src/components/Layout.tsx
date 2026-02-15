@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { WalkthroughButton } from "@/components/WalkthroughButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </SidebarInset>
+        <WalkthroughButton />
       </div>
     </SidebarProvider>
   );
