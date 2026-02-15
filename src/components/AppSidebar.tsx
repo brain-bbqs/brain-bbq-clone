@@ -65,7 +65,6 @@ const crossSpeciesItems = [
 
 const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
-  { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
 ];
 
 const directoryItems = [
