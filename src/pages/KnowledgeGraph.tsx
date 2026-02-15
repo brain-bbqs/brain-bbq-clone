@@ -1,21 +1,20 @@
-import { MarrChordDiagram } from "@/components/diagrams/MarrChordDiagram";
+import { MarrSankeyDiagram } from "@/components/diagrams/MarrSankeyDiagram";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 
 export default function KnowledgeGraph() {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="text-center mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
           BBQS Knowledge Graph
         </h1>
         <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
-          Inter-project relationships mapped through Marr's three levels of analysis.
-          Thicker ribbons indicate more shared approaches between projects.
-          Hover to explore connections.
+          How Marr's three levels of analysis flow through BBQS projects to each species.
+          Hover over any node to trace its connections.
         </p>
       </div>
 
-      <MarrChordDiagram />
+      <MarrSankeyDiagram />
 
       {/* Project index */}
       <div className="mt-10 border border-border rounded-lg p-4 sm:p-6">
