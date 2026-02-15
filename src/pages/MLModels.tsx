@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Search } from "lucide-react";
+import { ExternalLink, Search, ArrowRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SyncVisualization } from "@/components/SyncVisualization";
 
 interface MLModel {
   name: string;
@@ -168,9 +169,10 @@ const MLModels = () => {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Cross-Species Synchronization</h1>
-        <p className="text-muted-foreground">
+      {/* Header */}
+      <div className="mb-8 border-b-2 border-border pb-6">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Cross-Species Synchronization</h1>
+        <p className="text-sm text-muted-foreground max-w-3xl">
           Shared ML models and behavioral pipelines across species, organized by cross-species synchronization pairs.
         </p>
       </div>
@@ -189,48 +191,66 @@ const MLModels = () => {
 
         {syncPairs.map((pair) => (
           <TabsContent key={pair.id} value={pair.id} className="space-y-6">
-            {/* Overview card */}
-            <div className="rounded-lg border border-border p-5 bg-card/50">
-              <h2 className="text-lg font-semibold text-foreground mb-2">{pair.speciesA} ↔ {pair.speciesB}</h2>
-              <p className="text-sm text-muted-foreground mb-4">{pair.description}</p>
+            {/* Sync Visualization */}
+            <SyncVisualization
+              speciesA={pair.speciesA}
+              speciesB={pair.speciesB}
+              sharedBehaviors={pair.sharedBehaviors}
+              sharedTools={pair.sharedTools}
+            />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Shared Behaviors</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {pair.sharedBehaviors.map((b) => (
-                      <Badge key={b} variant="secondary" className="text-xs">{b}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Shared Tools</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {pair.sharedTools.map((t) => (
-                      <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
-                    ))}
-                  </div>
-                </div>
+            {/* Details card */}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="px-5 py-3 bg-muted/40 border-b border-border">
+                <h2 className="text-sm font-bold text-foreground">Synchronization Details</h2>
               </div>
+              <div className="px-5 py-4 bg-card space-y-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">{pair.description}</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">{pair.speciesA.split(" (")[0]} Projects</p>
-                  {pair.projectsA.map((p, i) => (
-                    <div key={i} className="text-sm">
-                      <span className="font-medium text-foreground">{p.title}</span>
-                      <span className="text-muted-foreground"> — {p.pi}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Shared Behaviors</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pair.sharedBehaviors.map((b) => (
+                        <Badge key={b} variant="secondary" className="text-xs">{b}</Badge>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Shared Tools</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pair.sharedTools.map((t) => (
+                        <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">{pair.speciesB.split(" (")[0]} Projects</p>
-                  {pair.projectsB.map((p, i) => (
-                    <div key={i} className="text-sm">
-                      <span className="font-medium text-foreground">{p.title}</span>
-                      <span className="text-muted-foreground"> — {p.pi}</span>
-                    </div>
-                  ))}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{pair.speciesA.split(" (")[0]} Projects</p>
+                    {pair.projectsA.map((p, i) => (
+                      <div key={i} className="text-sm flex items-start gap-1.5">
+                        <ArrowRight className="h-3 w-3 text-muted-foreground mt-1 shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">{p.title}</span>
+                          <span className="text-muted-foreground"> — {p.pi}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{pair.speciesB.split(" (")[0]} Projects</p>
+                    {pair.projectsB.map((p, i) => (
+                      <div key={i} className="text-sm flex items-start gap-1.5">
+                        <ArrowRight className="h-3 w-3 text-muted-foreground mt-1 shrink-0" />
+                        <span>
+                          <span className="font-medium text-foreground">{p.title}</span>
+                          <span className="text-muted-foreground"> — {p.pi}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
