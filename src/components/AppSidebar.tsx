@@ -1,36 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import {
-  Home,
-  FolderOpen,
-  Calendar,
-  Users,
-  BookOpen,
-  Bell,
-  Map,
-  Briefcase,
-  CalendarDays,
-  Info,
-  FileText,
-  FlaskConical,
-  MessageSquare,
-  LogIn,
-  LogOut,
-  Bot,
-  Brain,
-  Wrench,
-  Sparkles,
-  ScrollText,
-  Code,
-  Plug,
-  Scale,
-  Package,
-  Globe,
-} from "lucide-react";
+import { LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import bbqsLogo from "@/assets/bbqs-logo.png";
-import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import bbqsLogoVideo from "@/assets/bbqs-logo-animated.mp4";
+import { sidebarGroups } from "@/data/sidebar-config";
 
 import {
   Sidebar,
@@ -47,59 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ReportIssueDialog } from "@/components/ReportIssueDialog";
-
-const mainItems = [
-  { title: "Home", url: "/", icon: Home },
-  { title: "About", url: "/about", icon: Info },
-];
-
-const knowledgeBaseItems = [
-  { title: "Projects", url: "/projects", icon: FolderOpen },
-  { title: "Publications", url: "/publications", icon: FileText },
-  { title: "Tools", url: "/resources", icon: Wrench },
-];
-
-const crossSpeciesItems = [
-  { title: "Synchronization", url: "/ml-models", icon: Brain },
-  { title: "Explorer", url: "/knowledge-graph", icon: FlaskConical },
-];
-
-const aiItems = [
-  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
-  { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
-];
-
-const directoryItems = [
-  { title: "Investigators", url: "/investigators", icon: Users },
-  { title: "Working Groups", url: "/working-groups", icon: Users },
-];
-
-const communityItems = [
-  { title: "Announcements", url: "/announcements", icon: Bell },
-  { title: "Job Board", url: "#", icon: Briefcase },
-  { title: "Calendar", url: "#", icon: CalendarDays },
-];
-
-const conferencesItems = [
-  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
-];
-
-const legalItems = [
-  { title: "Data Sharing Policy", url: "/data-sharing-policy", icon: Scale },
-];
-
-const engineeringItems = [
-  { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Software Architecture", url: "/design-docs", icon: FileText },
-  { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
-];
-
-const softwareDocItems = [
-  { title: "Public API", url: "/api-docs", icon: Code },
-  { title: "MCP Server", url: "/mcp-docs", icon: Plug },
-  { title: "Build MCP", url: "/mcp-tutorial", icon: Package },
-  { title: "MCP Registry", url: "/mcp-registry", icon: Globe },
-];
+import type { NavItem } from "@/data/sidebar-config";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -110,7 +31,7 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
 
-  const renderMenuItems = (items: typeof mainItems) => (
+  const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.title}>
@@ -163,51 +84,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Main</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(mainItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Cross-Species</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(crossSpeciesItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Artificial Intelligence</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Knowledge Base</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(knowledgeBaseItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Community</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems([...directoryItems, ...communityItems])}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Conferences</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(conferencesItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Developer Tools</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(softwareDocItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Engineering</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(engineeringItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Legal</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(legalItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
+        {sidebarGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>{renderMenuItems(group.items)}</SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="p-2 space-y-2">
