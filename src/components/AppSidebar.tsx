@@ -194,11 +194,6 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Legal</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(legalItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Engineering</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(engineeringItems)}</SidebarGroupContent>
         </SidebarGroup>
@@ -206,6 +201,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Developer Tools</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(softwareDocItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Legal</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(legalItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
