@@ -184,7 +184,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Community</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(communityItems)}</SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems([...directoryItems, ...communityItems])}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
@@ -207,10 +207,6 @@ export function AppSidebar() {
           <SidebarGroupContent>{renderMenuItems(legalItems)}</SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Directory</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(directoryItems)}</SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-2 space-y-2">
