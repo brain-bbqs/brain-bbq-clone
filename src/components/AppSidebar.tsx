@@ -49,13 +49,13 @@ const mainItems = [
 const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
-  { title: "Cross-Species Sync", url: "/ml-models", icon: Brain },
   { title: "Tools", url: "/resources", icon: Wrench },
   { title: "Knowledge Graph", url: "/knowledge-graph", icon: FlaskConical },
 ];
 
 const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
+  { title: "Cross-Species Sync", url: "/ml-models", icon: Brain },
   { title: "Consortia History", url: "/consortia-history", icon: MessageSquare },
 ];
 
