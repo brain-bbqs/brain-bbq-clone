@@ -52,12 +52,15 @@ const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
   { title: "Tools", url: "/resources", icon: Wrench },
-  { title: "Cross-Species Explorer", url: "/knowledge-graph", icon: FlaskConical },
+];
+
+const crossSpeciesItems = [
+  { title: "Synchronization", url: "/ml-models", icon: Brain },
+  { title: "Explorer", url: "/knowledge-graph", icon: FlaskConical },
 ];
 
 const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
-  { title: "Cross-Species Sync", url: "/ml-models", icon: Brain },
   { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
 ];
 
@@ -152,6 +155,11 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Main</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(mainItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">Cross-Species</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(crossSpeciesItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
