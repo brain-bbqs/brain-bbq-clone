@@ -158,18 +158,6 @@ export default function NeuroMCP() {
 
   return (
     <div className="flex h-[calc(100vh-3rem)]">
-      {/* Left Sidebar — Chat History */}
-      <div className="hidden md:flex flex-col w-72 lg:w-80 border-r border-border bg-muted/30">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" />
-            Consortium Chat Archive
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">Search workflows & conversations across the team</p>
-        </div>
-        {session && <ChatHistory accessToken={session.access_token} mode="sidebar" />}
-      </div>
-
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
