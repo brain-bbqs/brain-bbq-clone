@@ -1,9 +1,11 @@
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageMeta } from "@/components/PageMeta";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta title="About" description="Learn about the BBQS consortium — mission, vision, and organizational structure for brain behavior quantification research." />
       <div className="max-w-4xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="mb-10">

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://brain-bbq-clone.lovable.app/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/about</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/projects</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/publications</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/resources</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/knowledge-graph</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/neuromcp</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/investigators</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/working-groups</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/announcements</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/sfn-2025</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/data-sharing-policy</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/api-docs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/mcp-docs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/mcp-tutorial</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/mcp-registry</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/ml-models</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/roadmap</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/design-docs</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://brain-bbq-clone.lovable.app/agentic-framework</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>

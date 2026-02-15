@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageMeta } from "@/components/PageMeta";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -169,6 +170,7 @@ const MLModels = () => {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
+      <PageMeta title="Cross-Species Synchronization" description="Shared ML models and behavioral pipelines across species — cross-species synchronization pairs in the BBQS consortium." />
       {/* Header */}
       <div className="mb-8 border-b-2 border-border pb-6">
         <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">Cross-Species Synchronization</h1>
