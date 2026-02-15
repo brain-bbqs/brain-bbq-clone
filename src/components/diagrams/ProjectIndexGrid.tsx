@@ -6,7 +6,8 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
 import { MARR_PROJECTS, type MarrProject } from "@/data/marr-projects";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Code, List, Copy, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const FeatureBadges = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
@@ -27,6 +28,106 @@ const SpeciesBadge = ({ value, data }: { value: string; data: MarrProject }) => 
     <span>{value}</span>
   </div>
 );
+
+function ProjectDetailPanel({ project }: { project: MarrProject }) {
+  const [view, setView] = useState<"list" | "json">("list");
+  const [copied, setCopied] = useState(false);
+
+  const jsonData = useMemo(() => JSON.stringify({
+    id: project.id,
+    shortName: project.shortName,
+    pi: project.pi,
+    species: project.species,
+    computational: project.computational,
+    algorithmic: project.algorithmic,
+    implementation: project.implementation,
+  }, null, 2), [project]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(jsonData);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="p-4 bg-muted/30 border-t border-border text-sm space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="font-semibold text-foreground">
+          {project.shortName} — Full Data Structure
+        </h4>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "p-1.5 rounded text-xs transition-colors",
+              view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+            title="List view"
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setView("json")}
+            className={cn(
+              "p-1.5 rounded text-xs transition-colors",
+              view === "json" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+            title="JSON view"
+          >
+            <Code className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {view === "list" ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#64b5f6" }}>Computational</div>
+              <ul className="space-y-0.5">
+                {project.computational.map((f) => (
+                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#81c784" }}>Algorithmic</div>
+              <ul className="space-y-0.5">
+                {project.algorithmic.map((f) => (
+                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#a78bfa" }}>Implementation</div>
+              <ul className="space-y-0.5">
+                {project.implementation.map((f) => (
+                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Grant: <span className="font-mono text-foreground/70">{project.id}</span> · PI: {project.pi} · Species: {project.species}
+          </div>
+        </>
+      ) : (
+        <div className="relative">
+          <button
+            onClick={handleCopy}
+            className="absolute top-2 right-2 p-1.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
+            title="Copy JSON"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+          <pre className="bg-background border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre">
+            {jsonData}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ProjectIndexGrid() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -110,43 +211,7 @@ export function ProjectIndexGrid() {
   }, [expandedId]);
 
   const fullWidthCellRenderer = useCallback((params: any) => {
-    const project = params.data as MarrProject;
-    return (
-      <div className="p-4 bg-muted/30 border-t border-border text-sm space-y-3">
-        <h4 className="font-semibold text-foreground">
-          {project.shortName} — Full Data Structure
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-blue-400 font-medium mb-1">Computational</div>
-            <ul className="space-y-0.5">
-              {project.computational.map((f) => (
-                <li key={f} className="text-foreground/80 text-xs">• {f}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wider text-green-400 font-medium mb-1">Algorithmic</div>
-            <ul className="space-y-0.5">
-              {project.algorithmic.map((f) => (
-                <li key={f} className="text-foreground/80 text-xs">• {f}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wider text-orange-400 font-medium mb-1">Implementation</div>
-            <ul className="space-y-0.5">
-              {project.implementation.map((f) => (
-                <li key={f} className="text-foreground/80 text-xs">• {f}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground mt-2">
-          Grant: <span className="font-mono text-foreground/70">{project.id}</span> · PI: {project.pi} · Species: {project.species}
-        </div>
-      </div>
-    );
+    return <ProjectDetailPanel project={params.data as MarrProject} />;
   }, []);
 
   return (
