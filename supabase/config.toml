@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.bbqs-api]
 verify_jwt = false
+
+[functions.bbqs-mcp]
+verify_jwt = false
