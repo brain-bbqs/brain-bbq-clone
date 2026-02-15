@@ -29,7 +29,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import bbqsLogo from "@/assets/bbqs-logo.png";
-import bbqsLogoVideo from "@/assets/bbqs-logo-animated.mp4";
+import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 
 import {
   Sidebar,
@@ -141,13 +141,10 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-              <video 
-                src={bbqsLogoVideo} 
-                autoPlay 
-                loop 
-                muted 
-                playsInline
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-[hsl(0_0%_100%)]">
+              <img 
+                src={bbqsLogoIcon} 
+                alt="BBQS" 
                 className="w-full h-full object-cover"
               />
             </div>
