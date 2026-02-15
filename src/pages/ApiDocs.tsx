@@ -1,32 +1,12 @@
 import { useState } from "react";
-import { Code, Copy, Check, Terminal, BookOpen, Zap, Database, MessageSquare, Plug, ChevronRight, ArrowRight, Globe, Settings, Play, Search, Layers } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Code, Terminal, BookOpen, Zap, Database, MessageSquare, Plug, ChevronRight, ArrowRight, Globe, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CodeBlock } from "@/components/api-docs/CodeBlock";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const BASE_URL = `${SUPABASE_URL}/functions/v1/bbqs-api`;
-const MCP_URL = `${SUPABASE_URL}/functions/v1/bbqs-mcp`;
-
-const mcpTools = [
-  { name: "search_projects", description: "Search projects by species, PI, or free-text query. Returns Marr-level features.", params: ["species", "pi", "query"], icon: Search },
-  { name: "get_ontology", description: "Get the complete Marr-level feature ontology across all BBQS projects.", params: [], icon: Layers },
-  { name: "list_species", description: "List all species with project counts and associated project names.", params: [], icon: Database },
-  { name: "ask_bbqs", description: "Ask a natural-language question using RAG over the BBQS knowledge base.", params: ["question"], icon: MessageSquare },
-];
-
-const claudeConfig = `{
-  "mcpServers": {
-    "bbqs": {
-      "url": "${SUPABASE_URL}/functions/v1/bbqs-mcp"
-    }
-  }
-}`;
-
-const cursorConfig = `{
-  "name": "bbqs",
-  "transport": "streamable-http",
-  "url": "${SUPABASE_URL}/functions/v1/bbqs-mcp"
-}`;
 
 interface Endpoint {
   method: "GET" | "POST";
@@ -125,29 +105,6 @@ const endpoints: Endpoint[] = [
   },
 ];
 
-function CodeBlock({ code, language = "bash" }: { code: string; language?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <div className="relative group">
-      <button
-        onClick={handleCopy}
-        className="absolute top-2 right-2 p-1.5 rounded bg-secondary/80 hover:bg-secondary text-secondary-foreground opacity-0 group-hover:opacity-100 transition-opacity z-10"
-        title="Copy"
-      >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      </button>
-      <pre className="bg-[hsl(229_50%_12%)] border border-[hsl(229_45%_20%)] rounded-lg p-4 text-xs font-mono text-[hsl(220_20%_85%)] overflow-x-auto whitespace-pre-wrap break-all">
-        {code}
-      </pre>
-    </div>
-  );
-}
-
 function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
   const [showResponse, setShowResponse] = useState(false);
   const isPost = endpoint.method === "POST";
@@ -237,23 +194,6 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
   );
 }
 
-function StepCard({ step, number, color }: { step: { title: string; description: string; detail?: string }; number: number; color: string }) {
-  return (
-    <div className="flex gap-4">
-      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-[hsl(0_0%_100%)]", color)}>
-        {number}
-      </div>
-      <div className="flex-1 pb-6">
-        <h4 className="text-sm font-semibold text-foreground mb-1">{step.title}</h4>
-        <p className="text-xs text-muted-foreground">{step.description}</p>
-        {step.detail && (
-          <p className="text-xs text-muted-foreground mt-1 italic">{step.detail}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function ApiDocs() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -268,7 +208,7 @@ export default function ApiDocs() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">BBQS Public API</h1>
-              <p className="text-[hsl(220_20%_75%)] text-sm">& MCP Server</p>
+              <p className="text-[hsl(220_20%_75%)] text-sm">REST Endpoints</p>
             </div>
           </div>
           <p className="text-[hsl(220_20%_80%)] text-sm sm:text-base max-w-2xl leading-relaxed">
@@ -282,7 +222,7 @@ export default function ApiDocs() {
         {[
           { icon: Database, title: "Cross-Species Explorer", desc: "Query projects, species, and Marr-level features across the consortium.", gradient: "from-[hsl(222_47%_20%/0.1)] to-[hsl(222_47%_20%/0.03)]", iconBg: "bg-[hsl(222_47%_20%)]" },
           { icon: MessageSquare, title: "AI-Powered Q&A", desc: "Ask natural-language questions grounded in the BBQS knowledge base.", gradient: "from-[hsl(38_90%_50%/0.12)] to-[hsl(38_90%_50%/0.03)]", iconBg: "bg-[hsl(38_90%_50%)]" },
-          { icon: Plug, title: "MCP Integration", desc: "Connect directly to Claude, Cursor, or any MCP-compatible AI agent.", gradient: "from-[hsl(150_60%_40%/0.1)] to-[hsl(150_60%_40%/0.03)]", iconBg: "bg-[hsl(150_60%_40%)]" },
+          { icon: Zap, title: "No Auth Required", desc: "All endpoints are publicly accessible. No API keys or tokens needed.", gradient: "from-[hsl(150_60%_40%/0.1)] to-[hsl(150_60%_40%/0.03)]", iconBg: "bg-[hsl(150_60%_40%)]" },
         ].map((card) => (
           <div key={card.title} className={cn("border border-border rounded-xl p-5 bg-gradient-to-br", card.gradient)}>
             <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
@@ -303,220 +243,37 @@ export default function ApiDocs() {
         <p className="text-xs text-muted-foreground mt-2">All REST endpoints are relative to this base URL. No API key or authentication header is needed.</p>
       </div>
 
-      {/* REST API Section */}
-      <div id="rest" className="mb-6 scroll-mt-8">
+      {/* Endpoints */}
+      <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-8 h-8 rounded-lg bg-[hsl(222_47%_20%)] flex items-center justify-center">
             <BookOpen className="h-4 w-4 text-[hsl(0_0%_100%)]" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">REST API Endpoints</h2>
+          <h2 className="text-xl font-bold text-foreground">Endpoints</h2>
         </div>
         <p className="text-sm text-muted-foreground ml-11 mb-6">Standard HTTP endpoints for querying BBQS data. Works with any HTTP client — curl, fetch, Postman, etc.</p>
       </div>
 
-      <div className="space-y-6 mb-14">
+      <div className="space-y-6 mb-10">
         {endpoints.map((ep) => (
           <EndpointCard key={`${ep.method}-${ep.path}`} endpoint={ep} />
         ))}
       </div>
 
-      {/* ─── MCP SERVER SECTION ─── */}
-      <div id="mcp" className="scroll-mt-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(150_60%_20%)] via-[hsl(160_50%_18%)] to-[hsl(170_45%_15%)] p-8 sm:p-10 text-[hsl(0_0%_100%)] mb-8">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-[hsl(150_60%_50%/0.15)] rounded-full blur-3xl" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[hsl(150_60%_45%)] flex items-center justify-center">
-              <Plug className="h-6 w-6 text-[hsl(0_0%_100%)]" />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold">MCP Server</h2>
-              <p className="text-[hsl(150_60%_75%)] text-sm">Model Context Protocol</p>
-            </div>
-          </div>
-          <p className="text-[hsl(150_60%_85%)] text-sm max-w-2xl leading-relaxed">
-            Connect BBQS as a native tool provider to AI agents. The MCP server exposes structured tools that Claude, Cursor, Windsurf, and other MCP-compatible clients can call directly — no custom code needed.
-          </p>
-        </div>
-      </div>
-
-      {/* MCP URL */}
-      <div className="mb-8 border border-[hsl(150_60%_40%/0.3)] rounded-xl p-5 bg-gradient-to-r from-[hsl(150_60%_40%/0.06)] to-transparent">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(150_60%_40%)] mb-2 flex items-center gap-1.5">
-          <Globe className="h-3.5 w-3.5" /> MCP Server URL
-        </h3>
-        <CodeBlock code={MCP_URL} />
-        <p className="text-xs text-muted-foreground mt-2">Uses Streamable HTTP transport — no SSE or WebSocket required.</p>
-      </div>
-
-      {/* Available Tools */}
-      <div className="mb-8">
-        <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Zap className="h-4 w-4 text-[hsl(38_90%_50%)]" /> Available Tools
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {mcpTools.map((tool) => (
-            <div key={tool.name} className="border border-border rounded-xl p-4 bg-card hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-[hsl(222_47%_20%)] flex items-center justify-center">
-                  <tool.icon className="h-3.5 w-3.5 text-[hsl(0_0%_100%)]" />
-                </div>
-                <code className="text-xs font-mono font-bold text-[hsl(38_90%_50%)]">{tool.name}</code>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
-              {tool.params.length > 0 && (
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {tool.params.map(p => (
-                    <Badge key={p} variant="outline" className="text-[10px] font-mono border-border">{p}</Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── SETUP GUIDES ─── */}
-      <div className="mb-6">
-        <h3 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
-          <Settings className="h-5 w-5 text-[hsl(38_90%_50%)]" /> Setup Guides
-        </h3>
-        <p className="text-sm text-muted-foreground">Step-by-step instructions for connecting BBQS to your AI tool of choice.</p>
-      </div>
-
-      {/* Claude Desktop */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-[hsl(25_80%_50%/0.1)] to-transparent border-b border-border">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <span className="w-6 h-6 rounded bg-[hsl(25_80%_50%)] text-[hsl(0_0%_100%)] flex items-center justify-center text-xs font-bold">C</span>
-            Claude Desktop
-          </h4>
-        </div>
-        <div className="px-5 py-5 bg-card space-y-0">
-          <StepCard number={1} color="bg-[hsl(222_47%_20%)]" step={{
-            title: "Open Claude Desktop settings",
-            description: "Click the Claude menu in your menu bar → Settings → Developer → Edit Config.",
-            detail: "On macOS, the config file is at ~/Library/Application Support/Claude/claude_desktop_config.json"
-          }} />
-          <StepCard number={2} color="bg-[hsl(38_90%_50%)]" step={{
-            title: "Add the BBQS MCP server config",
-            description: "Paste the JSON below into your claude_desktop_config.json file. If you already have other MCP servers, add the \"bbqs\" key inside the existing \"mcpServers\" object.",
-          }} />
-          <div className="ml-12 mb-4">
-            <CodeBlock code={claudeConfig} language="json" />
-          </div>
-          <StepCard number={3} color="bg-[hsl(150_60%_40%)]" step={{
-            title: "Restart Claude Desktop",
-            description: "Fully quit and reopen Claude Desktop. You should see a hammer 🔨 icon in the chat input — click it to verify the BBQS tools are listed.",
-            detail: "You'll see search_projects, get_ontology, list_species, and ask_bbqs in the tools list."
-          }} />
-          <StepCard number={4} color="bg-[hsl(280_60%_50%)]" step={{
-            title: "Start asking questions!",
-            description: "Try: \"Use BBQS to find all projects studying zebrafish\" or \"What pose estimation tools do BBQS projects use?\"",
-          }} />
-        </div>
-      </div>
-
-      {/* Cursor */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-[hsl(220_80%_55%/0.1)] to-transparent border-b border-border">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <span className="w-6 h-6 rounded bg-[hsl(220_80%_55%)] text-[hsl(0_0%_100%)] flex items-center justify-center text-xs font-bold">⌘</span>
-            Cursor
-          </h4>
-        </div>
-        <div className="px-5 py-5 bg-card space-y-0">
-          <StepCard number={1} color="bg-[hsl(222_47%_20%)]" step={{
-            title: "Open Cursor Settings",
-            description: "Go to Cursor → Settings → MCP Servers (or press Cmd+Shift+P → \"MCP: Add Server\").",
-          }} />
-          <StepCard number={2} color="bg-[hsl(38_90%_50%)]" step={{
-            title: "Add a new MCP server",
-            description: "Click \"+ Add Server\" and paste the config below. Select \"Streamable HTTP\" as the transport type.",
-          }} />
-          <div className="ml-12 mb-4">
-            <CodeBlock code={cursorConfig} language="json" />
-          </div>
-          <StepCard number={3} color="bg-[hsl(150_60%_40%)]" step={{
-            title: "Verify the connection",
-            description: "The BBQS tools should appear in the MCP panel. You can now reference them in your Cursor chat with @bbqs.",
-          }} />
-        </div>
-      </div>
-
-      {/* Windsurf & Generic */}
-      <div className="mb-6 border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-[hsl(280_60%_50%/0.1)] to-transparent border-b border-border">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <span className="w-6 h-6 rounded bg-[hsl(280_60%_50%)] text-[hsl(0_0%_100%)] flex items-center justify-center text-xs font-bold">◆</span>
-            Windsurf & Other MCP Clients
-          </h4>
-        </div>
-        <div className="px-5 py-5 bg-card space-y-0">
-          <StepCard number={1} color="bg-[hsl(222_47%_20%)]" step={{
-            title: "Find the MCP settings in your client",
-            description: "Most MCP-compatible tools have a configuration file or UI for adding MCP servers. Check your tool's documentation for the exact location.",
-          }} />
-          <StepCard number={2} color="bg-[hsl(38_90%_50%)]" step={{
-            title: "Configure the server URL",
-            description: `Point your MCP client to the BBQS MCP URL. Use "streamable-http" as the transport type if your client asks.`,
-          }} />
-          <div className="ml-12 mb-4">
-            <CodeBlock code={MCP_URL} />
-          </div>
-          <StepCard number={3} color="bg-[hsl(150_60%_40%)]" step={{
-            title: "That's it!",
-            description: "The MCP server auto-advertises its tools. Your client will discover search_projects, get_ontology, list_species, and ask_bbqs automatically.",
-          }} />
-        </div>
-      </div>
-
-      {/* Testing with Inspector */}
-      <div className="mb-10 border border-[hsl(38_90%_50%/0.3)] rounded-xl overflow-hidden">
-        <div className="px-5 py-4 bg-gradient-to-r from-[hsl(38_90%_50%/0.1)] to-transparent border-b border-border">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Play className="h-4 w-4 text-[hsl(38_90%_50%)]" />
-            Test with MCP Inspector
-          </h4>
-          <p className="text-xs text-muted-foreground mt-1">Verify the server works before connecting to your AI tool.</p>
-        </div>
-        <div className="px-5 py-5 bg-card space-y-0">
-          <StepCard number={1} color="bg-[hsl(222_47%_20%)]" step={{
-            title: "Run the MCP Inspector",
-            description: "Open a terminal and run the command below. This launches a local web UI for testing MCP servers.",
-          }} />
-          <div className="ml-12 mb-4">
-            <CodeBlock code="npx @modelcontextprotocol/inspector" />
-          </div>
-          <StepCard number={2} color="bg-[hsl(38_90%_50%)]" step={{
-            title: "Enter the BBQS MCP URL",
-            description: "In the Inspector UI, select \"Streamable HTTP\" transport and paste the MCP URL. Click Connect.",
-          }} />
-          <div className="ml-12 mb-4">
-            <CodeBlock code={MCP_URL} />
-          </div>
-          <StepCard number={3} color="bg-[hsl(150_60%_40%)]" step={{
-            title: "Browse and test tools",
-            description: "Click \"List Tools\" to see all available BBQS tools. Select any tool, fill in test parameters, and click \"Call Tool\" to see the response.",
-            detail: "Try calling search_projects with species=\"Mouse\" to verify everything works end-to-end."
-          }} />
-        </div>
-      </div>
-
       {/* Usage Notes */}
-      <div className="border border-border rounded-xl p-6 bg-gradient-to-br from-card to-muted/30">
+      <div className="mb-10 border border-border rounded-xl p-6 bg-gradient-to-br from-card to-muted/30">
         <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-[hsl(38_90%_50%)]" />
           Usage Notes
         </h3>
         <ul className="text-xs text-muted-foreground space-y-2">
           {[
-            <>All REST responses return JSON with <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">Content-Type: application/json</code></>,
-            <>The <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">/ask</code> endpoint and <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">ask_bbqs</code> MCP tool use RAG over the BBQS knowledge base</>,
+            <>All responses return JSON with <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">Content-Type: application/json</code></>,
+            <>The <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">/ask</code> endpoint uses RAG over the BBQS knowledge base</>,
             "Questions are limited to 2,000 characters",
             "Knowledge graph endpoints serve static metadata and respond instantly",
-            "CORS is enabled — call REST endpoints directly from browser-based applications",
-            "The MCP server uses Streamable HTTP transport — no SSE or WebSocket required",
-            "Both the REST API and MCP server are rate-limited to prevent abuse",
+            "CORS is enabled — call endpoints directly from browser-based applications",
+            "Endpoints are rate-limited to prevent abuse",
           ].map((note, i) => (
             <li key={i} className="flex items-start gap-2">
               <ArrowRight className="h-3 w-3 text-[hsl(38_90%_50%)] shrink-0 mt-0.5" />
@@ -525,6 +282,25 @@ export default function ApiDocs() {
           ))}
         </ul>
       </div>
+
+      {/* Link to MCP */}
+      <Link
+        to="/mcp-docs"
+        className="block border border-[hsl(150_60%_40%/0.3)] rounded-xl p-5 bg-gradient-to-r from-[hsl(150_60%_40%/0.06)] to-transparent hover:shadow-md transition-shadow group"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[hsl(150_60%_40%)] flex items-center justify-center">
+              <Plug className="h-5 w-5 text-[hsl(0_0%_100%)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Looking for MCP Server docs?</h3>
+              <p className="text-xs text-muted-foreground">Connect BBQS to Claude, Cursor, Windsurf, and other AI agents →</p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+        </div>
+      </Link>
     </div>
   );
 }
