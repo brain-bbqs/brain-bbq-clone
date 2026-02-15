@@ -52,7 +52,7 @@ const knowledgeBaseItems = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
   { title: "Tools", url: "/resources", icon: Wrench },
-  { title: "Knowledge Graph", url: "/knowledge-graph", icon: FlaskConical },
+  { title: "Cross-Species Explorer", url: "/knowledge-graph", icon: FlaskConical },
 ];
 
 const aiItems = [

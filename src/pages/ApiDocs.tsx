@@ -229,7 +229,7 @@ export default function ApiDocs() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         <div className="border border-border rounded-lg p-4 bg-card">
           <Database className="h-5 w-5 text-primary mb-2" />
-          <h3 className="text-sm font-semibold text-foreground">Knowledge Graph</h3>
+          <h3 className="text-sm font-semibold text-foreground">Cross-Species Explorer</h3>
           <p className="text-xs text-muted-foreground mt-1">Query projects, species, and Marr-level features across the consortium.</p>
         </div>
         <div className="border border-border rounded-lg p-4 bg-card">
