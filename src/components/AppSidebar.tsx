@@ -92,8 +92,8 @@ const engineeringItems = [
 ];
 
 const softwareDocItems = [
-  { title: "Public API", url: "/api-docs#rest", icon: Code },
-  { title: "MCP Server", url: "/api-docs#mcp", icon: Plug },
+  { title: "Public API", url: "/api-docs", icon: Code },
+  { title: "MCP Server", url: "/mcp-docs", icon: Plug },
 ];
 
 export function AppSidebar() {
