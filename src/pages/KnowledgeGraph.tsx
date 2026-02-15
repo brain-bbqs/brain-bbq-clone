@@ -1,4 +1,4 @@
-import { MarrSankeyDiagram } from "@/components/diagrams/MarrSankeyDiagram";
+import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 
 export default function KnowledgeGraph() {
@@ -9,12 +9,13 @@ export default function KnowledgeGraph() {
           BBQS Knowledge Graph
         </h1>
         <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
-          How Marr's three levels of analysis flow through BBQS projects to each species.
-          Hover over any node to trace its connections.
+          Cross-species collaboration opportunities mapped through shared methods.
+          Each cell shows how many computational, algorithmic, and implementation features
+          two species share across all BBQS projects. Hover for details.
         </p>
       </div>
 
-      <MarrSankeyDiagram />
+      <SpeciesHeatmap />
 
       {/* Project index */}
       <div className="mt-10 border border-border rounded-lg p-4 sm:p-6">
