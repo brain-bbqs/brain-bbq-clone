@@ -149,8 +149,8 @@ export function AppSidebar() {
               />
             </div>
             {!collapsed && (
-              <span className="font-semibold text-sidebar-foreground text-sm leading-tight">
-                BBQS
+              <span className="font-semibold text-sidebar-foreground text-xs leading-tight">
+                Brain Behavior Quantification & Synchronization
               </span>
             )}
           </Link>
