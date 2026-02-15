@@ -35,7 +35,9 @@ function getSpeciesFeatures(species: string) {
   return { computational, algorithmic, implementation, projects };
 }
 
-function buildHeatmapData() {
+type MarrFilter = "all" | "computational" | "algorithmic" | "implementation";
+
+function buildHeatmapData(filter: MarrFilter) {
   const speciesList = [...new Set(MARR_PROJECTS.map((p) => p.species))].sort();
   const matrix: CellData[][] = [];
 
@@ -46,22 +48,30 @@ function buildHeatmapData() {
     for (let j = 0; j < speciesList.length; j++) {
       const b = getSpeciesFeatures(speciesList[j]);
       const details: SharedDetail[] = [];
+      let total = 0;
 
-      const compShared = [...a.computational].filter((f) => b.computational.has(f));
-      if (compShared.length > 0) details.push({ level: "Computational", features: compShared });
+      if (filter === "all" || filter === "computational") {
+        const compShared = [...a.computational].filter((f) => b.computational.has(f));
+        if (compShared.length > 0) details.push({ level: "Computational", features: compShared });
+        total += compShared.length;
+      }
 
-      const algoShared = [...a.algorithmic].filter((f) => b.algorithmic.has(f));
-      if (algoShared.length > 0) details.push({ level: "Algorithmic", features: algoShared });
+      if (filter === "all" || filter === "algorithmic") {
+        const algoShared = [...a.algorithmic].filter((f) => b.algorithmic.has(f));
+        if (algoShared.length > 0) details.push({ level: "Algorithmic", features: algoShared });
+        total += algoShared.length;
+      }
 
-      const implShared = [...a.implementation].filter((f) => b.implementation.has(f));
-      if (implShared.length > 0) details.push({ level: "Implementation", features: implShared });
-
-      const total = compShared.length + algoShared.length + implShared.length;
+      if (filter === "all" || filter === "implementation") {
+        const implShared = [...a.implementation].filter((f) => b.implementation.has(f));
+        if (implShared.length > 0) details.push({ level: "Implementation", features: implShared });
+        total += implShared.length;
+      }
 
       row.push({
         speciesA: speciesList[i],
         speciesB: speciesList[j],
-        total: i === j ? 0 : total, // zero out diagonal for clarity
+        total: i === j ? 0 : total,
         details: i === j ? [] : details,
         projectsA: a.projects.map((p) => p.shortName),
         projectsB: b.projects.map((p) => p.shortName),
@@ -74,9 +84,17 @@ function buildHeatmapData() {
 }
 
 export function SpeciesHeatmap() {
-  const { speciesList, matrix } = useMemo(() => buildHeatmapData(), []);
+  const [filter, setFilter] = useState<MarrFilter>("all");
+  const { speciesList, matrix } = useMemo(() => buildHeatmapData(filter), [filter]);
   const [hovered, setHovered] = useState<CellData | null>(null);
   const [hoveredPos, setHoveredPos] = useState({ x: 0, y: 0 });
+
+  const FILTER_OPTIONS: { value: MarrFilter; label: string; color: string }[] = [
+    { value: "all", label: "All Levels", color: "" },
+    { value: "computational", label: "Computational", color: "#64b5f6" },
+    { value: "algorithmic", label: "Algorithmic", color: "#81c784" },
+    { value: "implementation", label: "Implementation", color: "#ffb74d" },
+  ];
 
   // Find max for color scale
   const maxVal = useMemo(() => {
@@ -100,6 +118,30 @@ export function SpeciesHeatmap() {
 
   return (
     <div className="relative">
+      {/* Level filter toggles */}
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setFilter(opt.value)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+              filter === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+          >
+            {opt.color && (
+              <span
+                className="inline-block w-2 h-2 rounded-full mr-1.5"
+                style={{ backgroundColor: opt.color }}
+              />
+            )}
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="border-collapse mx-auto">
           <thead>
