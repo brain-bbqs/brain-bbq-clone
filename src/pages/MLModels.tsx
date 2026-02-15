@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { ExternalLink, Search, ArrowRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SyncVisualization } from "@/components/SyncVisualization";
+import speciesMouseImg from "@/assets/species-mouse.png";
+import speciesGerbilImg from "@/assets/species-gerbil.png";
 
 interface MLModel {
   name: string;
@@ -199,6 +201,8 @@ const MLModels = () => {
               speciesB={pair.speciesB}
               sharedBehaviors={pair.sharedBehaviors}
               sharedTools={pair.sharedTools}
+              imageA={pair.id === "mouse-gerbil" ? speciesMouseImg : undefined}
+              imageB={pair.id === "mouse-gerbil" ? speciesGerbilImg : undefined}
             />
 
             {/* Details card */}
