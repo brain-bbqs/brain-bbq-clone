@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-api`;
-const MCP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-mcp`;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const BASE_URL = `${SUPABASE_URL}/functions/v1/bbqs-api`;
+const MCP_URL = `${SUPABASE_URL}/functions/v1/bbqs-mcp`;
 
 const mcpTools = [
   { name: "search_projects", description: "Search projects by species, PI, or free-text query. Returns Marr-level features.", params: ["species", "pi", "query"] },
