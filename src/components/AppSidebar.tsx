@@ -23,6 +23,8 @@ import {
   Code,
   Plug,
   Scale,
+  Package,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -94,6 +96,8 @@ const engineeringItems = [
 const softwareDocItems = [
   { title: "Public API", url: "/api-docs", icon: Code },
   { title: "MCP Server", url: "/mcp-docs", icon: Plug },
+  { title: "Build MCP", url: "/mcp-tutorial", icon: Package },
+  { title: "MCP Registry", url: "/mcp-registry", icon: Globe },
 ];
 
 export function AppSidebar() {
