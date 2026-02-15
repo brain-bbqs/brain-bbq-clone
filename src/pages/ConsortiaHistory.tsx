@@ -101,7 +101,7 @@ export default function ConsortiaHistory() {
         </div>
         <h1 className="text-xl font-semibold text-foreground mb-2">Access Restricted</h1>
         <p className="text-sm text-muted-foreground mb-4">
-          Consortia History is only available to MIT users.
+          Consortium Chat Archive is only available to MIT users.
           {!user ? " Please sign in with your @mit.edu email." : " Your current email is not authorized."}
         </p>
         {!user && (
@@ -118,7 +118,7 @@ export default function ConsortiaHistory() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2.5">
             <MessageSquare className="h-6 w-6 text-primary" />
-            Consortia History
+            Consortium Chat Archive
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Search and explore conversations, workflows, and insights shared across the consortium.
