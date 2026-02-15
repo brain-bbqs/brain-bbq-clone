@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Search, X, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -37,11 +37,11 @@ const PAGES: SearchablePage[] = [
 ];
 
 export function GlobalSearch() {
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const resultsRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const results = useMemo(() => {
@@ -54,20 +54,29 @@ export function GlobalSearch() {
     ).slice(0, 8);
   }, [query]);
 
+  const showDropdown = focused && query.trim().length > 0;
+
   useEffect(() => {
     setSelectedIndex(0);
   }, [results]);
 
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ⌘K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 50);
-      }
-      if (e.key === "Escape") {
-        setOpen(false);
-        setQuery("");
+        inputRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handler);
@@ -76,8 +85,9 @@ export function GlobalSearch() {
 
   const handleSelect = (path: string) => {
     navigate(path);
-    setOpen(false);
     setQuery("");
+    setFocused(false);
+    inputRef.current?.blur();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -89,86 +99,60 @@ export function GlobalSearch() {
       setSelectedIndex(i => Math.max(i - 1, 0));
     } else if (e.key === "Enter" && results[selectedIndex]) {
       handleSelect(results[selectedIndex].path);
+    } else if (e.key === "Escape") {
+      setFocused(false);
+      inputRef.current?.blur();
     }
   };
 
   return (
-    <>
-      {/* Search trigger */}
-      <button
-        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg hover:bg-muted transition-colors w-full max-w-xs"
-      >
-        <Search className="h-3.5 w-3.5 shrink-0" />
-        <span className="flex-1 text-left">Search pages...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-background border border-border rounded">
+    <div ref={containerRef} className="relative w-full max-w-sm">
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg">
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search pages..."
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+        />
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-background border border-border rounded text-muted-foreground">
           ⌘K
         </kbd>
-      </button>
+      </div>
 
-      {/* Overlay */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={() => { setOpen(false); setQuery(""); }}>
-          <div className="fixed inset-0 bg-background/60 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-lg mx-4 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search pages, topics, tools..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
-              {query && (
-                <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground">
-                  <X className="h-4 w-4" />
+      {/* Dropdown results */}
+      {showDropdown && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+          {results.length === 0 ? (
+            <div className="px-4 py-3 text-center">
+              <p className="text-xs text-muted-foreground">No pages found for "{query}"</p>
+            </div>
+          ) : (
+            <div className="py-1">
+              {results.map((page, i) => (
+                <button
+                  key={page.path}
+                  onClick={() => handleSelect(page.path)}
+                  onMouseEnter={() => setSelectedIndex(i)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 text-left transition-colors",
+                    i === selectedIndex ? "bg-muted" : "hover:bg-muted/50"
+                  )}
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{page.title}</p>
+                    <p className="text-[11px] text-muted-foreground">{page.section}</p>
+                  </div>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
                 </button>
-              )}
+              ))}
             </div>
-
-            {/* Results */}
-            <div ref={resultsRef} className="max-h-[320px] overflow-y-auto">
-              {query.trim() && results.length === 0 && (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">No pages found for "{query}"</p>
-                </div>
-              )}
-              {results.length > 0 && (
-                <div className="py-2">
-                  {results.map((page, i) => (
-                    <button
-                      key={page.path}
-                      onClick={() => handleSelect(page.path)}
-                      onMouseEnter={() => setSelectedIndex(i)}
-                      className={cn(
-                        "w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors",
-                        i === selectedIndex ? "bg-muted" : "hover:bg-muted/50"
-                      )}
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{page.title}</p>
-                        <p className="text-[11px] text-muted-foreground">{page.section}</p>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              )}
-              {!query.trim() && (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-xs text-muted-foreground">Type to search across all pages</p>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       )}
-    </>
+    </div>
   );
 }
