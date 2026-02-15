@@ -6,8 +6,14 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
 import { MARR_PROJECTS, type MarrProject } from "@/data/marr-projects";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, Code, List, Copy, Check } from "lucide-react";
+import { Code, List, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const FeatureBadges = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
@@ -29,7 +35,7 @@ const SpeciesBadge = ({ value, data }: { value: string; data: MarrProject }) => 
   </div>
 );
 
-function ProjectDetailPanel({ project }: { project: MarrProject }) {
+function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; open: boolean; onClose: () => void }) {
   const [view, setView] = useState<"list" | "json">("list");
   const [copied, setCopied] = useState(false);
 
@@ -50,87 +56,88 @@ function ProjectDetailPanel({ project }: { project: MarrProject }) {
   };
 
   return (
-    <div className="p-4 bg-muted/30 border-t border-border text-sm space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-foreground">
-          {project.shortName} — Full Data Structure
-        </h4>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setView("list")}
-            className={cn(
-              "p-1.5 rounded text-xs transition-colors",
-              view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            )}
-            title="List view"
-          >
-            <List className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setView("json")}
-            className={cn(
-              "p-1.5 rounded text-xs transition-colors",
-              view === "json" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            )}
-            title="JSON view"
-          >
-            <Code className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between pr-6">
+            <span>{project.shortName}</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setView("list")}
+                className={cn(
+                  "p-1.5 rounded text-xs transition-colors",
+                  view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                )}
+                title="List view"
+              >
+                <List className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setView("json")}
+                className={cn(
+                  "p-1.5 rounded text-xs transition-colors",
+                  view === "json" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                )}
+                title="JSON view"
+              >
+                <Code className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
 
-      {view === "list" ? (
-        <>
+        <div className="text-xs text-muted-foreground mb-3">
+          Grant: <span className="font-mono text-foreground/70">{project.id}</span> · PI: {project.pi} · Species: {project.species}
+        </div>
+
+        {view === "list" ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#64b5f6" }}>Computational</div>
-              <ul className="space-y-0.5">
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#64b5f6" }}>Computational</div>
+              <ul className="space-y-1">
                 {project.computational.map((f) => (
-                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#81c784" }}>Algorithmic</div>
-              <ul className="space-y-0.5">
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#81c784" }}>Algorithmic</div>
+              <ul className="space-y-1">
                 {project.algorithmic.map((f) => (
-                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1" style={{ color: "#a78bfa" }}>Implementation</div>
-              <ul className="space-y-0.5">
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#a78bfa" }}>Implementation</div>
+              <ul className="space-y-1">
                 {project.implementation.map((f) => (
-                  <li key={f} className="text-foreground/80 text-xs">• {f}</li>
+                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
                 ))}
               </ul>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Grant: <span className="font-mono text-foreground/70">{project.id}</span> · PI: {project.pi} · Species: {project.species}
+        ) : (
+          <div className="relative">
+            <button
+              onClick={handleCopy}
+              className="absolute top-2 right-2 p-1.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
+              title="Copy JSON"
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+            <pre className="bg-muted border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre">
+              {jsonData}
+            </pre>
           </div>
-        </>
-      ) : (
-        <div className="relative">
-          <button
-            onClick={handleCopy}
-            className="absolute top-2 right-2 p-1.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
-            title="Copy JSON"
-          >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          </button>
-          <pre className="bg-background border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre">
-            {jsonData}
-          </pre>
-        </div>
-      )}
-    </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function ProjectIndexGrid() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<MarrProject | null>(null);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
@@ -147,18 +154,14 @@ export function ProjectIndexGrid() {
       headerName: "Project",
       minWidth: 200,
       flex: 1,
-      cellRenderer: (params: ICellRendererParams<MarrProject>) => {
-        const isExpanded = expandedId === params.data?.id;
-        return (
-          <button
-            className="flex items-center gap-1.5 text-primary hover:text-primary/80 font-medium transition-colors text-left"
-            onClick={() => setExpandedId(isExpanded ? null : params.data?.id ?? null)}
-          >
-            {isExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-            {params.value}
-          </button>
-        );
-      },
+      cellRenderer: (params: ICellRendererParams<MarrProject>) => (
+        <button
+          className="text-primary hover:text-primary/80 font-medium transition-colors text-left"
+          onClick={() => setSelectedProject(params.data ?? null)}
+        >
+          {params.value}
+        </button>
+      ),
     },
     {
       field: "pi",
@@ -192,27 +195,7 @@ export function ProjectIndexGrid() {
       flex: 1,
       cellRenderer: FeatureBadges,
     },
-  ], [expandedId]);
-
-  const isFullWidthRow = useCallback((params: any) => {
-    return params.rowNode.data?._isDetail === true;
-  }, []);
-
-  // Build row data with detail rows injected
-  const rowData = useMemo(() => {
-    const rows: any[] = [];
-    MARR_PROJECTS.forEach((p) => {
-      rows.push(p);
-      if (expandedId === p.id) {
-        rows.push({ ...p, _isDetail: true, id: `${p.id}_detail` });
-      }
-    });
-    return rows;
-  }, [expandedId]);
-
-  const fullWidthCellRenderer = useCallback((params: any) => {
-    return <ProjectDetailPanel project={params.data as MarrProject} />;
-  }, []);
+  ], []);
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
@@ -222,20 +205,26 @@ export function ProjectIndexGrid() {
       </div>
       <div
         className="ag-theme-alpine"
-        style={{ height: Math.min(700, rowData.length * 48 + 56) }}
+        style={{ height: Math.min(700, MARR_PROJECTS.length * 48 + 56) }}
       >
         <AgGridReact
-          rowData={rowData}
+          rowData={MARR_PROJECTS}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           animateRows={true}
           suppressCellFocus={true}
           enableCellTextSelection={true}
-          getRowId={(params) => params.data._isDetail ? params.data.id : params.data.id}
-          isFullWidthRow={isFullWidthRow}
-          fullWidthCellRenderer={fullWidthCellRenderer}
+          getRowId={(params) => params.data.id}
         />
       </div>
+
+      {selectedProject && (
+        <ProjectDetailModal
+          project={selectedProject}
+          open={!!selectedProject}
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
     </div>
   );
 }
