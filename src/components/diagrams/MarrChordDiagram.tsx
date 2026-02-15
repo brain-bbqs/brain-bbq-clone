@@ -41,7 +41,7 @@ export function MarrChordDiagram() {
     const padding = 120;
     const svgWidth = width + padding * 2;
     const svgHeight = height + padding * 2;
-    const outerRadius = Math.min(width, height) * 0.34;
+    const outerRadius = Math.min(width, height) * 0.36;
     const innerRadius = outerRadius - 18;
 
     const svg = d3.select(svgRef.current);
@@ -55,7 +55,7 @@ export function MarrChordDiagram() {
       row.map((val, j) => (i === j ? MARR_PROJECTS[i][level === "all" ? "algorithmic" : level].length * 0.5 : val))
     );
 
-    const chord = d3.chord().padAngle(0.04).sortSubgroups(d3.descending);
+    const chord = d3.chord().padAngle(0.06).sortSubgroups(d3.descending);
     const chords = chord(augmented);
 
     const arc = d3.arc<d3.ChordGroup>()
@@ -105,7 +105,7 @@ export function MarrChordDiagram() {
       })
       .attr("text-anchor", (d: any) => (d.angle > Math.PI ? "end" : "start"))
       .attr("fill", "hsl(var(--foreground))")
-      .attr("font-size", Math.max(8, outerRadius * 0.055))
+      .attr("font-size", Math.max(10, outerRadius * 0.065))
       .style("opacity", (d) =>
         hoveredIndex === null ? 1 : d.index === hoveredIndex ? 1 : 0.15
       )
@@ -113,18 +113,18 @@ export function MarrChordDiagram() {
 
     // Draw ribbons (connections)
     g.append("g")
-      .attr("fill-opacity", 0.55)
+      .attr("fill-opacity", 0.4)
       .selectAll("path")
       .data(chords.filter(d => d.source.index !== d.target.index))
       .join("path")
       .attr("d", ribbon as any)
       .attr("fill", (d) => MARR_PROJECTS[d.source.index].color)
-      .attr("stroke", "hsl(var(--border))")
-      .attr("stroke-width", 0.3)
+      .attr("stroke", "none")
       .style("cursor", "pointer")
+      .style("mix-blend-mode", "normal")
       .style("opacity", (d) => {
-        if (hoveredIndex === null) return 0.5;
-        return d.source.index === hoveredIndex || d.target.index === hoveredIndex ? 0.75 : 0.04;
+        if (hoveredIndex === null) return 0.25;
+        return d.source.index === hoveredIndex || d.target.index === hoveredIndex ? 0.85 : 0.03;
       })
       .on("mouseenter", function (event, d) {
         const src = MARR_PROJECTS[d.source.index];
@@ -138,11 +138,11 @@ export function MarrChordDiagram() {
           target: tgt,
           shared,
         });
-        d3.select(this).style("opacity", 0.9);
+        d3.select(this).style("opacity", 0.9).attr("stroke", "hsl(var(--foreground))").attr("stroke-width", 0.5);
       })
       .on("mouseleave", function () {
         setTooltip(null);
-        d3.select(this).style("opacity", hoveredIndex === null ? 0.5 : 0.04);
+        d3.select(this).style("opacity", hoveredIndex === null ? 0.25 : 0.03).attr("stroke", "none");
       });
   }, [level, hoveredIndex, dimensions]);
 
