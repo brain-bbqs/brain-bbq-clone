@@ -57,7 +57,7 @@ const knowledgeBaseItems = [
 const aiItems = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
   { title: "Cross-Species Sync", url: "/ml-models", icon: Brain },
-  { title: "Consortia History", url: "/consortia-history", icon: MessageSquare },
+  { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
 ];
 
 const directoryItems = [
