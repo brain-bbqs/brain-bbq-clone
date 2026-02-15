@@ -1,10 +1,32 @@
 import { useState } from "react";
-import { Code, Copy, Check, Terminal, BookOpen, Zap, Database, MessageSquare } from "lucide-react";
+import { Code, Copy, Check, Terminal, BookOpen, Zap, Database, MessageSquare, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-api`;
+const MCP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-mcp`;
+
+const mcpTools = [
+  { name: "search_projects", description: "Search projects by species, PI, or free-text query. Returns Marr-level features.", params: ["species", "pi", "query"] },
+  { name: "get_ontology", description: "Get the complete Marr-level feature ontology across all BBQS projects.", params: [] },
+  { name: "list_species", description: "List all species with project counts and associated project names.", params: [] },
+  { name: "ask_bbqs", description: "Ask a natural-language question using RAG over the BBQS knowledge base.", params: ["question"] },
+];
+
+const claudeConfig = `{
+  "mcpServers": {
+    "bbqs": {
+      "url": "${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-mcp"
+    }
+  }
+}`;
+
+const cursorConfig = `{
+  "name": "bbqs",
+  "transport": "streamable-http",
+  "url": "${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bbqs-mcp"
+}`;
 
 interface Endpoint {
   method: "GET" | "POST";
@@ -258,15 +280,98 @@ export default function ApiDocs() {
         ))}
       </div>
 
-      {/* Rate limits & usage */}
+      {/* MCP Server Section */}
+      <div className="mt-14 mb-6">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
+          <Plug className="h-5 w-5 text-primary" />
+          MCP Server (Model Context Protocol)
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Connect BBQS as a tool provider to Claude Desktop, Cursor, Windsurf, or any MCP-compatible AI agent.
+          The MCP server exposes structured tools that agents can call natively.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* MCP Endpoint */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1">MCP Server URL</h3>
+            <p className="text-xs text-muted-foreground">Use this URL when configuring your MCP client.</p>
+          </div>
+          <div className="px-5 py-4">
+            <CodeBlock code={MCP_URL} />
+          </div>
+        </div>
+
+        {/* Available Tools */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Available Tools</h3>
+            <p className="text-xs text-muted-foreground">These tools are automatically discovered by MCP clients.</p>
+          </div>
+          <div className="px-5 py-4 space-y-4">
+            {mcpTools.map((tool) => (
+              <div key={tool.name} className="flex items-start gap-3">
+                <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-primary shrink-0 mt-0.5">{tool.name}</code>
+                <div>
+                  <p className="text-sm text-foreground">{tool.description}</p>
+                  {tool.params.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Params: {tool.params.map(p => <code key={p} className="bg-muted px-1 rounded mx-0.5">{p}</code>)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Claude Desktop Config */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Claude Desktop Configuration</h3>
+            <p className="text-xs text-muted-foreground">Add this to your <code className="bg-muted px-1 rounded">claude_desktop_config.json</code></p>
+          </div>
+          <div className="px-5 py-4">
+            <CodeBlock code={claudeConfig} language="json" />
+          </div>
+        </div>
+
+        {/* Cursor / Generic Config */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Cursor / Generic MCP Client</h3>
+            <p className="text-xs text-muted-foreground">For clients that support Streamable HTTP transport, point to the MCP URL directly.</p>
+          </div>
+          <div className="px-5 py-4">
+            <CodeBlock code={cursorConfig} language="json" />
+          </div>
+        </div>
+
+        {/* Testing with Inspector */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Test with MCP Inspector</h3>
+            <p className="text-xs text-muted-foreground">Verify the server works using the official MCP Inspector tool.</p>
+          </div>
+          <div className="px-5 py-4">
+            <CodeBlock code={`npx @modelcontextprotocol/inspector`} />
+            <p className="text-xs text-muted-foreground mt-2">Then enter the MCP URL in the inspector UI to browse available tools and test them interactively.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Usage Notes */}
       <div className="mt-10 border border-border rounded-lg p-5 bg-card">
         <h3 className="text-sm font-semibold text-foreground mb-2">Usage Notes</h3>
         <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
-          <li>All responses are JSON with <code className="bg-muted px-1 rounded">Content-Type: application/json</code></li>
-          <li>The <code className="bg-muted px-1 rounded">/ask</code> endpoint uses RAG over the BBQS knowledge base — answers are grounded in consortium data</li>
+          <li>All REST responses are JSON with <code className="bg-muted px-1 rounded">Content-Type: application/json</code></li>
+          <li>The <code className="bg-muted px-1 rounded">/ask</code> endpoint and <code className="bg-muted px-1 rounded">ask_bbqs</code> MCP tool use RAG over the BBQS knowledge base</li>
           <li>Questions are limited to 2000 characters</li>
           <li>The knowledge graph data endpoints serve static project metadata and respond instantly</li>
-          <li>CORS is enabled — you can call these endpoints directly from browser-based applications</li>
+          <li>CORS is enabled — you can call REST endpoints directly from browser-based applications</li>
+          <li>The MCP server uses Streamable HTTP transport — no SSE or WebSocket required</li>
         </ul>
       </div>
     </div>
