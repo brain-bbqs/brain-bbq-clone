@@ -145,13 +145,77 @@ export function generateRdfTurtle(): string {
   return lines.join("\n");
 }
 
-export function downloadRdf() {
-  const content = generateRdfTurtle();
-  const blob = new Blob([content], { type: "text/turtle;charset=utf-8" });
+export function generateJsonLd(): object {
+  const speciesSet = new Set<string>();
+  MARR_PROJECTS.forEach((p) => speciesSet.add(p.species));
+
+  const speciesNodes = [...speciesSet].map((s) => ({
+    "@type": "bbqs:Species",
+    "@id": `bbqs:Species_${normalize(s)}`,
+    "rdfs:label": s,
+  }));
+
+  const projectNodes = MARR_PROJECTS.map((p) => ({
+    "@type": "bbqs:Project",
+    "@id": `bbqs:Project_${normalize(p.shortName)}`,
+    "rdfs:label": p.shortName,
+    "bbqs:grantNumber": p.id,
+    "bbqs:principalInvestigator": p.pi,
+    "bbqs:studiesSpecies": { "@id": `bbqs:Species_${normalize(p.species)}` },
+    "bbqs:partOfConsortium": { "@id": "bbqs:BBQS" },
+    "bbqs:hasComputationalFeature": p.computational.map((f) => ({
+      "@type": "bbqs:ComputationalFeature",
+      "@id": `bbqs:Computational_${normalize(f)}`,
+      "rdfs:label": f,
+    })),
+    "bbqs:hasAlgorithmicFeature": p.algorithmic.map((f) => ({
+      "@type": "bbqs:AlgorithmicFeature",
+      "@id": `bbqs:Algorithmic_${normalize(f)}`,
+      "rdfs:label": f,
+    })),
+    "bbqs:hasImplementationFeature": p.implementation.map((f) => ({
+      "@type": "bbqs:ImplementationFeature",
+      "@id": `bbqs:Implementation_${normalize(f)}`,
+      "rdfs:label": f,
+    })),
+  }));
+
+  return {
+    "@context": {
+      "bbqs": "https://bbqs.dev/ontology#",
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#",
+    },
+    "@graph": [
+      {
+        "@type": "bbqs:Consortium",
+        "@id": "bbqs:BBQS",
+        "rdfs:label": "Brain Behavior Quantification and Synchronization",
+        "bbqs:description": "NIH-funded consortium for cross-species behavioral neuroscience",
+        "bbqs:hasProject": projectNodes.map((p) => ({ "@id": p["@id"] })),
+      },
+      ...speciesNodes,
+      ...projectNodes,
+    ],
+  };
+}
+
+function downloadBlob(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "bbqs-knowledge-graph.ttl";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function downloadRdf() {
+  downloadBlob(generateRdfTurtle(), "bbqs-knowledge-graph.ttl", "text/turtle");
+}
+
+export function downloadJsonLd() {
+  const jsonLd = generateJsonLd();
+  downloadBlob(JSON.stringify(jsonLd, null, 2), "bbqs-knowledge-graph.jsonld", "application/ld+json");
 }

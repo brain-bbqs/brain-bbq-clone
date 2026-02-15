@@ -1,6 +1,6 @@
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import { ProjectIndexGrid } from "@/components/diagrams/ProjectIndexGrid";
-import { downloadRdf } from "@/lib/rdf-export";
+import { downloadRdf, downloadJsonLd } from "@/lib/rdf-export";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,15 +16,16 @@ export default function KnowledgeGraph() {
           Each cell shows how many computational, algorithmic, and implementation features
           two species share across all BBQS projects. Hover for details.
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4 gap-2"
-          onClick={downloadRdf}
-        >
-          <Download className="h-3.5 w-3.5" />
-          Download RDF (Turtle)
-        </Button>
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Button variant="outline" size="sm" className="gap-2" onClick={downloadRdf}>
+            <Download className="h-3.5 w-3.5" />
+            RDF (Turtle)
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={downloadJsonLd}>
+            <Download className="h-3.5 w-3.5" />
+            JSON-LD
+          </Button>
+        </div>
       </div>
 
       <SpeciesHeatmap />
