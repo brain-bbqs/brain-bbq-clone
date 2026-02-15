@@ -2,10 +2,12 @@ import HeroSection from "@/components/HeroSection";
 import VisionSection from "@/components/VisionSection";
 import MissionSection from "@/components/MissionSection";
 import heroBackground from "@/assets/hero-background.mp4";
+import { PageMeta } from "@/components/PageMeta";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta title="Home" description="BBQS — Brain Behavior Quantification and Synchronization. An NIH-funded consortium advancing computational neuroscience through shared tools, data, and cross-species behavioral analysis." />
       {/* Hero with Video Background */}
       <div className="relative overflow-hidden h-[50vh] min-h-[400px]">
         {/* Background Video */}

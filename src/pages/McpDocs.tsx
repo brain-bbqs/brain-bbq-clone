@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { PageMeta } from "@/components/PageMeta";
 import { Terminal, Plug, ChevronRight, ArrowRight, Globe, Settings, Play, Search, Layers, Database, MessageSquare, BookOpen, Code } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ const cursorConfig = `{
 export default function McpDocs() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <PageMeta title="MCP Server" description="Connect BBQS as a native MCP tool provider to Claude, Cursor, Windsurf, and other AI agents." />
       {/* Header — formal, minimal */}
       <div className="mb-8 border-b-2 border-border pb-6">
         <div className="flex items-center gap-3 mb-2">

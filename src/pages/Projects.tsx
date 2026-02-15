@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { PageMeta } from "@/components/PageMeta";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
@@ -283,6 +284,7 @@ const Projects = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta title="Projects" description="Browse all BBQS consortium research projects — NIH grants, principal investigators, species, and Marr-level computational features." />
       <div className="px-6 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Projects</h1>

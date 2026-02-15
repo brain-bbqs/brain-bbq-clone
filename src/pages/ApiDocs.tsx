@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { PageMeta } from "@/components/PageMeta";
 import { Terminal, BookOpen, Plug, ChevronRight, ArrowRight, Globe, Settings, Code } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -292,6 +293,7 @@ export default function ApiDocs() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <PageMeta title="API Reference" description="BBQS Public API documentation — REST endpoints for projects, species, Marr-level ontology, and AI-powered Q&A." />
       {/* Header — formal, minimal */}
       <div className="mb-8 border-b-2 border-border pb-6">
         <div className="flex items-center gap-3 mb-2">

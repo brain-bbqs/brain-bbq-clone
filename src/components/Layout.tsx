@@ -2,12 +2,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/AppSidebar";
 import { WalkthroughButton } from "@/components/WalkthroughButton";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  useAnalytics();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
