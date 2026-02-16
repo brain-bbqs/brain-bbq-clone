@@ -16,6 +16,7 @@ import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, Folde
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
+import { FundingCharts } from "@/components/projects/FundingCharts";
 import "@/styles/ag-grid-theme.css";
 
 interface Publication {
@@ -350,6 +351,9 @@ const Projects = () => {
             </Card>
           </div>
           
+          {/* Funding Visualizations */}
+          <FundingCharts data={rowData} />
+          
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
               type="text"
@@ -392,7 +396,7 @@ const Projects = () => {
 
         <div 
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 380px)" }}
+          style={{ height: 500 }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
