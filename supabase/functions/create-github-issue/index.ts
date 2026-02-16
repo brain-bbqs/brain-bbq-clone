@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description, labels: customLabels, milestone, action, issue_number, state } = await req.json();
+    const { title, description, labels: customLabels, milestone, action, issue_number, state, assignees } = await req.json();
 
     const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN");
     if (!GITHUB_TOKEN) {
@@ -39,6 +39,7 @@ serve(async (req) => {
       if (state) body.state = state;
       if (customLabels) body.labels = customLabels;
       if (milestone !== undefined) body.milestone = milestone;
+      if (assignees) body.assignees = assignees;
 
       const resp = await fetch(
         `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}`,
