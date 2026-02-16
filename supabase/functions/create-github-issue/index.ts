@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, description } = await req.json();
+    const { title, description, labels: customLabels, milestone } = await req.json();
 
     // Validate inputs
     if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -68,7 +68,8 @@ serve(async (req) => {
         body: JSON.stringify({
           title: title.trim(),
           body: description?.trim() || "No description provided.",
-          labels: ["bug"],
+          labels: Array.isArray(customLabels) ? customLabels : ["bug"],
+          ...(milestone ? { milestone } : {}),
         }),
       }
     );
