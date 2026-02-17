@@ -6,6 +6,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { DataFlowDiagram } from "@/components/data-policy/DataFlowDiagram";
 
 const versionHistory = [
   { date: "May 22, 2025", step: "Draft proposal V.1", authors: "Laura Y. Cabrera, Jennifer Wagner" },
@@ -75,6 +76,9 @@ const DataSharingPolicy = () => {
           Last updated: February 11, 2026
         </p>
       </div>
+
+      {/* Data Flow Visualization */}
+      <DataFlowDiagram />
 
       {/* Version History */}
       <VersionHistoryGrid />
