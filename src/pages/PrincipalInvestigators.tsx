@@ -15,6 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import "@/styles/ag-grid-theme.css";
 
+interface CoPiInfo {
+  name: string;
+  profileId: number | null;
+  isContactPi: boolean;
+}
+
 interface GrantInfo {
   grantNumber: string;
   title: string;
@@ -24,6 +30,7 @@ interface GrantInfo {
   institution: string;
   fiscalYear: number | null;
   isBbqs: boolean;
+  coPis: CoPiInfo[];
 }
 
 interface PIRow {
@@ -143,7 +150,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5 py-1">
         {shown.map((g, idx) => (
           <Tooltip key={`${g.grantNumber}-${idx}`}>
             <TooltipTrigger asChild>
@@ -165,14 +172,62 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                 </Badge>
               </a>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-sm">
-              <p className="font-medium text-sm mb-1">{g.title}</p>
+            <TooltipContent side="bottom" className="max-w-md p-3">
+              <p className="font-semibold text-sm mb-1.5">{g.title}</p>
               <p className="text-xs text-muted-foreground mb-1">
                 {g.grantNumber} · {g.institution}
-                {g.awardAmount > 0 && ` · $${g.awardAmount.toLocaleString()}`}
               </p>
+              {g.awardAmount > 0 && (
+                <p className="text-xs font-mono text-emerald-600 mb-2">
+                  ${g.awardAmount.toLocaleString()}
+                </p>
+              )}
+              {g.coPis && g.coPis.length > 0 && (
+                <div className="border-t border-border pt-2 mt-1">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Investigators</p>
+                  <div className="flex flex-wrap gap-1">
+                    {g.coPis.map((copi, i) => (
+                      copi.profileId ? (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className={`text-[11px] cursor-pointer hover:bg-primary/15 transition-colors ${
+                            copi.isContactPi
+                              ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                              : "bg-muted/50 text-muted-foreground border-border"
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            supabase.functions.invoke("nih-reporter-search", {
+                              body: { pi_profile_id: copi.profileId },
+                            }).then(({ data }) => {
+                              if (data?.url) window.open(data.url, "_blank");
+                            });
+                          }}
+                        >
+                          {copi.name}
+                          {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className={`text-[11px] ${
+                            copi.isContactPi
+                              ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                              : "bg-muted/50 text-muted-foreground border-border"
+                          }`}
+                        >
+                          {copi.name}
+                          {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
+                        </Badge>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
               {g.isBbqs && (
-                <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 mt-1">
+                <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 mt-2">
                   BBQS Grant
                 </Badge>
               )}
@@ -184,7 +239,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
             <TooltipTrigger asChild>
               <span className="text-muted-foreground text-xs cursor-help self-center">+{remaining}</span>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-sm">
+            <TooltipContent side="bottom" className="max-w-sm p-2">
               <p className="text-xs text-muted-foreground">
                 {sorted.slice(6).map(g => extractGrantType(g.grantNumber) || g.grantNumber).join(", ")}
               </p>
@@ -288,6 +343,11 @@ const fetchPIs = async (): Promise<PIRow[]> => {
               institution: g.institution || "",
               fiscalYear: g.fiscalYear || null,
               isBbqs,
+              coPis: (g.coPis || []).map((c: any) => ({
+                name: c.name || "",
+                profileId: c.profileId || null,
+                isContactPi: c.isContactPi || false,
+              })),
             });
           }
 
@@ -344,6 +404,7 @@ function _populateFromBbqsOnly(piMap: Map<string, PIRow>, bbqsGrants: any[]) {
         institution: grant.institution || "",
         fiscalYear: grant.fiscalYear || null,
         isBbqs: true,
+        coPis: [],
       });
     });
   });
@@ -504,7 +565,7 @@ export default function PrincipalInvestigators() {
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
-            rowHeight={48}
+            rowHeight={56}
             headerHeight={40}
             loading={isLoading}
             loadingOverlayComponent={() => (

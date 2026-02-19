@@ -74,6 +74,13 @@ serve(async (req) => {
         for (const pi of pis) {
           const pid = pi.profile_id;
           if (pid && allResults[pid] !== undefined) {
+            // Collect all co-PIs on this grant
+            const coPis = pis.map((p: any) => ({
+              name: [p.first_name, p.last_name].filter(Boolean).join(" "),
+              profileId: p.profile_id || null,
+              isContactPi: p.is_contact_pi || false,
+            }));
+
             allResults[pid].push({
               grantNumber: project.project_num || "",
               title: project.project_title || "",
@@ -82,6 +89,7 @@ serve(async (req) => {
               institution: project.organization?.org_name || "",
               nihLink: project.project_detail_url || `https://reporter.nih.gov/project-details/${project.project_num}`,
               isContactPi: pi.is_contact_pi || false,
+              coPis,
             });
           }
         }
