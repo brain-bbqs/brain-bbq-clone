@@ -1,12 +1,13 @@
-import { useMemo, useRef, useState, useCallback, useEffect } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, GridReadyEvent, CellMouseOverEvent, GridApi } from "ag-grid-community";
+import { ColDef, GridReadyEvent, CellMouseOverEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { piProfileUrl } from "@/lib/pi-utils";
 
 import "ag-grid-community/styles/ag-grid.css";
@@ -22,15 +23,8 @@ interface Publication {
   rcr: number;
   grantNumber: string;
   pubmedLink: string;
+  keywords: string[];
 }
-
-const getRowStyle = (params: { data: Publication }) => {
-  if (!params.data) return {};
-  const rcr = params.data.rcr;
-  if (rcr >= 2) return { backgroundColor: "hsl(142 70% 95%)" };
-  if (rcr >= 1) return { backgroundColor: "hsl(38 90% 95%)" };
-  return {};
-};
 
 const fetchPublications = async (): Promise<Publication[]> => {
   const { data, error } = await supabase.functions.invoke("nih-grants", {
@@ -44,7 +38,7 @@ const fetchPublications = async (): Promise<Publication[]> => {
       if (grant.publications) {
         for (const pub of grant.publications) {
           const authorList = pub.authors
-            ?.map((a: { fullName?: string }) => a.fullName || "")
+            ?.map?.((a: { fullName?: string }) => a.fullName || "")
             .filter(Boolean)
             .join(", ");
 
@@ -58,6 +52,7 @@ const fetchPublications = async (): Promise<Publication[]> => {
             rcr: pub.rcr || 0,
             grantNumber: grant.grantNumber,
             pubmedLink: pub.pubmedLink,
+            keywords: pub.keywords || [],
           });
         }
       }
@@ -65,6 +60,65 @@ const fetchPublications = async (): Promise<Publication[]> => {
   }
 
   return Array.from(new Map(allPubs.map((p) => [p.pmid, p])).values());
+};
+
+const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
+  if (!data?.pubmedLink) return <span>{value}</span>;
+  return (
+    <a
+      href={data.pubmedLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors"
+    >
+      {value}
+      <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
+    </a>
+  );
+};
+
+const AuthorsCell = ({ value }: { value: string }) => {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
+  if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className="truncate block">
+      {authors.map((author, i) => (
+        <span key={i}>
+          <a
+            href={piProfileUrl(author)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+            title={`Search ${author} on Google Scholar`}
+          >
+            {author}
+          </a>
+          {i < authors.length - 1 ? ", " : ""}
+        </span>
+      ))}
+    </span>
+  );
+};
+
+const KeywordsCell = ({ value }: { value: string[] }) => {
+  if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
+  const displayed = value.slice(0, 4);
+  const remaining = value.length - displayed.length;
+  return (
+    <span className="flex flex-wrap gap-1 py-1">
+      {displayed.map((kw, i) => (
+        <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
+          {kw}
+        </Badge>
+      ))}
+      {remaining > 0 && (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
+          +{remaining}
+        </Badge>
+      )}
+    </span>
+  );
 };
 
 export default function Publications() {
@@ -81,35 +135,10 @@ export default function Publications() {
     gcTime: 30 * 60 * 1000,
   });
 
-  // Filter publications if grant param is present
   const displayedPubs = useMemo(() => {
     if (!grantFilter) return publications;
     return publications.filter((p) => p.grantNumber === grantFilter);
   }, [publications, grantFilter]);
-
-  const AuthorsCell = useCallback(({ value }: { value: string }) => {
-    if (!value) return <span className="text-muted-foreground">—</span>;
-    const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
-    if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
-    return (
-      <span className="truncate block">
-        {authors.map((author, i) => (
-          <span key={i}>
-            <a
-              href={piProfileUrl(author)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-              title={`Search ${author} on Google Scholar`}
-            >
-              {author}
-            </a>
-            {i < authors.length - 1 ? ", " : ""}
-          </span>
-        ))}
-      </span>
-    );
-  }, []);
 
   const columnDefs: ColDef<Publication>[] = useMemo(
     () => [
@@ -118,6 +147,10 @@ export default function Publications() {
         headerName: "Title",
         flex: 2,
         minWidth: 300,
+        cellRenderer: TitleCell,
+        wrapText: true,
+        autoHeight: true,
+        cellStyle: { lineHeight: "1.4", padding: "8px 12px" },
       },
       {
         field: "authors",
@@ -126,8 +159,22 @@ export default function Publications() {
         minWidth: 200,
         cellRenderer: AuthorsCell,
       },
+      {
+        field: "keywords",
+        headerName: "Keywords",
+        flex: 1,
+        minWidth: 200,
+        cellRenderer: KeywordsCell,
+        wrapText: true,
+        autoHeight: true,
+        cellStyle: { padding: "4px 12px" },
+        filter: "agTextColumnFilter",
+        filterValueGetter: (params) => {
+          return params.data?.keywords?.join(", ") || "";
+        },
+      },
     ],
-    [AuthorsCell]
+    []
   );
 
   const defaultColDef: ColDef = useMemo(
@@ -166,6 +213,14 @@ export default function Publications() {
     return { text: "Below Avg", className: "text-muted-foreground" };
   };
 
+  const getRowStyle = (params: { data: Publication }) => {
+    if (!params.data) return {};
+    const rcr = params.data.rcr;
+    if (rcr >= 2) return { backgroundColor: "hsl(142 70% 95%)" };
+    if (rcr >= 1) return { backgroundColor: "hsl(38 90% 95%)" };
+    return {};
+  };
+
   const clearFilter = () => {
     setSearchParams({});
   };
@@ -175,9 +230,7 @@ export default function Publications() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Publications</h1>
-          <p className="text-muted-foreground">
-            Papers from NIH-funded research grants
-          </p>
+          <p className="text-muted-foreground">Papers from NIH-funded research grants</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
@@ -199,10 +252,7 @@ export default function Publications() {
               <span className="bg-primary/10 text-primary border border-primary/30 rounded-full px-3 py-0.5 text-xs font-medium">
                 Grant: {grantFilter}
               </span>
-              <button
-                onClick={clearFilter}
-                className="text-xs text-muted-foreground hover:text-foreground underline"
-              >
+              <button onClick={clearFilter} className="text-xs text-muted-foreground hover:text-foreground underline">
                 Show all
               </button>
             </span>
@@ -215,9 +265,6 @@ export default function Publications() {
               <span className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(38 90% 85%)" }}></span> Above Avg (RCR ≥ 1)
             </span>
           </div>
-          <span className="text-xs italic">
-            RCR = Relative Citation Ratio, an NIH metric comparing citation impact to field average
-          </span>
         </div>
 
         {isLoading ? (
@@ -229,10 +276,7 @@ export default function Publications() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div
-            className="ag-theme-alpine relative"
-            style={{ height: "calc(100vh - 240px)", width: "100%" }}
-          >
+          <div className="ag-theme-alpine relative" style={{ height: "calc(100vh - 240px)", width: "100%" }}>
             <AgGridReact
               ref={gridRef}
               rowData={displayedPubs}
@@ -240,7 +284,7 @@ export default function Publications() {
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
               getRowStyle={getRowStyle}
-              rowHeight={36}
+              rowHeight={48}
               headerHeight={40}
               animateRows
               pagination
@@ -302,6 +346,12 @@ export default function Publications() {
                     </a>
                   </div>
                 </div>
+                {hoveredRow.keywords?.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground">Keywords: </span>
+                    <span className="text-xs">{hoveredRow.keywords.join(", ")}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

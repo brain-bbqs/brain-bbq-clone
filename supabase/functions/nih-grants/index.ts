@@ -17,6 +17,64 @@ const GRANT_NUMBERS = [
   "U24MH136628", "R24MH136632"
 ];
 
+async function fetchPubMedKeywords(pmids: string[]): Promise<Map<string, string[]>> {
+  const keywordsMap = new Map<string, string[]>();
+  if (pmids.length === 0) return keywordsMap;
+
+  try {
+    // Batch in groups of 50 to avoid URL length limits
+    const batchSize = 50;
+    for (let i = 0; i < pmids.length; i += batchSize) {
+      const batch = pmids.slice(i, i + batchSize);
+      const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${batch.join(",")}&rettype=xml&retmode=xml`;
+      const response = await fetch(url);
+      if (!response.ok) continue;
+
+      const xml = await response.text();
+
+      // Parse keywords from XML for each article
+      const articleRegex = /<PubmedArticle>([\s\S]*?)<\/PubmedArticle>/g;
+      let match;
+      while ((match = articleRegex.exec(xml)) !== null) {
+        const article = match[1];
+        // Extract PMID
+        const pmidMatch = article.match(/<PMID[^>]*>(\d+)<\/PMID>/);
+        if (!pmidMatch) continue;
+        const pmid = pmidMatch[1];
+
+        const keywords: string[] = [];
+
+        // Extract MeSH terms (descriptors only)
+        const meshRegex = /<DescriptorName[^>]*>([^<]+)<\/DescriptorName>/g;
+        let meshMatch;
+        while ((meshMatch = meshRegex.exec(article)) !== null) {
+          keywords.push(meshMatch[1]);
+        }
+
+        // Extract author-supplied keywords
+        const kwRegex = /<Keyword[^>]*>([^<]+)<\/Keyword>/g;
+        let kwMatch;
+        while ((kwMatch = kwRegex.exec(article)) !== null) {
+          if (!keywords.includes(kwMatch[1])) {
+            keywords.push(kwMatch[1]);
+          }
+        }
+
+        keywordsMap.set(pmid, keywords);
+      }
+
+      // Small delay between batches
+      if (i + batchSize < pmids.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching PubMed keywords:", err);
+  }
+
+  return keywordsMap;
+}
+
 async function fetchPubMedDetails(pmids: string[]): Promise<Map<string, any>> {
   const detailsMap = new Map<string, any>();
   if (pmids.length === 0) return detailsMap;
@@ -65,11 +123,17 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
     if (nihPubs.length === 0) return [];
 
     const pmids = nihPubs.map((p: any) => String(p.pmid)).filter(Boolean);
-    const detailsMap = await fetchPubMedDetails(pmids);
+    
+    // Fetch iCite details and PubMed keywords in parallel
+    const [detailsMap, keywordsMap] = await Promise.all([
+      fetchPubMedDetails(pmids),
+      fetchPubMedKeywords(pmids),
+    ]);
 
     return nihPubs.map((pub: any) => {
       const pmid = String(pub.pmid);
       const details = detailsMap.get(pmid) || {};
+      const keywords = keywordsMap.get(pmid) || [];
       return {
         pmid,
         title: details.title || "Unknown",
@@ -78,6 +142,7 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
         authors: details.authors || "",
         citations: details.citations || 0,
         rcr: details.rcr || 0,
+        keywords,
         pubmedLink: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : ""
       };
     });
