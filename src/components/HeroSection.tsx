@@ -3,12 +3,12 @@ import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 const HeroSection = () => {
   return (
     <section className="text-center">
-      <div className="inline-flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm rounded-xl px-10 py-6 shadow-lg">
-        <div className="w-28 h-28">
+      <div className="inline-flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-xl px-10 py-6">
+        <div className="w-32 h-32">
           <img 
             src={bbqsLogoIcon} 
             alt="BBQS Consortium"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain drop-shadow-lg"
           />
         </div>
         <div>
