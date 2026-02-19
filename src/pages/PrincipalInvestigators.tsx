@@ -8,7 +8,8 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,149 +76,112 @@ const openNihReporterProfile = async (pi: PIRow) => {
   window.open(piProfileUrl(pi.displayName), "_blank");
 };
 
-const NameCell = ({ data }: { data: PIRow }) => (
-  <div className="flex items-center gap-2">
-    <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-    <button
-      onClick={() => openNihReporterProfile(data)}
-      className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left"
-      title={`View ${data.displayName} on NIH Reporter`}
-    >
-      {data.displayName}
-    </button>
-  </div>
-);
-
-const ProjectsCell = ({ data }: { data: PIRow }) => {
-  const bbqsCount = data.grants.filter(g => g.isBbqs).length;
-  const otherCount = data.grants.filter(g => !g.isBbqs).length;
-
+/* ── Name + Institution cell (merged) ── */
+const NameCell = ({ data }: { data: PIRow }) => {
+  const inst = data.institutions?.[0];
+  const remaining = (data.institutions?.length || 0) - 1;
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <span className="text-foreground cursor-pointer">
-          <span className="font-semibold">{data.totalProjects}</span>
-          <span className="text-muted-foreground ml-1">
-            ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
-          </span>
-        </span>
-      </PopoverTrigger>
-      <PopoverContent side="bottom" align="start" className="w-72 p-4">
-        <p className="font-semibold text-sm mb-2">{data.displayName}</p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-muted/50 rounded p-2">
-            <p className="text-muted-foreground">As PI</p>
-            <p className="font-bold text-foreground text-base">{data.projectsAsPi}</p>
-          </div>
-          <div className="bg-muted/50 rounded p-2">
-            <p className="text-muted-foreground">As Co-PI</p>
-            <p className="font-bold text-foreground text-base">{data.projectsAsCoPi}</p>
-          </div>
-          <div className="bg-emerald-500/10 rounded p-2">
-            <p className="text-muted-foreground">BBQS Grants</p>
-            <p className="font-bold text-emerald-600 text-base">{bbqsCount}</p>
-          </div>
-          <div className="bg-muted/50 rounded p-2">
-            <p className="text-muted-foreground">Other Grants</p>
-            <p className="font-bold text-foreground text-base">{otherCount}</p>
-          </div>
+    <div className="flex flex-col justify-center gap-0.5 py-1">
+      <div className="flex items-center gap-1.5">
+        <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <button
+          onClick={() => openNihReporterProfile(data)}
+          className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left text-sm leading-tight"
+          title={`View ${data.displayName} on NIH Reporter`}
+        >
+          {data.displayName}
+        </button>
+      </div>
+      {inst && (
+        <div className="flex items-center gap-1 ml-5">
+          <a
+            href={institutionUrl(inst)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-muted-foreground hover:text-primary hover:underline truncate max-w-[200px] transition-colors"
+            title={inst}
+          >
+            {inst}
+          </a>
+          {remaining > 0 && (
+            <HoverCard openDelay={150} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                <span className="text-[10px] text-muted-foreground cursor-help">+{remaining}</span>
+              </HoverCardTrigger>
+              <HoverCardContent side="bottom" align="start" className="w-72 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                  All Institutions ({data.institutions.length})
+                </p>
+                <div className="flex flex-col gap-1">
+                  {data.institutions.map((i, idx) => (
+                    <a
+                      key={idx}
+                      href={institutionUrl(i)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      {i}
+                    </a>
+                  ))}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          )}
         </div>
-        {data.totalFunding > 0 && (
-          <p className="text-xs font-mono text-emerald-600 font-semibold mt-2">
-            Total: ${data.totalFunding.toLocaleString()}
-          </p>
-        )}
-        {(() => {
-          const copiCounts = new Map<string, { name: string; profileId: number | null; count: number }>();
-          data.grants.forEach(g => {
-            g.coPis.forEach(c => {
-              if (nameKey(c.name) === nameKey(data.displayName)) return;
-              const key = c.name.toLowerCase();
-              const existing = copiCounts.get(key);
-              if (existing) existing.count++;
-              else copiCounts.set(key, { name: c.name, profileId: c.profileId, count: 1 });
-            });
-          });
-          const topCoPis = Array.from(copiCounts.values())
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 8);
-          if (topCoPis.length === 0) return null;
-          return (
-            <div className="border-t border-border pt-2 mt-2">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Co-Investigators</p>
-              <div className="flex flex-wrap gap-1">
-                {topCoPis.map((c, i) => (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className={`text-[11px] ${c.profileId ? 'cursor-pointer hover:bg-primary/15' : ''} bg-muted/50 text-muted-foreground border-border transition-colors`}
-                    onClick={c.profileId ? (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      supabase.functions.invoke("nih-reporter-search", {
-                        body: { pi_profile_id: c.profileId },
-                      }).then(({ data }) => {
-                        if (data?.url) window.open(data.url, "_blank");
-                      });
-                    } : undefined}
-                  >
-                    {normalizePiName(c.name)}
-                    <span className="ml-0.5 opacity-50">({c.count})</span>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 };
 
+/* ── Projects cell ── */
+const ProjectsCell = ({ data }: { data: PIRow }) => (
+  <HoverCard openDelay={200} closeDelay={100}>
+    <HoverCardTrigger asChild>
+      <span className="text-foreground cursor-help">
+        <span className="font-semibold">{data.totalProjects}</span>
+        <span className="text-muted-foreground ml-1 text-xs">
+          ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
+        </span>
+      </span>
+    </HoverCardTrigger>
+    <HoverCardContent side="bottom" align="start" className="w-72 p-4">
+      <p className="font-semibold text-sm mb-2">{data.displayName}</p>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-muted/50 rounded p-2">
+          <p className="text-muted-foreground">As PI</p>
+          <p className="font-bold text-foreground text-base">{data.projectsAsPi}</p>
+        </div>
+        <div className="bg-muted/50 rounded p-2">
+          <p className="text-muted-foreground">As Co-PI</p>
+          <p className="font-bold text-foreground text-base">{data.projectsAsCoPi}</p>
+        </div>
+        <div className="bg-emerald-500/10 rounded p-2">
+          <p className="text-muted-foreground">BBQS</p>
+          <p className="font-bold text-emerald-600 text-base">{data.grants.filter(g => g.isBbqs).length}</p>
+        </div>
+        <div className="bg-muted/50 rounded p-2">
+          <p className="text-muted-foreground">Other</p>
+          <p className="font-bold text-foreground text-base">{data.grants.filter(g => !g.isBbqs).length}</p>
+        </div>
+      </div>
+      {data.totalFunding > 0 && (
+        <p className="text-xs font-mono text-emerald-600 font-semibold mt-2">
+          Total: ${data.totalFunding.toLocaleString()}
+        </p>
+      )}
+    </HoverCardContent>
+  </HoverCard>
+);
+
+/* ── Funding cell ── */
 const FundingCell = ({ value }: { value: number }) => {
   if (!value || isNaN(value)) return <span className="text-muted-foreground">—</span>;
   return <span className="font-mono text-emerald-600 font-semibold">${value.toLocaleString()}</span>;
 };
 
-const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
-  if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
-  const first = value[0];
-  const remaining = value.length - 1;
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <div className="flex items-center gap-1.5 cursor-pointer">
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs hover:bg-primary/20 transition-colors truncate max-w-[240px]" title={first}>
-            {first}
-          </Badge>
-          {remaining > 0 && (
-            <span className="text-muted-foreground text-xs whitespace-nowrap">+{remaining}</span>
-          )}
-        </div>
-      </PopoverTrigger>
-      <PopoverContent side="left" align="start" className="w-80 p-4">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-          Institutions ({value.length})
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {value.map((inst, i) => (
-            <a
-              key={i}
-              href={institutionUrl(inst)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-primary hover:underline transition-colors"
-            >
-              <ExternalLink className="h-3 w-3 shrink-0" />
-              {inst}
-            </a>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-};
-
+/* ── Grants cell ── */
 const GrantsCell = ({ data }: { data: PIRow }) => {
   if (!data?.grants || data.grants.length === 0) return <span className="text-muted-foreground">—</span>;
 
@@ -232,11 +196,11 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
   return (
     <div className="flex flex-wrap gap-1.5 py-1">
       {shown.map((g, idx) => (
-        <Popover key={`${g.grantNumber}-${idx}`}>
-          <PopoverTrigger asChild>
+        <HoverCard key={`${g.grantNumber}-${idx}`} openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
             <Badge
               variant="outline"
-              className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
+              className={`text-xs cursor-help hover:bg-primary/20 transition-colors ${
                 g.isBbqs
                   ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 font-semibold dark:text-emerald-400"
                   : "bg-muted text-muted-foreground border-border"
@@ -245,8 +209,8 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
               {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
               <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
             </Badge>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" align="start" className="w-80 p-4">
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-80 p-4">
             <p className="font-semibold text-sm mb-1.5 leading-snug">{g.title}</p>
             <p className="text-xs text-muted-foreground mb-1">
               {g.grantNumber} · {g.institution}
@@ -299,59 +263,72 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                 BBQS Grant
               </Badge>
             )}
-          </PopoverContent>
-        </Popover>
+          </HoverCardContent>
+        </HoverCard>
       ))}
       {remaining > 0 && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <span className="text-muted-foreground text-xs cursor-pointer self-center">+{remaining}</span>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" className="max-w-sm p-2">
-            <p className="text-xs text-muted-foreground">
-              {sorted.slice(6).map(g => extractGrantType(g.grantNumber) || g.grantNumber).join(", ")}
-            </p>
-          </PopoverContent>
-        </Popover>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground text-xs cursor-help self-center">+{remaining}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs max-w-xs">
+                {sorted.slice(6).map(g => extractGrantType(g.grantNumber) || g.grantNumber).join(", ")}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   );
 };
 
-const BadgeListCell = ({ value, color, data }: { value: string[]; color: "primary" | "amber"; data?: PIRow }) => {
-  if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
-  const shown = value.slice(0, 3);
-  const remaining = value.length - shown.length;
-  const colorClasses = color === "amber"
-    ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400"
-    : "bg-primary/10 text-primary border-primary/30";
-  const label = color === "amber" ? "Skill" : "Research Area";
+/* ── Combined Expertise cell (Skills + Research Areas) ── */
+const ExpertiseCell = ({ data }: { data: PIRow }) => {
+  if ((!data?.skills || data.skills.length === 0) && (!data?.researchAreas || data.researchAreas.length === 0)) {
+    return <span className="text-muted-foreground">—</span>;
+  }
 
-  const getRelatedProjects = (item: string) => {
-    if (!data) return [];
+  const allItems: { label: string; type: "skill" | "area" }[] = [
+    ...(data.skills || []).map(s => ({ label: s, type: "skill" as const })),
+    ...(data.researchAreas || []).map(a => ({ label: a, type: "area" as const })),
+  ];
+
+  const shown = allItems.slice(0, 4);
+  const remaining = allItems.length - shown.length;
+
+  const getRelatedProjects = (item: string, type: "skill" | "area") => {
     const piKey = nameKey(data.displayName);
     const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
     return MARR_PROJECTS.filter(p => {
       const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
-      const field = color === "amber" ? p.algorithmic : p.computational;
+      const field = type === "skill" ? p.algorithmic : p.computational;
       return matchesPi && field.includes(item);
     });
   };
 
-  const renderBadge = (item: string, i: number) => {
-    const related = getRelatedProjects(item);
+  const renderBadge = (item: { label: string; type: "skill" | "area" }, i: number) => {
+    const colorClasses = item.type === "skill"
+      ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400"
+      : "bg-primary/10 text-primary border-primary/30";
+    const related = getRelatedProjects(item.label, item.type);
+    const typeLabel = item.type === "skill" ? "Skill" : "Research Area";
+
     return (
-      <Popover key={i}>
-        <PopoverTrigger asChild>
-          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal cursor-pointer ${colorClasses}`}>
-            {item}
+      <HoverCard key={`${item.type}-${i}`} openDelay={200} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal cursor-help ${colorClasses}`}>
+            {item.label}
           </Badge>
-        </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-72 p-4">
-          <p className="font-semibold text-sm mb-1">{item}</p>
+        </HoverCardTrigger>
+        <HoverCardContent side="bottom" align="start" className="w-72 p-4">
+          <p className="font-semibold text-sm mb-1">{item.label}</p>
           {related.length > 0 ? (
             <>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">{label} · {related.length} project{related.length !== 1 ? "s" : ""}</p>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                {typeLabel} · {related.length} project{related.length !== 1 ? "s" : ""}
+              </p>
               <div className="flex flex-col gap-1.5">
                 {related.map((proj, j) => (
                   <div key={j} className="flex items-start gap-2 text-xs">
@@ -365,10 +342,10 @@ const BadgeListCell = ({ value, color, data }: { value: string[]; color: "primar
               </div>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">{label} for {data?.displayName}</p>
+            <p className="text-xs text-muted-foreground">{typeLabel} for {data.displayName}</p>
           )}
-        </PopoverContent>
-      </Popover>
+        </HoverCardContent>
+      </HoverCard>
     );
   };
 
@@ -376,28 +353,25 @@ const BadgeListCell = ({ value, color, data }: { value: string[]; color: "primar
     <div className="flex flex-wrap gap-1 py-1">
       {shown.map((item, i) => renderBadge(item, i))}
       {remaining > 0 && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-pointer">
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">
               +{remaining}
             </Badge>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" align="start" className="w-64 p-3">
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-72 p-3">
             <div className="flex flex-wrap gap-1">
-              {value.map((item, i) => renderBadge(item, i))}
+              {allItems.map((item, i) => renderBadge(item, i))}
             </div>
-          </PopoverContent>
-        </Popover>
+          </HoverCardContent>
+        </HoverCard>
       )}
     </div>
   );
 };
 
-const SkillsCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.skills} color="amber" data={data} />;
-const ResearchAreasCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.researchAreas} color="primary" data={data} />;
-
+/* ── Data fetching ── */
 const fetchPIs = async (): Promise<PIRow[]> => {
-  // Read all data from Supabase tables
   const [invResult, grantsResult, giResult, ioResult, orgResult] = await Promise.all([
     supabase.from("investigators").select("*"),
     supabase.from("grants").select("*"),
@@ -414,11 +388,8 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   const invOrgLinks = ioResult.data || [];
   const orgs = orgResult.data || [];
 
-  // Build lookup maps
   const grantByNumber = new Map(grants.map(g => [g.grant_number, g]));
   const orgById = new Map(orgs.map(o => [o.id, o]));
-
-  // BBQS grant numbers (from MARR projects)
   const bbqsGrantNumbers = new Set(MARR_PROJECTS.map(p => p.id));
 
   const piMap = new Map<string, PIRow>();
@@ -429,7 +400,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const nameParts = displayName.split(/\s+/);
     const profileId = inv.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(inv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
 
-    // Get grants for this investigator
     const piGrantLinks = grantInvLinks.filter(gi => gi.investigator_id === inv.id);
     let piAsPi = 0;
     let piAsCoPi = 0;
@@ -444,12 +414,10 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (isContact) piAsPi++;
       else piAsCoPi++;
 
-      // Check if BBQS grant (match core number without version prefix/suffix)
       const coreNum = link.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
       const isBbqs = bbqsGrantNumbers.has(link.grant_number) || bbqsGrantNumbers.has(coreNum) ||
         [...bbqsGrantNumbers].some(bn => link.grant_number.includes(bn) || bn.includes(coreNum));
 
-      // Get co-PIs for this grant
       const coPiLinks = grantInvLinks.filter(gi => gi.grant_number === link.grant_number && gi.investigator_id !== inv.id);
       const coPis: CoPiInfo[] = coPiLinks.map(coLink => {
         const coInv = investigators.find(i => i.id === coLink.investigator_id);
@@ -474,7 +442,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       });
     }
 
-    // Get organizations for this investigator
     const orgLinks = invOrgLinks.filter(io => io.investigator_id === inv.id);
     for (const ol of orgLinks) {
       const org = orgById.get(ol.organization_id);
@@ -521,7 +488,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     pi.researchAreas = Array.from(areas);
   }
 
-  // Optionally enrich with nih-pi-grants for additional non-BBQS grants
+  // Enrich with nih-pi-grants for additional non-BBQS grants
   const profileIds = Array.from(piMap.values())
     .map(pi => pi.profileId)
     .filter((id): id is number => id !== null);
@@ -584,6 +551,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
 };
 
+/* ── Main component ── */
 export default function PrincipalInvestigators() {
   const [quickFilterText, setQuickFilterText] = useState("");
   const { data: rowData = [], isLoading } = useQuery({
@@ -617,62 +585,51 @@ export default function PrincipalInvestigators() {
   const columnDefs = useMemo<ColDef<PIRow>[]>(() => [
     {
       field: "displayName",
-      headerName: "Name",
-      flex: 1,
-      minWidth: 200,
+      headerName: "Investigator",
+      flex: 1.2,
+      minWidth: 220,
       cellRenderer: NameCell,
       sort: "asc",
+      wrapText: true,
+      autoHeight: true,
     },
     {
-      headerName: "Projects (PI / Co-PI)",
-      width: 180,
-      minWidth: 160,
+      headerName: "Projects",
+      width: 160,
+      minWidth: 140,
       cellRenderer: ProjectsCell,
       comparator: (_vA, _vB, nodeA, nodeB) =>
         (nodeA.data?.totalProjects || 0) - (nodeB.data?.totalProjects || 0),
     },
     {
       headerName: "Grants",
-      flex: 1.5,
-      minWidth: 250,
+      flex: 1.2,
+      minWidth: 200,
       cellRenderer: GrantsCell,
+      wrapText: true,
+      autoHeight: true,
       comparator: (_vA, _vB, nodeA, nodeB) =>
         (nodeA.data?.grants?.length || 0) - (nodeB.data?.grants?.length || 0),
     },
     {
       field: "totalFunding",
-      headerName: "Total Funding",
-      width: 160,
-      minWidth: 130,
+      headerName: "Funding",
+      width: 140,
+      minWidth: 120,
       cellRenderer: FundingCell,
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
     {
-      field: "skills",
-      headerName: "Skills",
-      flex: 1,
-      minWidth: 200,
-      cellRenderer: (params: any) => <SkillsCell data={params.data} />,
+      headerName: "Expertise",
+      flex: 1.5,
+      minWidth: 250,
+      cellRenderer: (params: any) => <ExpertiseCell data={params.data} />,
       wrapText: true,
       autoHeight: true,
-      filterValueGetter: (params) => params.data?.skills?.join(", ") || "",
-    },
-    {
-      field: "researchAreas",
-      headerName: "Research Areas",
-      flex: 1,
-      minWidth: 200,
-      cellRenderer: (params: any) => <ResearchAreasCell data={params.data} />,
-      wrapText: true,
-      autoHeight: true,
-      filterValueGetter: (params) => params.data?.researchAreas?.join(", ") || "",
-    },
-    {
-      field: "institutions",
-      headerName: "Institutions",
-      flex: 1,
-      minWidth: 200,
-      cellRenderer: InstitutionBadgeCell,
+      filterValueGetter: (params) => [
+        ...(params.data?.skills || []),
+        ...(params.data?.researchAreas || []),
+      ].join(", "),
     },
   ], []);
 
@@ -734,7 +691,7 @@ export default function PrincipalInvestigators() {
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
               type="text"
-              placeholder="Filter by name, institution..."
+              placeholder="Filter by name, institution, expertise..."
               value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-xs"
@@ -758,7 +715,7 @@ export default function PrincipalInvestigators() {
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
-            rowHeight={56}
+            rowHeight={64}
             headerHeight={40}
             loading={isLoading}
             loadingOverlayComponent={() => (

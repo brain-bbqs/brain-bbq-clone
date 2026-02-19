@@ -436,6 +436,7 @@ export type Database = {
       }
       publications: {
         Row: {
+          author_orcids: Json | null
           authors: string | null
           citations: number | null
           created_at: string
@@ -451,6 +452,7 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          author_orcids?: Json | null
           authors?: string | null
           citations?: number | null
           created_at?: string
@@ -466,6 +468,7 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          author_orcids?: Json | null
           authors?: string | null
           citations?: number | null
           created_at?: string
