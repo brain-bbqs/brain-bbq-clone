@@ -103,31 +103,40 @@ const FundingCell = ({ value }: { value: number }) => {
 
 const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
-  const displayItems = value.slice(0, 3);
-  const remaining = value.length - 3;
+  const first = value[0];
+  const remaining = value.length - 1;
   return (
-    <div className="flex flex-wrap gap-1">
-      {displayItems.map((item, i) => (
-        <a
-          key={i}
-          href={institutionUrl(item)}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={`Visit ${normalizePiName(item)}`}
-        >
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs cursor-pointer hover:bg-primary/20 transition-colors">
-            {item}
-          </Badge>
-        </a>
-      ))}
+    <div className="flex items-center gap-1.5">
+      <a
+        href={institutionUrl(first)}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`Visit ${normalizePiName(first)}`}
+      >
+        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs cursor-pointer hover:bg-primary/20 transition-colors truncate max-w-[200px]">
+          {first}
+        </Badge>
+      </a>
       {remaining > 0 && (
         <TooltipProvider delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-muted-foreground text-xs cursor-help">+{remaining}</span>
+              <span className="text-muted-foreground text-xs cursor-help whitespace-nowrap">+{remaining}</span>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{value.slice(3).join(", ")}</p>
+            <TooltipContent side="left" className="max-w-xs">
+              <div className="flex flex-col gap-1">
+                {value.slice(1).map((inst, i) => (
+                  <a
+                    key={i}
+                    href={institutionUrl(inst)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    {inst}
+                  </a>
+                ))}
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
