@@ -32,8 +32,6 @@ const PAGES: SearchablePage[] = [
   { title: "Software Architecture", path: "/design-docs", keywords: ["software", "architecture", "design", "system", "technical"], section: "Development" },
   { title: "Agentic Framework", path: "/agentic-framework", keywords: ["agentic", "framework", "workflow", "agents", "ai"], section: "Development" },
   
-  { title: "Assertions", path: "/assertions", keywords: ["assertions", "claims", "statements"], section: "Knowledge Base" },
-  { title: "Evidence", path: "/evidence", keywords: ["evidence", "data", "support", "proof"], section: "Knowledge Base" },
 ];
 
 export function GlobalSearch() {

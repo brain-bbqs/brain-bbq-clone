@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.nih-grants]
 verify_jwt = false
 
-[functions.ner-extract]
-verify_jwt = false
-
 [functions.neuromcp-chat]
 verify_jwt = false
 

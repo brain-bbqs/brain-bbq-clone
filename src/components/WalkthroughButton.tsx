@@ -54,9 +54,9 @@ const steps: Step[] = [
   {
     icon: BookOpen,
     title: "Publications",
-    description: "Browse publications from BBQS investigators. Each paper has NER-extracted entities annotated with Marr levels, so you can trace methods back to the science.",
+    description: "Browse publications from BBQS investigators organized by project and grant.",
     route: "/publications",
-    cta: "Click a publication to see its extracted entities.",
+    cta: "Click a publication to explore details.",
     color: "bg-[hsl(220_80%_55%)]",
   },
   {
