@@ -419,59 +419,132 @@ const SkillsCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.sk
 const ResearchAreasCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.researchAreas} color="primary" data={data} />;
 
 const fetchPIs = async (): Promise<PIRow[]> => {
-  // Step 1: Get BBQS grants to identify our PIs
-  const { data, error } = await supabase.functions.invoke("nih-grants");
-  if (error) throw new Error(error.message);
-  if (data?.error) throw new Error(data.error);
+  // Read all data from Supabase tables
+  const [invResult, grantsResult, giResult, ioResult, orgResult] = await Promise.all([
+    supabase.from("investigators").select("*"),
+    supabase.from("grants").select("*"),
+    supabase.from("grant_investigators").select("*"),
+    supabase.from("investigator_organizations").select("investigator_id, organization_id"),
+    supabase.from("organizations").select("*"),
+  ]);
 
-  const bbqsGrants = data?.data || [];
+  if (invResult.error) throw new Error(invResult.error.message);
+
+  const investigators = invResult.data || [];
+  const grants = grantsResult.data || [];
+  const grantInvLinks = giResult.data || [];
+  const invOrgLinks = ioResult.data || [];
+  const orgs = orgResult.data || [];
+
+  // Build lookup maps
+  const grantByNumber = new Map(grants.map(g => [g.grant_number, g]));
+  const orgById = new Map(orgs.map(o => [o.id, o]));
+
+  // BBQS grant numbers (from MARR projects)
+  const bbqsGrantNumbers = new Set(MARR_PROJECTS.map(p => p.id));
+
   const piMap = new Map<string, PIRow>();
 
-  // Build initial PI list from BBQS grants
-  bbqsGrants.forEach((grant: any) => {
-    const piDetails: any[] = grant.piDetails || [];
-    const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
-    const contactPi = grant.contactPi?.trim() || "";
-    const normalizedContactPi = nameKey(contactPi);
+  for (const inv of investigators) {
+    const key = nameKey(inv.name);
+    const displayName = normalizePiName(inv.name);
+    const nameParts = displayName.split(/\s+/);
+    const profileId = inv.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(inv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
 
-    allPis.forEach((piName: string) => {
-      if (!piName) return;
-      const key = nameKey(piName);
-      const displayName = normalizePiName(piName);
+    // Get grants for this investigator
+    const piGrantLinks = grantInvLinks.filter(gi => gi.investigator_id === inv.id);
+    let piAsPi = 0;
+    let piAsCoPi = 0;
+    const piGrants: GrantInfo[] = [];
+    const institutions = new Set<string>();
 
-      const matchingDetail = piDetails.find((d: any) => {
-        const detailKey = nameKey(d.fullName || `${d.firstName} ${d.lastName}`);
-        return detailKey === key;
+    for (const link of piGrantLinks) {
+      const grant = grantByNumber.get(link.grant_number);
+      if (!grant) continue;
+
+      const isContact = link.role === "contact_pi";
+      if (isContact) piAsPi++;
+      else piAsCoPi++;
+
+      // Check if BBQS grant (match core number without version prefix/suffix)
+      const coreNum = link.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
+      const isBbqs = bbqsGrantNumbers.has(link.grant_number) || bbqsGrantNumbers.has(coreNum) ||
+        [...bbqsGrantNumbers].some(bn => link.grant_number.includes(bn) || bn.includes(coreNum));
+
+      // Get co-PIs for this grant
+      const coPiLinks = grantInvLinks.filter(gi => gi.grant_number === link.grant_number && gi.investigator_id !== inv.id);
+      const coPis: CoPiInfo[] = coPiLinks.map(coLink => {
+        const coInv = investigators.find(i => i.id === coLink.investigator_id);
+        const coProfileId = coInv?.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(coInv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
+        return {
+          name: coInv ? normalizePiName(coInv.name) : "Unknown",
+          profileId: coProfileId,
+          isContactPi: coLink.role === "contact_pi",
+        };
       });
 
-      const firstName = matchingDetail?.firstName || displayName.split(/\s+/)[0] || "";
-      const lastName = matchingDetail?.lastName || displayName.split(/\s+/).pop() || "";
-      const profileId = matchingDetail?.profileId || null;
+      piGrants.push({
+        grantNumber: link.grant_number,
+        title: grant.title,
+        nihLink: grant.nih_link || `https://reporter.nih.gov/project-details/${encodeURIComponent(link.grant_number)}`,
+        role: link.role,
+        awardAmount: Number(grant.award_amount) || 0,
+        institution: "", // Will be filled from org links
+        fiscalYear: grant.fiscal_year || null,
+        isBbqs,
+        coPis,
+      });
+    }
 
-      if (!piMap.has(key)) {
-        piMap.set(key, {
-          name: piName,
-          displayName,
-          firstName,
-          lastName,
-          profileId,
-          projectsAsPi: 0,
-          projectsAsCoPi: 0,
-          totalProjects: 0,
-          totalFunding: 0,
-          institutions: [],
-          grants: [],
-          skills: [],
-          researchAreas: [],
-        });
+    // Get organizations for this investigator
+    const orgLinks = invOrgLinks.filter(io => io.investigator_id === inv.id);
+    for (const ol of orgLinks) {
+      const org = orgById.get(ol.organization_id);
+      if (org) {
+        institutions.add(org.name);
+        // Assign institution to grants that don't have one
+        piGrants.forEach(g => { if (!g.institution) g.institution = org.name; });
       }
+    }
 
-      const existing = piMap.get(key)!;
-      if (profileId && !existing.profileId) existing.profileId = profileId;
+    const totalFunding = piGrants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
+
+    piMap.set(key, {
+      name: inv.name,
+      displayName,
+      firstName: nameParts[0] || "",
+      lastName: nameParts[nameParts.length - 1] || "",
+      profileId,
+      projectsAsPi: piAsPi,
+      projectsAsCoPi: piAsCoPi,
+      totalProjects: piGrantLinks.length,
+      totalFunding,
+      institutions: Array.from(institutions),
+      grants: piGrants,
+      skills: inv.skills || [],
+      researchAreas: inv.research_areas || [],
     });
-  });
+  }
 
-  // Step 2: Fetch ALL grants for each PI from NIH Reporter
+  // Enrich with MARR_PROJECTS data for PIs without skills/research_areas
+  for (const [, pi] of piMap) {
+    if (pi.skills.length > 0 || pi.researchAreas.length > 0) continue;
+    const piKey = nameKey(pi.displayName);
+    const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
+    const matchingProjects = MARR_PROJECTS.filter(p =>
+      nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
+    );
+    const skills = new Set<string>();
+    const areas = new Set<string>();
+    matchingProjects.forEach(p => {
+      p.algorithmic.forEach(s => skills.add(s));
+      p.computational.forEach(a => areas.add(a));
+    });
+    pi.skills = Array.from(skills);
+    pi.researchAreas = Array.from(areas);
+  }
+
+  // Optionally enrich with nih-pi-grants for additional non-BBQS grants
   const profileIds = Array.from(piMap.values())
     .map(pi => pi.profileId)
     .filter((id): id is number => id !== null);
@@ -485,25 +558,25 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (!allGrantsError && allGrantsData?.data) {
         const allGrantsByPi = allGrantsData.data as Record<number, any[]>;
 
-        // Set of BBQS grant numbers for tagging
-        const bbqsGrantNumbers = new Set(bbqsGrants.map((g: any) => g.grantNumber));
-
         for (const [, pi] of piMap) {
           if (!pi.profileId) continue;
           const piGrants = allGrantsByPi[pi.profileId] || [];
+          const existingGrantNums = new Set(pi.grants.map(g => g.grantNumber));
 
-          let piAsPi = 0;
-          let piAsCoPi = 0;
-          const institutions = new Set<string>();
-          const grants: GrantInfo[] = [];
+          let additionalPi = 0;
+          let additionalCoPi = 0;
 
           for (const g of piGrants) {
-            const isBbqs = bbqsGrantNumbers.has(g.grantNumber);
-            if (g.isContactPi) piAsPi++;
-            else piAsCoPi++;
-            if (g.institution) institutions.add(g.institution);
+            if (existingGrantNums.has(g.grantNumber)) continue;
 
-            grants.push({
+            const isBbqs = bbqsGrantNumbers.has(g.grantNumber);
+            if (g.isContactPi) additionalPi++;
+            else additionalCoPi++;
+            if (g.institution && !pi.institutions.includes(g.institution)) {
+              pi.institutions.push(g.institution);
+            }
+
+            pi.grants.push({
               grantNumber: g.grantNumber,
               title: g.title,
               nihLink: g.nihLink,
@@ -520,106 +593,20 @@ const fetchPIs = async (): Promise<PIRow[]> => {
             });
           }
 
-          pi.projectsAsPi = piAsPi;
-          pi.projectsAsCoPi = piAsCoPi;
-          pi.totalProjects = piGrants.length;
-          pi.totalFunding = grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
-          pi.institutions = Array.from(institutions);
-          pi.grants = grants;
+          pi.projectsAsPi += additionalPi;
+          pi.projectsAsCoPi += additionalCoPi;
+          pi.totalProjects = pi.grants.length;
+          pi.totalFunding = pi.grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
         }
       }
     } catch (e) {
-      console.error("Failed to fetch all PI grants:", e);
-      // Fall back to BBQS-only data
-      _populateFromBbqsOnly(piMap, bbqsGrants);
-    }
-  } else {
-    _populateFromBbqsOnly(piMap, bbqsGrants);
-  }
-
-  // Enrich with skills & research areas
-  // First try DB (investigators table), then fall back to static MARR_PROJECTS data
-  const { data: dbInvestigators } = await supabase
-    .from("investigators")
-    .select("name, skills, research_areas");
-
-  const dbSkillsMap = new Map<string, { skills: string[]; researchAreas: string[] }>();
-  if (dbInvestigators) {
-    dbInvestigators.forEach((inv: any) => {
-      if ((inv.skills?.length > 0) || (inv.research_areas?.length > 0)) {
-        dbSkillsMap.set(nameKey(inv.name), {
-          skills: inv.skills || [],
-          researchAreas: inv.research_areas || [],
-        });
-      }
-    });
-  }
-
-  for (const [, pi] of piMap) {
-    const piKey = nameKey(pi.displayName);
-    // Check DB first
-    const dbData = dbSkillsMap.get(piKey);
-    if (dbData && (dbData.skills.length > 0 || dbData.researchAreas.length > 0)) {
-      pi.skills = dbData.skills;
-      pi.researchAreas = dbData.researchAreas;
-    } else {
-      // Fall back to static MARR_PROJECTS
-      const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
-      const matchingProjects = MARR_PROJECTS.filter(p =>
-        nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
-      );
-      const skills = new Set<string>();
-      const areas = new Set<string>();
-      matchingProjects.forEach(p => {
-        p.algorithmic.forEach(s => skills.add(s));
-        p.computational.forEach(a => areas.add(a));
-      });
-      pi.skills = Array.from(skills);
-      pi.researchAreas = Array.from(areas);
+      console.error("Failed to enrich with nih-pi-grants:", e);
+      // Continue with DB-only data
     }
   }
 
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
 };
-
-/** Fallback: populate from BBQS grants only */
-function _populateFromBbqsOnly(piMap: Map<string, PIRow>, bbqsGrants: any[]) {
-  bbqsGrants.forEach((grant: any) => {
-    const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
-    const contactPi = grant.contactPi?.trim() || "";
-    const normalizedContactPi = nameKey(contactPi);
-    const awardAmount = typeof grant.awardAmount === "number" ? grant.awardAmount : 0;
-
-    allPis.forEach((piName: string) => {
-      if (!piName) return;
-      const key = nameKey(piName);
-      const existing = piMap.get(key);
-      if (!existing) return;
-
-      const isContact = key === normalizedContactPi;
-      if (isContact) existing.projectsAsPi++;
-      else existing.projectsAsCoPi++;
-      existing.totalProjects++;
-      existing.totalFunding += awardAmount;
-
-      if (grant.institution && !existing.institutions.includes(grant.institution)) {
-        existing.institutions.push(grant.institution);
-      }
-
-      existing.grants.push({
-        grantNumber: grant.grantNumber || "",
-        title: grant.title || "",
-        nihLink: grant.nihLink || "",
-        role: isContact ? "contact_pi" : "co_pi",
-        awardAmount,
-        institution: grant.institution || "",
-        fiscalYear: grant.fiscalYear || null,
-        isBbqs: true,
-        coPis: [],
-      });
-    });
-  });
-}
 
 export default function PrincipalInvestigators() {
   const [quickFilterText, setQuickFilterText] = useState("");
