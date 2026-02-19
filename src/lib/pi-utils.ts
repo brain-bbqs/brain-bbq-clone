@@ -29,11 +29,11 @@ export const normalizePiName = (name: string): string => {
 };
 
 /**
- * Build a Google Scholar profile URL that goes directly to the person's profile
- * using Google's "I'm Feeling Lucky" redirect.
+ * Build a Google Scholar author profile search URL for a PI.
+ * Links to the profiles search page which lists matching author profiles.
  */
 export const piProfileUrl = (piName: string): string => {
-  return `https://scholar.google.com/scholar?q=author:"${encodeURIComponent(piName)}"&btnI=1`;
+  return `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(piName)}`;
 };
 
 /**
