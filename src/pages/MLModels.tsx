@@ -27,10 +27,10 @@ export default function MLModels() {
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    { field: "name", headerName: "Name", flex: 1, minWidth: 250, cellRenderer: NameLink },
-    { field: "neuralNetworkArchitecture", headerName: "Architecture", width: 280 },
-    { field: "species", headerName: "Species", width: 300 },
-    { field: "implementation", headerName: "Language", width: 100 },
+    { field: "name", headerName: "Name", flex: 1, minWidth: 150, cellRenderer: NameLink },
+    { field: "neuralNetworkArchitecture", headerName: "Architecture", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
+    { field: "species", headerName: "Species", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
+    { field: "implementation", headerName: "Language", width: 110, minWidth: 90 },
   ], []);
 
   const onCellMouseOver = useCallback((event: any) => {
