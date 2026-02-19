@@ -92,10 +92,10 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
-const openNihReporterProfile = async (firstName: string, lastName: string, displayName: string) => {
+const openNihReporterProfile = async (profileId: number, displayName: string) => {
   try {
     const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
-      body: { first_name: firstName, last_name: lastName },
+      body: { pi_profile_id: profileId },
     });
     if (!error && data?.url) {
       window.open(data.url, "_blank");
@@ -122,7 +122,11 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
                 title={`View ${displayName} on NIH Reporter`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  openNihReporterProfile(pi.firstName, pi.lastName, displayName);
+                  if (pi.profileId) {
+                    openNihReporterProfile(pi.profileId, displayName);
+                  } else {
+                    window.open(piProfileUrl(displayName), "_blank");
+                  }
                 }}
               >
                 {displayName}
