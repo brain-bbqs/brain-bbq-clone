@@ -86,7 +86,7 @@ const ContainerizedBadge = ({ value }: { value: boolean }) => {
   );
 };
 
-const softwareResources = resources.filter(r => r.category === "Software" || r.category === "Papers & Protocols");
+const softwareResources = resources.filter(r => r.category === "Software");
 
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
