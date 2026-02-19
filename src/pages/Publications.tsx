@@ -14,6 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
+interface AuthorOrcid {
+  name: string;
+  orcid: string;
+}
+
 interface Publication {
   pmid: string;
   title: string;
@@ -25,6 +30,7 @@ interface Publication {
   grantNumber: string;
   pubmedLink: string;
   keywords: string[];
+  authorOrcids: AuthorOrcid[];
 }
 
 const fetchPublications = async (): Promise<Publication[]> => {
@@ -44,9 +50,10 @@ const fetchPublications = async (): Promise<Publication[]> => {
     authors: pub.authors || "",
     citations: pub.citations || 0,
     rcr: Number(pub.rcr) || 0,
-    grantNumber: "", // grant association via resource_links if needed
+    grantNumber: "",
     pubmedLink: pub.pubmed_link || (pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""),
     keywords: Array.isArray(pub.keywords) ? pub.keywords : [],
+    authorOrcids: Array.isArray(pub.author_orcids) ? (pub.author_orcids as unknown as AuthorOrcid[]) : [],
   }));
 };
 
@@ -65,27 +72,52 @@ const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
   );
 };
 
-const AuthorsCell = ({ value }: { value: string }) => {
+const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
   const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
   if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
 
+  // Build a lookup from author name fragments → ORCID
+  const orcidMap = new Map<string, string>();
+  if (data?.authorOrcids) {
+    for (const ao of data.authorOrcids) {
+      // Key by last name for fuzzy matching
+      const parts = ao.name.split(",").map(s => s.trim());
+      const lastName = parts[0]?.toLowerCase() || "";
+      if (lastName) orcidMap.set(lastName, ao.orcid);
+    }
+  }
+
+  const getAuthorUrl = (author: string): string => {
+    // Try to match by last name
+    const parts = author.trim().split(/\s+/);
+    const lastName = parts[parts.length - 1]?.toLowerCase() || "";
+    const orcid = orcidMap.get(lastName);
+    if (orcid) return `https://orcid.org/${orcid}`;
+    // Fallback to Google Scholar search
+    return piProfileUrl(author);
+  };
+
   return (
     <span className="truncate block">
-      {authors.map((author, i) => (
-        <span key={i}>
-          <a
-            href={piProfileUrl(author)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-            title={`Search ${author} on Google Scholar`}
-          >
-            {author}
-          </a>
-          {i < authors.length - 1 ? ", " : ""}
-        </span>
-      ))}
+      {authors.map((author, i) => {
+        const url = getAuthorUrl(author);
+        const isOrcid = url.includes("orcid.org");
+        return (
+          <span key={i}>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+              title={isOrcid ? `View ${author} on ORCID` : `Search ${author} on Google Scholar`}
+            >
+              {author}
+            </a>
+            {i < authors.length - 1 ? ", " : ""}
+          </span>
+        );
+      })}
     </span>
   );
 };
