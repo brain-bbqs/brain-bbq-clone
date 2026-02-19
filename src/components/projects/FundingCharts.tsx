@@ -1,13 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  PieChart,
+  Pie,
   Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  Sector,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -17,6 +16,7 @@ interface ProjectRow {
   institution: string;
   awardAmount: number;
   publicationCount: number;
+  contactPi: string;
 }
 
 interface FundingChartsProps {
@@ -36,6 +36,9 @@ const COLORS = [
   "hsl(310, 45%, 50%)",
   "hsl(45, 80%, 50%)",
   "hsl(190, 60%, 45%)",
+  "hsl(0, 65%, 50%)",
+  "hsl(120, 45%, 45%)",
+  "hsl(60, 70%, 45%)",
 ];
 
 const shortenInstitution = (name: string): string => {
@@ -65,189 +68,141 @@ const shortenInstitution = (name: string): string => {
   return map[name] || name.split(" ").slice(0, 2).join(" ");
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
+const renderActiveShape = (props: any) => {
+  const {
+    cx, cy, innerRadius, outerRadius, startAngle, endAngle,
+    fill, payload, percent, value,
+  } = props;
+
   return (
-    <div className="bg-card border border-border rounded-lg shadow-xl px-3 py-2 text-xs">
-      <p className="font-medium text-foreground mb-1">{label}</p>
-      {payload.map((entry: any, i: number) => (
-        <p key={i} className="text-muted-foreground">
-          {entry.name}: <span className="font-mono text-foreground font-medium">
-            ${(entry.value / 1000000).toFixed(2)}M
-          </span>
-        </p>
-      ))}
-    </div>
+    <g>
+      <text x={cx} y={cy - 14} textAnchor="middle" fill="hsl(var(--foreground))" className="text-sm font-semibold">
+        {payload.name}
+      </text>
+      <text x={cx} y={cy + 6} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
+        ${(value / 1_000_000).toFixed(2)}M
+      </text>
+      <text x={cx} y={cy + 22} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
+        {payload.grants} grant{payload.grants !== 1 ? "s" : ""} · {(percent * 100).toFixed(1)}%
+      </text>
+      <Sector
+        cx={cx} cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 8}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <Sector
+        cx={cx} cy={cy}
+        innerRadius={outerRadius + 10}
+        outerRadius={outerRadius + 14}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+    </g>
   );
 };
 
-const PubTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
   return (
-    <div className="bg-card border border-border rounded-lg shadow-xl px-3 py-2 text-xs">
-      <p className="font-medium text-foreground mb-1">{label}</p>
-      {payload.map((entry: any, i: number) => (
-        <p key={i} className="text-muted-foreground">
-          {entry.name}: <span className="font-mono text-foreground font-medium">{entry.value}</span>
-        </p>
-      ))}
+    <div className="bg-card border border-border rounded-lg shadow-xl px-4 py-3 text-xs max-w-xs">
+      <p className="font-semibold text-foreground mb-1">{d.fullName}</p>
+      <p className="text-muted-foreground">
+        Funding: <span className="font-mono text-foreground font-medium">${(d.value / 1_000_000).toFixed(2)}M</span>
+      </p>
+      <p className="text-muted-foreground">
+        Grants: <span className="text-foreground font-medium">{d.grants}</span>
+      </p>
+      {d.grantList && (
+        <div className="mt-2 pt-2 border-t border-border space-y-0.5">
+          {d.grantList.map((g: string, i: number) => (
+            <p key={i} className="text-muted-foreground">• {g}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 export const FundingCharts = ({ data }: FundingChartsProps) => {
-  const fundingByInstitution = useMemo(() => {
-    const map = new Map<string, number>();
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+
+  const pieData = useMemo(() => {
+    const map = new Map<string, { amount: number; grants: string[]; fullName: string }>();
     data.forEach((d) => {
       const short = shortenInstitution(d.institution);
-      map.set(short, (map.get(short) || 0) + d.awardAmount);
+      const existing = map.get(short) || { amount: 0, grants: [], fullName: d.institution };
+      const grantType = d.grantNumber.match(/[A-Z]\d+/)?.[0] || d.grantNumber.substring(0, 3);
+      existing.amount += d.awardAmount;
+      existing.grants.push(`${grantType} — ${d.contactPi}`);
+      map.set(short, existing);
     });
     return Array.from(map.entries())
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
+      .map(([name, { amount, grants, fullName }]) => ({
+        name,
+        value: amount,
+        grants: grants.length,
+        grantList: grants,
+        fullName,
+      }))
+      .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  const fundingByType = useMemo(() => {
-    const map = new Map<string, { amount: number; count: number }>();
-    data.forEach((d) => {
-      const type = d.grantNumber.match(/[A-Z]\d+/)?.[0] || "Other";
-      const existing = map.get(type) || { amount: 0, count: 0 };
-      map.set(type, { amount: existing.amount + d.awardAmount, count: existing.count + 1 });
-    });
-    return Array.from(map.entries())
-      .map(([name, { amount, count }]) => ({ name: `${name} (${count})`, amount }))
-      .sort((a, b) => b.amount - a.amount);
-  }, [data]);
+  const onPieEnter = useCallback((_: any, index: number) => {
+    setActiveIndex(index);
+  }, []);
 
-  const pubsByInstitution = useMemo(() => {
-    const map = new Map<string, number>();
-    data.forEach((d) => {
-      const short = shortenInstitution(d.institution);
-      map.set(short, (map.get(short) || 0) + d.publicationCount);
-    });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
-      .filter((d) => d.count > 0)
-      .sort((a, b) => b.count - a.count);
-  }, [data]);
+  const onPieLeave = useCallback(() => {
+    setActiveIndex(undefined);
+  }, []);
 
   if (data.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div className="mb-6">
       <Card className="bg-card border-border">
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold text-foreground">
-            Funding by Institution
+            Funding by Organization
           </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pb-3">
-          <div style={{ height: 280 }}>
+          <div style={{ height: 400 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={fundingByInstitution}
-                layout="vertical"
-                margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tickFormatter={(v) => `$${(v / 1000000).toFixed(1)}M`}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={{ stroke: "hsl(var(--border))" }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={90}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
+              <PieChart>
+                <Pie
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={130}
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                  onMouseLeave={onPieLeave}
+                  paddingAngle={2}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="hsl(var(--background))" strokeWidth={2} />
+                  ))}
+                </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="amount" name="Funding" radius={[0, 4, 4, 0]} maxBarSize={16}>
-                  {fundingByInstitution.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-foreground">
-            Funding by Grant Mechanism
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-3">
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={fundingByType}
-                margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={{ stroke: "hsl(var(--border))" }}
+                <Legend
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value: string) => (
+                    <span className="text-xs text-foreground">{value}</span>
+                  )}
                 />
-                <YAxis
-                  tickFormatter={(v) => `$${(v / 1000000).toFixed(1)}M`}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="amount" name="Funding" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                  {fundingByType.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-foreground">
-            Publications by Institution
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pb-3">
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={pubsByInstitution}
-                layout="vertical"
-                margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={{ stroke: "hsl(var(--border))" }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={90}
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip content={<PubTooltip />} />
-                <Bar dataKey="count" name="Publications" radius={[0, 4, 4, 0]} maxBarSize={16}>
-                  {pubsByInstitution.map((_, i) => (
-                    <Cell key={i} fill={COLORS[(i + 3) % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
