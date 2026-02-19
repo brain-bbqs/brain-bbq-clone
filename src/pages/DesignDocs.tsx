@@ -257,10 +257,6 @@ export default function DesignDocs() {
                 <td className="py-2">Fetches grant data from NIH Reporter + iCite</td>
               </tr>
               <tr className="border-b border-border/50">
-                <td className="py-2"><code className="bg-secondary px-1 rounded">ner-extract</code></td>
-                <td className="py-2">Runs NER extraction on paper abstracts</td>
-              </tr>
-              <tr className="border-b border-border/50">
                 <td className="py-2"><code className="bg-secondary px-1 rounded">github-roadmap</code></td>
                 <td className="py-2">Fetches GitHub milestones and issues</td>
               </tr>

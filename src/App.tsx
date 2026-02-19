@@ -12,8 +12,6 @@ import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
 import Roadmap from "./pages/Roadmap";
-import Assertions from "./pages/Assertions";
-import Evidence from "./pages/Evidence";
 import Auth from "./pages/Auth";
 import NeuroMCP from "./pages/NeuroMCP";
 import ConsortiaHistory from "./pages/ConsortiaHistory";
@@ -50,8 +48,6 @@ const App = () => (
               <Route path="/resources" element={<Resources />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/assertions" element={<Assertions />} />
-              <Route path="/evidence" element={<Evidence />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
               <Route path="/consortia-history" element={<ConsortiaHistory />} />
