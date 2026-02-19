@@ -59,9 +59,12 @@ const scienceItems: NavItem[] = [
 ];
 
 const aiItems: NavItem[] = [
-  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
   { title: "Neurodocker Agent", url: "#", icon: Container },
   { title: "Data Harmonizer", url: "#", icon: Database },
+];
+
+const experimentalItems: NavItem[] = [
+  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
   { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
 ];
 
@@ -110,5 +113,6 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Conferences", items: conferencesItems },
   { label: "Developer Tools", items: softwareDocItems },
   { label: "Engineering", items: engineeringItems },
+  { label: "Experimental", items: experimentalItems },
   { label: "Legal", items: legalItems },
 ];
