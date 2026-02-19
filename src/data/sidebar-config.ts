@@ -13,7 +13,7 @@ import {
   FlaskConical,
   MessageSquare,
   Bot,
-  Brain,
+  
   Wrench,
   Sparkles,
   Code,
@@ -41,7 +41,6 @@ const mainItems: NavItem[] = [
 ];
 
 const crossSpeciesItems: NavItem[] = [
-  { title: "Synchronization", url: "/ml-models", icon: Brain },
   { title: "Explorer", url: "/knowledge-graph", icon: FlaskConical },
 ];
 
