@@ -32,11 +32,20 @@ interface Publication {
   pubmedLink: string;
 }
 
+interface PiDetail {
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  profileId: number | null;
+  isContactPi: boolean;
+}
+
 interface ProjectRow {
   grantNumber: string;
   title: string;
   contactPi: string;
   allPis: string;
+  piDetails?: PiDetail[];
   institution: string;
   fiscalYear: number;
   awardAmount: number;
@@ -83,9 +92,39 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
-const PiCell = ({ value }: { value: string; data: ProjectRow }) => {
-  if (!value) return <span className="text-muted-foreground">—</span>;
-  const piNames = value.split(/[,;]/).map((n) => n.trim()).filter(Boolean);
+const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
+  const piDetails = data.piDetails;
+  
+  // If we have structured PI data with profile_ids, use NIH Reporter links
+  if (piDetails && piDetails.length > 0) {
+    return (
+      <span className="truncate block max-w-full">
+        {piDetails.map((pi, i) => {
+          const displayName = normalizePiName(pi.fullName);
+          const href = pi.profileId
+            ? `https://reporter.nih.gov/search/results?pi_profile_id=${pi.profileId}`
+            : piProfileUrl(displayName);
+          return (
+            <span key={i}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+                title={pi.profileId ? `View ${displayName} on NIH Reporter` : `Search ${displayName} on Google Scholar`}
+              >
+                {displayName}
+              </a>
+              {i < piDetails.length - 1 ? ", " : ""}
+            </span>
+          );
+        })}
+      </span>
+    );
+  }
+
+  // Fallback: parse from allPis string
+  const piNames = (data.allPis || "").split(/[,;]/).map((n) => n.trim()).filter(Boolean);
   const normalizedNames = piNames.map(normalizePiName);
 
   return (
@@ -97,7 +136,7 @@ const PiCell = ({ value }: { value: string; data: ProjectRow }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
-            title={`View ${name} on Google Scholar`}
+            title={`Search ${name} on Google Scholar`}
           >
             {name}
           </a>

@@ -113,12 +113,21 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
     const coreProjectNum = project.core_project_num || grantNumber.replace(/\d$/, "");
     const publications = await fetchPublications(coreProjectNum);
     
+    const piDetails = pis.map((pi: any) => ({
+      fullName: pi.full_name || "",
+      firstName: pi.first_name || "",
+      lastName: pi.last_name || "",
+      profileId: pi.profile_id || null,
+      isContactPi: pi.is_contact_pi || false,
+    }));
+
     return {
       grantNumber: project.project_num || grantNumber,
       title: project.project_title || "Unknown",
       abstract: project.abstract_text || "",
       contactPi: project.contact_pi_name || "Unknown",
       allPis: pis.map((pi: any) => pi.full_name).join(", ") || project.contact_pi_name || "Unknown",
+      piDetails,
       institution: project.organization?.org_name || "Unknown",
       fiscalYear: project.fiscal_year || 0,
       awardAmount: project.award_amount || 0,
