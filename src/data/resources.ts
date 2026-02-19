@@ -206,36 +206,13 @@ export const resources: Resource[] = [
     mlPipeline: "Standardized evaluation for DLC variants",
     implementation: "Web", species: "Multi-species (varies by benchmark)", neuroMcpStatus: "not-started", containerized: false,
   },
-  // Papers & Protocols
+  // Protocols
   {
-    id: 25, category: "Papers & Protocols", name: "DLC 3D Pose Protocol", url: "https://www.nature.com/articles/s41596-019-0176-0",
+    id: 25, category: "Protocols", name: "DLC 3D Pose Protocol", url: "https://www.nature.com/articles/s41596-019-0176-0",
     algorithm: "Multi-camera 3D pose estimation methodology",
     computational: "Triangulation of 2D poses with camera calibration",
     neuralNetworkArchitecture: "CNN (for 2D pose); geometric methods for 3D",
     mlPipeline: "Protocol: Train 2D pose models per camera → calibrate cameras → triangulate to 3D coordinates",
     implementation: "Protocol", species: "Multi-species (general methodology)", neuroMcpStatus: "not-started", containerized: false,
-  },
-  {
-    id: 26, category: "Papers & Protocols", name: "DeepLabCut Paper", url: "https://www.nature.com/articles/s41593-018-0209-y",
-    algorithm: "Foundational approach to animal pose tracking",
-    computational: "Transfer learning with ResNets for keypoint localization",
-    neuralNetworkArchitecture: "CNN (ResNet)",
-    mlPipeline: "Transfer learning methodology for pose estimation",
-    implementation: "Paper", species: "Multi-species (general methodology)", neuroMcpStatus: "not-started", containerized: false,
-  },
-  {
-    id: 27, category: "Papers & Protocols", name: "DeeperCut Paper", url: "https://arxiv.org/abs/1605.03170",
-    algorithm: "Multiple individual pose estimation in crowded scenes",
-    computational: "Integer linear programming for part-to-person association",
-    neuralNetworkArchitecture: "CNN (ResNet backbone)",
-    mlPipeline: "Two-stage: CNN detects body parts → ILP solves association problem for multi-person pose",
-    implementation: "Paper", species: "Human (Homo sapiens)", neuroMcpStatus: "not-started", containerized: false,
-  },
-  {
-    id: 28, category: "Papers & Protocols", name: "BRAIN Data Sharing (2024)", url: "https://www.nature.com/articles/s41593-024-01608-4",
-    algorithm: "Analysis of neuroscience data sharing infrastructure",
-    computational: "Comparative evaluation of FAIR principles across 7 repositories",
-    neuralNetworkArchitecture: "N/A (policy paper)", mlPipeline: "N/A (policy paper)",
-    implementation: "Paper", species: "Multi-species (infrastructure for all neuroscience data)", neuroMcpStatus: "not-started", containerized: false,
   },
 ];

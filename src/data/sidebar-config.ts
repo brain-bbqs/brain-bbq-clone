@@ -49,7 +49,7 @@ const toolsItems: NavItem[] = [
   { title: "Datasets", url: "/datasets", icon: Database },
   { title: "Benchmarks", url: "/benchmarks", icon: BarChart3 },
   { title: "ML Models", url: "/ml-models", icon: Brain },
-  { title: "Papers & Protocols", url: "/papers-protocols", icon: BookOpen },
+  { title: "Protocols", url: "/protocols", icon: BookOpen },
 ];
 
 const scienceItems: NavItem[] = [
