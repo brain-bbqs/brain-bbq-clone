@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
+import { Loader2, Users, ExternalLink, DollarSign, Lightbulb, FlaskConical } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
+import { MARR_PROJECTS } from "@/data/marr-projects";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -46,6 +47,8 @@ interface PIRow {
   totalFunding: number;
   institutions: string[];
   grants: GrantInfo[];
+  skills: string[];
+  researchAreas: string[];
 }
 
 const nameKey = (name: string): string =>
@@ -335,6 +338,45 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
   );
 };
 
+const BadgeListCell = ({ value, color }: { value: string[]; color: "primary" | "amber" }) => {
+  if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
+  const shown = value.slice(0, 3);
+  const remaining = value.length - shown.length;
+  const colorClasses = color === "amber"
+    ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400"
+    : "bg-primary/10 text-primary border-primary/30";
+  return (
+    <div className="flex flex-wrap gap-1 py-1">
+      {shown.map((item, i) => (
+        <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${colorClasses}`}>
+          {item}
+        </Badge>
+      ))}
+      {remaining > 0 && (
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">
+              +{remaining}
+            </Badge>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-64 p-3">
+            <div className="flex flex-wrap gap-1">
+              {value.map((item, i) => (
+                <Badge key={i} variant="outline" className={`text-[10px] ${colorClasses}`}>
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </div>
+  );
+};
+
+const SkillsCell = ({ value }: { value: string[] }) => <BadgeListCell value={value} color="amber" />;
+const ResearchAreasCell = ({ value }: { value: string[] }) => <BadgeListCell value={value} color="primary" />;
+
 const fetchPIs = async (): Promise<PIRow[]> => {
   // Step 1: Get BBQS grants to identify our PIs
   const { data, error } = await supabase.functions.invoke("nih-grants");
@@ -378,6 +420,8 @@ const fetchPIs = async (): Promise<PIRow[]> => {
           totalFunding: 0,
           institutions: [],
           grants: [],
+          skills: [],
+          researchAreas: [],
         });
       }
 
@@ -450,6 +494,20 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     }
   } else {
     _populateFromBbqsOnly(piMap, bbqsGrants);
+  }
+
+  // Enrich with skills & research areas from Marr projects data
+  for (const [, pi] of piMap) {
+    const piKey = nameKey(pi.displayName);
+    const matchingProjects = MARR_PROJECTS.filter(p => nameKey(p.pi) === piKey);
+    const skills = new Set<string>();
+    const areas = new Set<string>();
+    matchingProjects.forEach(p => {
+      p.algorithmic.forEach(s => skills.add(s));
+      p.computational.forEach(a => areas.add(a));
+    });
+    pi.skills = Array.from(skills);
+    pi.researchAreas = Array.from(areas);
   }
 
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
@@ -561,8 +619,28 @@ export default function PrincipalInvestigators() {
       field: "institutions",
       headerName: "Institutions",
       flex: 1,
-      minWidth: 220,
+      minWidth: 200,
       cellRenderer: InstitutionBadgeCell,
+    },
+    {
+      field: "skills",
+      headerName: "Skills",
+      flex: 1,
+      minWidth: 200,
+      cellRenderer: SkillsCell,
+      wrapText: true,
+      autoHeight: true,
+      filterValueGetter: (params) => params.data?.skills?.join(", ") || "",
+    },
+    {
+      field: "researchAreas",
+      headerName: "Research Areas",
+      flex: 1,
+      minWidth: 200,
+      cellRenderer: ResearchAreasCell,
+      wrapText: true,
+      autoHeight: true,
+      filterValueGetter: (params) => params.data?.researchAreas?.join(", ") || "",
     },
   ], []);
 

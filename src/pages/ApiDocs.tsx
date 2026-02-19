@@ -91,6 +91,138 @@ const endpoints: Endpoint[] = [
 }`,
   },
   {
+    method: "GET",
+    path: "/people",
+    description: "Get all PIs and Co-PIs with pagination and advanced filtering by skill, research area, or organization.",
+    params: [
+      { name: "page", type: "int", description: "Page number (default 1, min 1)" },
+      { name: "page_size", type: "int", description: "Results per page (default 50, min 1, max 200)" },
+      { name: "search", type: "string", description: "Free-text search across PI names" },
+      { name: "skill", type: "string", description: "Filter by skill (e.g. Pose estimation)" },
+      { name: "research_area", type: "string", description: "Filter by research area (e.g. Social behavior)" },
+      { name: "organization", type: "string", description: "Filter by institution name" },
+    ],
+    example: `curl "${BASE_URL}/people?skill=Pose%20estimation"`,
+    exampleResponse: `{
+  "count": 8,
+  "page": 1,
+  "page_size": 50,
+  "people": [
+    {
+      "id": "eva-dyer",
+      "name": "Eva Dyer",
+      "organization": "Georgia Institute of Technology",
+      "skills": ["Pose estimation", "Object detection", ...],
+      "research_areas": ["Multi-animal social behavior quantification", ...]
+    }
+  ]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/person/:person_id",
+    description: "Get detailed information about a specific PI or Co-PI.",
+    example: `curl "${BASE_URL}/person/eva-dyer"`,
+    exampleResponse: `{
+  "id": "eva-dyer",
+  "name": "Eva Dyer",
+  "organization": "Georgia Institute of Technology",
+  "skills": ["Pose estimation", "Object detection", ...],
+  "research_areas": ["Multi-animal social behavior quantification", ...],
+  "grants": [{ "grantNumber": "R34DA059510", "title": "..." }]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/person/:person_id/projects",
+    description: "Get all projects for a person (as main PI or Co-PI) with pagination.",
+    params: [
+      { name: "page", type: "int", description: "Page number (default 1, min 1)" },
+      { name: "page_size", type: "int", description: "Results per page (default 50, min 1, max 200)" },
+    ],
+    example: `curl "${BASE_URL}/person/eva-dyer/projects"`,
+    exampleResponse: `{
+  "count": 2,
+  "projects": [
+    { "id": "R34DA059510", "title": "Dyer – Cichlid Arena", "role": "contact_pi" }
+  ]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/person/:person_id/evolution",
+    description: "Temporal evolution of skills and research areas over time for a specific person.",
+    params: [
+      { name: "entity_type", type: "string", description: "Filter type: skills | research_areas | all (default: all)" },
+    ],
+    example: `curl "${BASE_URL}/person/eva-dyer/evolution?entity_type=skills"`,
+    exampleResponse: `{
+  "person_id": "eva-dyer",
+  "evolution": {
+    "2023": { "skills": ["Pose estimation"], "research_areas": [...] },
+    "2024": { "skills": ["Pose estimation", "Graph modeling"], "research_areas": [...] }
+  }
+}`,
+  },
+  {
+    method: "GET",
+    path: "/skills",
+    description: "Get all skills (algorithmic approaches) with pagination and optional year filter.",
+    params: [
+      { name: "page", type: "int", description: "Page number (default 1, min 1)" },
+      { name: "page_size", type: "int", description: "Results per page (default 50, min 1, max 200)" },
+      { name: "search", type: "string", description: "Free-text search across skill names" },
+      { name: "year", type: "int", description: "Temporal filter by fiscal year" },
+    ],
+    example: `curl "${BASE_URL}/skills?search=pose"`,
+    exampleResponse: `{
+  "count": 1,
+  "skills": [
+    { "name": "Pose estimation", "project_count": 8, "people_count": 10 }
+  ]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/skill/:skill_name",
+    description: "Get skill detail, including associated projects and people.",
+    example: `curl "${BASE_URL}/skill/Pose%20estimation"`,
+    exampleResponse: `{
+  "name": "Pose estimation",
+  "projects": [{ "id": "R34DA059510", "shortName": "Dyer – Cichlid Arena" }],
+  "people": [{ "name": "Eva Dyer" }, { "name": "Pulkit Grover" }]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/research-areas",
+    description: "Get all research areas (computational problems) with pagination and optional year filter.",
+    params: [
+      { name: "page", type: "int", description: "Page number (default 1, min 1)" },
+      { name: "page_size", type: "int", description: "Results per page (default 50, min 1, max 200)" },
+      { name: "search", type: "string", description: "Free-text search across research area names" },
+      { name: "year", type: "int", description: "Temporal filter by fiscal year" },
+    ],
+    example: `curl "${BASE_URL}/research-areas?search=social"`,
+    exampleResponse: `{
+  "count": 2,
+  "research_areas": [
+    { "name": "Multi-animal social behavior quantification", "project_count": 3, "people_count": 4 }
+  ]
+}`,
+  },
+  {
+    method: "GET",
+    path: "/research-area/:area_name",
+    description: "Get research area detail, including associated projects and people.",
+    example: `curl "${BASE_URL}/research-area/Multi-animal%20social%20behavior%20quantification"`,
+    exampleResponse: `{
+  "name": "Multi-animal social behavior quantification",
+  "projects": [{ "id": "R34DA059510", "shortName": "Dyer – Cichlid Arena" }],
+  "people": [{ "name": "Eva Dyer" }]
+}`,
+  },
+  {
     method: "POST",
     path: "/ask",
     description: "Ask a natural-language question about the BBQS consortium. Uses RAG over the knowledge base to provide grounded answers.",
@@ -321,7 +453,7 @@ export default function ApiDocs() {
           Endpoint Summary
         </h2>
         <p className="text-xs text-muted-foreground mb-4">Overview of all available API endpoints.</p>
-        <div className="ag-theme-alpine rounded-lg overflow-hidden border border-border" style={{ width: "100%", height: 230 }}>
+        <div className="ag-theme-alpine rounded-lg overflow-hidden border border-border" style={{ width: "100%", height: 500 }}>
           <AgGridReact
             rowData={gridRowData}
             columnDefs={columnDefs}
