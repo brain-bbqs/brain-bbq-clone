@@ -5,8 +5,9 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { resources, Resource } from "@/data/resources";
-import { ExternalLink } from "lucide-react";
+import type { Resource } from "@/data/resources";
+import { useResources } from "@/hooks/useResources";
+import { ExternalLink, Loader2 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const NameLink = ({ value, data }: { value: string; data: Resource }) => (
@@ -17,10 +18,9 @@ const NameLink = ({ value, data }: { value: string; data: Resource }) => (
   </a>
 );
 
-const datasetResources = resources.filter(r => r.category === "Datasets");
-
 export default function Datasets() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const { data: datasetResources = [], isLoading } = useResources("Datasets");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
@@ -60,6 +60,12 @@ export default function Datasets() {
             quickFilterText={quickFilterText} animateRows={true} pagination={true} paginationPageSize={25}
             suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
             onCellMouseOver={onCellMouseOver} onCellMouseOut={() => setHoveredRow(null)}
+            loading={isLoading}
+            loadingOverlayComponent={() => (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading datasets...
+              </div>
+            )}
           />
         </div>
         {hoveredRow && (
