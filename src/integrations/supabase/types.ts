@@ -228,6 +228,53 @@ export type Database = {
           },
         ]
       }
+      grants: {
+        Row: {
+          abstract: string | null
+          award_amount: number | null
+          created_at: string
+          fiscal_year: number | null
+          grant_number: string
+          id: string
+          nih_link: string | null
+          resource_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          abstract?: string | null
+          award_amount?: number | null
+          created_at?: string
+          fiscal_year?: number | null
+          grant_number: string
+          id?: string
+          nih_link?: string | null
+          resource_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          abstract?: string | null
+          award_amount?: number | null
+          created_at?: string
+          fiscal_year?: number | null
+          grant_number?: string
+          id?: string
+          nih_link?: string | null
+          resource_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grants_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investigator_organizations: {
         Row: {
           investigator_id: string
@@ -266,6 +313,7 @@ export type Database = {
           name: string
           orcid: string | null
           profile_url: string | null
+          resource_id: string | null
           updated_at: string
         }
         Insert: {
@@ -275,6 +323,7 @@ export type Database = {
           name: string
           orcid?: string | null
           profile_url?: string | null
+          resource_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -284,9 +333,18 @@ export type Database = {
           name?: string
           orcid?: string | null
           profile_url?: string | null
+          resource_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "investigators_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       knowledge_embeddings: {
         Row: {
@@ -380,21 +438,207 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          resource_id: string | null
           url: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          resource_id?: string | null
           url?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          resource_id?: string | null
           url?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      publications: {
+        Row: {
+          authors: string | null
+          citations: number | null
+          created_at: string
+          doi: string | null
+          id: string
+          journal: string | null
+          pmid: string | null
+          pubmed_link: string | null
+          rcr: number | null
+          resource_id: string | null
+          title: string
+          year: number | null
+        }
+        Insert: {
+          authors?: string | null
+          citations?: number | null
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal?: string | null
+          pmid?: string | null
+          pubmed_link?: string | null
+          rcr?: number | null
+          resource_id?: string | null
+          title: string
+          year?: number | null
+        }
+        Update: {
+          authors?: string | null
+          citations?: number | null
+          created_at?: string
+          doi?: string | null
+          id?: string
+          journal?: string | null
+          pmid?: string | null
+          pubmed_link?: string | null
+          rcr?: number | null
+          resource_id?: string | null
+          title?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publications_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_links: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          relationship: string
+          source_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          relationship?: string
+          source_id: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          relationship?: string
+          source_id?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_links_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_links_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_url: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          resource_type: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          resource_type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
         Relationships: []
+      }
+      software_tools: {
+        Row: {
+          created_at: string
+          description: string | null
+          docs_url: string | null
+          id: string
+          language: string | null
+          license: string | null
+          name: string
+          repo_url: string | null
+          resource_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          docs_url?: string | null
+          id?: string
+          language?: string | null
+          license?: string | null
+          name: string
+          repo_url?: string | null
+          resource_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          docs_url?: string | null
+          id?: string
+          language?: string | null
+          license?: string | null
+          name?: string
+          repo_url?: string | null
+          resource_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "software_tools_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -419,7 +663,15 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      resource_type:
+        | "investigator"
+        | "organization"
+        | "grant"
+        | "publication"
+        | "software"
+        | "tool"
+        | "dataset"
+        | "protocol"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -546,6 +798,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      resource_type: [
+        "investigator",
+        "organization",
+        "grant",
+        "publication",
+        "software",
+        "tool",
+        "dataset",
+        "protocol",
+      ],
+    },
   },
 } as const
