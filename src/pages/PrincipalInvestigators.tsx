@@ -497,9 +497,13 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   }
 
   // Enrich with skills & research areas from Marr projects data
+  // Match by PI name OR by grant number overlap
   for (const [, pi] of piMap) {
     const piKey = nameKey(pi.displayName);
-    const matchingProjects = MARR_PROJECTS.filter(p => nameKey(p.pi) === piKey);
+    const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
+    const matchingProjects = MARR_PROJECTS.filter(p =>
+      nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
+    );
     const skills = new Set<string>();
     const areas = new Set<string>();
     matchingProjects.forEach(p => {
@@ -616,13 +620,6 @@ export default function PrincipalInvestigators() {
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
     {
-      field: "institutions",
-      headerName: "Institutions",
-      flex: 1,
-      minWidth: 200,
-      cellRenderer: InstitutionBadgeCell,
-    },
-    {
       field: "skills",
       headerName: "Skills",
       flex: 1,
@@ -641,6 +638,13 @@ export default function PrincipalInvestigators() {
       wrapText: true,
       autoHeight: true,
       filterValueGetter: (params) => params.data?.researchAreas?.join(", ") || "",
+    },
+    {
+      field: "institutions",
+      headerName: "Institutions",
+      flex: 1,
+      minWidth: 200,
+      cellRenderer: InstitutionBadgeCell,
     },
   ], []);
 
