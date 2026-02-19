@@ -5,8 +5,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
-  Sector,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -39,6 +37,13 @@ const COLORS = [
   "hsl(0, 65%, 50%)",
   "hsl(120, 45%, 45%)",
   "hsl(60, 70%, 45%)",
+  "hsl(250, 55%, 60%)",
+  "hsl(330, 55%, 55%)",
+  "hsl(100, 50%, 40%)",
+  "hsl(15, 75%, 55%)",
+  "hsl(210, 55%, 55%)",
+  "hsl(290, 45%, 50%)",
+  "hsl(75, 60%, 42%)",
 ];
 
 const shortenInstitution = (name: string): string => {
@@ -64,44 +69,35 @@ const shortenInstitution = (name: string): string => {
     "MASSACHUSETTS INSTITUTE OF TECHNOLOGY": "MIT",
     "JOHNS HOPKINS UNIVERSITY": "Johns Hopkins",
     "EMORY UNIVERSITY": "Emory",
+    "SEATTLE CHILDREN'S HOSPITAL": "Seattle Children's",
+    "UTAH STATE UNIVERSITY": "Utah State",
   };
   return map[name] || name.split(" ").slice(0, 2).join(" ");
 };
 
-const renderActiveShape = (props: any) => {
-  const {
-    cx, cy, innerRadius, outerRadius, startAngle, endAngle,
-    fill, payload, percent, value,
-  } = props;
+const RADIAN = Math.PI / 180;
+
+const renderCustomLabel = ({
+  cx, cy, midAngle, innerRadius, outerRadius, percent, name,
+}: any) => {
+  // Only label slices > 3%
+  if (percent < 0.03) return null;
+  const radius = outerRadius + 24;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <g>
-      <text x={cx} y={cy - 14} textAnchor="middle" fill="hsl(var(--foreground))" className="text-sm font-semibold">
-        {payload.name}
-      </text>
-      <text x={cx} y={cy + 6} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
-        ${(value / 1_000_000).toFixed(2)}M
-      </text>
-      <text x={cx} y={cy + 22} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
-        {payload.grants} grant{payload.grants !== 1 ? "s" : ""} · {(percent * 100).toFixed(1)}%
-      </text>
-      <Sector
-        cx={cx} cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx} cy={cy}
-        innerRadius={outerRadius + 10}
-        outerRadius={outerRadius + 14}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-    </g>
+    <text
+      x={x}
+      y={y}
+      fill="hsl(var(--foreground))"
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={500}
+    >
+      {name}
+    </text>
   );
 };
 
@@ -129,8 +125,6 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export const FundingCharts = ({ data }: FundingChartsProps) => {
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
-
   const pieData = useMemo(() => {
     const map = new Map<string, { amount: number; grants: string[]; fullName: string }>();
     data.forEach((d) => {
@@ -152,14 +146,6 @@ export const FundingCharts = ({ data }: FundingChartsProps) => {
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  const onPieEnter = useCallback((_: any, index: number) => {
-    setActiveIndex(index);
-  }, []);
-
-  const onPieLeave = useCallback(() => {
-    setActiveIndex(undefined);
-  }, []);
-
   if (data.length === 0) return null;
 
   return (
@@ -171,37 +157,26 @@ export const FundingCharts = ({ data }: FundingChartsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pb-3">
-          <div style={{ height: 400 }}>
+          <div style={{ height: 420 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  activeIndex={activeIndex}
-                  activeShape={renderActiveShape}
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={80}
-                  outerRadius={130}
+                  innerRadius={70}
+                  outerRadius={120}
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={onPieLeave}
-                  paddingAngle={2}
+                  paddingAngle={1.5}
+                  label={renderCustomLabel}
+                  labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
+                  isAnimationActive={true}
                 >
                   {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="hsl(var(--background))" strokeWidth={2} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value: string) => (
-                    <span className="text-xs text-foreground">{value}</span>
-                  )}
-                />
               </PieChart>
             </ResponsiveContainer>
           </div>

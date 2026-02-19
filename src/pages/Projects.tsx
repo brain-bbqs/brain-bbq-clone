@@ -151,6 +151,7 @@ const Projects = () => {
     sortable: true,
     resizable: true,
     suppressMovable: true,
+    unSortIcon: true,
   }), []);
 
   const columnDefs = useMemo<ColDef<ProjectRow>[]>(() => [

@@ -33,6 +33,24 @@
   letter-spacing: 0.5px;
 }
 
+/* Sort icons always visible */
+.ag-theme-alpine .ag-header-cell .ag-sort-indicator-icon {
+  opacity: 0.4;
+}
+
+.ag-theme-alpine .ag-header-cell .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell .ag-sort-descending-icon {
+  opacity: 1;
+}
+
+.ag-theme-alpine .ag-header-icon .ag-icon {
+  color: hsl(0 0% 100%);
+}
+
+.ag-theme-alpine .ag-header-cell:hover .ag-sort-indicator-icon {
+  opacity: 0.8;
+}
+
 .ag-theme-alpine .ag-row {
   border-bottom-color: hsl(220 15% 92%);
 }
