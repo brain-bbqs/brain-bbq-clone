@@ -8,25 +8,52 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, Users, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "@/styles/ag-grid-theme.css";
 
 interface PIRow {
   name: string;
-  email: string;
   projectsAsPi: number;
   projectsAsCoPi: number;
   totalProjects: number;
   institutions: string[];
   grantTypes: string[];
+  grants: { grantNumber: string; title: string; nihLink: string; role: string }[];
 }
 
-const NameCell = ({ value }: { value: string }) => {
+/** Normalize a name to lowercase parts sorted alphabetically for comparison */
+const normalizeName = (name: string): string => {
+  return name
+    .replace(/[,.\-]/g, " ")
+    .split(/\s+/)
+    .map((s) => s.toLowerCase().trim())
+    .filter(Boolean)
+    .sort()
+    .join(" ");
+};
+
+/** Extract grant activity code (R34, U01, R61, U24, R24 etc.) from full NIH grant number */
+const extractGrantType = (grantNumber: string): string => {
+  const match = grantNumber?.match(/([A-Z]\d{2})/);
+  return match?.[1] || "";
+};
+
+const NameCell = ({ value, data }: { value: string; data: PIRow }) => {
+  // Link to NIH Reporter PI search
+  const searchUrl = `https://reporter.nih.gov/search/results?pi_names=${encodeURIComponent(value)}`;
   return (
     <div className="flex items-center gap-2">
-      <Users className="h-4 w-4 text-muted-foreground" />
-      <span className="font-medium text-foreground">{value}</span>
+      <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+      <a
+        href={searchUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+        title="View on NIH Reporter"
+      >
+        {value}
+      </a>
     </div>
   );
 };
@@ -36,7 +63,7 @@ const ProjectsCell = ({ data }: { data: PIRow }) => {
     <span className="text-foreground">
       <span className="font-semibold">{data.totalProjects}</span>
       <span className="text-muted-foreground ml-1">
-        ({data.projectsAsPi} / {data.projectsAsCoPi})
+        ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
       </span>
     </span>
   );
@@ -44,18 +71,18 @@ const ProjectsCell = ({ data }: { data: PIRow }) => {
 
 const BadgeListCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) {
-    return <span className="text-muted-foreground">N/A</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
-  
-  const displayItems = value.slice(0, 2);
-  const remaining = value.length - 2;
-  
+
+  const displayItems = value.slice(0, 3);
+  const remaining = value.length - 3;
+
   return (
     <div className="flex flex-wrap gap-1">
       {displayItems.map((item, i) => (
-        <Badge 
-          key={i} 
-          variant="outline" 
+        <Badge
+          key={i}
+          variant="outline"
           className="bg-primary/10 text-primary border-primary/30 text-xs"
         >
           {item}
@@ -68,59 +95,105 @@ const BadgeListCell = ({ value }: { value: string[] }) => {
   );
 };
 
+const GrantsCell = ({ data }: { data: PIRow }) => {
+  if (!data.grants || data.grants.length === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {data.grants.map((g) => (
+        <a
+          key={g.grantNumber}
+          href={g.nihLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1"
+          title={g.title}
+        >
+          <Badge
+            variant="outline"
+            className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
+              g.role === "contact_pi"
+                ? "bg-primary/15 text-primary border-primary/40 font-semibold"
+                : "bg-muted text-muted-foreground border-border"
+            }`}
+          >
+            {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
+            <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+          </Badge>
+        </a>
+      ))}
+    </div>
+  );
+};
+
 const fetchPIs = async (): Promise<PIRow[]> => {
   const { data, error } = await supabase.functions.invoke("nih-grants");
-  
+
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(data.error);
-  
+
   const grants = data?.data || [];
-  
-  // Aggregate PIs from grants
+
   const piMap = new Map<string, PIRow>();
-  
+
   grants.forEach((grant: any) => {
-    const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
-    const contactPi = grant.contactPi?.trim();
-    const grantType = grant.grantNumber?.match(/^[A-Z]\d+/)?.[0] || "";
-    
+    const allPis =
+      grant.allPis
+        ?.split(/[,;]/)
+        .map((p: string) => p.trim())
+        .filter(Boolean) || [];
+    const contactPi = grant.contactPi?.trim() || "";
+    const normalizedContactPi = normalizeName(contactPi);
+    const grantType = extractGrantType(grant.grantNumber || "");
+
     allPis.forEach((piName: string) => {
       if (!piName) return;
-      
+
       const existing = piMap.get(piName) || {
         name: piName,
-        email: "N/A",
         projectsAsPi: 0,
         projectsAsCoPi: 0,
         totalProjects: 0,
         institutions: [],
         grantTypes: [],
+        grants: [],
       };
-      
-      if (piName === contactPi) {
+
+      const isContact = normalizeName(piName) === normalizedContactPi;
+
+      if (isContact) {
         existing.projectsAsPi++;
       } else {
         existing.projectsAsCoPi++;
       }
       existing.totalProjects++;
-      
+
       if (grant.institution && !existing.institutions.includes(grant.institution)) {
         existing.institutions.push(grant.institution);
       }
       if (grantType && !existing.grantTypes.includes(grantType)) {
         existing.grantTypes.push(grantType);
       }
-      
+
+      existing.grants.push({
+        grantNumber: grant.grantNumber || "",
+        title: grant.title || "",
+        nihLink: grant.nihLink || "",
+        role: isContact ? "contact_pi" : "co_pi",
+      });
+
       piMap.set(piName, existing);
     });
   });
-  
+
   return Array.from(piMap.values()).sort((a, b) => b.totalProjects - a.totalProjects);
 };
 
 export default function PrincipalInvestigators() {
   const [quickFilterText, setQuickFilterText] = useState("");
-  
+
   const { data: rowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
     queryFn: fetchPIs,
@@ -128,54 +201,50 @@ export default function PrincipalInvestigators() {
     gcTime: 30 * 60 * 1000,
   });
 
-  const defaultColDef = useMemo<ColDef>(() => ({
-    sortable: true,
-    resizable: true,
-    suppressMovable: true,
-  }), []);
+  const defaultColDef = useMemo<ColDef>(
+    () => ({
+      sortable: true,
+      resizable: true,
+      suppressMovable: true,
+    }),
+    []
+  );
 
-  const columnDefs = useMemo<ColDef<PIRow>[]>(() => [
-    {
-      field: "name",
-      headerName: "Name",
-      flex: 1,
-      minWidth: 180,
-      cellRenderer: NameCell,
-      sort: "asc",
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      width: 120,
-      minWidth: 100,
-      cellRenderer: ({ value }: { value: string }) => (
-        <span className="text-muted-foreground">{value}</span>
-      ),
-    },
-    {
-      headerName: "Projects (PI / Co-PI)",
-      width: 160,
-      minWidth: 140,
-      cellRenderer: ProjectsCell,
-      comparator: (valueA, valueB, nodeA, nodeB) => {
-        return (nodeA.data?.totalProjects || 0) - (nodeB.data?.totalProjects || 0);
+  const columnDefs = useMemo<ColDef<PIRow>[]>(
+    () => [
+      {
+        field: "name",
+        headerName: "Name",
+        flex: 1,
+        minWidth: 200,
+        cellRenderer: NameCell,
+        sort: "asc",
       },
-    },
-    {
-      field: "grantTypes",
-      headerName: "Grant Types",
-      width: 160,
-      minWidth: 140,
-      cellRenderer: BadgeListCell,
-    },
-    {
-      field: "institutions",
-      headerName: "Institutions",
-      flex: 1,
-      minWidth: 200,
-      cellRenderer: BadgeListCell,
-    },
-  ], []);
+      {
+        headerName: "Projects (PI / Co-PI)",
+        width: 180,
+        minWidth: 160,
+        cellRenderer: ProjectsCell,
+        comparator: (_vA, _vB, nodeA, nodeB) => {
+          return (nodeA.data?.totalProjects || 0) - (nodeB.data?.totalProjects || 0);
+        },
+      },
+      {
+        headerName: "Grants",
+        width: 200,
+        minWidth: 160,
+        cellRenderer: GrantsCell,
+      },
+      {
+        field: "institutions",
+        headerName: "Institutions",
+        flex: 1,
+        minWidth: 220,
+        cellRenderer: BadgeListCell,
+      },
+    ],
+    []
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,13 +252,13 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs with their project associations
+            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their NIH Reporter profile.
           </p>
-          
+
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
               type="text"
-              placeholder="Filter by name..."
+              placeholder="Filter by name, institution..."
               value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-xs"
@@ -200,8 +269,8 @@ export default function PrincipalInvestigators() {
           </div>
         </div>
 
-        <div 
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
+        <div
+          className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
           style={{ height: "calc(100vh - 240px)" }}
         >
           <AgGridReact<PIRow>
@@ -226,8 +295,8 @@ export default function PrincipalInvestigators() {
             )}
             noRowsOverlayComponent={() => (
               <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span>Fetching data...</span>
+                <Users className="h-8 w-8 text-muted-foreground" />
+                <span>No investigators found</span>
               </div>
             )}
           />
