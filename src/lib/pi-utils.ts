@@ -29,11 +29,11 @@ export const normalizePiName = (name: string): string => {
 };
 
 /**
- * Build a working NIH Reporter search URL for a PI name.
+ * Build a Google Scholar search URL for a PI.
+ * Google Scholar reliably deep-links to search results, unlike NIH Reporter.
  */
 export const nihReporterPiUrl = (piName: string): string => {
-  // Use the advanced search with PI name filter
-  return `https://reporter.nih.gov/search/results?query=${encodeURIComponent(piName)}&selectedFOField=PI_NAME`;
+  return `https://scholar.google.com/scholar?q=author:"${encodeURIComponent(piName)}"`;
 };
 
 /**
