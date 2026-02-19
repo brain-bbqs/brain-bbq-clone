@@ -66,6 +66,9 @@ const aiItems: NavItem[] = [
 const experimentalItems: NavItem[] = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
   { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
+  { title: "MCP Server", url: "/mcp-docs", icon: Plug },
+  { title: "Build MCP", url: "/mcp-tutorial", icon: Package },
+  { title: "MCP Registry", url: "/mcp-registry", icon: Globe },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
@@ -88,9 +91,6 @@ const conferencesItems: NavItem[] = [
 
 const softwareDocItems: NavItem[] = [
   { title: "Public API", url: "/api-docs", icon: Code },
-  { title: "MCP Server", url: "/mcp-docs", icon: Plug },
-  { title: "Build MCP", url: "/mcp-tutorial", icon: Package },
-  { title: "MCP Registry", url: "/mcp-registry", icon: Globe },
 ];
 
 const engineeringItems: NavItem[] = [
