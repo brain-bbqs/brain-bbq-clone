@@ -29,15 +29,29 @@ export const normalizePiName = (name: string): string => {
 };
 
 /**
+ * Strip middle initials/names from a name for better Scholar search.
+ * "Steve W. C. Chang" → "Steve Chang"
+ * "Monika P. Jadi" → "Monika Jadi"
+ * "Timothy William Dunn" → "Timothy Dunn" (keeps first + last only)
+ */
+export const simplifyNameForSearch = (name: string): string => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) return name;
+  // Keep first and last name only
+  return `${parts[0]} ${parts[parts.length - 1]}`;
+};
+
+/**
  * Build a Google Scholar URL for a PI.
  * If a Scholar user ID is provided, links directly to their profile.
- * Otherwise falls back to the author search page.
+ * Otherwise falls back to the author search page with simplified name.
  */
 export const piProfileUrl = (piName: string, scholarId?: string): string => {
   if (scholarId) {
     return `https://scholar.google.com/citations?hl=en&user=${encodeURIComponent(scholarId)}`;
   }
-  return `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(piName)}`;
+  const searchName = simplifyNameForSearch(piName);
+  return `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(searchName)}`;
 };
 
 /**
