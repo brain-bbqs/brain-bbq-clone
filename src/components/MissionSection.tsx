@@ -8,12 +8,12 @@ const MissionSection = () => {
 
   return (
     <section className="max-w-3xl mx-auto py-4">
-      <h2 className="text-xl font-bold text-foreground mb-2">Mission</h2>
-      <div className="border-t border-border mb-3" />
+      <h2 className="text-2xl font-bold text-foreground mb-3">Mission</h2>
+      <div className="border-t border-border mb-4" />
       
-      <ul className="list-disc list-inside space-y-2">
+      <ul className="list-disc list-inside space-y-3">
         {missions.map((mission, index) => (
-          <li key={index} className="text-foreground text-sm">
+          <li key={index} className="text-foreground text-base">
             {mission}
           </li>
         ))}
