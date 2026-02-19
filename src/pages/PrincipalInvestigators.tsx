@@ -9,7 +9,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Users, ExternalLink } from "lucide-react";
+import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
@@ -30,9 +30,11 @@ interface PIRow {
   displayName: string;
   firstName: string;
   lastName: string;
+  profileId: number | null;
   projectsAsPi: number;
   projectsAsCoPi: number;
   totalProjects: number;
+  totalFunding: number;
   institutions: string[];
   grantTypes: string[];
   grants: GrantInfo[];
@@ -46,11 +48,16 @@ const extractGrantType = (grantNumber: string): string => {
   return match?.[1] || "";
 };
 
-/** Open NIH Reporter search for a PI, falling back to Google Scholar */
-const openNihReporterProfile = async (firstName: string, lastName: string, displayName: string) => {
+/** Open NIH Reporter search for a PI using their profile ID */
+const openNihReporterProfile = async (pi: PIRow) => {
   try {
+    // Use profile_id if available (most reliable)
+    const body = pi.profileId
+      ? { pi_profile_id: pi.profileId }
+      : { first_name: pi.firstName, last_name: pi.lastName };
+
     const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
-      body: { first_name: firstName, last_name: lastName },
+      body,
     });
     if (!error && data?.url) {
       window.open(data.url, "_blank");
@@ -59,9 +66,8 @@ const openNihReporterProfile = async (firstName: string, lastName: string, displ
   } catch {
     // fallback below
   }
-  // Fallback: go directly to NIH Reporter search
-  const reporterUrl = `https://reporter.nih.gov/search/results?pi_names=${encodeURIComponent(firstName)}%20${encodeURIComponent(lastName)}`;
-  window.open(reporterUrl, "_blank");
+  // Fallback: Google Scholar search
+  window.open(piProfileUrl(pi.displayName), "_blank");
 };
 
 const NameCell = ({ data }: { data: PIRow }) => {
@@ -69,7 +75,7 @@ const NameCell = ({ data }: { data: PIRow }) => {
     <div className="flex items-center gap-2">
       <Users className="h-4 w-4 text-muted-foreground shrink-0" />
       <button
-        onClick={() => openNihReporterProfile(data.firstName, data.lastName, data.displayName)}
+        onClick={() => openNihReporterProfile(data)}
         className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left"
         title={`View ${data.displayName} on NIH Reporter`}
       >
@@ -87,6 +93,11 @@ const ProjectsCell = ({ data }: { data: PIRow }) => (
     </span>
   </span>
 );
+
+const FundingCell = ({ value }: { value: number }) => {
+  if (!value || isNaN(value)) return <span className="text-muted-foreground">—</span>;
+  return <span className="font-mono text-emerald-600">${value.toLocaleString()}</span>;
+};
 
 const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
@@ -121,7 +132,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
           <Tooltip key={`${g.grantNumber}-${idx}`}>
             <TooltipTrigger asChild>
               <a
-                href={g.nihLink || `https://reporter.nih.gov/search/results?projectNum=${encodeURIComponent(g.grantNumber)}`}
+                href={g.nihLink || `https://reporter.nih.gov/project-details/${encodeURIComponent(g.grantNumber)}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -168,39 +179,54 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   const piMap = new Map<string, PIRow>();
 
   grants.forEach((grant: any) => {
+    const piDetails: any[] = grant.piDetails || [];
     const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
     const contactPi = grant.contactPi?.trim() || "";
     const normalizedContactPi = nameKey(contactPi);
     const grantType = extractGrantType(grant.grantNumber || "");
     const allPiNames = allPis.map((n: string) => normalizePiName(n));
+    const awardAmount = typeof grant.awardAmount === "number" ? grant.awardAmount : 0;
 
     allPis.forEach((piName: string) => {
       if (!piName) return;
       const key = nameKey(piName);
       const displayName = normalizePiName(piName);
 
-      // Extract first/last for NIH Reporter search
-      const nameParts = displayName.split(/\s+/).filter(Boolean);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts[nameParts.length - 1] || "";
+      // Find matching piDetail for this PI to get profileId, firstName, lastName
+      const matchingDetail = piDetails.find((d: any) => {
+        const detailKey = nameKey(d.fullName || `${d.firstName} ${d.lastName}`);
+        return detailKey === key;
+      });
+
+      const firstName = matchingDetail?.firstName || displayName.split(/\s+/)[0] || "";
+      const lastName = matchingDetail?.lastName || displayName.split(/\s+/).pop() || "";
+      const profileId = matchingDetail?.profileId || null;
 
       const existing = piMap.get(key) || {
         name: piName,
         displayName,
         firstName,
         lastName,
+        profileId,
         projectsAsPi: 0,
         projectsAsCoPi: 0,
         totalProjects: 0,
+        totalFunding: 0,
         institutions: [],
         grantTypes: [],
         grants: [],
       };
 
+      // Update profileId if we found one and didn't have one before
+      if (profileId && !existing.profileId) {
+        existing.profileId = profileId;
+      }
+
       const isContact = key === normalizedContactPi;
       if (isContact) existing.projectsAsPi++;
       else existing.projectsAsCoPi++;
       existing.totalProjects++;
+      existing.totalFunding += awardAmount;
 
       if (grant.institution && !existing.institutions.includes(grant.institution)) {
         existing.institutions.push(grant.institution);
@@ -216,7 +242,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
         title: grant.title || "",
         nihLink: grant.nihLink || "",
         role: isContact ? "contact_pi" : "co_pi",
-        awardAmount: grant.awardAmount || 0,
+        awardAmount,
         institution: grant.institution || "",
         collaborators,
       });
@@ -236,6 +262,26 @@ export default function PrincipalInvestigators() {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+
+  const totalFundingAll = useMemo(() =>
+    rowData.reduce((sum, pi) => sum + pi.totalFunding, 0),
+    [rowData]
+  );
+
+  // Deduplicate funding: count each grant only once across PIs
+  const uniqueGrantFunding = useMemo(() => {
+    const seen = new Set<string>();
+    let total = 0;
+    rowData.forEach(pi => {
+      pi.grants.forEach(g => {
+        if (!seen.has(g.grantNumber)) {
+          seen.add(g.grantNumber);
+          total += g.awardAmount || 0;
+        }
+      });
+    });
+    return total;
+  }, [rowData]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
@@ -268,17 +314,11 @@ export default function PrincipalInvestigators() {
       cellRenderer: GrantsCell,
     },
     {
+      field: "totalFunding",
       headerName: "Total Funding",
       width: 150,
       minWidth: 120,
-      valueGetter: (params) => {
-        if (!params.data?.grants) return 0;
-        return params.data.grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
-      },
-      cellRenderer: ({ value }: { value: number }) => {
-        if (!value) return <span className="text-muted-foreground">—</span>;
-        return <span className="font-mono text-primary">${value.toLocaleString()}</span>;
-      },
+      cellRenderer: FundingCell,
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
     {
@@ -300,7 +340,7 @@ export default function PrincipalInvestigators() {
           </p>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-card border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -310,6 +350,21 @@ export default function PrincipalInvestigators() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Investigators</p>
                     <p className="text-xl font-bold text-foreground">{rowData.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
+                    <p className="text-xl font-bold text-emerald-600">
+                      ${uniqueGrantFunding > 0 ? `${(uniqueGrantFunding / 1000000).toFixed(1)}M` : "—"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -345,7 +400,7 @@ export default function PrincipalInvestigators() {
 
         <div
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-          style={{ height: "calc(100vh - 340px)" }}
+          style={{ height: "calc(100vh - 380px)" }}
         >
           <AgGridReact<PIRow>
             rowData={rowData}
