@@ -125,12 +125,12 @@ const Projects = () => {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
 
-  // Fetch grants with caching (stale for 5 minutes, cache for 30 minutes)
+  // Fetch grants from server cache (data refreshed via cron/admin)
   const { data: rowData = [], isLoading: loading, refetch } = useQuery({
     queryKey: ["nih-grants"],
     queryFn: fetchGrants,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes cache
+    staleTime: 60 * 60 * 1000, // 1 hour (data is cached server-side)
+    gcTime: 24 * 60 * 60 * 1000, // 24 hour client cache
   });
 
   // Calculate metrics

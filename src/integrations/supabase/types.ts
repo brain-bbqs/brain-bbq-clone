@@ -238,6 +238,57 @@ export type Database = {
         }
         Relationships: []
       }
+      nih_grants_cache: {
+        Row: {
+          created_at: string
+          data: Json
+          grant_number: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          grant_number: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          grant_number?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nih_grants_sync_log: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          grants_updated: number | null
+          id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          grants_updated?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          grants_updated?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
