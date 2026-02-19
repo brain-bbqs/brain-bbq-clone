@@ -92,29 +92,45 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
+const openNihReporterProfile = async (profileId: number, displayName: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
+      body: { pi_profile_id: profileId },
+    });
+    if (!error && data?.url) {
+      window.open(data.url, "_blank");
+      return;
+    }
+  } catch {
+    // fallback below
+  }
+  window.open(piProfileUrl(displayName), "_blank");
+};
+
 const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   const piDetails = data.piDetails;
   
-  // If we have structured PI data with profile_ids, use NIH Reporter links
   if (piDetails && piDetails.length > 0) {
     return (
       <span className="truncate block max-w-full">
         {piDetails.map((pi, i) => {
           const displayName = normalizePiName(pi.fullName);
-          const href = pi.profileId
-            ? `https://reporter.nih.gov/search/results?pi_profile_id=${pi.profileId}`
-            : piProfileUrl(displayName);
           return (
             <span key={i}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-                title={pi.profileId ? `View ${displayName} on NIH Reporter` : `Search ${displayName} on Google Scholar`}
+              <span
+                className="text-primary hover:underline cursor-pointer"
+                title={`View ${displayName} on NIH Reporter`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (pi.profileId) {
+                    openNihReporterProfile(pi.profileId, displayName);
+                  } else {
+                    window.open(piProfileUrl(displayName), "_blank");
+                  }
+                }}
               >
                 {displayName}
-              </a>
+              </span>
               {i < piDetails.length - 1 ? ", " : ""}
             </span>
           );
