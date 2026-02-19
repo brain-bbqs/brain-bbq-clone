@@ -8,10 +8,22 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, ExternalLink } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import "@/styles/ag-grid-theme.css";
+
+interface GrantInfo {
+  grantNumber: string;
+  title: string;
+  nihLink: string;
+  role: string;
+  awardAmount: number;
+  collaborators: string[];
+  institution: string;
+}
 
 interface PIRow {
   name: string;
@@ -19,16 +31,15 @@ interface PIRow {
   projectsAsPi: number;
   projectsAsCoPi: number;
   totalProjects: number;
+  totalFunding: number;
   institutions: string[];
   grantTypes: string[];
-  grants: { grantNumber: string; title: string; nihLink: string; role: string }[];
+  grants: GrantInfo[];
 }
 
-/** Normalize a name to lowercase sorted parts for comparison */
 const nameKey = (name: string): string =>
   name.replace(/[,.\-]/g, " ").split(/\s+/).map((s) => s.toLowerCase().trim()).filter(Boolean).sort().join(" ");
 
-/** Extract grant activity code */
 const extractGrantType = (grantNumber: string): string => {
   const match = grantNumber?.match(/([A-Z]\d{2})/);
   return match?.[1] || "";
@@ -61,6 +72,11 @@ const ProjectsCell = ({ data }: { data: PIRow }) => (
   </span>
 );
 
+const FundingCell = ({ value }: { value: number }) => {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  return <span className="font-mono text-emerald-600">${value.toLocaleString()}</span>;
+};
+
 const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
   const displayItems = value.slice(0, 3);
@@ -88,23 +104,43 @@ const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
 const GrantsCell = ({ data }: { data: PIRow }) => {
   if (!data.grants || data.grants.length === 0) return <span className="text-muted-foreground">—</span>;
   return (
-    <div className="flex flex-wrap gap-1">
-      {data.grants.map((g) => (
-        <a key={g.grantNumber} href={g.nihLink} target="_blank" rel="noopener noreferrer" title={g.title}>
-          <Badge
-            variant="outline"
-            className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
-              g.role === "contact_pi"
-                ? "bg-primary/15 text-primary border-primary/40 font-semibold"
-                : "bg-muted text-muted-foreground border-border"
-            }`}
-          >
-            {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
-            <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
-          </Badge>
-        </a>
-      ))}
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex flex-wrap gap-1">
+        {data.grants.map((g) => (
+          <Tooltip key={g.grantNumber}>
+            <TooltipTrigger asChild>
+              <a href={g.nihLink} target="_blank" rel="noopener noreferrer">
+                <Badge
+                  variant="outline"
+                  className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
+                    g.role === "contact_pi"
+                      ? "bg-primary/15 text-primary border-primary/40 font-semibold"
+                      : "bg-muted text-muted-foreground border-border"
+                  }`}
+                >
+                  {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
+                  <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                </Badge>
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-sm">
+              <p className="font-medium text-sm mb-1">{g.title}</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {g.grantNumber} · {g.institution}
+                {g.awardAmount > 0 && ` · $${g.awardAmount.toLocaleString()}`}
+              </p>
+              {g.collaborators.length > 0 && (
+                <div className="mt-1 pt-1 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Collaborators: {g.collaborators.join(", ")}
+                  </p>
+                </div>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 };
 
@@ -121,16 +157,19 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const contactPi = grant.contactPi?.trim() || "";
     const normalizedContactPi = nameKey(contactPi);
     const grantType = extractGrantType(grant.grantNumber || "");
+    const allPiNames = allPis.map((n: string) => normalizePiName(n));
 
     allPis.forEach((piName: string) => {
       if (!piName) return;
       const key = nameKey(piName);
+      const displayName = normalizePiName(piName);
       const existing = piMap.get(key) || {
         name: piName,
-        displayName: normalizePiName(piName),
+        displayName,
         projectsAsPi: 0,
         projectsAsCoPi: 0,
         totalProjects: 0,
+        totalFunding: 0,
         institutions: [],
         grantTypes: [],
         grants: [],
@@ -140,6 +179,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (isContact) existing.projectsAsPi++;
       else existing.projectsAsCoPi++;
       existing.totalProjects++;
+      existing.totalFunding += grant.awardAmount || 0;
 
       if (grant.institution && !existing.institutions.includes(grant.institution)) {
         existing.institutions.push(grant.institution);
@@ -147,18 +187,24 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (grantType && !existing.grantTypes.includes(grantType)) {
         existing.grantTypes.push(grantType);
       }
+
+      const collaborators = allPiNames.filter((n: string) => n !== displayName);
+
       existing.grants.push({
         grantNumber: grant.grantNumber || "",
         title: grant.title || "",
         nihLink: grant.nihLink || "",
         role: isContact ? "contact_pi" : "co_pi",
+        awardAmount: grant.awardAmount || 0,
+        institution: grant.institution || "",
+        collaborators,
       });
 
       piMap.set(key, existing);
     });
   });
 
-  return Array.from(piMap.values()).sort((a, b) => b.totalProjects - a.totalProjects);
+  return Array.from(piMap.values()).sort((a, b) => b.totalFunding - a.totalFunding);
 };
 
 export default function PrincipalInvestigators() {
@@ -170,10 +216,16 @@ export default function PrincipalInvestigators() {
     gcTime: 30 * 60 * 1000,
   });
 
+  const totalFundingAll = useMemo(() =>
+    rowData.reduce((sum, pi) => sum + pi.totalFunding, 0),
+    [rowData]
+  );
+
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
     resizable: true,
     suppressMovable: true,
+    unSortIcon: true,
   }), []);
 
   const columnDefs = useMemo<ColDef<PIRow>[]>(() => [
@@ -200,6 +252,13 @@ export default function PrincipalInvestigators() {
       cellRenderer: GrantsCell,
     },
     {
+      field: "totalFunding",
+      headerName: "Total Funding",
+      width: 140,
+      minWidth: 120,
+      cellRenderer: FundingCell,
+    },
+    {
       field: "institutions",
       headerName: "Institutions",
       flex: 1,
@@ -214,8 +273,56 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their Google Scholar profile.
+            Browse all Principal Investigators and Co-PIs across BBQS grants. Hover over a grant badge to see project details and collaborators.
           </p>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Investigators</p>
+                    <p className="text-xl font-bold text-foreground">{rowData.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <DollarSign className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
+                    <p className="text-xl font-bold text-foreground">
+                      ${(totalFundingAll / 1000000).toFixed(1)}M
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Unique Institutions</p>
+                    <p className="text-xl font-bold text-foreground">
+                      {new Set(rowData.flatMap(pi => pi.institutions)).size}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
               type="text"
@@ -230,7 +337,7 @@ export default function PrincipalInvestigators() {
 
         <div
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-          style={{ height: "calc(100vh - 240px)" }}
+          style={{ height: "calc(100vh - 340px)" }}
         >
           <AgGridReact<PIRow>
             rowData={rowData}
