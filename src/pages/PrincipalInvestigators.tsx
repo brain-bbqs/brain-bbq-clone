@@ -284,51 +284,35 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
   );
 };
 
-/* ── Combined Expertise cell (Skills + Research Areas) ── */
-const ExpertiseCell = ({ data }: { data: PIRow }) => {
-  if ((!data?.skills || data.skills.length === 0) && (!data?.researchAreas || data.researchAreas.length === 0)) {
-    return <span className="text-muted-foreground">—</span>;
-  }
+/* ── Skills cell ── */
+const SkillsCell = ({ data }: { data: PIRow }) => {
+  if (!data?.skills || data.skills.length === 0) return <span className="text-muted-foreground">—</span>;
+  const shown = data.skills.slice(0, 3);
+  const remaining = data.skills.length - shown.length;
 
-  const allItems: { label: string; type: "skill" | "area" }[] = [
-    ...(data.skills || []).map(s => ({ label: s, type: "skill" as const })),
-    ...(data.researchAreas || []).map(a => ({ label: a, type: "area" as const })),
-  ];
-
-  const shown = allItems.slice(0, 4);
-  const remaining = allItems.length - shown.length;
-
-  const getRelatedProjects = (item: string, type: "skill" | "area") => {
+  const getRelatedProjects = (skill: string) => {
     const piKey = nameKey(data.displayName);
     const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
     return MARR_PROJECTS.filter(p => {
       const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
-      const field = type === "skill" ? p.algorithmic : p.computational;
-      return matchesPi && field.includes(item);
+      return matchesPi && p.algorithmic.includes(skill);
     });
   };
 
-  const renderBadge = (item: { label: string; type: "skill" | "area" }, i: number) => {
-    const colorClasses = item.type === "skill"
-      ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400"
-      : "bg-primary/10 text-primary border-primary/30";
-    const related = getRelatedProjects(item.label, item.type);
-    const typeLabel = item.type === "skill" ? "Skill" : "Research Area";
-
+  const renderBadge = (skill: string, i: number) => {
+    const related = getRelatedProjects(skill);
     return (
-      <HoverCard key={`${item.type}-${i}`} openDelay={200} closeDelay={100}>
+      <HoverCard key={i} openDelay={200} closeDelay={100}>
         <HoverCardTrigger asChild>
-          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal cursor-help ${colorClasses}`}>
-            {item.label}
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal cursor-help bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400">
+            {skill}
           </Badge>
         </HoverCardTrigger>
         <HoverCardContent side="bottom" align="start" className="w-72 p-4">
-          <p className="font-semibold text-sm mb-1">{item.label}</p>
+          <p className="font-semibold text-sm mb-1">{skill}</p>
           {related.length > 0 ? (
             <>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-                {typeLabel} · {related.length} project{related.length !== 1 ? "s" : ""}
-              </p>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">Skill · {related.length} project{related.length !== 1 ? "s" : ""}</p>
               <div className="flex flex-col gap-1.5">
                 {related.map((proj, j) => (
                   <div key={j} className="flex items-start gap-2 text-xs">
@@ -342,7 +326,7 @@ const ExpertiseCell = ({ data }: { data: PIRow }) => {
               </div>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">{typeLabel} for {data.displayName}</p>
+            <p className="text-xs text-muted-foreground">Skill for {data.displayName}</p>
           )}
         </HoverCardContent>
       </HoverCard>
@@ -351,18 +335,80 @@ const ExpertiseCell = ({ data }: { data: PIRow }) => {
 
   return (
     <div className="flex flex-wrap gap-1 py-1">
-      {shown.map((item, i) => renderBadge(item, i))}
+      {shown.map((s, i) => renderBadge(s, i))}
       {remaining > 0 && (
         <HoverCard openDelay={200} closeDelay={100}>
           <HoverCardTrigger asChild>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">
-              +{remaining}
-            </Badge>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">+{remaining}</Badge>
           </HoverCardTrigger>
           <HoverCardContent side="bottom" align="start" className="w-72 p-3">
-            <div className="flex flex-wrap gap-1">
-              {allItems.map((item, i) => renderBadge(item, i))}
-            </div>
+            <div className="flex flex-wrap gap-1">{data.skills.map((s, i) => renderBadge(s, i))}</div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </div>
+  );
+};
+
+/* ── Research Areas cell ── */
+const ResearchAreasCell = ({ data }: { data: PIRow }) => {
+  if (!data?.researchAreas || data.researchAreas.length === 0) return <span className="text-muted-foreground">—</span>;
+  const shown = data.researchAreas.slice(0, 3);
+  const remaining = data.researchAreas.length - shown.length;
+
+  const getRelatedProjects = (area: string) => {
+    const piKey = nameKey(data.displayName);
+    const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
+    return MARR_PROJECTS.filter(p => {
+      const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
+      return matchesPi && p.computational.includes(area);
+    });
+  };
+
+  const renderBadge = (area: string, i: number) => {
+    const related = getRelatedProjects(area);
+    return (
+      <HoverCard key={i} openDelay={200} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal cursor-help bg-primary/10 text-primary border-primary/30">
+            {area}
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent side="bottom" align="start" className="w-72 p-4">
+          <p className="font-semibold text-sm mb-1">{area}</p>
+          {related.length > 0 ? (
+            <>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">Research Area · {related.length} project{related.length !== 1 ? "s" : ""}</p>
+              <div className="flex flex-col gap-1.5">
+                {related.map((proj, j) => (
+                  <div key={j} className="flex items-start gap-2 text-xs">
+                    <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ backgroundColor: proj.color }} />
+                    <div>
+                      <p className="font-medium text-foreground">{proj.shortName}</p>
+                      <p className="text-muted-foreground">{proj.species}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">Research area for {data.displayName}</p>
+          )}
+        </HoverCardContent>
+      </HoverCard>
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1 py-1">
+      {shown.map((a, i) => renderBadge(a, i))}
+      {remaining > 0 && (
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">+{remaining}</Badge>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-72 p-3">
+            <div className="flex flex-wrap gap-1">{data.researchAreas.map((a, i) => renderBadge(a, i))}</div>
           </HoverCardContent>
         </HoverCard>
       )}
@@ -620,16 +666,22 @@ export default function PrincipalInvestigators() {
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
     {
-      headerName: "Expertise",
-      flex: 1.5,
-      minWidth: 250,
-      cellRenderer: (params: any) => <ExpertiseCell data={params.data} />,
+      headerName: "Skills",
+      flex: 1,
+      minWidth: 200,
+      cellRenderer: (params: any) => <SkillsCell data={params.data} />,
       wrapText: true,
       autoHeight: true,
-      filterValueGetter: (params) => [
-        ...(params.data?.skills || []),
-        ...(params.data?.researchAreas || []),
-      ].join(", "),
+      filterValueGetter: (params) => (params.data?.skills || []).join(", "),
+    },
+    {
+      headerName: "Research Areas",
+      flex: 1,
+      minWidth: 220,
+      cellRenderer: (params: any) => <ResearchAreasCell data={params.data} />,
+      wrapText: true,
+      autoHeight: true,
+      filterValueGetter: (params) => (params.data?.researchAreas || []).join(", "),
     },
   ], []);
 
