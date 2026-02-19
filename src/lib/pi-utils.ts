@@ -29,10 +29,14 @@ export const normalizePiName = (name: string): string => {
 };
 
 /**
- * Build a Google Scholar author profile search URL for a PI.
- * Links to the profiles search page which lists matching author profiles.
+ * Build a Google Scholar URL for a PI.
+ * If a Scholar user ID is provided, links directly to their profile.
+ * Otherwise falls back to the author search page.
  */
-export const piProfileUrl = (piName: string): string => {
+export const piProfileUrl = (piName: string, scholarId?: string): string => {
+  if (scholarId) {
+    return `https://scholar.google.com/citations?hl=en&user=${encodeURIComponent(scholarId)}`;
+  }
   return `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(piName)}`;
 };
 
