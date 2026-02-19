@@ -87,7 +87,7 @@
   border-radius: 8px;
 }
 
-/* Ensure hovercards appear above AG Grid */
+/* Ensure hovercards/popovers appear above AG Grid */
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
 }
