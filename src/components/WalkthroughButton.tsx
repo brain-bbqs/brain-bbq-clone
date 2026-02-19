@@ -116,17 +116,16 @@ export function WalkthroughButton() {
       {!open && (
         <button
           onClick={handleOpen}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[hsl(222_47%_20%)] to-[hsl(229_50%_15%)] text-[hsl(0_0%_100%)] shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center group"
+          className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-gradient-to-br from-[hsl(222_47%_20%)] to-[hsl(229_50%_15%)] text-[hsl(0_0%_100%)] shadow-md hover:shadow-lg hover:scale-110 transition-all flex items-center justify-center"
           title="Take a guided tour"
         >
-          <HelpCircle className="h-6 w-6" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[hsl(38_90%_50%)] border-2 border-background animate-pulse" />
+          <HelpCircle className="h-5 w-5" />
         </button>
       )}
 
       {/* Tour card — bottom-right, no overlay so user can see the page */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] animate-in slide-in-from-bottom-4 fade-in duration-300">
+        <div className="fixed top-14 right-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] animate-in slide-in-from-top-4 fade-in duration-300">
           {/* Card */}
           <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
             {/* Gradient bar */}
