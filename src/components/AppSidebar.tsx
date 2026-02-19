@@ -63,11 +63,11 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 flex-shrink-0">
+            <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-sidebar-accent/30">
               <img
                 src={bbqsLogoIcon}
                 alt="BBQS Logo"
-                className="w-full h-full object-contain drop-shadow-sm"
+                className="w-full h-full object-cover scale-[1.35]"
               />
             </div>
             {!collapsed && (

@@ -4,11 +4,11 @@ const HeroSection = () => {
   return (
     <section className="text-center">
       <div className="inline-flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-xl px-10 py-6">
-        <div className="w-32 h-32">
+        <div className="w-36 h-36 rounded-full overflow-hidden bg-background/60 shadow-lg">
           <img 
             src={bbqsLogoIcon} 
             alt="BBQS Consortium"
-            className="w-full h-full object-contain drop-shadow-lg"
+            className="w-full h-full object-cover scale-[1.35]"
           />
         </div>
         <div>
