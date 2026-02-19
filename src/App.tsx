@@ -20,13 +20,16 @@ import Publications from "./pages/Publications";
 import About from "./pages/About";
 import AgenticFramework from "./pages/AgenticFramework";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
-
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
 import ApiDocs from "./pages/ApiDocs";
 import McpDocs from "./pages/McpDocs";
 import McpTutorial from "./pages/McpTutorial";
 import McpRegistry from "./pages/McpRegistry";
+import Datasets from "./pages/Datasets";
+import Benchmarks from "./pages/Benchmarks";
+import MLModels from "./pages/MLModels";
+import ComputationalModels from "./pages/ComputationalModels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,7 +64,10 @@ const App = () => (
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/mcp-docs" element={<McpDocs />} />
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
-              <Route path="/mcp-registry" element={<McpRegistry />} />
+              <Route path="/datasets" element={<Datasets />} />
+              <Route path="/benchmarks" element={<Benchmarks />} />
+              <Route path="/ml-models" element={<MLModels />} />
+              <Route path="/computational-models" element={<ComputationalModels />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

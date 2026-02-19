@@ -13,7 +13,6 @@ import {
   FlaskConical,
   MessageSquare,
   Bot,
-  
   Wrench,
   Sparkles,
   Code,
@@ -21,6 +20,11 @@ import {
   Scale,
   Package,
   Globe,
+  Database,
+  BarChart3,
+  Brain,
+  Bug,
+  Sigma,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -40,8 +44,16 @@ const mainItems: NavItem[] = [
   { title: "About", url: "/about", icon: Info },
 ];
 
-const crossSpeciesItems: NavItem[] = [
-  { title: "Explorer", url: "/knowledge-graph", icon: FlaskConical },
+const toolsItems: NavItem[] = [
+  { title: "Software", url: "/resources", icon: Wrench },
+  { title: "Datasets", url: "/datasets", icon: Database },
+  { title: "Benchmarks", url: "/benchmarks", icon: BarChart3 },
+  { title: "ML Models", url: "/ml-models", icon: Brain },
+];
+
+const scienceItems: NavItem[] = [
+  { title: "Species", url: "/knowledge-graph", icon: Bug },
+  { title: "Computational Models", url: "/computational-models", icon: Sigma },
 ];
 
 const aiItems: NavItem[] = [
@@ -52,7 +64,6 @@ const aiItems: NavItem[] = [
 const knowledgeBaseItems: NavItem[] = [
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
-  { title: "Tools", url: "/resources", icon: Wrench },
 ];
 
 const communityItems: NavItem[] = [
@@ -86,7 +97,8 @@ const legalItems: NavItem[] = [
 
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
-  { label: "Cross-Species", items: crossSpeciesItems },
+  { label: "Tools", items: toolsItems },
+  { label: "Science", items: scienceItems },
   { label: "Artificial Intelligence", items: aiItems },
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Community", items: communityItems },
