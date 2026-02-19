@@ -18,7 +18,7 @@ const PAGES: SearchablePage[] = [
   { title: "Resources & Tools", path: "/resources", keywords: ["resources", "tools", "software", "deeplabcut", "sleap", "suite2p"], section: "Knowledge Base" },
   { title: "Knowledge Graph", path: "/knowledge-graph", keywords: ["knowledge", "graph", "ontology", "entities", "ner", "extraction"], section: "Knowledge Base" },
   { title: "NeuroMCP (Hannah)", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai", "assistant", "ask"], section: "AI" },
-  { title: "Cross-Species Synchronization", path: "/consortia-history", keywords: ["cross", "species", "synchronization", "history", "consortia"], section: "AI" },
+  
   { title: "Principal Investigators", path: "/investigators", keywords: ["investigators", "pi", "principal", "researchers", "faculty"], section: "Directory" },
   { title: "Working Groups", path: "/working-groups", keywords: ["working", "groups", "committees", "teams"], section: "Directory" },
   { title: "Announcements", path: "/announcements", keywords: ["announcements", "news", "updates"], section: "Community" },
@@ -31,7 +31,7 @@ const PAGES: SearchablePage[] = [
   { title: "Roadmap", path: "/roadmap", keywords: ["roadmap", "timeline", "milestones", "planning", "github"], section: "Development" },
   { title: "Software Architecture", path: "/design-docs", keywords: ["software", "architecture", "design", "system", "technical"], section: "Development" },
   { title: "Agentic Framework", path: "/agentic-framework", keywords: ["agentic", "framework", "workflow", "agents", "ai"], section: "Development" },
-  { title: "ML Models", path: "/ml-models", keywords: ["ml", "models", "machine", "learning", "deep", "neural"], section: "Knowledge Base" },
+  
   { title: "Assertions", path: "/assertions", keywords: ["assertions", "claims", "statements"], section: "Knowledge Base" },
   { title: "Evidence", path: "/evidence", keywords: ["evidence", "data", "support", "proof"], section: "Knowledge Base" },
 ];

@@ -22,7 +22,7 @@ import Publications from "./pages/Publications";
 import About from "./pages/About";
 import AgenticFramework from "./pages/AgenticFramework";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
-import MLModels from "./pages/MLModels";
+
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
 import ApiDocs from "./pages/ApiDocs";
@@ -59,7 +59,7 @@ const App = () => (
               <Route path="/agentic-framework" element={<AgenticFramework />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
-              <Route path="/ml-models" element={<MLModels />} />
+              
               <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
               <Route path="/data-sharing-policy" element={<DataSharingPolicy />} />
               <Route path="/api-docs" element={<ApiDocs />} />
