@@ -289,7 +289,7 @@ export default function Publications() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div className="ag-theme-alpine relative" style={{ height: "calc(100vh - 240px)", width: "100%" }}>
+          <div className="ag-theme-alpine relative" style={{ height: "calc(100vh - 280px)", minHeight: "400px", width: "100%" }}>
             <AgGridReact
               ref={gridRef}
               rowData={displayedPubs}
@@ -301,7 +301,8 @@ export default function Publications() {
               headerHeight={40}
               animateRows
               pagination
-              paginationPageSize={50}
+              paginationPageSize={20}
+              paginationPageSizeSelector={[10, 20, 50]}
               domLayout="normal"
               onCellMouseOver={onCellMouseOver}
               onCellMouseOut={onCellMouseOut}
