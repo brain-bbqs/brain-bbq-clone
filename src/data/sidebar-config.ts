@@ -59,7 +59,7 @@ const scienceItems: NavItem[] = [
 ];
 
 const aiItems: NavItem[] = [
-  { title: "Neurodocker Agent", url: "#", icon: Container },
+  { title: "Neurodocker", url: "#", icon: Container },
   { title: "Data Harmonizer", url: "#", icon: Database },
 ];
 
@@ -108,7 +108,7 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
   { label: "Science", items: scienceItems },
-  { label: "AI Microservices", items: aiItems },
+  { label: "Agentic AI Microservices", items: aiItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Developer Tools", items: softwareDocItems },
