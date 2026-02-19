@@ -78,11 +78,9 @@ const shortenInstitution = (name: string): string => {
 const RADIAN = Math.PI / 180;
 
 const renderCustomLabel = ({
-  cx, cy, midAngle, innerRadius, outerRadius, percent, name,
+  cx, cy, midAngle, innerRadius, outerRadius, percent, name, index,
 }: any) => {
-  // Only label slices > 3%
-  if (percent < 0.03) return null;
-  const radius = outerRadius + 24;
+  const radius = outerRadius + 20;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -93,7 +91,7 @@ const renderCustomLabel = ({
       fill="hsl(var(--foreground))"
       textAnchor={x > cx ? "start" : "end"}
       dominantBaseline="central"
-      fontSize={11}
+      fontSize={percent < 0.03 ? 9 : 11}
       fontWeight={500}
     >
       {name}
@@ -157,15 +155,15 @@ export const FundingCharts = ({ data }: FundingChartsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pb-3">
-          <div style={{ height: 420 }}>
+          <div style={{ height: 550 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={120}
+                  innerRadius={90}
+                  outerRadius={160}
                   dataKey="value"
                   paddingAngle={1.5}
                   label={renderCustomLabel}

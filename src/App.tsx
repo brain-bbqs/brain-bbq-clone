@@ -31,6 +31,7 @@ import Benchmarks from "./pages/Benchmarks";
 import MLModels from "./pages/MLModels";
 import ComputationalModels from "./pages/ComputationalModels";
 import Protocols from "./pages/Protocols";
+import Species from "./pages/Species";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/ml-models" element={<MLModels />} />
               <Route path="/computational-models" element={<ComputationalModels />} />
               <Route path="/protocols" element={<Protocols />} />
+              <Route path="/species" element={<Species />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

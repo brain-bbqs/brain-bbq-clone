@@ -53,6 +53,7 @@ const toolsItems: NavItem[] = [
 ];
 
 const scienceItems: NavItem[] = [
+  { title: "Species", url: "/species", icon: Bug },
   { title: "Computational Models", url: "/computational-models", icon: Sigma },
 ];
 
