@@ -16,9 +16,9 @@ const NameLink = ({ value, data }: { value: string; data: Resource }) => (
   </a>
 );
 
-const papersResources = resources.filter(r => r.category === "Papers & Protocols");
+const protocolResources = resources.filter(r => r.category === "Protocols");
 
-export default function PapersProtocols() {
+export default function Protocols() {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
@@ -42,20 +42,20 @@ export default function PapersProtocols() {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Papers & Protocols</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Protocols</h1>
           <p className="text-muted-foreground mb-4">
-            Key publications and methodological protocols for behavioral neuroscience.
+            Methodological protocols for behavioral neuroscience research.
           </p>
           <div className="flex items-center gap-4 mb-4">
             <input type="text" placeholder="Quick filter..." value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md" />
-            <span className="text-sm text-muted-foreground">{papersResources.length} papers</span>
+            <span className="text-sm text-muted-foreground">{protocolResources.length} protocols</span>
           </div>
         </div>
         <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 240px)" }}>
           <AgGridReact<Resource>
-            rowData={papersResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
+            rowData={protocolResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
             quickFilterText={quickFilterText} animateRows={true} pagination={true} paginationPageSize={25}
             suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
             onCellMouseOver={onCellMouseOver} onCellMouseOut={() => setHoveredRow(null)}
