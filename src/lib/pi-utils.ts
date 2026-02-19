@@ -29,11 +29,17 @@ export const normalizePiName = (name: string): string => {
 };
 
 /**
- * Build a Google Scholar search URL for a PI.
- * Google Scholar reliably deep-links to search results, unlike NIH Reporter.
+ * Build a Google Scholar profile search URL for a PI.
  */
-export const nihReporterPiUrl = (piName: string): string => {
-  return `https://scholar.google.com/scholar?q=author:"${encodeURIComponent(piName)}"`;
+export const piProfileUrl = (piName: string): string => {
+  return `https://scholar.google.com/citations?view_op=search_authors&mauthors=${encodeURIComponent(piName)}`;
+};
+
+/**
+ * Build a URL to the university's website via Google "I'm Feeling Lucky".
+ */
+export const institutionUrl = (institution: string): string => {
+  return `https://www.google.com/search?q=${encodeURIComponent(institution + " official site")}&btnI`;
 };
 
 /**
