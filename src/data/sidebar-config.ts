@@ -13,6 +13,7 @@ import {
   FlaskConical,
   MessageSquare,
   Bot,
+  Container,
   Wrench,
   Sparkles,
   Code,
@@ -59,6 +60,8 @@ const scienceItems: NavItem[] = [
 
 const aiItems: NavItem[] = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
+  { title: "Neurodocker Agent", url: "#", icon: Container },
+  { title: "Data Harmonizer", url: "#", icon: Database },
   { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
 ];
 
@@ -102,7 +105,7 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
   { label: "Science", items: scienceItems },
-  { label: "Artificial Intelligence", items: aiItems },
+  { label: "AI Microservices", items: aiItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Developer Tools", items: softwareDocItems },
