@@ -83,42 +83,28 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
-const PiCell = ({ value, data }: { value: string; data: ProjectRow }) => {
+const PiCell = ({ value }: { value: string; data: ProjectRow }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
   const piNames = value.split(/[,;]/).map((n) => n.trim()).filter(Boolean);
   const normalizedNames = piNames.map(normalizePiName);
-  const displayText = normalizedNames.join(", ");
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="truncate block max-w-full text-primary hover:underline cursor-pointer"
-            onClick={() => {
-              const url = piProfileUrl(normalizedNames[0]);
-              window.open(url, "_blank");
-            }}
+    <span className="truncate block max-w-full">
+      {normalizedNames.map((name, i) => (
+        <span key={i}>
+          <a
+            href={piProfileUrl(name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+            title={`View ${name} on Google Scholar`}
           >
-            {displayText}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-sm">
-          <div className="space-y-1">
-            {normalizedNames.map((name, i) => (
-              <a
-                key={i}
-                href={piProfileUrl(name)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-primary hover:underline"
-              >
-                {name} <ExternalLink className="inline h-3 w-3" />
-              </a>
-            ))}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            {name}
+          </a>
+          {i < normalizedNames.length - 1 ? ", " : ""}
+        </span>
+      ))}
+    </span>
   );
 };
 
