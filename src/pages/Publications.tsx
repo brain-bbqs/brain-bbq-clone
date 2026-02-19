@@ -8,7 +8,7 @@ import { Download, RefreshCw, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { piProfileUrl } from "@/lib/pi-utils";
+
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -81,16 +81,24 @@ const AuthorsCell = ({ value }: { value: string }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
   const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
   if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
+
+  const nihSearchUrl = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    const lastName = parts[parts.length - 1] || "";
+    const firstName = parts[0] || "";
+    return `https://reporter.nih.gov/search/results?query=${encodeURIComponent(firstName + " " + lastName)}&selectedFilters=PiName`;
+  };
+
   return (
     <span className="truncate block">
       {authors.map((author, i) => (
         <span key={i}>
           <a
-            href={piProfileUrl(author)}
+            href={nihSearchUrl(author)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
-            title={`Search ${author} on Google Scholar`}
+            title={`Search ${author} on NIH Reporter`}
           >
             {author}
           </a>
