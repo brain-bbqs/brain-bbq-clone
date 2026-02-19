@@ -30,6 +30,7 @@ import Datasets from "./pages/Datasets";
 import Benchmarks from "./pages/Benchmarks";
 import MLModels from "./pages/MLModels";
 import ComputationalModels from "./pages/ComputationalModels";
+import PapersProtocols from "./pages/PapersProtocols";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/ml-models" element={<MLModels />} />
               <Route path="/computational-models" element={<ComputationalModels />} />
+              <Route path="/papers-protocols" element={<PapersProtocols />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
