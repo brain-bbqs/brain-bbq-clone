@@ -151,57 +151,6 @@ export type Database = {
           },
         ]
       }
-      community_mcp_servers: {
-        Row: {
-          approved_at: string | null
-          author: string
-          description: string
-          github_url: string | null
-          id: string
-          name: string
-          pip_package: string | null
-          species: string[] | null
-          status: string
-          submitted_at: string
-          submitted_by: string | null
-          tools: string[]
-          transport: string
-          url: string
-        }
-        Insert: {
-          approved_at?: string | null
-          author: string
-          description: string
-          github_url?: string | null
-          id?: string
-          name: string
-          pip_package?: string | null
-          species?: string[] | null
-          status?: string
-          submitted_at?: string
-          submitted_by?: string | null
-          tools?: string[]
-          transport?: string
-          url: string
-        }
-        Update: {
-          approved_at?: string | null
-          author?: string
-          description?: string
-          github_url?: string | null
-          id?: string
-          name?: string
-          pip_package?: string | null
-          species?: string[] | null
-          status?: string
-          submitted_at?: string
-          submitted_by?: string | null
-          tools?: string[]
-          transport?: string
-          url?: string
-        }
-        Relationships: []
-      }
       grant_investigators: {
         Row: {
           grant_number: string
@@ -386,6 +335,7 @@ export type Database = {
         Row: {
           created_at: string
           data: Json
+          grant_id: string | null
           grant_number: string
           id: string
           updated_at: string
@@ -393,6 +343,7 @@ export type Database = {
         Insert: {
           created_at?: string
           data: Json
+          grant_id?: string | null
           grant_number: string
           id?: string
           updated_at?: string
@@ -400,11 +351,20 @@ export type Database = {
         Update: {
           created_at?: string
           data?: Json
+          grant_id?: string | null
           grant_number?: string
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nih_grants_cache_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nih_grants_sync_log: {
         Row: {
