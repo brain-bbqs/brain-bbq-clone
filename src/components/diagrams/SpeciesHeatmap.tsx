@@ -52,19 +52,19 @@ function buildHeatmapData(filter: MarrFilter) {
 
       if (filter === "all" || filter === "computational") {
         const compShared = [...a.computational].filter((f) => b.computational.has(f));
-        if (compShared.length > 0) details.push({ level: "Computational", features: compShared });
+        if (compShared.length > 0) details.push({ level: "Goals", features: compShared });
         total += compShared.length;
       }
 
       if (filter === "all" || filter === "algorithmic") {
         const algoShared = [...a.algorithmic].filter((f) => b.algorithmic.has(f));
-        if (algoShared.length > 0) details.push({ level: "Algorithmic", features: algoShared });
+        if (algoShared.length > 0) details.push({ level: "Methods", features: algoShared });
         total += algoShared.length;
       }
 
       if (filter === "all" || filter === "implementation") {
         const implShared = [...a.implementation].filter((f) => b.implementation.has(f));
-        if (implShared.length > 0) details.push({ level: "Implementation", features: implShared });
+        if (implShared.length > 0) details.push({ level: "Resources", features: implShared });
         total += implShared.length;
       }
 
@@ -91,9 +91,9 @@ export function SpeciesHeatmap() {
 
   const FILTER_OPTIONS: { value: MarrFilter; label: string; color: string }[] = [
     { value: "all", label: "All Levels", color: "" },
-    { value: "computational", label: "Computational", color: "#64b5f6" },
-    { value: "algorithmic", label: "Algorithmic", color: "#81c784" },
-    { value: "implementation", label: "Implementation", color: "#a78bfa" },
+    { value: "computational", label: "Goals", color: "#64b5f6" },
+    { value: "algorithmic", label: "Methods", color: "#81c784" },
+    { value: "implementation", label: "Resources", color: "#a78bfa" },
   ];
 
   // HSL base per filter: blue for computational, green for algorithmic, purple for implementation, gold for all
@@ -226,7 +226,7 @@ export function SpeciesHeatmap() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs text-muted-foreground">
-        <span>Shared features include: <strong className="text-foreground">Computational</strong> (problems), <strong className="text-foreground">Algorithmic</strong> (approaches), and <strong className="text-foreground">Implementation</strong> (tools)</span>
+        <span>Shared features include: <strong className="text-foreground">Goals</strong> (problems), <strong className="text-foreground">Methods</strong> (approaches), and <strong className="text-foreground">Resources</strong> (tools)</span>
       </div>
 
       {/* Hover tooltip */}
@@ -253,9 +253,9 @@ export function SpeciesHeatmap() {
                 style={{
                   fontSize: 10,
                   color:
-                    d.level === "Computational"
+                    d.level === "Goals"
                       ? "#64b5f6"
-                      : d.level === "Algorithmic"
+                      : d.level === "Methods"
                       ? "#81c784"
                       : "#ffb74d",
                 }}
