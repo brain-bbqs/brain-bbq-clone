@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { ExternalLink } from "lucide-react";
+import { piProfileUrl } from "@/lib/pi-utils";
 
 export interface Publication {
   pmid: string;
@@ -102,7 +103,29 @@ export const PublicationsGrid = ({ publications, grantNumber }: PublicationsGrid
       headerName: "Authors",
       minWidth: 200,
       flex: 1,
-      valueFormatter: (params) => formatAuthors(params.value),
+      cellRenderer: ({ value }: { value: unknown }) => {
+        const authorsStr = formatAuthors(value);
+        if (!authorsStr) return <span className="text-muted-foreground">—</span>;
+        const authors = authorsStr.split(",").map(a => a.trim()).filter(Boolean);
+        return (
+          <span>
+            {authors.map((author, i) => (
+              <span key={i}>
+                <a
+                  href={piProfileUrl(author)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                  title={`Search ${author} on Google Scholar`}
+                >
+                  {author}
+                </a>
+                {i < authors.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </span>
+        );
+      },
     },
     {
       field: "year",

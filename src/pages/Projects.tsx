@@ -138,7 +138,7 @@ const InstitutionCell = ({ value }: { value: string }) => {
           </a>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>Search {value} on NIH Reporter</p>
+          <p>Visit {value}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -254,6 +254,26 @@ const Projects = () => {
       suppressSizeToFit: true,
       cellRenderer: InstitutionCell,
       cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    },
+    {
+      field: "publicationCount",
+      headerName: "Pubs",
+      width: 80,
+      minWidth: 80,
+      maxWidth: 80,
+      suppressSizeToFit: true,
+      cellRenderer: ({ value, data }: { value: number; data: ProjectRow }) => {
+        if (!value) return <span className="text-muted-foreground">0</span>;
+        return (
+          <a
+            href="/publications"
+            className="text-primary hover:underline font-medium"
+            title={`View ${value} publication${value !== 1 ? 's' : ''}`}
+          >
+            {value}
+          </a>
+        );
+      },
     },
     {
       field: "awardAmount",

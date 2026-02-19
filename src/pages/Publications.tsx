@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { piProfileUrl } from "@/lib/pi-utils";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -83,6 +84,31 @@ export default function Publications() {
     gcTime: 30 * 60 * 1000,
   });
 
+  const AuthorsCell = useCallback(({ value }: { value: string }) => {
+    if (!value) return <span className="text-muted-foreground">—</span>;
+    // Split authors and make each clickable
+    const authors = value.split(",").map(a => a.trim()).filter(Boolean);
+    if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
+    return (
+      <span className="truncate block">
+        {authors.map((author, i) => (
+          <span key={i}>
+            <a
+              href={piProfileUrl(author)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+              title={`Search ${author} on Google Scholar`}
+            >
+              {author}
+            </a>
+            {i < authors.length - 1 ? ", " : ""}
+          </span>
+        ))}
+      </span>
+    );
+  }, []);
+
   const columnDefs: ColDef<Publication>[] = useMemo(
     () => [
       {
@@ -96,9 +122,10 @@ export default function Publications() {
         headerName: "Authors",
         flex: 1,
         minWidth: 200,
+        cellRenderer: AuthorsCell,
       },
     ],
-    []
+    [AuthorsCell]
   );
 
   const defaultColDef: ColDef = useMemo(
