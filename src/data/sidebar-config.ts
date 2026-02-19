@@ -69,7 +69,7 @@ const knowledgeBaseItems: NavItem[] = [
 ];
 
 const communityItems: NavItem[] = [
-  { title: "Investigators", url: "/investigators", icon: Users },
+  { title: "People", url: "/investigators", icon: Users },
   { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "#", icon: Briefcase },
