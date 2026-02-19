@@ -62,9 +62,20 @@
   overflow: visible;
 }
 
+.ag-theme-alpine .ag-cell-wrapper,
+.ag-theme-alpine .ag-cell-value {
+  overflow: visible;
+  pointer-events: auto;
+}
+
 .ag-theme-alpine .ag-row {
   overflow: visible;
   border-bottom-color: hsl(220 15% 92%);
+  z-index: 1;
+}
+
+.ag-theme-alpine .ag-row:hover {
+  z-index: 2;
 }
 
 .ag-theme-alpine .ag-body-viewport,

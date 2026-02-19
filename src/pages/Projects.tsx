@@ -552,7 +552,7 @@ const Projects = () => {
             loadingOverlayComponent={() => (
               <div className="flex flex-col items-center gap-3 text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span>Loading grant data from NIH Reporter...</span>
+                <span>Loading...</span>
               </div>
             )}
             noRowsOverlayComponent={() => (
