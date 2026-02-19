@@ -11,7 +11,8 @@ import "@/styles/ag-grid-theme.css";
 
 const NameLink = ({ value, data }: { value: string; data: Resource }) => (
   <a href={data.url} target="_blank" rel="noopener noreferrer"
-    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors">
+    onClick={(e) => { e.stopPropagation(); window.open(data.url, '_blank'); }}
+    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer">
     {value}<ExternalLink className="h-3.5 w-3.5 opacity-60" />
   </a>
 );
