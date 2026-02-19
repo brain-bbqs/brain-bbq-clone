@@ -27,39 +27,26 @@ interface Publication {
 }
 
 const fetchPublications = async (): Promise<Publication[]> => {
-  const { data, error } = await supabase.functions.invoke("nih-grants", {
-    body: { grantNumbers: [] },
-  });
+  const { data, error } = await supabase
+    .from("publications")
+    .select("*")
+    .order("citations", { ascending: false });
+
   if (error) throw error;
+  if (!data) return [];
 
-  const allPubs: Publication[] = [];
-  if (data?.data) {
-    for (const grant of data.data) {
-      if (grant.publications) {
-        for (const pub of grant.publications) {
-          const authorList = pub.authors
-            ?.map?.((a: { fullName?: string }) => a.fullName || "")
-            .filter(Boolean)
-            .join(", ");
-
-          allPubs.push({
-            pmid: pub.pmid,
-            title: pub.title,
-            year: pub.year,
-            journal: pub.journal,
-            authors: typeof pub.authors === "string" ? pub.authors : authorList || "",
-            citations: pub.citations || 0,
-            rcr: pub.rcr || 0,
-            grantNumber: grant.grantNumber,
-            pubmedLink: pub.pubmedLink,
-            keywords: pub.keywords || [],
-          });
-        }
-      }
-    }
-  }
-
-  return Array.from(new Map(allPubs.map((p) => [p.pmid, p])).values());
+  return data.map((pub) => ({
+    pmid: pub.pmid || "",
+    title: pub.title,
+    year: pub.year || 0,
+    journal: pub.journal || "",
+    authors: pub.authors || "",
+    citations: pub.citations || 0,
+    rcr: Number(pub.rcr) || 0,
+    grantNumber: "", // grant association via resource_links if needed
+    pubmedLink: pub.pubmed_link || (pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""),
+    keywords: [], // keywords not stored in publications table
+  }));
 };
 
 const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
