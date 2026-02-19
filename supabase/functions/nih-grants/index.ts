@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,39 +17,13 @@ const GRANT_NUMBERS = [
   "U24MH136628", "R24MH136632"
 ];
 
-interface NIHProject {
-  project_num: string;
-  project_title: string;
-  contact_pi_name: string;
-  principal_investigators: Array<{ full_name: string; email?: string }>;
-  organization: { org_name: string } | null;
-  fiscal_year: number;
-  award_amount: number;
-  core_project_num: string;
-}
-
-interface NIHPublication {
-  pmid: string;
-  pub_title: string;
-  pub_year: number;
-  journal_title: string;
-  authors: Array<{ author_name: string }>;
-  cited_by_clin: number;
-  relative_citation_ratio: number;
-}
-
 async function fetchPubMedDetails(pmids: string[]): Promise<Map<string, any>> {
   const detailsMap = new Map<string, any>();
   if (pmids.length === 0) return detailsMap;
 
   try {
-    // Use iCite API to get publication details including RCR
     const response = await fetch(`https://icite.od.nih.gov/api/pubs?pmids=${pmids.join(",")}`);
-    
-    if (!response.ok) {
-      console.error(`iCite API error: ${response.status}`);
-      return detailsMap;
-    }
+    if (!response.ok) return detailsMap;
 
     const data = await response.json();
     const pubs = data.data || data;
@@ -73,37 +48,28 @@ async function fetchPubMedDetails(pmids: string[]): Promise<Map<string, any>> {
 
 async function fetchPublications(coreProjectNum: string): Promise<any[]> {
   try {
-    // First get PMIDs from NIH Reporter
     const response = await fetch("https://api.reporter.nih.gov/v2/publications/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        criteria: {
-          core_project_nums: [coreProjectNum]
-        },
+        criteria: { core_project_nums: [coreProjectNum] },
         offset: 0,
         limit: 100
       })
     });
 
-    if (!response.ok) {
-      console.error(`Publications API error for ${coreProjectNum}: ${response.status}`);
-      return [];
-    }
+    if (!response.ok) return [];
 
     const data = await response.json();
     const nihPubs = data.results || [];
-    
     if (nihPubs.length === 0) return [];
 
-    // Extract PMIDs and fetch details from iCite
     const pmids = nihPubs.map((p: any) => String(p.pmid)).filter(Boolean);
     const detailsMap = await fetchPubMedDetails(pmids);
 
     return nihPubs.map((pub: any) => {
       const pmid = String(pub.pmid);
       const details = detailsMap.get(pmid) || {};
-      
       return {
         pmid,
         title: details.title || "Unknown",
@@ -127,9 +93,7 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        criteria: {
-          project_nums: [grantNumber]
-        },
+        criteria: { project_nums: [grantNumber] },
         include_fields: [
           "ProjectNum", "ProjectTitle", "ContactPiName", "PrincipalInvestigators",
           "Organization", "FiscalYear", "AwardAmount", "AbstractText", "CoreProjectNum"
@@ -139,31 +103,22 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
       })
     });
 
-    if (!response.ok) {
-      console.error(`NIH API error for ${grantNumber}: ${response.status}`);
-      return null;
-    }
+    if (!response.ok) return null;
 
     const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-      console.log(`No results for ${grantNumber}`);
-      return null;
-    }
+    if (!data.results || data.results.length === 0) return null;
 
-    const project: NIHProject = data.results[0];
+    const project = data.results[0];
     const pis = project.principal_investigators || [];
     const coreProjectNum = project.core_project_num || grantNumber.replace(/\d$/, "");
-    
-    // Fetch publications for this grant
     const publications = await fetchPublications(coreProjectNum);
     
     return {
       grantNumber: project.project_num || grantNumber,
       title: project.project_title || "Unknown",
-      abstract: data.results[0].abstract_text || "",
+      abstract: project.abstract_text || "",
       contactPi: project.contact_pi_name || "Unknown",
-      allPis: pis.map(pi => pi.full_name).join(", ") || project.contact_pi_name || "Unknown",
+      allPis: pis.map((pi: any) => pi.full_name).join(", ") || project.contact_pi_name || "Unknown",
       institution: project.organization?.org_name || "Unknown",
       fiscalYear: project.fiscal_year || 0,
       awardAmount: project.award_amount || 0,
@@ -182,33 +137,108 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
   try {
     const url = new URL(req.url);
-    const singleGrant = url.searchParams.get("grant");
+    const action = url.searchParams.get("action");
 
-    if (singleGrant) {
-      const result = await fetchGrantData(singleGrant);
+    // ACTION: refresh — fetch from NIH APIs and update cache
+    if (action === "refresh") {
+      console.log(`Refreshing ${GRANT_NUMBERS.length} grants from NIH Reporter...`);
+
+      // Create sync log entry
+      const { data: syncLog } = await supabase
+        .from("nih_grants_sync_log")
+        .insert({ status: "running" })
+        .select("id")
+        .single();
+
+      let updatedCount = 0;
+      const errors: string[] = [];
+
+      for (const grant of GRANT_NUMBERS) {
+        try {
+          const projectData = await fetchGrantData(grant);
+          if (projectData) {
+            await supabase
+              .from("nih_grants_cache")
+              .upsert({
+                grant_number: grant,
+                data: projectData,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: "grant_number" });
+            updatedCount++;
+          }
+          await new Promise(resolve => setTimeout(resolve, 150));
+        } catch (err) {
+          errors.push(`${grant}: ${err instanceof Error ? err.message : "unknown"}`);
+        }
+      }
+
+      // Update sync log
+      if (syncLog) {
+        await supabase
+          .from("nih_grants_sync_log")
+          .update({
+            completed_at: new Date().toISOString(),
+            grants_updated: updatedCount,
+            status: errors.length > 0 ? "completed_with_errors" : "completed",
+            error_message: errors.length > 0 ? errors.join("; ") : null,
+          })
+          .eq("id", syncLog.id);
+      }
+
+      console.log(`Refresh complete: ${updatedCount} grants updated, ${errors.length} errors`);
+
       return new Response(
-        JSON.stringify({ success: true, data: result ? [result] : [] }),
+        JSON.stringify({ success: true, updated: updatedCount, errors: errors.length }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Fetching ${GRANT_NUMBERS.length} grants from NIH Reporter...`);
-    
-    const results = [];
-    for (const grant of GRANT_NUMBERS) {
-      const projectData = await fetchGrantData(grant);
-      if (projectData) {
-        results.push(projectData);
-      }
-      await new Promise(resolve => setTimeout(resolve, 150));
+    // DEFAULT: serve cached data from DB
+    const { data: cached, error: cacheError } = await supabase
+      .from("nih_grants_cache")
+      .select("data")
+      .order("grant_number");
+
+    if (cacheError) {
+      throw new Error(`Cache read error: ${cacheError.message}`);
     }
 
-    console.log(`Successfully fetched ${results.length} grants with publications`);
+    // If cache is empty, do an initial refresh
+    if (!cached || cached.length === 0) {
+      console.log("Cache empty, performing initial data fetch...");
+      
+      const results = [];
+      for (const grant of GRANT_NUMBERS) {
+        const projectData = await fetchGrantData(grant);
+        if (projectData) {
+          await supabase
+            .from("nih_grants_cache")
+            .upsert({
+              grant_number: grant,
+              data: projectData,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "grant_number" });
+          results.push(projectData);
+        }
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, data: results, source: "fresh" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const results = cached.map(row => row.data);
 
     return new Response(
-      JSON.stringify({ success: true, data: results }),
+      JSON.stringify({ success: true, data: results, source: "cache" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
