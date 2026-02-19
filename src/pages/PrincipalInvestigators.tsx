@@ -537,22 +537,46 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     _populateFromBbqsOnly(piMap, bbqsGrants);
   }
 
-  // Enrich with skills & research areas from Marr projects data
-  // Match by PI name OR by grant number overlap
+  // Enrich with skills & research areas
+  // First try DB (investigators table), then fall back to static MARR_PROJECTS data
+  const { data: dbInvestigators } = await supabase
+    .from("investigators")
+    .select("name, skills, research_areas");
+
+  const dbSkillsMap = new Map<string, { skills: string[]; researchAreas: string[] }>();
+  if (dbInvestigators) {
+    dbInvestigators.forEach((inv: any) => {
+      if ((inv.skills?.length > 0) || (inv.research_areas?.length > 0)) {
+        dbSkillsMap.set(nameKey(inv.name), {
+          skills: inv.skills || [],
+          researchAreas: inv.research_areas || [],
+        });
+      }
+    });
+  }
+
   for (const [, pi] of piMap) {
     const piKey = nameKey(pi.displayName);
-    const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
-    const matchingProjects = MARR_PROJECTS.filter(p =>
-      nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
-    );
-    const skills = new Set<string>();
-    const areas = new Set<string>();
-    matchingProjects.forEach(p => {
-      p.algorithmic.forEach(s => skills.add(s));
-      p.computational.forEach(a => areas.add(a));
-    });
-    pi.skills = Array.from(skills);
-    pi.researchAreas = Array.from(areas);
+    // Check DB first
+    const dbData = dbSkillsMap.get(piKey);
+    if (dbData && (dbData.skills.length > 0 || dbData.researchAreas.length > 0)) {
+      pi.skills = dbData.skills;
+      pi.researchAreas = dbData.researchAreas;
+    } else {
+      // Fall back to static MARR_PROJECTS
+      const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
+      const matchingProjects = MARR_PROJECTS.filter(p =>
+        nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
+      );
+      const skills = new Set<string>();
+      const areas = new Set<string>();
+      matchingProjects.forEach(p => {
+        p.algorithmic.forEach(s => skills.add(s));
+        p.computational.forEach(a => areas.add(a));
+      });
+      pi.skills = Array.from(skills);
+      pi.researchAreas = Array.from(areas);
+    }
   }
 
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));

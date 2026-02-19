@@ -262,8 +262,10 @@ export type Database = {
           name: string
           orcid: string | null
           profile_url: string | null
+          research_areas: string[] | null
           resource_id: string | null
           scholar_id: string | null
+          skills: string[] | null
           updated_at: string
         }
         Insert: {
@@ -273,8 +275,10 @@ export type Database = {
           name: string
           orcid?: string | null
           profile_url?: string | null
+          research_areas?: string[] | null
           resource_id?: string | null
           scholar_id?: string | null
+          skills?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -284,8 +288,10 @@ export type Database = {
           name?: string
           orcid?: string | null
           profile_url?: string | null
+          research_areas?: string[] | null
           resource_id?: string | null
           scholar_id?: string | null
+          skills?: string[] | null
           updated_at?: string
         }
         Relationships: [
