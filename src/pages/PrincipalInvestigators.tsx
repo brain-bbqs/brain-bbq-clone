@@ -87,14 +87,49 @@ const NameCell = ({ data }: { data: PIRow }) => (
   </div>
 );
 
-const ProjectsCell = ({ data }: { data: PIRow }) => (
-  <span className="text-foreground">
-    <span className="font-semibold">{data.totalProjects}</span>
-    <span className="text-muted-foreground ml-1">
-      ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
-    </span>
-  </span>
-);
+const ProjectsCell = ({ data }: { data: PIRow }) => {
+  const bbqsCount = data.grants.filter(g => g.isBbqs).length;
+  const otherCount = data.grants.filter(g => !g.isBbqs).length;
+
+  return (
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <span className="text-foreground cursor-default">
+          <span className="font-semibold">{data.totalProjects}</span>
+          <span className="text-muted-foreground ml-1">
+            ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
+          </span>
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent side="bottom" align="start" className="w-72 p-4">
+        <p className="font-semibold text-sm mb-2">{data.displayName}</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">As PI</p>
+            <p className="font-bold text-foreground text-base">{data.projectsAsPi}</p>
+          </div>
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">As Co-PI</p>
+            <p className="font-bold text-foreground text-base">{data.projectsAsCoPi}</p>
+          </div>
+          <div className="bg-emerald-500/10 rounded p-2">
+            <p className="text-muted-foreground">BBQS Grants</p>
+            <p className="font-bold text-emerald-600 text-base">{bbqsCount}</p>
+          </div>
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">Other Grants</p>
+            <p className="font-bold text-foreground text-base">{otherCount}</p>
+          </div>
+        </div>
+        {data.totalFunding > 0 && (
+          <p className="text-xs font-mono text-emerald-600 font-semibold mt-2">
+            Total: ${data.totalFunding.toLocaleString()}
+          </p>
+        )}
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
 
 const FundingCell = ({ value }: { value: number }) => {
   if (!value || isNaN(value)) return <span className="text-muted-foreground">—</span>;
@@ -106,42 +141,37 @@ const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   const first = value[0];
   const remaining = value.length - 1;
   return (
-    <div className="flex items-center gap-1.5">
-      <a
-        href={institutionUrl(first)}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={`Visit ${normalizePiName(first)}`}
-      >
-        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs cursor-pointer hover:bg-primary/20 transition-colors truncate max-w-[200px]">
-          {first}
-        </Badge>
-      </a>
-      {remaining > 0 && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-muted-foreground text-xs cursor-help whitespace-nowrap">+{remaining}</span>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-xs">
-              <div className="flex flex-col gap-1">
-                {value.slice(1).map((inst, i) => (
-                  <a
-                    key={i}
-                    href={institutionUrl(inst)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    {inst}
-                  </a>
-                ))}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-    </div>
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <div className="flex items-center gap-1.5 cursor-default">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs hover:bg-primary/20 transition-colors truncate max-w-[200px]">
+            {first}
+          </Badge>
+          {remaining > 0 && (
+            <span className="text-muted-foreground text-xs whitespace-nowrap">+{remaining}</span>
+          )}
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent side="left" align="start" className="w-72 p-4">
+        <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+          Institutions ({value.length})
+        </p>
+        <div className="flex flex-col gap-1.5">
+          {value.map((inst, i) => (
+            <a
+              key={i}
+              href={institutionUrl(inst)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-primary hover:underline transition-colors"
+            >
+              <ExternalLink className="h-3 w-3 shrink-0" />
+              {inst}
+            </a>
+          ))}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 

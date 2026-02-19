@@ -59,6 +59,18 @@
   line-height: 1.5;
   display: flex;
   align-items: center;
+  overflow: visible;
+}
+
+.ag-theme-alpine .ag-row {
+  overflow: visible;
+  border-bottom-color: hsl(220 15% 92%);
+}
+
+.ag-theme-alpine .ag-body-viewport,
+.ag-theme-alpine .ag-center-cols-viewport,
+.ag-theme-alpine .ag-center-cols-container {
+  overflow: visible;
 }
 
 .ag-theme-alpine .ag-paging-panel {
