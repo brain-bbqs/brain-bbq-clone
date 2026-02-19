@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import bbqsLogoVideo from "@/assets/bbqs-logo-animated.mp4";
+import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { sidebarGroups } from "@/data/sidebar-config";
 
 import {
@@ -63,14 +63,11 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-              <video
-                src={bbqsLogoVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-sidebar-accent/20 p-0.5">
+              <img
+                src={bbqsLogoIcon}
+                alt="BBQS Logo"
+                className="w-full h-full object-contain"
               />
             </div>
             {!collapsed && (
