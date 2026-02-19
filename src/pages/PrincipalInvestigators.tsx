@@ -126,6 +126,49 @@ const ProjectsCell = ({ data }: { data: PIRow }) => {
             Total: ${data.totalFunding.toLocaleString()}
           </p>
         )}
+        {/* Frequent co-PIs */}
+        {(() => {
+          const copiCounts = new Map<string, { name: string; profileId: number | null; count: number }>();
+          data.grants.forEach(g => {
+            g.coPis.forEach(c => {
+              if (nameKey(c.name) === nameKey(data.displayName)) return;
+              const key = c.name.toLowerCase();
+              const existing = copiCounts.get(key);
+              if (existing) existing.count++;
+              else copiCounts.set(key, { name: c.name, profileId: c.profileId, count: 1 });
+            });
+          });
+          const topCoPis = Array.from(copiCounts.values())
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 8);
+          if (topCoPis.length === 0) return null;
+          return (
+            <div className="border-t border-border pt-2 mt-2">
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Co-Investigators</p>
+              <div className="flex flex-wrap gap-1">
+                {topCoPis.map((c, i) => (
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className={`text-[11px] ${c.profileId ? 'cursor-pointer hover:bg-primary/15' : ''} bg-muted/50 text-muted-foreground border-border transition-colors`}
+                    onClick={c.profileId ? (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      supabase.functions.invoke("nih-reporter-search", {
+                        body: { pi_profile_id: c.profileId },
+                      }).then(({ data }) => {
+                        if (data?.url) window.open(data.url, "_blank");
+                      });
+                    } : undefined}
+                  >
+                    {normalizePiName(c.name)}
+                    <span className="ml-0.5 opacity-50">({c.count})</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </HoverCardContent>
     </HoverCard>
   );
