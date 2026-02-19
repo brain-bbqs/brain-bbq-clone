@@ -442,6 +442,7 @@ export type Database = {
           doi: string | null
           id: string
           journal: string | null
+          keywords: string[] | null
           pmid: string | null
           pubmed_link: string | null
           rcr: number | null
@@ -456,6 +457,7 @@ export type Database = {
           doi?: string | null
           id?: string
           journal?: string | null
+          keywords?: string[] | null
           pmid?: string | null
           pubmed_link?: string | null
           rcr?: number | null
@@ -470,6 +472,7 @@ export type Database = {
           doi?: string | null
           id?: string
           journal?: string | null
+          keywords?: string[] | null
           pmid?: string | null
           pubmed_link?: string | null
           rcr?: number | null
