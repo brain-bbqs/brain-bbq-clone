@@ -59,7 +59,9 @@ const openNihReporterProfile = async (firstName: string, lastName: string, displ
   } catch {
     // fallback below
   }
-  window.open(piProfileUrl(displayName), "_blank");
+  // Fallback: go directly to NIH Reporter search
+  const reporterUrl = `https://reporter.nih.gov/search/results?pi_names=${encodeURIComponent(firstName)}%20${encodeURIComponent(lastName)}`;
+  window.open(reporterUrl, "_blank");
 };
 
 const NameCell = ({ data }: { data: PIRow }) => {
@@ -264,6 +266,20 @@ export default function PrincipalInvestigators() {
       flex: 1,
       minWidth: 200,
       cellRenderer: GrantsCell,
+    },
+    {
+      headerName: "Total Funding",
+      width: 150,
+      minWidth: 120,
+      valueGetter: (params) => {
+        if (!params.data?.grants) return 0;
+        return params.data.grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
+      },
+      cellRenderer: ({ value }: { value: number }) => {
+        if (!value) return <span className="text-muted-foreground">—</span>;
+        return <span className="font-mono text-primary">${value.toLocaleString()}</span>;
+      },
+      comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
     {
       field: "institutions",
