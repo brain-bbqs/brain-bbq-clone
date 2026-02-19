@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, RefreshCw, CheckCircle, AlertCircle, FlaskConical, FolderOpen } from "lucide-react";
+import { Database, RefreshCw, CheckCircle, AlertCircle, FlaskConical, FolderOpen, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ export function AdminPanel({ accessToken }: AdminPanelProps) {
   const [isIngesting, setIsIngesting] = useState(false);
   const [isIngestingWorkflows, setIsIngestingWorkflows] = useState(false);
   const [isSyncingGrants, setIsSyncingGrants] = useState(false);
+  const [isResolvingScholar, setIsResolvingScholar] = useState(false);
   const [lastResult, setLastResult] = useState<{
     success: boolean;
     message: string;
@@ -126,7 +127,43 @@ export function AdminPanel({ accessToken }: AdminPanelProps) {
     }
   };
 
-  const anyLoading = isIngesting || isIngestingWorkflows || isSyncingGrants;
+  const triggerScholarResolve = async () => {
+    setIsResolvingScholar(true);
+    setLastResult(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resolve-scholar-ids`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Scholar ID resolution failed");
+      }
+
+      setLastResult({
+        success: true,
+        message: `Resolved ${data.resolved || 0} of ${data.total || 0} Scholar IDs`,
+      });
+      toast.success("Scholar IDs resolved");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Scholar ID resolution failed";
+      setLastResult({ success: false, message });
+      toast.error(message);
+    } finally {
+      setIsResolvingScholar(false);
+    }
+  };
+
+  const anyLoading = isIngesting || isIngestingWorkflows || isSyncingGrants || isResolvingScholar;
 
   return (
     <div className="border border-dashed border-muted-foreground/30 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 bg-muted/20">
@@ -179,6 +216,16 @@ export function AdminPanel({ accessToken }: AdminPanelProps) {
           >
             <FolderOpen className={`h-3.5 w-3.5 ${isSyncingGrants ? "animate-spin" : ""}`} />
             {isSyncingGrants ? "Syncing..." : "Refresh Grants"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={triggerScholarResolve}
+            disabled={anyLoading}
+            className="gap-2"
+          >
+            <GraduationCap className={`h-3.5 w-3.5 ${isResolvingScholar ? "animate-spin" : ""}`} />
+            {isResolvingScholar ? "Resolving..." : "Resolve Scholar IDs"}
           </Button>
         </div>
       </div>
