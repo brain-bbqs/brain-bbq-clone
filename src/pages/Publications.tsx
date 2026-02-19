@@ -45,7 +45,7 @@ const fetchPublications = async (): Promise<Publication[]> => {
     rcr: Number(pub.rcr) || 0,
     grantNumber: "", // grant association via resource_links if needed
     pubmedLink: pub.pubmed_link || (pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""),
-    keywords: [], // keywords not stored in publications table
+    keywords: Array.isArray(pub.keywords) ? pub.keywords : [],
   }));
 };
 
