@@ -641,6 +641,8 @@ export type Database = {
         | "tool"
         | "dataset"
         | "protocol"
+        | "benchmark"
+        | "ml_model"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -777,6 +779,8 @@ export const Constants = {
         "tool",
         "dataset",
         "protocol",
+        "benchmark",
+        "ml_model",
       ],
     },
   },

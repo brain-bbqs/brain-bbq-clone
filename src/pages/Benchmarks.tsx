@@ -5,21 +5,22 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { resources, Resource } from "@/data/resources";
-import { ExternalLink } from "lucide-react";
+import type { Resource } from "@/data/resources";
+import { useResources } from "@/hooks/useResources";
+import { ExternalLink, Loader2 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const NameLink = ({ value, data }: { value: string; data: Resource }) => (
   <a href={data.url} target="_blank" rel="noopener noreferrer"
-    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors">
+    onClick={(e) => { e.stopPropagation(); window.open(data.url, '_blank'); }}
+    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer">
     {value}<ExternalLink className="h-3.5 w-3.5 opacity-60" />
   </a>
 );
 
-const benchmarkResources = resources.filter(r => r.category === "Benchmarks");
-
 export default function Benchmarks() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const { data: benchmarkResources = [], isLoading } = useResources("Benchmarks");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
@@ -59,6 +60,12 @@ export default function Benchmarks() {
             quickFilterText={quickFilterText} animateRows={true} pagination={true} paginationPageSize={25}
             suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
             onCellMouseOver={onCellMouseOver} onCellMouseOut={() => setHoveredRow(null)}
+            loading={isLoading}
+            loadingOverlayComponent={() => (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading benchmarks...
+              </div>
+            )}
           />
         </div>
         {hoveredRow && (

@@ -5,9 +5,10 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { resources, Resource } from "@/data/resources";
+import type { Resource } from "@/data/resources";
+import { useResources } from "@/hooks/useResources";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Check, Circle, Box } from "lucide-react";
+import { ExternalLink, Check, Circle, Box, Loader2 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
@@ -25,46 +26,25 @@ const CategoryBadge = ({ value }: { value: string }) => {
   );
 };
 
-const NameLink = ({ value, data }: { value: string; data: Resource }) => {
-  return (
-    <a
-      href={data.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors"
-    >
-      {value}
-      <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-    </a>
-  );
-};
+const NameLink = ({ value, data }: { value: string; data: Resource }) => (
+  <a href={data.url} target="_blank" rel="noopener noreferrer"
+    onClick={(e) => { e.stopPropagation(); window.open(data.url, '_blank'); }}
+    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer">
+    {value}<ExternalLink className="h-3.5 w-3.5 opacity-60" />
+  </a>
+);
 
 const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) => {
   const statusConfig = {
-    trained: {
-      label: "Trained",
-      className: "bg-green-500/20 text-green-400 border-green-500/30",
-      icon: Check,
-    },
-    pending: {
-      label: "Pending",
-      className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      icon: Circle,
-    },
-    "not-started": {
-      label: "Not Started",
-      className: "bg-muted/50 text-muted-foreground border-border",
-      icon: Circle,
-    },
+    trained: { label: "Trained", className: "bg-green-500/20 text-green-400 border-green-500/30", icon: Check },
+    pending: { label: "Pending", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: Circle },
+    "not-started": { label: "Not Started", className: "bg-muted/50 text-muted-foreground border-border", icon: Circle },
   };
-
   const config = statusConfig[value] || statusConfig["not-started"];
   const Icon = config.icon;
-
   return (
     <Badge variant="outline" className={`${config.className} text-xs gap-1`}>
-      <Icon className="h-3 w-3" />
-      {config.label}
+      <Icon className="h-3 w-3" />{config.label}
     </Badge>
   );
 };
@@ -73,63 +53,31 @@ const ContainerizedBadge = ({ value }: { value: boolean }) => {
   if (value) {
     return (
       <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs gap-1">
-        <Box className="h-3 w-3" />
-        Yes
+        <Box className="h-3 w-3" />Yes
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs gap-1">
-      <Circle className="h-3 w-3" />
-      No
+      <Circle className="h-3 w-3" />No
     </Badge>
   );
 };
 
-const softwareResources = resources.filter(r => r.category === "Software");
-
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const { data: softwareResources = [], isLoading } = useResources("Software");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
-  const defaultColDef = useMemo<ColDef>(() => ({
-    sortable: true,
-    resizable: true,
-    unSortIcon: true,
-  }), []);
+  const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    {
-      field: "category",
-      headerName: "Category",
-      width: 130,
-      cellRenderer: CategoryBadge,
-    },
-    {
-      field: "name",
-      headerName: "Name",
-      flex: 1,
-      minWidth: 180,
-      cellRenderer: NameLink,
-    },
-    {
-      field: "implementation",
-      headerName: "Software",
-      width: 100,
-    },
-    {
-      field: "containerized",
-      headerName: "Container",
-      width: 100,
-      cellRenderer: ContainerizedBadge,
-    },
-    {
-      field: "neuroMcpStatus",
-      headerName: "NeuroMCP",
-      width: 120,
-      cellRenderer: NeuroMcpStatusBadge,
-    },
+    { field: "category", headerName: "Category", width: 130, cellRenderer: CategoryBadge },
+    { field: "name", headerName: "Name", flex: 1, minWidth: 180, cellRenderer: NameLink },
+    { field: "implementation", headerName: "Software", width: 100 },
+    { field: "containerized", headerName: "Container", width: 100, cellRenderer: ContainerizedBadge },
+    { field: "neuroMcpStatus", headerName: "NeuroMCP", width: 120, cellRenderer: NeuroMcpStatusBadge },
   ], []);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
@@ -144,10 +92,6 @@ const Resources = () => {
     setHoveredRow(null);
   }, []);
 
-  const onGridReady = useCallback(() => {
-    // Grid is ready
-  }, []);
-
   return (
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
@@ -157,65 +101,34 @@ const Resources = () => {
             Browse software tools and protocols for behavioral neuroscience research.
           </p>
           <div className="flex items-center gap-4 mb-4">
-            <input
-              type="text"
-              placeholder="Quick filter..."
-              value={quickFilterText}
+            <input type="text" placeholder="Quick filter..." value={quickFilterText}
               onChange={(e) => setQuickFilterText(e.target.value)}
-              className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
-            />
-            <span className="text-sm text-muted-foreground">
-              {softwareResources.length} tools
-            </span>
+              className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md" />
+            <span className="text-sm text-muted-foreground">{softwareResources.length} tools</span>
           </div>
         </div>
-
-        <div 
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 240px)" }}
-        >
+        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 240px)" }}>
           <AgGridReact<Resource>
-            rowData={softwareResources}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            quickFilterText={quickFilterText}
-            onGridReady={onGridReady}
-            onCellMouseOver={onCellMouseOver}
-            onCellMouseOut={onCellMouseOut}
-            animateRows={true}
-            pagination={true}
-            paginationPageSize={25}
-            paginationPageSizeSelector={[10, 25, 50, 100]}
-            suppressCellFocus={true}
-            enableCellTextSelection={true}
-            rowHeight={36}
-            headerHeight={40}
+            rowData={softwareResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
+            quickFilterText={quickFilterText} onCellMouseOver={onCellMouseOver} onCellMouseOut={onCellMouseOut}
+            animateRows={true} pagination={true} paginationPageSize={25} paginationPageSizeSelector={[10, 25, 50, 100]}
+            suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
+            loading={isLoading}
+            loadingOverlayComponent={() => (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading software...
+              </div>
+            )}
           />
         </div>
-
-        {/* Hover Detail Card */}
         {hoveredRow && (
-          <div
-            className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-md pointer-events-none"
-            style={{
-              left: Math.min(hoverPosition.x + 15, window.innerWidth - 420),
-              top: Math.min(hoverPosition.y + 10, window.innerHeight - 300),
-            }}
-          >
+          <div className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-md pointer-events-none"
+            style={{ left: Math.min(hoverPosition.x + 15, window.innerWidth - 420), top: Math.min(hoverPosition.y + 10, window.innerHeight - 300) }}>
             <h3 className="font-semibold text-foreground mb-3">{hoveredRow.name}</h3>
             <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Algorithm: </span>
-                <span className="text-foreground">{hoveredRow.algorithm}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Computational: </span>
-                <span className="text-foreground">{hoveredRow.computational}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Species: </span>
-                <span className="text-foreground">{hoveredRow.species}</span>
-              </div>
+              <div><span className="text-muted-foreground">Algorithm: </span><span className="text-foreground">{hoveredRow.algorithm}</span></div>
+              <div><span className="text-muted-foreground">Computational: </span><span className="text-foreground">{hoveredRow.computational}</span></div>
+              <div><span className="text-muted-foreground">Species: </span><span className="text-foreground">{hoveredRow.species}</span></div>
             </div>
           </div>
         )}
