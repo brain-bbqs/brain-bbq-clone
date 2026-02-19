@@ -5,6 +5,7 @@ import { ColDef, GridReadyEvent, CellMouseOverEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, ExternalLink } from "lucide-react";
+import { piProfileUrl } from "@/lib/pi-utils";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -69,23 +70,16 @@ const AuthorsCell = ({ value }: { value: string }) => {
   const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
   if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
 
-  const nihSearchUrl = (name: string) => {
-    const parts = name.trim().split(/\s+/);
-    const lastName = parts[parts.length - 1] || "";
-    const firstName = parts[0] || "";
-    return `https://reporter.nih.gov/search/results?query=${encodeURIComponent(firstName + " " + lastName)}&selectedFilters=PiName`;
-  };
-
   return (
     <span className="truncate block">
       {authors.map((author, i) => (
         <span key={i}>
           <a
-            href={nihSearchUrl(author)}
+            href={piProfileUrl(author)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
-            title={`Search ${author} on NIH Reporter`}
+            title={`Search ${author} on Google Scholar`}
           >
             {author}
           </a>
