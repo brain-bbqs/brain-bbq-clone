@@ -16,7 +16,7 @@ export interface Resource {
 export const resources: Resource[] = [
   // Software
   {
-    id: 1, category: "Software", name: "idtracker.ai", url: "https://idtracker.ai/",
+    id: 1, category: "Software", name: "idtracker.ai", url: "https://idtracker.ai/latest/",
     algorithm: "Multi-animal identity tracking and maintenance across video recordings",
     computational: "Deep learning-based individual identification without markers (up to 100 animals)",
     neuralNetworkArchitecture: "CNN (Convolutional Neural Network)",
