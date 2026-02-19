@@ -12,8 +12,8 @@ import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
   const colorMap: Record<string, string> = {
-    "General Tools": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    "Models": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    "Software": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    "ML Models": "bg-purple-500/20 text-purple-400 border-purple-500/30",
     "Datasets": "bg-green-500/20 text-green-400 border-green-500/30",
     "Benchmarks": "bg-orange-500/20 text-orange-400 border-orange-500/30",
     "Papers & Protocols": "bg-pink-500/20 text-pink-400 border-pink-500/30",
@@ -86,6 +86,8 @@ const ContainerizedBadge = ({ value }: { value: boolean }) => {
   );
 };
 
+const softwareResources = resources.filter(r => r.category === "Software" || r.category === "Papers & Protocols");
+
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
@@ -94,6 +96,7 @@ const Resources = () => {
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
     resizable: true,
+    unSortIcon: true,
   }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
@@ -149,9 +152,9 @@ const Resources = () => {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Tools</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Software</h1>
           <p className="text-muted-foreground mb-4">
-            Browse tools, models, datasets, and benchmarks for behavioral neuroscience research.
+            Browse software tools and protocols for behavioral neuroscience research.
           </p>
           <div className="flex items-center gap-4 mb-4">
             <input
@@ -162,7 +165,7 @@ const Resources = () => {
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
             <span className="text-sm text-muted-foreground">
-              {resources.length} tools
+              {softwareResources.length} tools
             </span>
           </div>
         </div>
@@ -172,7 +175,7 @@ const Resources = () => {
           style={{ height: "calc(100vh - 240px)" }}
         >
           <AgGridReact<Resource>
-            rowData={resources}
+            rowData={softwareResources}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}
