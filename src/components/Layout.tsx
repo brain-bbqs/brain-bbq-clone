@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { WalkthroughButton } from "@/components/WalkthroughButton";
-import { GlobalSearch } from "@/components/GlobalSearch";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface LayoutProps {
@@ -18,9 +17,6 @@ export function Layout({ children }: LayoutProps) {
         <SidebarInset className="flex flex-col flex-1">
           <header className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
             <SidebarTrigger className="h-7 w-7" />
-            <div className="flex-1 max-w-sm">
-              <GlobalSearch />
-            </div>
           </header>
           <main className="flex-1">
             {children}
