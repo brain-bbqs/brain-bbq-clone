@@ -202,6 +202,92 @@ export type Database = {
         }
         Relationships: []
       }
+      grant_investigators: {
+        Row: {
+          grant_number: string
+          investigator_id: string
+          role: string
+        }
+        Insert: {
+          grant_number: string
+          investigator_id: string
+          role?: string
+        }
+        Update: {
+          grant_number?: string
+          investigator_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigator_organizations: {
+        Row: {
+          investigator_id: string
+          organization_id: string
+        }
+        Insert: {
+          investigator_id: string
+          organization_id: string
+        }
+        Update: {
+          investigator_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigator_organizations_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigator_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investigators: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          orcid: string | null
+          profile_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          orcid?: string | null
+          profile_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          orcid?: string | null
+          profile_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_embeddings: {
         Row: {
           content: string
@@ -286,6 +372,27 @@ export type Database = {
           id?: string
           started_at?: string
           status?: string
+        }
+        Relationships: []
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          url?: string | null
         }
         Relationships: []
       }
