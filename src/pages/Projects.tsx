@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
@@ -265,13 +266,15 @@ const Projects = () => {
       cellRenderer: ({ value, data }: { value: number; data: ProjectRow }) => {
         if (!value) return <span className="text-muted-foreground">0</span>;
         return (
-          <a
-            href="/publications"
-            className="text-primary hover:underline font-medium"
-            title={`View ${value} publication${value !== 1 ? 's' : ''}`}
+          <span
+            className="text-primary hover:underline font-medium cursor-pointer"
+            title={`View ${value} publication${value !== 1 ? 's' : ''} for this grant`}
+            onClick={() => {
+              window.location.href = `/publications?grant=${encodeURIComponent(data.grantNumber)}`;
+            }}
           >
             {value}
-          </a>
+          </span>
         );
       },
     },
