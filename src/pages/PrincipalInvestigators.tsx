@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Users, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizePiName, piProfileUrl } from "@/lib/pi-utils";
+import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import "@/styles/ag-grid-theme.css";
 
 interface PIRow {
@@ -44,7 +44,7 @@ const NameCell = ({ data }: { data: PIRow }) => {
         target="_blank"
         rel="noopener noreferrer"
         className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
-        title={`Search ${data.displayName} on NIH Reporter`}
+        title={`View ${data.displayName} on Google Scholar`}
       >
         {data.displayName}
       </a>
@@ -61,16 +61,24 @@ const ProjectsCell = ({ data }: { data: PIRow }) => (
   </span>
 );
 
-const BadgeListCell = ({ value }: { value: string[] }) => {
+const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
   const displayItems = value.slice(0, 3);
   const remaining = value.length - 3;
   return (
     <div className="flex flex-wrap gap-1">
       {displayItems.map((item, i) => (
-        <Badge key={i} variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
-          {item}
-        </Badge>
+        <a
+          key={i}
+          href={institutionUrl(item)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={`Visit ${normalizePiName(item)}`}
+        >
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs cursor-pointer hover:bg-primary/20 transition-colors">
+            {item}
+          </Badge>
+        </a>
       ))}
       {remaining > 0 && <span className="text-muted-foreground text-xs">+{remaining}</span>}
     </div>
@@ -196,7 +204,7 @@ export default function PrincipalInvestigators() {
       headerName: "Institutions",
       flex: 1,
       minWidth: 220,
-      cellRenderer: BadgeListCell,
+      cellRenderer: InstitutionBadgeCell,
     },
   ], []);
 
@@ -206,7 +214,7 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to search NIH Reporter.
+            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their Google Scholar profile.
           </p>
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
