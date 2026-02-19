@@ -163,7 +163,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                   variant="outline"
                   className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
                     g.isBbqs
-                      ? "bg-primary/15 text-primary border-primary/40 font-semibold"
+                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 font-semibold dark:text-emerald-400"
                       : "bg-muted text-muted-foreground border-border"
                   }`}
                 >
@@ -488,7 +488,7 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their NIH Reporter profile. BBQS grants are highlighted in the Grants column.
+            Browse all Principal Investigators and Co-PIs across NIH grants. Click a name to view their NIH Reporter profile. BBQS-affiliated grants are highlighted in green.
           </p>
 
           {/* Summary cards */}
