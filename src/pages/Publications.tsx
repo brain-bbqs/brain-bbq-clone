@@ -163,7 +163,7 @@ export default function Publications() {
         field: "keywords",
         headerName: "Keywords",
         flex: 1,
-        minWidth: 200,
+        minWidth: 180,
         cellRenderer: KeywordsCell,
         wrapText: true,
         autoHeight: true,
@@ -172,6 +172,13 @@ export default function Publications() {
         filterValueGetter: (params) => {
           return params.data?.keywords?.join(", ") || "";
         },
+      },
+      {
+        field: "citations",
+        headerName: "Citations",
+        width: 100,
+        flex: 0,
+        sort: "desc",
       },
     ],
     []
@@ -213,13 +220,6 @@ export default function Publications() {
     return { text: "Below Avg", className: "text-muted-foreground" };
   };
 
-  const getRowStyle = (params: { data: Publication }) => {
-    if (!params.data) return {};
-    const rcr = params.data.rcr;
-    if (rcr >= 2) return { backgroundColor: "hsl(142 70% 95%)" };
-    if (rcr >= 1) return { backgroundColor: "hsl(38 90% 95%)" };
-    return {};
-  };
 
   const clearFilter = () => {
     setSearchParams({});
@@ -257,14 +257,6 @@ export default function Publications() {
               </button>
             </span>
           )}
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(142 70% 85%)" }}></span> High Impact (RCR ≥ 2)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(38 90% 85%)" }}></span> Above Avg (RCR ≥ 1)
-            </span>
-          </div>
         </div>
 
         {isLoading ? (
@@ -283,7 +275,7 @@ export default function Publications() {
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
-              getRowStyle={getRowStyle}
+              
               rowHeight={48}
               headerHeight={40}
               animateRows
