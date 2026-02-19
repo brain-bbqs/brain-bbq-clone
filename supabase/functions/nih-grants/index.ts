@@ -122,7 +122,7 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
       institution: project.organization?.org_name || "Unknown",
       fiscalYear: project.fiscal_year || 0,
       awardAmount: project.award_amount || 0,
-      nihLink: `https://reporter.nih.gov/project-details/${project.project_num?.replace(/[^a-zA-Z0-9]/g, "") || grantNumber}`,
+      nihLink: `https://reporter.nih.gov/project-details/${encodeURIComponent(project.project_num || grantNumber)}`,
       publications,
       publicationCount: publications.length
     };
