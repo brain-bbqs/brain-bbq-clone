@@ -174,6 +174,7 @@ const Projects = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
@@ -383,7 +384,10 @@ const Projects = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
+            <Card
+              className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => document.getElementById('grants-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10">
@@ -396,7 +400,10 @@ const Projects = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
+            <Card
+              className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => navigate('/publications')}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-purple-500/10">
@@ -409,7 +416,10 @@ const Projects = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
+            <Card
+              className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => navigate('/investigators')}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-orange-500/10">
@@ -467,7 +477,8 @@ const Projects = () => {
           </div>
         </div>
 
-        <div 
+        <div
+          id="grants-grid"
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
           style={{ height: 500 }}
         >
