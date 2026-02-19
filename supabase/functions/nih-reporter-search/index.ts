@@ -11,20 +11,9 @@ serve(async (req) => {
   }
 
   try {
-    const { pi_profile_id, first_name, last_name } = await req.json();
-
-    // Build criteria: prefer pi_names for proper "PI/Project Leader" header
-    let criteria: Record<string, unknown>;
-    if (first_name && last_name) {
-      criteria = {
-        pi_names: [
-          { first_name, last_name, any_name: false },
-        ],
-      };
-    } else if (pi_profile_id) {
-      criteria = { pi_profile_ids: [pi_profile_id] };
-    } else {
-      return new Response(JSON.stringify({ error: "first_name+last_name or pi_profile_id required" }), {
+    const { pi_profile_id } = await req.json();
+    if (!pi_profile_id) {
+      return new Response(JSON.stringify({ error: "pi_profile_id required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -33,7 +22,11 @@ serve(async (req) => {
     const res = await fetch("https://api.reporter.nih.gov/v2/projects/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ criteria, offset: 0, limit: 1 }),
+      body: JSON.stringify({
+        criteria: { pi_profile_ids: [pi_profile_id] },
+        offset: 0,
+        limit: 1,
+      }),
     });
 
     const json = await res.json();
