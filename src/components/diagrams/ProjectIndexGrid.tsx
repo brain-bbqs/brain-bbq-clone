@@ -93,7 +93,7 @@ function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; 
         {view === "list" ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#64b5f6" }}>Computational</div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#64b5f6" }}>Goals</div>
               <ul className="space-y-1">
                 {project.computational.map((f) => (
                   <li key={f} className="text-foreground/80 text-sm">• {f}</li>
@@ -101,7 +101,7 @@ function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; 
               </ul>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#81c784" }}>Algorithmic</div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#81c784" }}>Methods</div>
               <ul className="space-y-1">
                 {project.algorithmic.map((f) => (
                   <li key={f} className="text-foreground/80 text-sm">• {f}</li>
@@ -109,7 +109,7 @@ function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; 
               </ul>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#a78bfa" }}>Implementation</div>
+              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#a78bfa" }}>Resources</div>
               <ul className="space-y-1">
                 {project.implementation.map((f) => (
                   <li key={f} className="text-foreground/80 text-sm">• {f}</li>
@@ -176,21 +176,21 @@ export function ProjectIndexGrid() {
     },
     {
       field: "computational",
-      headerName: "Computational",
+      headerName: "Goals",
       minWidth: 180,
       flex: 1,
       cellRenderer: FeatureBadges,
     },
     {
       field: "algorithmic",
-      headerName: "Algorithmic",
+      headerName: "Methods",
       minWidth: 180,
       flex: 1,
       cellRenderer: FeatureBadges,
     },
     {
       field: "implementation",
-      headerName: "Implementation",
+      headerName: "Resources",
       minWidth: 180,
       flex: 1,
       cellRenderer: FeatureBadges,

@@ -53,7 +53,6 @@ const toolsItems: NavItem[] = [
 ];
 
 const scienceItems: NavItem[] = [
-  { title: "Species", url: "/knowledge-graph", icon: Bug },
   { title: "Computational Models", url: "/computational-models", icon: Sigma },
 ];
 
@@ -63,6 +62,7 @@ const aiItems: NavItem[] = [
 ];
 
 const knowledgeBaseItems: NavItem[] = [
+  { title: "Explorer", url: "/knowledge-graph", icon: Globe },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Publications", url: "/publications", icon: FileText },
 ];
@@ -98,10 +98,10 @@ const legalItems: NavItem[] = [
 
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
+  { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
   { label: "Science", items: scienceItems },
   { label: "Artificial Intelligence", items: aiItems },
-  { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Developer Tools", items: softwareDocItems },
