@@ -21,8 +21,9 @@ interface GrantInfo {
   nihLink: string;
   role: string;
   awardAmount: number;
-  collaborators: string[];
   institution: string;
+  fiscalYear: number | null;
+  isBbqs: boolean;
 }
 
 interface PIRow {
@@ -36,7 +37,6 @@ interface PIRow {
   totalProjects: number;
   totalFunding: number;
   institutions: string[];
-  grantTypes: string[];
   grants: GrantInfo[];
 }
 
@@ -51,39 +51,33 @@ const extractGrantType = (grantNumber: string): string => {
 /** Open NIH Reporter search for a PI using their profile ID */
 const openNihReporterProfile = async (pi: PIRow) => {
   try {
-    // Use profile_id if available (most reliable)
     const body = pi.profileId
       ? { pi_profile_id: pi.profileId }
       : { first_name: pi.firstName, last_name: pi.lastName };
 
-    const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
-      body,
-    });
+    const { data, error } = await supabase.functions.invoke("nih-reporter-search", { body });
     if (!error && data?.url) {
       window.open(data.url, "_blank");
       return;
     }
   } catch {
-    // fallback below
+    // fallback
   }
-  // Fallback: Google Scholar search
   window.open(piProfileUrl(pi.displayName), "_blank");
 };
 
-const NameCell = ({ data }: { data: PIRow }) => {
-  return (
-    <div className="flex items-center gap-2">
-      <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-      <button
-        onClick={() => openNihReporterProfile(data)}
-        className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left"
-        title={`View ${data.displayName} on NIH Reporter`}
-      >
-        {data.displayName}
-      </button>
-    </div>
-  );
-};
+const NameCell = ({ data }: { data: PIRow }) => (
+  <div className="flex items-center gap-2">
+    <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+    <button
+      onClick={() => openNihReporterProfile(data)}
+      className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left"
+      title={`View ${data.displayName} on NIH Reporter`}
+    >
+      {data.displayName}
+    </button>
+  </div>
+);
 
 const ProjectsCell = ({ data }: { data: PIRow }) => (
   <span className="text-foreground">
@@ -96,7 +90,7 @@ const ProjectsCell = ({ data }: { data: PIRow }) => (
 
 const FundingCell = ({ value }: { value: number }) => {
   if (!value || isNaN(value)) return <span className="text-muted-foreground">—</span>;
-  return <span className="font-mono text-emerald-600">${value.toLocaleString()}</span>;
+  return <span className="font-mono text-emerald-600 font-semibold">${value.toLocaleString()}</span>;
 };
 
 const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
@@ -118,17 +112,39 @@ const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
           </Badge>
         </a>
       ))}
-      {remaining > 0 && <span className="text-muted-foreground text-xs">+{remaining}</span>}
+      {remaining > 0 && (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground text-xs cursor-help">+{remaining}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">{value.slice(3).join(", ")}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
   );
 };
 
 const GrantsCell = ({ data }: { data: PIRow }) => {
   if (!data?.grants || data.grants.length === 0) return <span className="text-muted-foreground">—</span>;
+
+  // Show BBQS grants first, then others
+  const sorted = [...data.grants].sort((a, b) => {
+    if (a.isBbqs !== b.isBbqs) return a.isBbqs ? -1 : 1;
+    return (b.awardAmount || 0) - (a.awardAmount || 0);
+  });
+
+  // Show up to 6 badges, rest as "+N"
+  const shown = sorted.slice(0, 6);
+  const remaining = sorted.length - 6;
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-wrap gap-1">
-        {data.grants.map((g, idx) => (
+        {shown.map((g, idx) => (
           <Tooltip key={`${g.grantNumber}-${idx}`}>
             <TooltipTrigger asChild>
               <a
@@ -139,7 +155,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                 <Badge
                   variant="outline"
                   className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
-                    g.role === "contact_pi"
+                    g.isBbqs
                       ? "bg-primary/15 text-primary border-primary/40 font-semibold"
                       : "bg-muted text-muted-foreground border-border"
                   }`}
@@ -155,44 +171,52 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                 {g.grantNumber} · {g.institution}
                 {g.awardAmount > 0 && ` · $${g.awardAmount.toLocaleString()}`}
               </p>
-              {g.collaborators && g.collaborators.length > 0 && (
-                <div className="mt-1 pt-1 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    Collaborators: {g.collaborators.join(", ")}
-                  </p>
-                </div>
+              {g.isBbqs && (
+                <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 mt-1">
+                  BBQS Grant
+                </Badge>
               )}
             </TooltipContent>
           </Tooltip>
         ))}
+        {remaining > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground text-xs cursor-help self-center">+{remaining}</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-sm">
+              <p className="text-xs text-muted-foreground">
+                {sorted.slice(6).map(g => extractGrantType(g.grantNumber) || g.grantNumber).join(", ")}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </TooltipProvider>
   );
 };
 
 const fetchPIs = async (): Promise<PIRow[]> => {
+  // Step 1: Get BBQS grants to identify our PIs
   const { data, error } = await supabase.functions.invoke("nih-grants");
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(data.error);
 
-  const grants = data?.data || [];
+  const bbqsGrants = data?.data || [];
   const piMap = new Map<string, PIRow>();
 
-  grants.forEach((grant: any) => {
+  // Build initial PI list from BBQS grants
+  bbqsGrants.forEach((grant: any) => {
     const piDetails: any[] = grant.piDetails || [];
     const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
     const contactPi = grant.contactPi?.trim() || "";
     const normalizedContactPi = nameKey(contactPi);
-    const grantType = extractGrantType(grant.grantNumber || "");
-    const allPiNames = allPis.map((n: string) => normalizePiName(n));
-    const awardAmount = typeof grant.awardAmount === "number" ? grant.awardAmount : 0;
 
     allPis.forEach((piName: string) => {
       if (!piName) return;
       const key = nameKey(piName);
       const displayName = normalizePiName(piName);
 
-      // Find matching piDetail for this PI to get profileId, firstName, lastName
       const matchingDetail = piDetails.find((d: any) => {
         const detailKey = nameKey(d.fullName || `${d.firstName} ${d.lastName}`);
         return detailKey === key;
@@ -202,25 +226,104 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       const lastName = matchingDetail?.lastName || displayName.split(/\s+/).pop() || "";
       const profileId = matchingDetail?.profileId || null;
 
-      const existing = piMap.get(key) || {
-        name: piName,
-        displayName,
-        firstName,
-        lastName,
-        profileId,
-        projectsAsPi: 0,
-        projectsAsCoPi: 0,
-        totalProjects: 0,
-        totalFunding: 0,
-        institutions: [],
-        grantTypes: [],
-        grants: [],
-      };
-
-      // Update profileId if we found one and didn't have one before
-      if (profileId && !existing.profileId) {
-        existing.profileId = profileId;
+      if (!piMap.has(key)) {
+        piMap.set(key, {
+          name: piName,
+          displayName,
+          firstName,
+          lastName,
+          profileId,
+          projectsAsPi: 0,
+          projectsAsCoPi: 0,
+          totalProjects: 0,
+          totalFunding: 0,
+          institutions: [],
+          grants: [],
+        });
       }
+
+      const existing = piMap.get(key)!;
+      if (profileId && !existing.profileId) existing.profileId = profileId;
+    });
+  });
+
+  // Step 2: Fetch ALL grants for each PI from NIH Reporter
+  const profileIds = Array.from(piMap.values())
+    .map(pi => pi.profileId)
+    .filter((id): id is number => id !== null);
+
+  if (profileIds.length > 0) {
+    try {
+      const { data: allGrantsData, error: allGrantsError } = await supabase.functions.invoke("nih-pi-grants", {
+        body: { profile_ids: profileIds },
+      });
+
+      if (!allGrantsError && allGrantsData?.data) {
+        const allGrantsByPi = allGrantsData.data as Record<number, any[]>;
+
+        // Set of BBQS grant numbers for tagging
+        const bbqsGrantNumbers = new Set(bbqsGrants.map((g: any) => g.grantNumber));
+
+        for (const [, pi] of piMap) {
+          if (!pi.profileId) continue;
+          const piGrants = allGrantsByPi[pi.profileId] || [];
+
+          let piAsPi = 0;
+          let piAsCoPi = 0;
+          const institutions = new Set<string>();
+          const grants: GrantInfo[] = [];
+
+          for (const g of piGrants) {
+            const isBbqs = bbqsGrantNumbers.has(g.grantNumber);
+            if (g.isContactPi) piAsPi++;
+            else piAsCoPi++;
+            if (g.institution) institutions.add(g.institution);
+
+            grants.push({
+              grantNumber: g.grantNumber,
+              title: g.title,
+              nihLink: g.nihLink,
+              role: g.isContactPi ? "contact_pi" : "co_pi",
+              awardAmount: g.awardAmount || 0,
+              institution: g.institution || "",
+              fiscalYear: g.fiscalYear || null,
+              isBbqs,
+            });
+          }
+
+          pi.projectsAsPi = piAsPi;
+          pi.projectsAsCoPi = piAsCoPi;
+          pi.totalProjects = piGrants.length;
+          pi.totalFunding = grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
+          pi.institutions = Array.from(institutions);
+          pi.grants = grants;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch all PI grants:", e);
+      // Fall back to BBQS-only data
+      _populateFromBbqsOnly(piMap, bbqsGrants);
+    }
+  } else {
+    _populateFromBbqsOnly(piMap, bbqsGrants);
+  }
+
+  return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
+};
+
+/** Fallback: populate from BBQS grants only */
+function _populateFromBbqsOnly(piMap: Map<string, PIRow>, bbqsGrants: any[]) {
+  bbqsGrants.forEach((grant: any) => {
+    const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
+    const contactPi = grant.contactPi?.trim() || "";
+    const normalizedContactPi = nameKey(contactPi);
+    const awardAmount = typeof grant.awardAmount === "number" ? grant.awardAmount : 0;
+
+    allPis.forEach((piName: string) => {
+      if (!piName) return;
+      const key = nameKey(piName);
+      const existing = piMap.get(key);
+      if (!existing) return;
 
       const isContact = key === normalizedContactPi;
       if (isContact) existing.projectsAsPi++;
@@ -231,11 +334,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (grant.institution && !existing.institutions.includes(grant.institution)) {
         existing.institutions.push(grant.institution);
       }
-      if (grantType && !existing.grantTypes.includes(grantType)) {
-        existing.grantTypes.push(grantType);
-      }
-
-      const collaborators = allPiNames.filter((n: string) => n !== displayName);
 
       existing.grants.push({
         grantNumber: grant.grantNumber || "",
@@ -244,15 +342,12 @@ const fetchPIs = async (): Promise<PIRow[]> => {
         role: isContact ? "contact_pi" : "co_pi",
         awardAmount,
         institution: grant.institution || "",
-        collaborators,
+        fiscalYear: grant.fiscalYear || null,
+        isBbqs: true,
       });
-
-      piMap.set(key, existing);
     });
   });
-
-  return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
-};
+}
 
 export default function PrincipalInvestigators() {
   const [quickFilterText, setQuickFilterText] = useState("");
@@ -263,13 +358,7 @@ export default function PrincipalInvestigators() {
     gcTime: 30 * 60 * 1000,
   });
 
-  const totalFundingAll = useMemo(() =>
-    rowData.reduce((sum, pi) => sum + pi.totalFunding, 0),
-    [rowData]
-  );
-
-  // Deduplicate funding: count each grant only once across PIs
-  const uniqueGrantFunding = useMemo(() => {
+  const totalFundingAll = useMemo(() => {
     const seen = new Set<string>();
     let total = 0;
     rowData.forEach(pi => {
@@ -309,15 +398,17 @@ export default function PrincipalInvestigators() {
     },
     {
       headerName: "Grants",
-      flex: 1,
-      minWidth: 200,
+      flex: 1.5,
+      minWidth: 250,
       cellRenderer: GrantsCell,
+      comparator: (_vA, _vB, nodeA, nodeB) =>
+        (nodeA.data?.grants?.length || 0) - (nodeB.data?.grants?.length || 0),
     },
     {
       field: "totalFunding",
       headerName: "Total Funding",
-      width: 150,
-      minWidth: 120,
+      width: 160,
+      minWidth: 130,
       cellRenderer: FundingCell,
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
@@ -336,7 +427,7 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their NIH Reporter profile. Hover over a grant badge to see project details and collaborators.
+            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their NIH Reporter profile. BBQS grants are highlighted in the Grants column.
           </p>
 
           {/* Summary cards */}
@@ -363,7 +454,7 @@ export default function PrincipalInvestigators() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
                     <p className="text-xl font-bold text-emerald-600">
-                      ${uniqueGrantFunding > 0 ? `${(uniqueGrantFunding / 1000000).toFixed(1)}M` : "—"}
+                      {totalFundingAll > 0 ? `$${(totalFundingAll / 1000000).toFixed(1)}M` : "—"}
                     </p>
                   </div>
                 </div>
