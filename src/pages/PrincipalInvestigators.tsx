@@ -9,6 +9,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,92 +150,93 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
   const remaining = sorted.length - 6;
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex flex-wrap gap-1.5 py-1">
-        {shown.map((g, idx) => (
-          <Tooltip key={`${g.grantNumber}-${idx}`}>
-            <TooltipTrigger asChild>
-              <a
-                href={g.nihLink || `https://reporter.nih.gov/project-details/${encodeURIComponent(g.grantNumber)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+    <div className="flex flex-wrap gap-1.5 py-1">
+      {shown.map((g, idx) => (
+        <HoverCard key={`${g.grantNumber}-${idx}`} openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <a
+              href={g.nihLink || `https://reporter.nih.gov/project-details/${encodeURIComponent(g.grantNumber)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Badge
+                variant="outline"
+                className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
+                  g.isBbqs
+                    ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 font-semibold dark:text-emerald-400"
+                    : "bg-muted text-muted-foreground border-border"
+                }`}
               >
-                <Badge
-                  variant="outline"
-                  className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
-                    g.isBbqs
-                      ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 font-semibold dark:text-emerald-400"
-                      : "bg-muted text-muted-foreground border-border"
-                  }`}
-                >
-                  {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
-                  <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
-                </Badge>
-              </a>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-3">
-              <p className="font-semibold text-sm mb-1.5">{g.title}</p>
-              <p className="text-xs text-muted-foreground mb-1">
-                {g.grantNumber} · {g.institution}
+                {extractGrantType(g.grantNumber) || g.grantNumber.slice(0, 6)}
+                <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+              </Badge>
+            </a>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-80 p-4">
+            <p className="font-semibold text-sm mb-1.5 leading-snug">{g.title}</p>
+            <p className="text-xs text-muted-foreground mb-1">
+              {g.grantNumber} · {g.institution}
+            </p>
+            {g.awardAmount > 0 && (
+              <p className="text-xs font-mono text-emerald-600 font-semibold mb-2">
+                ${g.awardAmount.toLocaleString()}
               </p>
-              {g.awardAmount > 0 && (
-                <p className="text-xs font-mono text-emerald-600 mb-2">
-                  ${g.awardAmount.toLocaleString()}
-                </p>
-              )}
-              {g.coPis && g.coPis.length > 0 && (
-                <div className="border-t border-border pt-2 mt-1">
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Investigators</p>
-                  <div className="flex flex-wrap gap-1">
-                    {g.coPis.map((copi, i) => (
-                      copi.profileId ? (
-                        <Badge
-                          key={i}
-                          variant="outline"
-                          className={`text-[11px] cursor-pointer hover:bg-primary/15 transition-colors ${
-                            copi.isContactPi
-                              ? "bg-primary/10 text-primary border-primary/30 font-medium"
-                              : "bg-muted/50 text-muted-foreground border-border"
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            supabase.functions.invoke("nih-reporter-search", {
-                              body: { pi_profile_id: copi.profileId },
-                            }).then(({ data }) => {
-                              if (data?.url) window.open(data.url, "_blank");
-                            });
-                          }}
-                        >
-                          {copi.name}
-                          {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          key={i}
-                          variant="outline"
-                          className={`text-[11px] ${
-                            copi.isContactPi
-                              ? "bg-primary/10 text-primary border-primary/30 font-medium"
-                              : "bg-muted/50 text-muted-foreground border-border"
-                          }`}
-                        >
-                          {copi.name}
-                          {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
-                        </Badge>
-                      )
-                    ))}
-                  </div>
+            )}
+            {g.coPis && g.coPis.length > 0 && (
+              <div className="border-t border-border pt-2 mt-1">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Investigators</p>
+                <div className="flex flex-wrap gap-1">
+                  {g.coPis.map((copi, i) => (
+                    copi.profileId ? (
+                      <Badge
+                        key={i}
+                        variant="outline"
+                        className={`text-[11px] cursor-pointer hover:bg-primary/15 transition-colors ${
+                          copi.isContactPi
+                            ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                            : "bg-muted/50 text-muted-foreground border-border"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          supabase.functions.invoke("nih-reporter-search", {
+                            body: { pi_profile_id: copi.profileId },
+                          }).then(({ data }) => {
+                            if (data?.url) window.open(data.url, "_blank");
+                          });
+                        }}
+                      >
+                        {copi.name}
+                        {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        key={i}
+                        variant="outline"
+                        className={`text-[11px] ${
+                          copi.isContactPi
+                            ? "bg-primary/10 text-primary border-primary/30 font-medium"
+                            : "bg-muted/50 text-muted-foreground border-border"
+                        }`}
+                      >
+                        {copi.name}
+                        {copi.isContactPi && <span className="ml-0.5 opacity-60">(PI)</span>}
+                      </Badge>
+                    )
+                  ))}
                 </div>
-              )}
-              {g.isBbqs && (
-                <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30 mt-2">
-                  BBQS Grant
-                </Badge>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        ))}
-        {remaining > 0 && (
+              </div>
+            )}
+            {g.isBbqs && (
+              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 border-emerald-500/30 mt-2 dark:text-emerald-400">
+                BBQS Grant
+              </Badge>
+            )}
+          </HoverCardContent>
+        </HoverCard>
+      ))}
+      {remaining > 0 && (
+        <TooltipProvider delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-muted-foreground text-xs cursor-help self-center">+{remaining}</span>
@@ -245,9 +247,9 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
               </p>
             </TooltipContent>
           </Tooltip>
-        )}
-      </div>
-    </TooltipProvider>
+        </TooltipProvider>
+      )}
+    </div>
   );
 };
 
