@@ -173,14 +173,13 @@ const Projects = () => {
       cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     },
     {
-      field: "contactPi",
-      headerName: "PI",
-      width: 150,
+      field: "allPis",
+      headerName: "PIs",
+      width: 200,
       minWidth: 150,
-      maxWidth: 150,
-      suppressSizeToFit: true,
       cellRenderer: TruncatedCell,
       cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      valueGetter: (params) => params.data?.allPis || params.data?.contactPi || '',
     },
     {
       field: "institution",
