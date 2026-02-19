@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Users, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizePiName, nihReporterPiUrl } from "@/lib/pi-utils";
+import { normalizePiName, piProfileUrl } from "@/lib/pi-utils";
 import "@/styles/ag-grid-theme.css";
 
 interface PIRow {
@@ -35,7 +35,7 @@ const extractGrantType = (grantNumber: string): string => {
 };
 
 const NameCell = ({ data }: { data: PIRow }) => {
-  const url = nihReporterPiUrl(data.displayName);
+  const url = piProfileUrl(data.displayName);
   return (
     <div className="flex items-center gap-2">
       <Users className="h-4 w-4 text-muted-foreground shrink-0" />

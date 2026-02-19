@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
-import { normalizePiName, nihReporterPiUrl } from "@/lib/pi-utils";
+import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
@@ -94,7 +94,7 @@ const PiCell = ({ value, data }: { value: string; data: ProjectRow }) => {
         <TooltipTrigger asChild>
           <span className="truncate block max-w-full text-primary hover:underline cursor-pointer"
             onClick={() => {
-              const url = nihReporterPiUrl(normalizedNames[0]);
+              const url = piProfileUrl(normalizedNames[0]);
               window.open(url, "_blank");
             }}
           >
@@ -106,7 +106,7 @@ const PiCell = ({ value, data }: { value: string; data: ProjectRow }) => {
             {normalizedNames.map((name, i) => (
               <a
                 key={i}
-                href={nihReporterPiUrl(name)}
+                href={piProfileUrl(name)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-primary hover:underline"
@@ -123,7 +123,7 @@ const PiCell = ({ value, data }: { value: string; data: ProjectRow }) => {
 
 const InstitutionCell = ({ value }: { value: string }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
-  const searchUrl = `https://reporter.nih.gov/search/results?query=${encodeURIComponent(value)}&selectedFOField=ORG_NAME`;
+  const searchUrl = institutionUrl(value);
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
