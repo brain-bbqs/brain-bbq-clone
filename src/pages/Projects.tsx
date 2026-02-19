@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
+import { normalizePiName, nihReporterPiUrl } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
@@ -75,6 +76,69 @@ const TruncatedCell = ({ value }: { value: string }) => {
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <p>{value}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const PiCell = ({ value, data }: { value: string; data: ProjectRow }) => {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  const piNames = value.split(/[,;]/).map((n) => n.trim()).filter(Boolean);
+  const normalizedNames = piNames.map(normalizePiName);
+  const displayText = normalizedNames.join(", ");
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="truncate block max-w-full text-primary hover:underline cursor-pointer"
+            onClick={() => {
+              const url = nihReporterPiUrl(normalizedNames[0]);
+              window.open(url, "_blank");
+            }}
+          >
+            {displayText}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-sm">
+          <div className="space-y-1">
+            {normalizedNames.map((name, i) => (
+              <a
+                key={i}
+                href={nihReporterPiUrl(name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-primary hover:underline"
+              >
+                {name} <ExternalLink className="inline h-3 w-3" />
+              </a>
+            ))}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const InstitutionCell = ({ value }: { value: string }) => {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  const searchUrl = `https://reporter.nih.gov/search/results?query=${encodeURIComponent(value)}&selectedFOField=ORG_NAME`;
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href={searchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate block max-w-full text-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {value}
+          </a>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Search {value} on NIH Reporter</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -177,7 +241,7 @@ const Projects = () => {
       headerName: "PIs",
       width: 200,
       minWidth: 150,
-      cellRenderer: TruncatedCell,
+      cellRenderer: PiCell,
       cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       valueGetter: (params) => params.data?.allPis || params.data?.contactPi || '',
     },
@@ -188,7 +252,7 @@ const Projects = () => {
       minWidth: 200,
       maxWidth: 200,
       suppressSizeToFit: true,
-      cellRenderer: TruncatedCell,
+      cellRenderer: InstitutionCell,
       cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     },
     {
@@ -456,7 +520,12 @@ const Projects = () => {
               </div>
               <div>
                 <span className="text-muted-foreground">All PIs: </span>
-                <span className="text-foreground">{hoveredRow.allPis || hoveredRow.contactPi}</span>
+                <span className="text-foreground">
+                  {(hoveredRow.allPis || hoveredRow.contactPi)
+                    ?.split(/[,;]/)
+                    .map((n: string) => normalizePiName(n.trim()))
+                    .join(", ")}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Fiscal Year: </span>
