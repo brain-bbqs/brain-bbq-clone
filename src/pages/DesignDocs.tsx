@@ -1,6 +1,49 @@
-import { Database, Server, Globe, Brain, FileText, Layers, ArrowRight } from "lucide-react";
+import { Database, Server, Globe, Brain, FileText, Layers, ArrowRight, Link2, Table2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import SoftwareArchitectureFlow from "@/components/diagrams/SoftwareArchitectureFlow";
+
+const dbTables = [
+  { name: "grants", desc: "NIH grant records with award amounts, abstracts, fiscal years" },
+  { name: "investigators", desc: "PI/Co-PI profiles with ORCID, Scholar ID, and profile URLs" },
+  { name: "organizations", desc: "Research institutions linked to investigators" },
+  { name: "publications", desc: "Papers with DOI, PMID, citation counts, and RCR metrics" },
+  { name: "grant_investigators", desc: "Junction table linking grants ↔ investigators with roles" },
+  { name: "investigator_organizations", desc: "Junction table linking investigators ↔ organizations" },
+  { name: "resources", desc: "Unified resource registry (grants, publications, software, datasets)" },
+  { name: "resource_links", desc: "Typed relationships between resources (e.g. grant → publication)" },
+  { name: "software_tools", desc: "Software tools with repo URLs, languages, and licenses" },
+  { name: "knowledge_embeddings", desc: "RAG vector store (1536-dim) for NeuroMCP chat context" },
+  { name: "chat_conversations", desc: "NeuroMCP conversation sessions per user" },
+  { name: "chat_messages", desc: "Individual chat messages with latency and token tracking" },
+  { name: "nih_grants_cache", desc: "Cached NIH Reporter API responses to reduce external calls" },
+  { name: "nih_grants_sync_log", desc: "Audit log for grant data synchronization runs" },
+  { name: "analytics_pageviews", desc: "Page view tracking with referrer and user agent" },
+  { name: "analytics_clicks", desc: "Click event tracking with element metadata" },
+];
+
+const edgeFunctions = [
+  { name: "nih-grants", desc: "Fetches BBQS grant data from NIH Reporter + iCite APIs" },
+  { name: "nih-pi-grants", desc: "Batch-fetches all grants for a set of PI profile IDs" },
+  { name: "nih-reporter-search", desc: "Generates NIH Reporter search URLs for PI lookups" },
+  { name: "resolve-scholar-ids", desc: "Resolves Google Scholar IDs for investigators" },
+  { name: "bbqs-api", desc: "Public REST API serving BBQS consortium data" },
+  { name: "bbqs-mcp", desc: "MCP (Model Context Protocol) server for AI tool access" },
+  { name: "neuromcp-chat", desc: "RAG-powered chat with OpenRouter LLM backend" },
+  { name: "neuromcp-ingest", desc: "Ingests documents into the knowledge embedding store" },
+  { name: "neuromcp-ingest-workflows", desc: "Ingests workflow data for the recommender" },
+  { name: "neuromcp-audio", desc: "Audio processing for research recordings" },
+  { name: "neuromcp-history", desc: "Retrieves conversation history for NeuroMCP" },
+  { name: "github-roadmap", desc: "Fetches GitHub milestones and issues for the roadmap" },
+  { name: "create-github-issue", desc: "Creates GitHub issues from the Report Issue dialog" },
+];
+
+const nihLinkages = [
+  { source: "NIH Reporter v2", endpoint: "POST /v2/projects/search", data: "Grant numbers, titles, PIs, award amounts, abstracts, fiscal years", flow: "Edge Function queries by BBQS grant numbers → caches in nih_grants_cache → populates grants + investigators tables" },
+  { source: "NIH Reporter v2", endpoint: "POST /v2/projects/search (by PI)", data: "All grants for a PI profile ID (beyond BBQS)", flow: "nih-pi-grants fetches full portfolio per PI → displayed on People page with BBQS grants highlighted" },
+  { source: "iCite API", endpoint: "GET /api/pubs?pmids=...", data: "Publication titles, authors, journals, citation counts, RCR", flow: "PMIDs from NIH Reporter → iCite lookup → publications table" },
+  { source: "NIH Reporter", endpoint: "Search URL generation", data: "PI profile search links", flow: "nih-reporter-search generates deep links to NIH Reporter for PI profiles" },
+];
 
 export default function DesignDocs() {
   return (
@@ -8,7 +51,7 @@ export default function DesignDocs() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Software Architecture</h1>
         <p className="text-muted-foreground">
-          High-level overview of the BBQS platform architecture and integrations
+          High-level overview of the BBQS platform architecture, database schema, and NIH data linkages
         </p>
       </div>
 
@@ -57,34 +100,34 @@ export default function DesignDocs() {
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">React + TypeScript</CardTitle>
+              <CardTitle className="text-base">React 18 + TypeScript</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                The UI is built with React 18 and TypeScript for type safety. 
-                We use React Router for client-side navigation.
+                Type-safe UI with React Router for client-side navigation.
+                Components use shadcn/ui (Radix primitives) for accessible, composable UI.
               </p>
             </CardContent>
           </Card>
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Tailwind CSS + shadcn/ui</CardTitle>
+              <CardTitle className="text-base">Tailwind CSS + Custom Theme</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Styling uses Tailwind CSS with a custom dark theme. 
-                UI components are from shadcn/ui (built on Radix primitives).
+                Utility-first styling with a custom Bluevine-inspired design system.
+                HSL-based semantic tokens for consistent theming.
               </p>
             </CardContent>
           </Card>
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Vite</CardTitle>
+              <CardTitle className="text-base">Vite + Bun</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Build tooling powered by Vite for fast development 
-                and optimized production builds.
+                Fast HMR development builds with Vite. Production builds optimized
+                with tree-shaking and code splitting.
               </p>
             </CardContent>
           </Card>
@@ -94,179 +137,218 @@ export default function DesignDocs() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Server state management with automatic caching, 
-                refetching, and synchronization.
+                Server state management with automatic caching, background refetching,
+                and stale-while-revalidate patterns.
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">AG Grid</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                High-performance data grids for the People and Projects directories.
+                Custom Bluevine theme with dark headers and gold accents.
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">D3 + Recharts + React Flow</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Data visualization suite: D3 for heatmaps and Sankey diagrams,
+                Recharts for charts, React Flow for interactive architecture diagrams.
               </p>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Backend - Supabase */}
+      {/* Supabase Database Schema */}
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Table2 className="h-5 w-5 text-primary" />
+          Supabase Database Schema
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          PostgreSQL database with {dbTables.length} tables organized into domain areas: 
+          research entities, NIH data, AI/chat, and analytics.
+        </p>
+        <div className="overflow-x-auto border border-border rounded-lg">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left py-2.5 px-4 text-foreground font-semibold">Table</th>
+                <th className="text-left py-2.5 px-4 text-foreground font-semibold">Purpose</th>
+              </tr>
+            </thead>
+            <tbody className="text-muted-foreground">
+              {dbTables.map((t, i) => (
+                <tr key={t.name} className={i < dbTables.length - 1 ? "border-b border-border/50" : ""}>
+                  <td className="py-2 px-4">
+                    <code className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono">{t.name}</code>
+                  </td>
+                  <td className="py-2 px-4 text-xs">{t.desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Backend Services */}
       <section className="mb-10">
         <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
           <Server className="h-5 w-5 text-primary" />
-          Backend — Supabase
+          Backend Services
         </h2>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-6 space-y-4">
-            <div>
-              <h3 className="font-medium text-foreground mb-1">PostgreSQL Database</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Edge Functions (Deno)</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-sm text-muted-foreground">
-                All persistent data is stored in a hosted PostgreSQL instance. 
-                Key tables include <code className="bg-secondary px-1 rounded">ner_extractions</code> (paper metadata) 
-                and <code className="bg-secondary px-1 rounded">ner_entities</code> (extracted neuroscience entities).
+                {edgeFunctions.length} serverless functions written in TypeScript/Deno handle
+                API proxying, data processing, and AI chat.
               </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-foreground mb-1">Edge Functions (Deno)</h3>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Row Level Security</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-sm text-muted-foreground">
-                Serverless functions written in TypeScript/Deno handle API proxying, 
-                data processing, and integrations with external services.
+                Database access controlled via RLS policies. Chat data is user-isolated;
+                research data is publicly readable.
               </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-foreground mb-1">Row Level Security (RLS)</h3>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Supabase Auth</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-sm text-muted-foreground">
-                Database access is controlled via RLS policies, ensuring users 
-                can only access data they're authorized to view or modify.
+                User signup, login, and session management with JWT tokens.
+                Used for NeuroMCP chat and admin features.
               </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-foreground mb-1">Authentication</h3>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Vector Embeddings (pgvector)</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-sm text-muted-foreground">
-                Supabase Auth handles user signup, login, and session management 
-                with JWT tokens.
+                1536-dimensional vectors in knowledge_embeddings table power
+                RAG-based semantic search for the NeuroMCP assistant.
               </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
-      {/* External Integrations */}
+      {/* NIH Data Linkages */}
       <section className="mb-10">
         <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          External Integrations
+          <Link2 className="h-5 w-5 text-primary" />
+          NIH Data Linkages
         </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          The platform maintains live connections to NIH data systems, pulling grant and publication 
+          data through Edge Functions and caching results in PostgreSQL.
+        </p>
         <div className="space-y-4">
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-accent" />
-                NIH Reporter API
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-2">
-                We query the NIH Reporter API to fetch grant information including 
-                principal investigators, award amounts, project abstracts, and associated publications.
-              </p>
-              <code className="text-xs bg-secondary px-2 py-1 rounded block overflow-x-auto">
-                POST https://api.reporter.nih.gov/v2/projects/search
-              </code>
-            </CardContent>
-          </Card>
+          {nihLinkages.map((link, i) => (
+            <Card key={i} className="bg-card border-border">
+              <CardContent className="pt-5">
+                <div className="flex items-start gap-3 mb-2">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs shrink-0">
+                    {link.source}
+                  </Badge>
+                  <code className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">{link.endpoint}</code>
+                </div>
+                <p className="text-sm text-muted-foreground mb-1.5">
+                  <span className="font-medium text-foreground">Data:</span> {link.data}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Flow:</span> {link.flow}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-accent" />
-                iCite API
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-2">
-                Publication metadata (titles, authors, journals, citation metrics) 
-                is retrieved from the iCite API using PMIDs from NIH Reporter.
-              </p>
-              <code className="text-xs bg-secondary px-2 py-1 rounded block overflow-x-auto">
-                GET https://icite.od.nih.gov/api/pubs?pmids=...
-              </code>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Brain className="h-4 w-4 text-accent" />
-                GitHub API
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                The Roadmap page fetches project milestones and issues from GitHub 
-                to display development progress. Issue reporting also integrates with GitHub.
-              </p>
-            </CardContent>
-          </Card>
+      {/* Edge Functions Reference */}
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Server className="h-5 w-5 text-primary" />
+          Edge Functions Reference
+        </h2>
+        <div className="overflow-x-auto border border-border rounded-lg">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left py-2.5 px-4 text-foreground font-semibold">Function</th>
+                <th className="text-left py-2.5 px-4 text-foreground font-semibold">Purpose</th>
+              </tr>
+            </thead>
+            <tbody className="text-muted-foreground">
+              {edgeFunctions.map((fn, i) => (
+                <tr key={fn.name} className={i < edgeFunctions.length - 1 ? "border-b border-border/50" : ""}>
+                  <td className="py-2 px-4">
+                    <code className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono">{fn.name}</code>
+                  </td>
+                  <td className="py-2 px-4 text-xs">{fn.desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
       {/* Data Flow */}
-      <section className="mb-10">
+      <section>
         <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
           <Layers className="h-5 w-5 text-primary" />
-          Data Flow Example: Grant Extraction
+          Data Flow: Grant → Publication Pipeline
         </h2>
         <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <ol className="space-y-3 text-sm text-muted-foreground">
               <li className="flex gap-3">
                 <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">1</span>
-                <span>User enters a grant number on the Projects page</span>
+                <span>BBQS grant numbers are configured in the platform</span>
               </li>
               <li className="flex gap-3">
                 <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">2</span>
-                <span>Frontend calls the <code className="bg-secondary px-1 rounded">nih-grants</code> Edge Function</span>
+                <span><code className="bg-secondary px-1 rounded">nih-grants</code> Edge Function queries NIH Reporter API for grant details, PI profiles, and PMIDs</span>
               </li>
               <li className="flex gap-3">
                 <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">3</span>
-                <span>Edge Function queries NIH Reporter API for grant details and PMIDs</span>
+                <span>PI profile IDs are extracted → <code className="bg-secondary px-1 rounded">nih-pi-grants</code> fetches their full grant portfolio</span>
               </li>
               <li className="flex gap-3">
                 <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">4</span>
-                <span>PMIDs are sent to iCite API to fetch full publication metadata</span>
+                <span>PMIDs are sent to iCite API to fetch publication metadata, citation counts, and RCR</span>
               </li>
               <li className="flex gap-3">
                 <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">5</span>
-                <span>Combined data is returned to the frontend and displayed in AG Grid</span>
+                <span>Combined data is cached in <code className="bg-secondary px-1 rounded">nih_grants_cache</code> and displayed in AG Grid tables</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium">6</span>
+                <span>Investigator names are normalized (Title Case, First Last) and deduplicated across grants</span>
               </li>
             </ol>
           </CardContent>
         </Card>
-      </section>
-
-      {/* Key Edge Functions */}
-      <section>
-        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Server className="h-5 w-5 text-primary" />
-          Edge Functions Reference
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 text-foreground font-medium">Function</th>
-                <th className="text-left py-2 text-foreground font-medium">Purpose</th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              <tr className="border-b border-border/50">
-                <td className="py-2"><code className="bg-secondary px-1 rounded">nih-grants</code></td>
-                <td className="py-2">Fetches grant data from NIH Reporter + iCite</td>
-              </tr>
-              <tr className="border-b border-border/50">
-                <td className="py-2"><code className="bg-secondary px-1 rounded">github-roadmap</code></td>
-                <td className="py-2">Fetches GitHub milestones and issues</td>
-              </tr>
-              <tr>
-                <td className="py-2"><code className="bg-secondary px-1 rounded">create-github-issue</code></td>
-                <td className="py-2">Creates issues from the Report Issue dialog</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
     </div>
   );
