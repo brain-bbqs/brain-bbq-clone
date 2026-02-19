@@ -9,7 +9,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
+import { Loader2, Users, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
@@ -28,10 +28,11 @@ interface GrantInfo {
 interface PIRow {
   name: string;
   displayName: string;
+  firstName: string;
+  lastName: string;
   projectsAsPi: number;
   projectsAsCoPi: number;
   totalProjects: number;
-  totalFunding: number;
   institutions: string[];
   grantTypes: string[];
   grants: GrantInfo[];
@@ -45,20 +46,33 @@ const extractGrantType = (grantNumber: string): string => {
   return match?.[1] || "";
 };
 
+/** Open NIH Reporter search for a PI, falling back to Google Scholar */
+const openNihReporterProfile = async (firstName: string, lastName: string, displayName: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
+      body: { first_name: firstName, last_name: lastName },
+    });
+    if (!error && data?.url) {
+      window.open(data.url, "_blank");
+      return;
+    }
+  } catch {
+    // fallback below
+  }
+  window.open(piProfileUrl(displayName), "_blank");
+};
+
 const NameCell = ({ data }: { data: PIRow }) => {
-  const url = piProfileUrl(data.displayName);
   return (
     <div className="flex items-center gap-2">
       <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
-        title={`View ${data.displayName} on Google Scholar`}
+      <button
+        onClick={() => openNihReporterProfile(data.firstName, data.lastName, data.displayName)}
+        className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left"
+        title={`View ${data.displayName} on NIH Reporter`}
       >
         {data.displayName}
-      </a>
+      </button>
     </div>
   );
 };
@@ -71,11 +85,6 @@ const ProjectsCell = ({ data }: { data: PIRow }) => (
     </span>
   </span>
 );
-
-const FundingCell = ({ value }: { value: number }) => {
-  if (!value) return <span className="text-muted-foreground">—</span>;
-  return <span className="font-mono text-emerald-600">${value.toLocaleString()}</span>;
-};
 
 const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
@@ -102,14 +111,18 @@ const InstitutionBadgeCell = ({ value }: { value: string[] }) => {
 };
 
 const GrantsCell = ({ data }: { data: PIRow }) => {
-  if (!data.grants || data.grants.length === 0) return <span className="text-muted-foreground">—</span>;
+  if (!data?.grants || data.grants.length === 0) return <span className="text-muted-foreground">—</span>;
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-wrap gap-1">
-        {data.grants.map((g) => (
-          <Tooltip key={g.grantNumber}>
+        {data.grants.map((g, idx) => (
+          <Tooltip key={`${g.grantNumber}-${idx}`}>
             <TooltipTrigger asChild>
-              <a href={g.nihLink} target="_blank" rel="noopener noreferrer">
+              <a
+                href={g.nihLink || `https://reporter.nih.gov/search/results?projectNum=${encodeURIComponent(g.grantNumber)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Badge
                   variant="outline"
                   className={`text-xs cursor-pointer hover:bg-primary/20 transition-colors ${
@@ -163,13 +176,20 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (!piName) return;
       const key = nameKey(piName);
       const displayName = normalizePiName(piName);
+
+      // Extract first/last for NIH Reporter search
+      const nameParts = displayName.split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts[nameParts.length - 1] || "";
+
       const existing = piMap.get(key) || {
         name: piName,
         displayName,
+        firstName,
+        lastName,
         projectsAsPi: 0,
         projectsAsCoPi: 0,
         totalProjects: 0,
-        totalFunding: 0,
         institutions: [],
         grantTypes: [],
         grants: [],
@@ -179,7 +199,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       if (isContact) existing.projectsAsPi++;
       else existing.projectsAsCoPi++;
       existing.totalProjects++;
-      existing.totalFunding += grant.awardAmount || 0;
 
       if (grant.institution && !existing.institutions.includes(grant.institution)) {
         existing.institutions.push(grant.institution);
@@ -204,7 +223,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     });
   });
 
-  return Array.from(piMap.values()).sort((a, b) => b.totalFunding - a.totalFunding);
+  return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
 };
 
 export default function PrincipalInvestigators() {
@@ -215,11 +234,6 @@ export default function PrincipalInvestigators() {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
-
-  const totalFundingAll = useMemo(() =>
-    rowData.reduce((sum, pi) => sum + pi.totalFunding, 0),
-    [rowData]
-  );
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
@@ -247,16 +261,9 @@ export default function PrincipalInvestigators() {
     },
     {
       headerName: "Grants",
-      width: 200,
-      minWidth: 160,
+      flex: 1,
+      minWidth: 200,
       cellRenderer: GrantsCell,
-    },
-    {
-      field: "totalFunding",
-      headerName: "Total Funding",
-      width: 140,
-      minWidth: 120,
-      cellRenderer: FundingCell,
     },
     {
       field: "institutions",
@@ -273,11 +280,11 @@ export default function PrincipalInvestigators() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across BBQS grants. Hover over a grant badge to see project details and collaborators.
+            Browse all Principal Investigators and Co-PIs across BBQS grants. Click a name to view their NIH Reporter profile. Hover over a grant badge to see project details and collaborators.
           </p>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <Card className="bg-card border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -287,21 +294,6 @@ export default function PrincipalInvestigators() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Investigators</p>
                     <p className="text-xl font-bold text-foreground">{rowData.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
-                    <p className="text-xl font-bold text-foreground">
-                      ${(totalFundingAll / 1000000).toFixed(1)}M
-                    </p>
                   </div>
                 </div>
               </CardContent>
