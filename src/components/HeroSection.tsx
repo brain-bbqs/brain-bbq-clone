@@ -1,10 +1,11 @@
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
+import { HomeSearch } from "@/components/HomeSearch";
 
 const HeroSection = () => {
   return (
-    <section className="text-center">
-      <div className="inline-flex flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm rounded-xl px-10 py-6 shadow-lg">
-        <div className="w-36 h-36 rounded-full overflow-hidden bg-background/60 shadow-lg">
+    <section className="text-center w-full max-w-2xl mx-auto">
+      <div className="inline-flex flex-col items-center justify-center gap-4 bg-background/70 backdrop-blur-sm rounded-xl px-10 py-6 shadow-lg mb-6">
+        <div className="w-28 h-28 rounded-full overflow-hidden bg-background/60 shadow-lg">
           <img 
             src={bbqsLogoIcon} 
             alt="BBQS Consortium"
@@ -20,6 +21,7 @@ const HeroSection = () => {
           </h1>
         </div>
       </div>
+      <HomeSearch />
     </section>
   );
 };
