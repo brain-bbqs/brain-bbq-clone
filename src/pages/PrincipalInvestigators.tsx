@@ -338,20 +338,65 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
   );
 };
 
-const BadgeListCell = ({ value, color }: { value: string[]; color: "primary" | "amber" }) => {
+const BadgeListCell = ({ value, color, data }: { value: string[]; color: "primary" | "amber"; data?: PIRow }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
   const shown = value.slice(0, 3);
   const remaining = value.length - shown.length;
   const colorClasses = color === "amber"
     ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400"
     : "bg-primary/10 text-primary border-primary/30";
-  return (
-    <div className="flex flex-wrap gap-1 py-1">
-      {shown.map((item, i) => (
+  const label = color === "amber" ? "Skill" : "Research Area";
+
+  // Find related projects for a given item
+  const getRelatedProjects = (item: string) => {
+    if (!data) return [];
+    const piKey = nameKey(data.displayName);
+    const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
+    return MARR_PROJECTS.filter(p => {
+      const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
+      const field = color === "amber" ? p.algorithmic : p.computational;
+      return matchesPi && field.includes(item);
+    });
+  };
+
+  const renderBadge = (item: string, i: number, isOverflow = false) => {
+    const related = getRelatedProjects(item);
+    if (related.length === 0) {
+      return (
         <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${colorClasses}`}>
           {item}
         </Badge>
-      ))}
+      );
+    }
+    return (
+      <HoverCard key={i} openDelay={200} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-normal cursor-help ${colorClasses}`}>
+            {item}
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent side="bottom" align="start" className="w-72 p-4">
+          <p className="font-semibold text-sm mb-1">{item}</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">{label} · {related.length} project{related.length !== 1 ? "s" : ""}</p>
+          <div className="flex flex-col gap-1.5">
+            {related.map((proj, j) => (
+              <div key={j} className="flex items-start gap-2 text-xs">
+                <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ backgroundColor: proj.color }} />
+                <div>
+                  <p className="font-medium text-foreground">{proj.shortName}</p>
+                  <p className="text-muted-foreground">{proj.species}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1 py-1">
+      {shown.map((item, i) => renderBadge(item, i))}
       {remaining > 0 && (
         <HoverCard openDelay={200} closeDelay={100}>
           <HoverCardTrigger asChild>
@@ -361,11 +406,7 @@ const BadgeListCell = ({ value, color }: { value: string[]; color: "primary" | "
           </HoverCardTrigger>
           <HoverCardContent side="bottom" align="start" className="w-64 p-3">
             <div className="flex flex-wrap gap-1">
-              {value.map((item, i) => (
-                <Badge key={i} variant="outline" className={`text-[10px] ${colorClasses}`}>
-                  {item}
-                </Badge>
-              ))}
+              {value.map((item, i) => renderBadge(item, i, true))}
             </div>
           </HoverCardContent>
         </HoverCard>
@@ -374,8 +415,8 @@ const BadgeListCell = ({ value, color }: { value: string[]; color: "primary" | "
   );
 };
 
-const SkillsCell = ({ value }: { value: string[] }) => <BadgeListCell value={value} color="amber" />;
-const ResearchAreasCell = ({ value }: { value: string[] }) => <BadgeListCell value={value} color="primary" />;
+const SkillsCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.skills} color="amber" data={data} />;
+const ResearchAreasCell = ({ data }: { data: PIRow }) => <BadgeListCell value={data?.researchAreas} color="primary" data={data} />;
 
 const fetchPIs = async (): Promise<PIRow[]> => {
   // Step 1: Get BBQS grants to identify our PIs
@@ -624,7 +665,7 @@ export default function PrincipalInvestigators() {
       headerName: "Skills",
       flex: 1,
       minWidth: 200,
-      cellRenderer: SkillsCell,
+      cellRenderer: (params: any) => <SkillsCell data={params.data} />,
       wrapText: true,
       autoHeight: true,
       filterValueGetter: (params) => params.data?.skills?.join(", ") || "",
@@ -634,7 +675,7 @@ export default function PrincipalInvestigators() {
       headerName: "Research Areas",
       flex: 1,
       minWidth: 200,
-      cellRenderer: ResearchAreasCell,
+      cellRenderer: (params: any) => <ResearchAreasCell data={params.data} />,
       wrapText: true,
       autoHeight: true,
       filterValueGetter: (params) => params.data?.researchAreas?.join(", ") || "",
