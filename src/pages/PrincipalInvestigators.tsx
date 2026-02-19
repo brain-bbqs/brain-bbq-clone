@@ -129,7 +129,7 @@ const GrantsCell = ({ data }: { data: PIRow }) => {
                 {g.grantNumber} · {g.institution}
                 {g.awardAmount > 0 && ` · $${g.awardAmount.toLocaleString()}`}
               </p>
-              {g.collaborators.length > 0 && (
+              {g.collaborators && g.collaborators.length > 0 && (
                 <div className="mt-1 pt-1 border-t border-border">
                   <p className="text-xs text-muted-foreground">
                     Collaborators: {g.collaborators.join(", ")}
