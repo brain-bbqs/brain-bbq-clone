@@ -106,7 +106,23 @@ export const PublicationsGrid = ({ publications, grantNumber }: PublicationsGrid
       cellRenderer: ({ value }: { value: unknown }) => {
         const authorsStr = formatAuthors(value);
         if (!authorsStr) return <span className="text-muted-foreground">—</span>;
-        const authors = authorsStr.split(",").map(a => a.trim()).filter(Boolean);
+        // Parse "LastName, FirstName, LastName, FirstName, ..." into pairs
+        const parts = authorsStr.split(",").map(a => a.trim()).filter(Boolean);
+        const authors: string[] = [];
+        let i = 0;
+        while (i < parts.length) {
+          if (i + 1 < parts.length) {
+            const next = parts[i + 1];
+            const looksLikeFirstName = /^[A-Z][a-z]/.test(next) || /^[A-Z]{1,3}$/.test(next);
+            if (looksLikeFirstName) {
+              authors.push(`${next} ${parts[i]}`);
+              i += 2;
+              continue;
+            }
+          }
+          authors.push(parts[i]);
+          i += 1;
+        }
         return (
           <span>
             {authors.map((author, i) => (
