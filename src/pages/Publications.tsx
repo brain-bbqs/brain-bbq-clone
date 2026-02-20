@@ -200,6 +200,7 @@ export default function Publications() {
   const grantFilter = searchParams.get("grant");
   const [hoveredRow, setHoveredRow] = useState<Publication | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [quickFilterText, setQuickFilterText] = useState("");
 
   const { data: publications = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["publications"],
@@ -315,8 +316,15 @@ export default function Publications() {
       </div>
 
       <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-muted-foreground">
-          <span>{displayedPubs.length} publications</span>
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Quick filter..."
+            value={quickFilterText}
+            onChange={(e) => setQuickFilterText(e.target.value)}
+            className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md text-sm"
+          />
+          <span className="text-sm text-muted-foreground">{displayedPubs.length} publications</span>
           {grantFilter && (
             <span className="flex items-center gap-2">
               <span className="bg-primary/10 text-primary border border-primary/30 rounded-full px-3 py-0.5 text-xs font-medium">
@@ -345,6 +353,7 @@ export default function Publications() {
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
+              quickFilterText={quickFilterText}
               
               rowHeight={44}
               headerHeight={40}
