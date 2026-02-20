@@ -3,6 +3,8 @@ export interface Resource {
   category: string;
   name: string;
   url: string;
+  repoUrl?: string;
+  dockerUrl?: string;
   algorithm: string;
   computational: string;
   neuralNetworkArchitecture: string;

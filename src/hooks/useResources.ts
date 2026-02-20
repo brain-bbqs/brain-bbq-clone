@@ -21,6 +21,8 @@ const mapDbToResource = (row: any): Resource => {
     category: meta.category || RESOURCE_TYPE_TO_CATEGORY[row.resource_type] || row.resource_type,
     name: row.name,
     url: row.external_url || "",
+    repoUrl: meta.repoUrl || "",
+    dockerUrl: meta.dockerUrl || "",
     algorithm: meta.algorithm || row.description || "",
     computational: meta.computational || "",
     neuralNetworkArchitecture: meta.neuralNetworkArchitecture || "",
