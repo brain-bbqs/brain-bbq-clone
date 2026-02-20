@@ -533,7 +533,7 @@ const Projects = () => {
         <div
           id="grants-grid"
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: 500 }}
+          style={{ height: "calc(100vh - 340px)", minHeight: 400 }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
@@ -544,7 +544,7 @@ const Projects = () => {
             onCellMouseOut={onCellMouseOut}
             animateRows={true}
             pagination={true}
-            paginationPageSize={25}
+            paginationPageSize={10}
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
