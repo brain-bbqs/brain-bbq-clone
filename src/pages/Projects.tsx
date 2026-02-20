@@ -189,7 +189,9 @@ const CurrencyCell = ({ value }: { value: number }) => {
 };
 
 const GrantTypeBadge = ({ value }: { value: string }) => {
-  const grantType = value.match(/^[A-Z]\d+/)?.[0] || value.substring(0, 3);
+  // Strip leading digits (e.g. "5R34DA..." -> "R34DA...") then extract mechanism code
+  const stripped = value.replace(/^\d+/, "");
+  const grantType = stripped.match(/^[A-Z]\d+/)?.[0] || stripped.substring(0, 3);
   const colorMap: Record<string, string> = {
     "R34": "bg-blue-500/20 text-blue-600 border-blue-500/30",
     "R61": "bg-purple-500/20 text-purple-600 border-purple-500/30",
