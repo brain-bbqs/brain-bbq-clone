@@ -170,7 +170,7 @@ export function HomeSearch() {
     }
 
     // Search software tools
-    for (const tool of searchIndex.software) {
+    for (const tool of searchIndex.software || []) {
       if (
         tool.name.toLowerCase().includes(q) ||
         tool.description.toLowerCase().includes(q)
