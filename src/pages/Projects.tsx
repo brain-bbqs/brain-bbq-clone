@@ -533,7 +533,7 @@ const Projects = () => {
         <div
           id="grants-grid"
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: "calc(100vh - 340px)", minHeight: 400 }}
+          style={{ height: 700, minHeight: 500 }}
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
