@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
@@ -8,9 +8,12 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Users, ExternalLink, DollarSign } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Users, ExternalLink, DollarSign, Columns3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
@@ -597,9 +600,70 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
 };
 
+/* ── Institution cell ── */
+const InstitutionCell = ({ data }: { data: PIRow }) => {
+  if (!data?.institutions || data.institutions.length === 0) return <span className="text-muted-foreground">—</span>;
+  const primary = data.institutions[0];
+  const remaining = data.institutions.length - 1;
+  return (
+    <div className="flex items-center gap-1 py-1">
+      <a
+        href={institutionUrl(primary)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary hover:underline truncate transition-colors"
+        title={primary}
+      >
+        {primary}
+      </a>
+      {remaining > 0 && (
+        <HoverCard openDelay={150} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <span className="text-[10px] text-muted-foreground cursor-help shrink-0">+{remaining}</span>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-72 p-3">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+              All Institutions ({data.institutions.length})
+            </p>
+            <div className="flex flex-col gap-1">
+              {data.institutions.map((inst, idx) => (
+                <a
+                  key={idx}
+                  href={institutionUrl(inst)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  {inst}
+                </a>
+              ))}
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </div>
+  );
+};
+
+const ALL_COLUMNS = [
+  { id: "investigator" as const, label: "Investigator", default: true, locked: true },
+  { id: "institution" as const, label: "Institution", default: true },
+  { id: "projects" as const, label: "Projects", default: true },
+  { id: "grants" as const, label: "Grants", default: true },
+  { id: "funding" as const, label: "Funding", default: true },
+  { id: "skills" as const, label: "Skills", default: false },
+  { id: "researchAreas" as const, label: "Research Areas", default: false },
+];
+
+type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
+
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
+    () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
+  );
   const { data: rowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
     queryFn: fetchPIs,
@@ -628,36 +692,52 @@ export default function PrincipalInvestigators() {
     unSortIcon: true,
   }), []);
 
-  const columnDefs = useMemo<ColDef<PIRow>[]>(() => [
-    {
+  const toggleColumn = useCallback((id: ColumnId) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const allColumnDefs = useMemo<Record<ColumnId, ColDef<PIRow>>>(() => ({
+    investigator: {
       field: "displayName",
       headerName: "Investigator",
       flex: 1.2,
       minWidth: 220,
       cellRenderer: NameCell,
-      sort: "asc",
+      sort: "asc" as const,
       wrapText: true,
       autoHeight: true,
     },
-    {
+    institution: {
+      headerName: "Institution",
+      flex: 1,
+      minWidth: 180,
+      cellRenderer: (params: any) => <InstitutionCell data={params.data} />,
+      filterValueGetter: (params) => (params.data?.institutions || []).join(", "),
+    },
+    projects: {
       headerName: "Projects",
       width: 160,
       minWidth: 140,
       cellRenderer: ProjectsCell,
-      comparator: (_vA, _vB, nodeA, nodeB) =>
+      comparator: (_vA: any, _vB: any, nodeA: any, nodeB: any) =>
         (nodeA.data?.totalProjects || 0) - (nodeB.data?.totalProjects || 0),
     },
-    {
+    grants: {
       headerName: "Grants",
       flex: 1.2,
       minWidth: 200,
       cellRenderer: GrantsCell,
       wrapText: true,
       autoHeight: true,
-      comparator: (_vA, _vB, nodeA, nodeB) =>
+      comparator: (_vA: any, _vB: any, nodeA: any, nodeB: any) =>
         (nodeA.data?.grants?.length || 0) - (nodeB.data?.grants?.length || 0),
     },
-    {
+    funding: {
       field: "totalFunding",
       headerName: "Funding",
       width: 140,
@@ -665,7 +745,7 @@ export default function PrincipalInvestigators() {
       cellRenderer: FundingCell,
       comparator: (a: number, b: number) => (a || 0) - (b || 0),
     },
-    {
+    skills: {
       headerName: "Skills",
       flex: 1,
       minWidth: 200,
@@ -674,7 +754,7 @@ export default function PrincipalInvestigators() {
       autoHeight: true,
       filterValueGetter: (params) => (params.data?.skills || []).join(", "),
     },
-    {
+    researchAreas: {
       headerName: "Research Areas",
       flex: 1,
       minWidth: 220,
@@ -683,7 +763,12 @@ export default function PrincipalInvestigators() {
       autoHeight: true,
       filterValueGetter: (params) => (params.data?.researchAreas || []).join(", "),
     },
-  ], []);
+  }), []);
+
+  const columnDefs = useMemo<ColDef<PIRow>[]>(() =>
+    ALL_COLUMNS.filter(c => visibleColumns.has(c.id)).map(c => allColumnDefs[c.id]),
+    [visibleColumns, allColumnDefs]
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -748,6 +833,29 @@ export default function PrincipalInvestigators() {
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-xs"
             />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Columns3 className="h-4 w-4" />
+                  Columns
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-52 p-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Toggle columns</p>
+                <div className="flex flex-col gap-2">
+                  {ALL_COLUMNS.map(col => (
+                    <label key={col.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={visibleColumns.has(col.id)}
+                        onCheckedChange={() => !col.locked && toggleColumn(col.id)}
+                        disabled={col.locked}
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <span className="text-sm text-muted-foreground">{rowData.length} investigators</span>
           </div>
         </div>
