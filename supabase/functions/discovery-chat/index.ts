@@ -72,22 +72,70 @@ serve(async (req) => {
     }
 
     // --- 3. Also do a direct DB search for people, projects, tools ---
-    const q = `%${query}%`;
-    const [piRes, grantRes, pubRes, toolRes] = await Promise.all([
-      supabase
-        .from("investigators")
-        .select("name, email, orcid, research_areas")
-        .ilike("name", q)
-        .limit(5),
-      supabase.from("grants").select("title, grant_number").ilike("title", q).limit(5),
-      supabase.from("publications").select("title, pmid, journal, year").ilike("title", q).limit(5),
-      supabase
-        .from("resources")
-        .select("name, description, external_url, metadata")
-        .in("resource_type", ["software", "tool"])
-        .ilike("name", q)
-        .limit(5),
-    ]);
+    // Extract meaningful keywords (drop stop words, keep 2+ char words)
+    const STOP_WORDS = new Set(["the","a","an","is","are","was","were","be","been","being","have","has","had","do","does","did","will","would","shall","should","may","might","must","can","could","of","in","to","for","with","on","at","by","from","as","into","through","during","before","after","above","below","between","out","off","over","under","again","further","then","once","here","there","where","when","why","how","all","both","each","few","more","most","other","some","such","no","nor","not","only","own","same","so","than","too","very","just","about","what","which","who","whom","this","that","these","those","i","me","my","we","our","you","your","he","him","his","she","her","it","its","they","them","their","and","but","or","if","while","because","until","find","show","tell","give","get","know","want","like","need","use","look","help","let","say","see","go","come","make","take"]);
+    const keywords = query
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 2 && !STOP_WORDS.has(w));
+
+    // Build OR-style search: search each keyword against each table
+    const searchQueries = keywords.length > 0 ? keywords : [query.toLowerCase()];
+
+    // For each keyword, do parallel searches and merge results
+    const allPiResults: any[] = [];
+    const allGrantResults: any[] = [];
+    const allPubResults: any[] = [];
+    const allToolResults: any[] = [];
+
+    const searchPromises = searchQueries.flatMap((kw) => {
+      const pattern = `%${kw}%`;
+      return [
+        supabase
+          .from("investigators")
+          .select("name, email, orcid, research_areas")
+          .ilike("name", pattern)
+          .limit(5)
+          .then((r) => { if (r.data) allPiResults.push(...r.data); }),
+        supabase
+          .from("grants")
+          .select("title, grant_number, abstract")
+          .ilike("title", pattern)
+          .limit(5)
+          .then((r) => { if (r.data) allGrantResults.push(...r.data); }),
+        supabase
+          .from("publications")
+          .select("title, pmid, journal, year, authors")
+          .ilike("title", pattern)
+          .limit(5)
+          .then((r) => { if (r.data) allPubResults.push(...r.data); }),
+        supabase
+          .from("resources")
+          .select("name, description, external_url, resource_type, metadata")
+          .or(`name.ilike.${pattern},description.ilike.${pattern}`)
+          .limit(10)
+          .then((r) => { if (r.data) allToolResults.push(...r.data); }),
+      ];
+    });
+
+    await Promise.all(searchPromises);
+
+    // Deduplicate by name/title
+    const dedupe = <T extends Record<string, any>>(arr: T[], key: string): T[] => {
+      const seen = new Set<string>();
+      return arr.filter((item) => {
+        const k = (item[key] || "").toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    };
+
+    const piRes = { data: dedupe(allPiResults, "name").slice(0, 8) };
+    const grantRes = { data: dedupe(allGrantResults, "grant_number").slice(0, 8) };
+    const pubRes = { data: dedupe(allPubResults, "pmid").slice(0, 8) };
+    const toolRes = { data: dedupe(allToolResults, "name").slice(0, 8) };
 
     const dbContext: string[] = [];
     if (piRes.data?.length) {
@@ -117,8 +165,15 @@ serve(async (req) => {
     }
     if (toolRes.data?.length) {
       dbContext.push(
-        "SOFTWARE TOOLS:\n" +
-          toolRes.data.map((t: any) => `- ${t.name}: ${t.description || ""}${t.external_url ? ` → ${t.external_url}` : ""}`).join("\n")
+        "SOFTWARE TOOLS & RESOURCES:\n" +
+          toolRes.data.map((t: any) => {
+            const meta = t.metadata || {};
+            const parts = [`- **${t.name}** (${t.resource_type}): ${t.description || ""}`];
+            if (meta.algorithm) parts.push(`  Algorithm: ${meta.algorithm}`);
+            if (meta.species) parts.push(`  Species: ${meta.species}`);
+            if (t.external_url) parts.push(`  URL: ${t.external_url}`);
+            return parts.join("\n");
+          }).join("\n")
       );
     }
 
