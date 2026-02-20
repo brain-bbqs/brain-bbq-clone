@@ -44,13 +44,15 @@ const CATEGORY_LABELS = {
 
 /** Fetch searchable data from nih-grants edge function + resources (cached) */
 const fetchSearchIndex = async () => {
-  const [grantsRes, resourcesRes] = await Promise.all([
+  const [grantsRes, resourcesRes, pubsRes] = await Promise.all([
     supabase.functions.invoke("nih-grants"),
     supabase.from("resources").select("name, description, external_url, resource_type, metadata").in("resource_type", ["software", "tool"]).order("name"),
+    supabase.from("publications").select("title, pmid, authors, journal, year").order("citations", { ascending: false }).limit(500),
   ]);
 
   const grants = grantsRes.data?.data || [];
   const softwareRows = resourcesRes.data || [];
+  const pubRows = pubsRes.data || [];
 
   const people = new Map<string, { name: string; institution: string }>();
   const projects: { title: string; grantNumber: string; pi: string }[] = [];
@@ -66,6 +68,16 @@ const fetchSearchIndex = async () => {
     }
     for (const pub of grant.publications || []) {
       publications.push({ title: pub.title || "", pmid: pub.pmid || "" });
+    }
+  }
+
+  // Merge grant publications with direct DB publications (dedupe by pmid)
+  const seenPmids = new Set(publications.map(p => p.pmid));
+  for (const row of pubRows) {
+    const pmid = row.pmid || "";
+    if (!seenPmids.has(pmid)) {
+      publications.push({ title: row.title || "", pmid });
+      seenPmids.add(pmid);
     }
   }
 
@@ -323,7 +335,7 @@ export function HomeSearch() {
 
       {/* Search dropdown results */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-[9999]">
           {results.length === 0 ? (
             <div className="px-5 py-4 text-center">
               <p className="text-sm text-muted-foreground">
@@ -337,27 +349,41 @@ export function HomeSearch() {
               </button>
             </div>
           ) : (
-            <div className="py-1.5 max-h-[400px] overflow-y-auto">
+            <div className="py-1.5 max-h-[400px] overflow-y-auto divide-y divide-border/30">
               {results.map((result, i) => {
                 const Icon = CATEGORY_ICONS[result.category];
+                const categoryColors: Record<string, string> = {
+                  people: "bg-blue-500/15 text-blue-500",
+                  project: "bg-amber-500/15 text-amber-500",
+                  publication: "bg-emerald-500/15 text-emerald-500",
+                  page: "bg-violet-500/15 text-violet-500",
+                  software: "bg-orange-500/15 text-orange-500",
+                };
+                const labelColors: Record<string, string> = {
+                  people: "text-blue-500",
+                  project: "text-amber-500",
+                  publication: "text-emerald-500",
+                  page: "text-violet-500",
+                  software: "text-orange-500",
+                };
                 return (
                   <button
                     key={`${result.category}-${result.title}-${i}`}
                     onClick={() => handleSelect(result)}
                     onMouseEnter={() => setSelectedIndex(i)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                      i === selectedIndex ? "bg-muted" : "hover:bg-muted/50"
+                      "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
+                      i === selectedIndex ? "bg-accent" : "hover:bg-muted/50"
                     )}
                   >
-                    <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
-                      <Icon className="h-4 w-4 text-primary" />
+                    <div className={cn("p-1.5 rounded-md shrink-0", categoryColors[result.category] || "bg-primary/10 text-primary")}>
+                      <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{result.title}</p>
                       <p className="text-[11px] text-muted-foreground truncate">{result.subtitle}</p>
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider shrink-0">
+                    <span className={cn("text-[10px] uppercase tracking-wider font-semibold shrink-0", labelColors[result.category] || "text-muted-foreground")}>
                       {CATEGORY_LABELS[result.category]}
                     </span>
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
