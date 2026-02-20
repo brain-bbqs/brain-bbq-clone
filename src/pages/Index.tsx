@@ -9,9 +9,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <PageMeta title="Home" description="BBQS — Brain Behavior Quantification and Synchronization. An NIH-funded consortium advancing computational neuroscience through shared tools, data, and cross-species behavioral analysis." />
       {/* Hero with Video Background */}
-      <div className="relative overflow-hidden h-[50vh] min-h-[400px]">
+      <div className="relative h-[50vh] min-h-[400px]">
         {/* Background Video */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <video
             autoPlay
             loop
