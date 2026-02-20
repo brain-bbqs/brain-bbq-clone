@@ -532,8 +532,7 @@ const Projects = () => {
 
         <div
           id="grants-grid"
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden" 
-          style={{ height: 700, minHeight: 500 }}
+          className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
         >
           <AgGridReact<ProjectRow>
             rowData={rowData}
@@ -548,17 +547,18 @@ const Projects = () => {
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
+            domLayout="autoHeight"
             rowHeight={36}
             headerHeight={40}
             loading={loading}
             loadingOverlayComponent={() => (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span>Loading...</span>
               </div>
             )}
             noRowsOverlayComponent={() => (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span>Fetching projects...</span>
               </div>
