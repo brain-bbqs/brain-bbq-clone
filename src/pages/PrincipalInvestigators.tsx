@@ -96,44 +96,76 @@ const NameCell = ({ data }: { data: PIRow }) => {
 };
 
 /* ── Projects cell ── */
-const ProjectsCell = ({ data }: { data: PIRow }) => (
-  <HoverCard openDelay={200} closeDelay={100}>
-    <HoverCardTrigger asChild>
-      <span className="text-foreground cursor-help">
-        <span className="font-semibold">{data.totalProjects}</span>
-        <span className="text-muted-foreground ml-1 text-xs">
-          ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
+const ProjectsCell = ({ data }: { data: PIRow }) => {
+  // Collect unique co-PIs across all grants for this investigator
+  const coPiGrants = data.grants.filter(g => g.role !== "contact_pi");
+  const piGrants = data.grants.filter(g => g.role === "contact_pi");
+
+  // For co-PI grants, the "other investigators" are the contact PIs
+  const coPiDetails = coPiGrants.map(g => ({
+    grantNumber: g.grantNumber,
+    title: g.title,
+    contactPis: g.coPis.filter(c => c.isContactPi),
+  }));
+
+  return (
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <span className="text-foreground cursor-help">
+          <span className="font-semibold">{data.totalProjects}</span>
+          <span className="text-muted-foreground ml-1 text-xs">
+            ({data.projectsAsPi} PI / {data.projectsAsCoPi} Co-PI)
+          </span>
         </span>
-      </span>
-    </HoverCardTrigger>
-    <HoverCardContent side="bottom" align="start" className="w-72 p-4">
-      <p className="font-semibold text-sm mb-2">{data.displayName}</p>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="bg-muted/50 rounded p-2">
-          <p className="text-muted-foreground">As PI</p>
-          <p className="font-bold text-foreground text-base">{data.projectsAsPi}</p>
+      </HoverCardTrigger>
+      <HoverCardContent side="bottom" align="start" className="w-80 p-4">
+        <p className="font-semibold text-sm mb-2">{data.displayName}</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">As PI</p>
+            <p className="font-bold text-foreground text-base">{data.projectsAsPi}</p>
+          </div>
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">As Co-PI</p>
+            <p className="font-bold text-foreground text-base">{data.projectsAsCoPi}</p>
+          </div>
+          <div className="bg-emerald-500/10 rounded p-2">
+            <p className="text-muted-foreground">BBQS</p>
+            <p className="font-bold text-emerald-600 text-base">{data.grants.filter(g => g.isBbqs).length}</p>
+          </div>
+          <div className="bg-muted/50 rounded p-2">
+            <p className="text-muted-foreground">Other</p>
+            <p className="font-bold text-foreground text-base">{data.grants.filter(g => !g.isBbqs).length}</p>
+          </div>
         </div>
-        <div className="bg-muted/50 rounded p-2">
-          <p className="text-muted-foreground">As Co-PI</p>
-          <p className="font-bold text-foreground text-base">{data.projectsAsCoPi}</p>
-        </div>
-        <div className="bg-emerald-500/10 rounded p-2">
-          <p className="text-muted-foreground">BBQS</p>
-          <p className="font-bold text-emerald-600 text-base">{data.grants.filter(g => g.isBbqs).length}</p>
-        </div>
-        <div className="bg-muted/50 rounded p-2">
-          <p className="text-muted-foreground">Other</p>
-          <p className="font-bold text-foreground text-base">{data.grants.filter(g => !g.isBbqs).length}</p>
-        </div>
-      </div>
-      {data.totalFunding > 0 && (
-        <p className="text-xs font-mono text-emerald-600 font-semibold mt-2">
-          Total: ${data.totalFunding.toLocaleString()}
-        </p>
-      )}
-    </HoverCardContent>
-  </HoverCard>
-);
+        {data.totalFunding > 0 && (
+          <p className="text-xs font-mono text-emerald-600 font-semibold mt-2">
+            Total: ${data.totalFunding.toLocaleString()}
+          </p>
+        )}
+        {coPiDetails.length > 0 && (
+          <div className="border-t border-border pt-2 mt-3">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5">Co-PI on grants with</p>
+            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+              {coPiDetails.map((g, i) => (
+                <div key={i} className="text-xs">
+                  <p className="text-muted-foreground truncate">{g.title.length > 60 ? g.title.slice(0, 60) + "…" : g.title}</p>
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {g.contactPis.map((pi, j) => (
+                      <Badge key={j} variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
+                        {pi.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
 
 /* ── Funding cell ── */
 const FundingCell = ({ value }: { value: number }) => {
