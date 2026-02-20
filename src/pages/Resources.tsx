@@ -8,7 +8,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import type { Resource } from "@/data/resources";
 import { useResources } from "@/hooks/useResources";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Check, Circle, Box, Loader2 } from "lucide-react";
+import { ExternalLink, Check, Circle, Box, Loader2, Github, Container } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const CategoryBadge = ({ value }: { value: string }) => {
@@ -29,10 +29,39 @@ const CategoryBadge = ({ value }: { value: string }) => {
 const NameLink = ({ value, data }: { value: string; data: Resource }) => (
   <a href={data.url} target="_blank" rel="noopener noreferrer"
     onClick={(e) => { e.stopPropagation(); window.open(data.url, '_blank'); }}
-    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer">
-    {value}<ExternalLink className="h-3.5 w-3.5 opacity-60" />
+    className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer text-sm">
+    {value}<ExternalLink className="h-3 w-3 opacity-60" />
   </a>
 );
+
+const RepoLink = ({ data }: { data: Resource }) => {
+  const repoUrl = data.repoUrl || (data.url?.includes("github.com") ? data.url : "");
+  if (!repoUrl) return <span className="text-muted-foreground">—</span>;
+  return (
+    <a href={repoUrl} target="_blank" rel="noopener noreferrer"
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 text-xs transition-colors">
+      <Github className="h-3.5 w-3.5" />Repo
+    </a>
+  );
+};
+
+const DockerLink = ({ data }: { data: Resource }) => {
+  if (!data.containerized) return <span className="text-muted-foreground text-xs">—</span>;
+  const dockerUrl = data.dockerUrl;
+  if (dockerUrl) {
+    return (
+      <a href={dockerUrl} target="_blank" rel="noopener noreferrer"
+        className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 text-xs transition-colors">
+        <Container className="h-3.5 w-3.5" />Registry
+      </a>
+    );
+  }
+  return (
+    <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs gap-1">
+      <Container className="h-3 w-3" />Available
+    </Badge>
+  );
+};
 
 const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) => {
   const statusConfig = {
@@ -73,10 +102,11 @@ const Resources = () => {
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    { field: "category", headerName: "Category", width: 130, cellRenderer: CategoryBadge },
-    { field: "name", headerName: "Name", flex: 1, minWidth: 180, cellRenderer: NameLink },
-    { field: "implementation", headerName: "Software", width: 100 },
-    { field: "containerized", headerName: "Container", width: 100, cellRenderer: ContainerizedBadge },
+    { field: "category", headerName: "Category", width: 120, cellRenderer: CategoryBadge },
+    { field: "name", headerName: "Name", width: 160, minWidth: 120, cellRenderer: NameLink },
+    { field: "implementation", headerName: "Language", width: 90 },
+    { headerName: "Repo", width: 90, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
+    { headerName: "Docker", width: 100, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
     { field: "neuroMcpStatus", headerName: "NeuroMCP", width: 120, cellRenderer: NeuroMcpStatusBadge },
   ], []);
 
