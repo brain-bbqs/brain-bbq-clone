@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench, MessageCircle, ArrowRight, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -369,17 +369,68 @@ export function HomeSearch() {
         </div>
       )}
 
-      {/* Chat response panel */}
-      {mode === "chat" && chatResponse && (
-        <div className="mt-3 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-xl p-5 max-h-[400px] overflow-y-auto z-50 relative">
-          <button
-            onClick={() => setChatResponse("")}
-            className="absolute top-3 right-3 p-1 rounded-md hover:bg-muted transition-colors"
-          >
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-          <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed">
-            <ReactMarkdown>{chatResponse}</ReactMarkdown>
+      {/* Right-side chat slide-out panel */}
+      {mode === "chat" && (chatResponse || chatLoading) && (
+        <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-card border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+          {/* Panel header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">AI Discovery</span>
+            </div>
+            <button
+              onClick={() => setChatResponse("")}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Query echo */}
+          <div className="px-5 py-3 border-b border-border/50 bg-muted/30 shrink-0">
+            <p className="text-xs text-muted-foreground">You asked:</p>
+            <p className="text-sm font-medium text-foreground mt-0.5">{query}</p>
+          </div>
+
+          {/* Response body */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {chatLoading && !chatResponse && (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Searching the BBQS database…
+              </div>
+            )}
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed">
+              <ReactMarkdown
+                components={{
+                  a: ({ href, children }) => {
+                    // Internal links (paths like /projects) use router navigation
+                    if (href && href.startsWith("/")) {
+                      return (
+                        <Link
+                          to={href}
+                          className="text-primary underline underline-offset-2 hover:text-primary/80 font-medium"
+                        >
+                          {children}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline underline-offset-2 hover:text-primary/80"
+                      >
+                        {children}
+                      </a>
+                    );
+                  },
+                }}
+              >
+                {chatResponse}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       )}
