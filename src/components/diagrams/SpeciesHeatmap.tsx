@@ -154,12 +154,12 @@ export function SpeciesHeatmap() {
         <table className="border-collapse mx-auto">
           <thead>
             <tr>
-              <th className="p-2 text-xs font-medium text-muted-foreground" />
+              <th className="p-3 text-sm font-medium text-muted-foreground" />
               {speciesList.map((s) => (
                 <th
                   key={s}
-                  className="p-1 text-xs font-medium text-foreground"
-                  style={{ writingMode: "vertical-lr", textOrientation: "mixed", minWidth: 40, height: 100 }}
+                  className="p-2 text-sm font-semibold text-foreground"
+                  style={{ writingMode: "vertical-lr", textOrientation: "mixed", minWidth: 56, height: 130 }}
                 >
                   <span className="transform rotate-180" style={{ writingMode: "vertical-rl" }}>{s}</span>
                 </th>
@@ -169,19 +169,19 @@ export function SpeciesHeatmap() {
           <tbody>
             {speciesList.map((rowSpecies, i) => (
               <tr key={rowSpecies}>
-                <td className="p-2 text-xs font-medium text-foreground text-right whitespace-nowrap pr-3">
+                <td className="p-3 text-sm font-semibold text-foreground text-right whitespace-nowrap pr-4">
                   {rowSpecies}
                 </td>
                 {matrix[i].map((cell, j) => (
                   <td
                     key={`${i}-${j}`}
                     className={cn(
-                      "text-center text-xs font-mono border border-border/30 transition-all duration-150 cursor-pointer",
+                      "text-center text-sm font-mono border border-border/30 transition-all duration-150 cursor-pointer rounded-sm",
                       i === j && "bg-transparent"
                     )}
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: 56,
+                      height: 56,
                       backgroundColor: i === j ? "transparent" : getColor(cell.total),
                       color: getTextColor(cell.total),
                     }}
@@ -201,7 +201,7 @@ export function SpeciesHeatmap() {
                     onMouseLeave={() => setHovered(null)}
                   >
                     {i === j ? (
-                      <span className="text-muted-foreground/30">•</span>
+                      <span className="text-muted-foreground/30 text-lg">•</span>
                     ) : (
                       cell.total || ""
                     )}
