@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2 } from "lucide-react";
+import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ interface SearchResult {
   title: string;
   subtitle: string;
   path: string;
-  category: "people" | "project" | "publication" | "page";
+  category: "people" | "project" | "publication" | "page" | "software";
 }
 
 const PAGES = [
@@ -30,6 +30,7 @@ const CATEGORY_ICONS = {
   project: FolderOpen,
   publication: FileText,
   page: Globe,
+  software: Wrench,
 };
 
 const CATEGORY_LABELS = {
@@ -37,27 +38,31 @@ const CATEGORY_LABELS = {
   project: "Grant",
   publication: "Publication",
   page: "Page",
+  software: "Software",
 };
 
-/** Fetch searchable data from nih-grants edge function (cached) */
+/** Fetch searchable data from nih-grants edge function + resources (cached) */
 const fetchSearchIndex = async () => {
-  const { data, error } = await supabase.functions.invoke("nih-grants");
-  if (error) throw error;
-  const grants = data?.data || [];
+  const [grantsRes, resourcesRes] = await Promise.all([
+    supabase.functions.invoke("nih-grants"),
+    supabase.from("resources").select("name, description, external_url, resource_type, metadata").in("resource_type", ["software", "tool"]).order("name"),
+  ]);
+
+  const grants = grantsRes.data?.data || [];
+  const softwareRows = resourcesRes.data || [];
 
   const people = new Map<string, { name: string; institution: string }>();
   const projects: { title: string; grantNumber: string; pi: string }[] = [];
   const publications: { title: string; pmid: string }[] = [];
+  const software: { name: string; description: string; url: string }[] = [];
 
   for (const grant of grants) {
-    // Projects
     projects.push({
       title: grant.title || "",
       grantNumber: grant.grantNumber || "",
       pi: grant.contactPi || "",
     });
 
-    // People
     const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
     for (const pi of allPis) {
       const key = pi.toLowerCase();
@@ -66,18 +71,22 @@ const fetchSearchIndex = async () => {
       }
     }
 
-    // Publications
     const pubs = grant.publications || [];
     for (const pub of pubs) {
       publications.push({ title: pub.title || "", pmid: pub.pmid || "" });
     }
   }
 
-  return {
-    people: Array.from(people.values()),
-    projects,
-    publications,
-  };
+  for (const row of softwareRows) {
+    const meta = (row.metadata as Record<string, any>) || {};
+    software.push({
+      name: row.name,
+      description: meta.algorithm || row.description || "",
+      url: row.external_url || "",
+    });
+  }
+
+  return { people: Array.from(people.values()), projects, publications, software };
 };
 
 export function HomeSearch() {
@@ -155,6 +164,22 @@ export function HomeSearch() {
           subtitle: pub.pmid ? `PMID: ${pub.pmid}` : "Publication",
           path: "/publications",
           category: "publication",
+        });
+      }
+      if (matches.length > 15) break;
+    }
+
+    // Search software tools
+    for (const tool of searchIndex.software) {
+      if (
+        tool.name.toLowerCase().includes(q) ||
+        tool.description.toLowerCase().includes(q)
+      ) {
+        matches.push({
+          title: tool.name,
+          subtitle: tool.description.length > 80 ? tool.description.slice(0, 80) + "…" : tool.description,
+          path: "/resources",
+          category: "software",
         });
       }
       if (matches.length > 15) break;
