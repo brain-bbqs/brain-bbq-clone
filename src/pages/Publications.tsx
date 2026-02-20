@@ -9,6 +9,7 @@ import { piProfileUrl } from "@/lib/pi-utils";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
 
 import "ag-grid-community/styles/ag-grid.css";
@@ -144,23 +145,52 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
   );
 };
 
+const KEYWORD_COLORS = [
+  "bg-primary/15 text-primary border-primary/25",
+  "bg-accent/15 text-accent-foreground border-accent/25",
+  "bg-secondary text-secondary-foreground border-secondary",
+  "bg-muted text-muted-foreground border-muted",
+];
+
 const KeywordsCell = ({ value }: { value: string[] }) => {
   if (!value || value.length === 0) return <span className="text-muted-foreground">—</span>;
-  const displayed = value.slice(0, 4);
+  const displayed = value.slice(0, 3);
   const remaining = value.length - displayed.length;
   return (
-    <span className="flex flex-wrap gap-1 py-1">
-      {displayed.map((kw, i) => (
-        <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
-          {kw}
-        </Badge>
-      ))}
-      {remaining > 0 && (
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
-          +{remaining}
-        </Badge>
-      )}
-    </span>
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <span className="flex flex-wrap gap-1 py-1 cursor-pointer">
+          {displayed.map((kw, i) => (
+            <Badge
+              key={i}
+              variant="outline"
+              className={`text-[10px] px-1.5 py-0.5 font-normal whitespace-nowrap ${KEYWORD_COLORS[i % KEYWORD_COLORS.length]}`}
+            >
+              {kw}
+            </Badge>
+          ))}
+          {remaining > 0 && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 font-normal text-muted-foreground">
+              +{remaining}
+            </Badge>
+          )}
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-72 z-[9999]" side="left" align="start">
+        <p className="text-xs font-semibold mb-2 text-foreground">All Keywords</p>
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((kw, i) => (
+            <Badge
+              key={i}
+              variant="outline"
+              className={`text-[11px] px-2 py-0.5 font-normal ${KEYWORD_COLORS[i % KEYWORD_COLORS.length]}`}
+            >
+              {kw}
+            </Badge>
+          ))}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
@@ -205,9 +235,10 @@ export default function Publications() {
         field: "keywords",
         headerName: "Keywords",
         flex: 1,
-        minWidth: 180,
+        minWidth: 220,
         cellRenderer: KeywordsCell,
-        cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        autoHeight: true,
+        cellStyle: { overflow: 'visible', lineHeight: '1.4' },
         filter: "agTextColumnFilter",
         filterValueGetter: (params) => {
           return params.data?.keywords?.join(", ") || "";
