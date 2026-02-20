@@ -714,8 +714,8 @@ export default function PrincipalInvestigators() {
     },
     institution: {
       headerName: "Institution",
-      flex: 1,
-      minWidth: 180,
+      width: 200,
+      minWidth: 150,
       cellRenderer: (params: any) => <InstitutionCell data={params.data} />,
       filterValueGetter: (params) => (params.data?.institutions || []).join(", "),
     },
