@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.resolve-scholar-ids]
 verify_jwt = false
+
+[functions.discovery-chat]
+verify_jwt = false

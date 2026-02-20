@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench } from "lucide-react";
+import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench, MessageCircle, ArrowRight, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName } from "@/lib/pi-utils";
+import ReactMarkdown from "react-markdown";
 
 interface SearchResult {
   title: string;
@@ -57,42 +58,41 @@ const fetchSearchIndex = async () => {
   const software: { name: string; description: string; url: string }[] = [];
 
   for (const grant of grants) {
-    projects.push({
-      title: grant.title || "",
-      grantNumber: grant.grantNumber || "",
-      pi: grant.contactPi || "",
-    });
-
+    projects.push({ title: grant.title || "", grantNumber: grant.grantNumber || "", pi: grant.contactPi || "" });
     const allPis = grant.allPis?.split(/[,;]/).map((p: string) => p.trim()).filter(Boolean) || [];
     for (const pi of allPis) {
       const key = pi.toLowerCase();
-      if (!people.has(key)) {
-        people.set(key, { name: pi, institution: grant.institution || "" });
-      }
+      if (!people.has(key)) people.set(key, { name: pi, institution: grant.institution || "" });
     }
-
-    const pubs = grant.publications || [];
-    for (const pub of pubs) {
+    for (const pub of grant.publications || []) {
       publications.push({ title: pub.title || "", pmid: pub.pmid || "" });
     }
   }
 
   for (const row of softwareRows) {
     const meta = (row.metadata as Record<string, any>) || {};
-    software.push({
-      name: row.name,
-      description: meta.algorithm || row.description || "",
-      url: row.external_url || "",
-    });
+    software.push({ name: row.name, description: meta.algorithm || row.description || "", url: row.external_url || "" });
   }
 
   return { people: Array.from(people.values()), projects, publications, software };
 };
 
+/** Log a query anonymously */
+const logQuery = async (query: string, mode: "search" | "chat", resultsCount: number) => {
+  try {
+    await supabase.from("search_queries").insert({ query, mode, results_count: resultsCount });
+  } catch { /* silent */ }
+};
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discovery-chat`;
+
 export function HomeSearch() {
   const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<"search" | "chat">("search");
   const [focused, setFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [chatResponse, setChatResponse] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -105,112 +105,71 @@ export function HomeSearch() {
   });
 
   const results = useMemo<SearchResult[]>(() => {
-    if (!query.trim()) return [];
+    if (mode === "chat" || !query.trim()) return [];
     const q = query.toLowerCase().trim();
     const matches: SearchResult[] = [];
 
-    // Search pages
     for (const page of PAGES) {
-      if (
-        page.title.toLowerCase().includes(q) ||
-        page.keywords.some(k => k.includes(q))
-      ) {
-        matches.push({
-          title: page.title,
-          subtitle: "Navigate to page",
-          path: page.path,
-          category: "page",
-        });
+      if (page.title.toLowerCase().includes(q) || page.keywords.some(k => k.includes(q))) {
+        matches.push({ title: page.title, subtitle: "Navigate to page", path: page.path, category: "page" });
       }
     }
 
     if (!searchIndex) return matches.slice(0, 10);
 
-    // Search people
     for (const person of searchIndex.people) {
       if (person.name.toLowerCase().includes(q)) {
-        matches.push({
-          title: normalizePiName(person.name),
-          subtitle: person.institution || "Investigator",
-          path: "/investigators",
-          category: "people",
-        });
+        matches.push({ title: normalizePiName(person.name), subtitle: person.institution || "Investigator", path: "/investigators", category: "people" });
       }
       if (matches.length > 15) break;
     }
 
-    // Search projects
     for (const project of searchIndex.projects) {
-      if (
-        project.title.toLowerCase().includes(q) ||
-        project.grantNumber.toLowerCase().includes(q) ||
-        project.pi.toLowerCase().includes(q)
-      ) {
-        matches.push({
-          title: project.title.length > 80 ? project.title.slice(0, 80) + "…" : project.title,
-          subtitle: `${project.grantNumber} · ${normalizePiName(project.pi)}`,
-          path: "/projects",
-          category: "project",
-        });
+      if (project.title.toLowerCase().includes(q) || project.grantNumber.toLowerCase().includes(q) || project.pi.toLowerCase().includes(q)) {
+        matches.push({ title: project.title.length > 80 ? project.title.slice(0, 80) + "…" : project.title, subtitle: `${project.grantNumber} · ${normalizePiName(project.pi)}`, path: "/projects", category: "project" });
       }
       if (matches.length > 15) break;
     }
 
-    // Search publications
     for (const pub of searchIndex.publications) {
       if (pub.title.toLowerCase().includes(q)) {
-        matches.push({
-          title: pub.title.length > 80 ? pub.title.slice(0, 80) + "…" : pub.title,
-          subtitle: pub.pmid ? `PMID: ${pub.pmid}` : "Publication",
-          path: "/publications",
-          category: "publication",
-        });
+        matches.push({ title: pub.title.length > 80 ? pub.title.slice(0, 80) + "…" : pub.title, subtitle: pub.pmid ? `PMID: ${pub.pmid}` : "Publication", path: "/publications", category: "publication" });
       }
       if (matches.length > 15) break;
     }
 
-    // Search software tools
     for (const tool of searchIndex.software || []) {
-      if (
-        tool.name.toLowerCase().includes(q) ||
-        tool.description.toLowerCase().includes(q)
-      ) {
-        matches.push({
-          title: tool.name,
-          subtitle: tool.description.length > 80 ? tool.description.slice(0, 80) + "…" : tool.description,
-          path: "/resources",
-          category: "software",
-        });
+      if (tool.name.toLowerCase().includes(q) || tool.description.toLowerCase().includes(q)) {
+        matches.push({ title: tool.name, subtitle: tool.description.length > 80 ? tool.description.slice(0, 80) + "…" : tool.description, path: "/resources", category: "software" });
       }
       if (matches.length > 15) break;
     }
 
     return matches.slice(0, 10);
-  }, [query, searchIndex]);
+  }, [query, searchIndex, mode]);
 
-  const showDropdown = focused && query.trim().length > 0;
-
+  // Log search queries (debounced)
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [results]);
+    if (mode !== "search" || !query.trim() || query.trim().length < 3) return;
+    const t = setTimeout(() => logQuery(query.trim(), "search", results.length), 2000);
+    return () => clearTimeout(t);
+  }, [query, results.length, mode]);
+
+  const showDropdown = focused && query.trim().length > 0 && mode === "search";
+
+  useEffect(() => { setSelectedIndex(0); }, [results]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setFocused(false);
-      }
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setFocused(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ⌘K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); inputRef.current?.focus(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -223,46 +182,146 @@ export function HomeSearch() {
     inputRef.current?.blur();
   }, [navigate]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex(i => Math.min(i + 1, results.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex(i => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && results[selectedIndex]) {
-      handleSelect(results[selectedIndex]);
-    } else if (e.key === "Escape") {
-      setFocused(false);
-      inputRef.current?.blur();
+  const handleChatSubmit = useCallback(async () => {
+    if (!query.trim() || chatLoading) return;
+    setChatLoading(true);
+    setChatResponse("");
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        const err = await resp.json().catch(() => ({ error: "Request failed" }));
+        setChatResponse(`⚠️ ${err.error || "Something went wrong. Please try again."}`);
+        setChatLoading(false);
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIdx: number;
+        while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIdx);
+          buffer = buffer.slice(newlineIdx + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "" || !line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              fullText += content;
+              setChatResponse(fullText);
+            }
+          } catch { /* partial JSON, wait */ }
+        }
+      }
+    } catch (e) {
+      console.error("Discovery chat error:", e);
+      setChatResponse("⚠️ Connection error. Please try again.");
+    } finally {
+      setChatLoading(false);
     }
+  }, [query, chatLoading]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (mode === "chat") {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChatSubmit(); }
+      return;
+    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, results.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter" && results[selectedIndex]) handleSelect(results[selectedIndex]);
+    else if (e.key === "Escape") { setFocused(false); inputRef.current?.blur(); }
+  };
+
+  const toggleMode = () => {
+    const newMode = mode === "search" ? "chat" : "search";
+    setMode(newMode);
+    setChatResponse("");
+    inputRef.current?.focus();
   };
 
   return (
     <div ref={containerRef} className="relative w-full max-w-xl mx-auto">
+      {/* Mode toggle pills */}
+      <div className="flex justify-center gap-1 mb-3">
+        <button
+          onClick={() => { setMode("search"); setChatResponse(""); }}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all",
+            mode === "search"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted/60 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <Search className="h-3 w-3" /> Search
+        </button>
+        <button
+          onClick={toggleMode}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all",
+            mode === "chat"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted/60 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <MessageCircle className="h-3 w-3" /> Ask AI
+        </button>
+      </div>
+
+      {/* Search/Chat input */}
       <div className={cn(
         "flex items-center gap-3 px-5 py-3.5 bg-background/90 backdrop-blur-sm border-2 rounded-2xl shadow-lg transition-all",
         focused ? "border-primary/50 shadow-primary/10 shadow-xl" : "border-border/60"
       )}>
-        <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+        {mode === "chat" ? (
+          <MessageCircle className="h-5 w-5 text-primary shrink-0" />
+        ) : (
+          <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+        )}
         <input
           ref={inputRef}
           value={query}
           onChange={e => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search people, projects, publications..."
+          placeholder={mode === "chat" ? "Ask about people, tools, projects..." : "Search people, projects, publications..."}
           className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none"
         />
-        {isLoading && focused && (
+        {chatLoading && <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />}
+        {isLoading && focused && mode === "search" && (
           <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
         )}
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-mono bg-muted border border-border rounded-md text-muted-foreground">
-          ⌘K
-        </kbd>
+        {mode === "chat" && query.trim() && !chatLoading && (
+          <button onClick={handleChatSubmit} className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
+        {mode === "search" && (
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-mono bg-muted border border-border rounded-md text-muted-foreground">
+            ⌘K
+          </kbd>
+        )}
       </div>
 
-      {/* Dropdown results */}
+      {/* Search dropdown results */}
       {showDropdown && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50">
           {results.length === 0 ? (
@@ -270,6 +329,12 @@ export function HomeSearch() {
               <p className="text-sm text-muted-foreground">
                 {isLoading ? "Loading search index..." : `No results for "${query}"`}
               </p>
+              <button
+                onClick={toggleMode}
+                className="mt-2 text-xs text-primary hover:underline flex items-center gap-1 mx-auto"
+              >
+                <MessageCircle className="h-3 w-3" /> Try asking the AI assistant
+              </button>
             </div>
           ) : (
             <div className="py-1.5 max-h-[400px] overflow-y-auto">
@@ -301,6 +366,21 @@ export function HomeSearch() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Chat response panel */}
+      {mode === "chat" && chatResponse && (
+        <div className="mt-3 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-xl p-5 max-h-[400px] overflow-y-auto z-50 relative">
+          <button
+            onClick={() => setChatResponse("")}
+            className="absolute top-3 right-3 p-1 rounded-md hover:bg-muted transition-colors"
+          >
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+          <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed">
+            <ReactMarkdown>{chatResponse}</ReactMarkdown>
+          </div>
         </div>
       )}
     </div>

@@ -568,6 +568,30 @@ export type Database = {
         }
         Relationships: []
       }
+      search_queries: {
+        Row: {
+          created_at: string
+          id: string
+          mode: string
+          query: string
+          results_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mode?: string
+          query: string
+          results_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mode?: string
+          query?: string
+          results_count?: number | null
+        }
+        Relationships: []
+      }
       software_tools: {
         Row: {
           created_at: string
