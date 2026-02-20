@@ -1,5 +1,4 @@
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
-import { ProjectIndexGrid } from "@/components/diagrams/ProjectIndexGrid";
 
 export default function KnowledgeGraph() {
   return (
@@ -15,10 +14,6 @@ export default function KnowledgeGraph() {
       </div>
 
       <SpeciesHeatmap />
-
-      <div className="mt-10">
-        <ProjectIndexGrid />
-      </div>
     </div>
   );
 }
