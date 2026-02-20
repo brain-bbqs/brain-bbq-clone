@@ -81,59 +81,16 @@ const openNihReporterProfile = async (pi: PIRow) => {
 
 /* ── Name + Institution cell (merged) ── */
 const NameCell = ({ data }: { data: PIRow }) => {
-  const inst = data.institutions?.[0];
-  const remaining = (data.institutions?.length || 0) - 1;
   return (
-    <div className="flex flex-col justify-center gap-0.5 py-1">
-      <div className="flex items-center gap-1.5">
-        <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-        <button
-          onClick={() => openNihReporterProfile(data)}
-          className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left text-sm leading-tight"
-          title={`View ${data.displayName} on NIH Reporter`}
-        >
-          {data.displayName}
-        </button>
-      </div>
-      {inst && (
-        <div className="flex items-center gap-1 ml-5">
-          <a
-            href={institutionUrl(inst)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-muted-foreground hover:text-primary hover:underline truncate max-w-[200px] transition-colors"
-            title={inst}
-          >
-            {inst}
-          </a>
-          {remaining > 0 && (
-            <HoverCard openDelay={150} closeDelay={100}>
-              <HoverCardTrigger asChild>
-                <span className="text-[10px] text-muted-foreground cursor-help">+{remaining}</span>
-              </HoverCardTrigger>
-              <HoverCardContent side="bottom" align="start" className="w-72 p-3">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-                  All Institutions ({data.institutions.length})
-                </p>
-                <div className="flex flex-col gap-1">
-                  {data.institutions.map((i, idx) => (
-                    <a
-                      key={idx}
-                      href={institutionUrl(i)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                    >
-                      <ExternalLink className="h-3 w-3 shrink-0" />
-                      {i}
-                    </a>
-                  ))}
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          )}
-        </div>
-      )}
+    <div className="flex items-center gap-1.5 py-1">
+      <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <button
+        onClick={() => openNihReporterProfile(data)}
+        className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left text-sm leading-tight"
+        title={`View ${data.displayName} on NIH Reporter`}
+      >
+        {data.displayName}
+      </button>
     </div>
   );
 };
