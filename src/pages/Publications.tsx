@@ -72,16 +72,40 @@ const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
   );
 };
 
+/** Parse "LastName, FirstName, LastName, FirstName, ..." into full name pairs */
+const parseAuthorPairs = (raw: string): string[] => {
+  const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const authors: string[] = [];
+  // Heuristic: if the string looks like "Last, First, Last, First, ..."
+  // pair them up. A "first name" part typically starts with an uppercase letter
+  // and is shorter or contains initials.
+  let i = 0;
+  while (i < parts.length) {
+    if (i + 1 < parts.length) {
+      // Check if next part looks like a first name (not all-caps multi-word surname)
+      const next = parts[i + 1];
+      const looksLikeFirstName = /^[A-Z][a-z]/.test(next) || /^[A-Z]{1,3}$/.test(next);
+      if (looksLikeFirstName) {
+        authors.push(`${next} ${parts[i]}`); // "FirstName LastName"
+        i += 2;
+        continue;
+      }
+    }
+    authors.push(parts[i]);
+    i += 1;
+  }
+  return authors;
+};
+
 const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
   if (!value) return <span className="text-muted-foreground">—</span>;
-  const authors = value.split(",").map((a) => a.trim()).filter(Boolean);
+  const authors = parseAuthorPairs(value);
   if (authors.length === 0) return <span className="text-muted-foreground">—</span>;
 
   // Build a lookup from author name fragments → ORCID
   const orcidMap = new Map<string, string>();
   if (data?.authorOrcids) {
     for (const ao of data.authorOrcids) {
-      // Key by last name for fuzzy matching
       const parts = ao.name.split(",").map(s => s.trim());
       const lastName = parts[0]?.toLowerCase() || "";
       if (lastName) orcidMap.set(lastName, ao.orcid);
@@ -89,12 +113,10 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
   }
 
   const getAuthorUrl = (author: string): string => {
-    // Try to match by last name
     const parts = author.trim().split(/\s+/);
     const lastName = parts[parts.length - 1]?.toLowerCase() || "";
     const orcid = orcidMap.get(lastName);
     if (orcid) return `https://orcid.org/${orcid}`;
-    // Fallback to Google Scholar search
     return piProfileUrl(author);
   };
 
@@ -304,6 +326,8 @@ export default function Publications() {
               paginationPageSize={20}
               paginationPageSizeSelector={[10, 20, 50]}
               domLayout="normal"
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
               onCellMouseOver={onCellMouseOver}
               onCellMouseOut={onCellMouseOut}
               noRowsOverlayComponent={() => (
