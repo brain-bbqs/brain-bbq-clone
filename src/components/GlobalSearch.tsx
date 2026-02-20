@@ -13,25 +13,36 @@ interface SearchablePage {
 const PAGES: SearchablePage[] = [
   { title: "Home", path: "/", keywords: ["home", "dashboard", "overview", "bbqs", "brain", "behavior"], section: "General" },
   { title: "About", path: "/about", keywords: ["about", "mission", "consortium", "overview"], section: "General" },
-  { title: "Projects", path: "/projects", keywords: ["projects", "grants", "research", "labs", "marr"], section: "Knowledge Base" },
+  { title: "Explorer", path: "/knowledge-graph", keywords: ["knowledge", "graph", "ontology", "entities", "ner", "extraction", "explorer"], section: "Knowledge Base" },
+  { title: "Projects", path: "/projects", keywords: ["projects", "grants", "research", "labs", "marr", "nih", "r34", "r61", "u01"], section: "Knowledge Base" },
   { title: "Publications", path: "/publications", keywords: ["publications", "papers", "journals", "articles", "doi", "pubmed"], section: "Knowledge Base" },
-  { title: "Resources & Tools", path: "/resources", keywords: ["resources", "tools", "software", "deeplabcut", "sleap", "suite2p"], section: "Knowledge Base" },
-  { title: "Knowledge Graph", path: "/knowledge-graph", keywords: ["knowledge", "graph", "ontology", "entities", "ner", "extraction"], section: "Knowledge Base" },
+
+  { title: "Software", path: "/resources", keywords: ["software", "tools", "deeplabcut", "sleap", "simba", "bonsai", "openpose", "anipose", "idtracker", "resources"], section: "Tools" },
+  { title: "Datasets", path: "/datasets", keywords: ["datasets", "data", "training", "superanimal", "quadruped", "mouse"], section: "Tools" },
+  { title: "Benchmarks", path: "/benchmarks", keywords: ["benchmarks", "evaluation", "leaderboard", "metrics", "accuracy"], section: "Tools" },
+  { title: "ML Models", path: "/ml-models", keywords: ["ml", "models", "machine learning", "cebra", "model zoo", "huggingface"], section: "Tools" },
+  { title: "Protocols", path: "/protocols", keywords: ["protocols", "methods", "3d pose", "methodology"], section: "Tools" },
+
+  { title: "Species", path: "/species", keywords: ["species", "mouse", "rat", "primate", "fish", "fly", "drosophila", "zebrafish", "bird"], section: "Science" },
+  { title: "Computational Models", path: "/computational-models", keywords: ["computational", "models", "marr", "levels", "analysis", "framework"], section: "Science" },
+
   { title: "NeuroMCP (Hannah)", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai", "assistant", "ask"], section: "AI" },
-  
-  { title: "Principal Investigators", path: "/investigators", keywords: ["investigators", "pi", "principal", "researchers", "faculty"], section: "Directory" },
-  { title: "Working Groups", path: "/working-groups", keywords: ["working", "groups", "committees", "teams"], section: "Directory" },
+
+  { title: "Principal Investigators", path: "/investigators", keywords: ["investigators", "pi", "principal", "researchers", "faculty", "people"], section: "Community" },
+  { title: "Working Groups", path: "/working-groups", keywords: ["working", "groups", "committees", "teams"], section: "Community" },
   { title: "Announcements", path: "/announcements", keywords: ["announcements", "news", "updates"], section: "Community" },
+  { title: "Consortia History", path: "/consortia-history", keywords: ["consortia", "history", "timeline", "origins"], section: "Community" },
+
   { title: "SFN 2025", path: "/sfn-2025", keywords: ["sfn", "2025", "conference", "neuroscience", "poster"], section: "Conferences" },
+
   { title: "Data Sharing Policy", path: "/data-sharing-policy", keywords: ["data", "sharing", "policy", "legal", "compliance"], section: "Documentation" },
   { title: "API Reference", path: "/api-docs", keywords: ["api", "rest", "endpoints", "curl", "fetch", "documentation"], section: "Documentation" },
   { title: "MCP Server Docs", path: "/mcp-docs", keywords: ["mcp", "server", "claude", "cursor", "model", "context", "protocol"], section: "Documentation" },
   { title: "Build MCP Server", path: "/mcp-tutorial", keywords: ["build", "mcp", "tutorial", "python", "fastmcp", "deploy"], section: "Documentation" },
-  { title: "MCP Registry", path: "/mcp-registry", keywords: ["registry", "community", "mcp", "servers", "submit"], section: "Documentation" },
+
   { title: "Roadmap", path: "/roadmap", keywords: ["roadmap", "timeline", "milestones", "planning", "github"], section: "Development" },
   { title: "Software Architecture", path: "/design-docs", keywords: ["software", "architecture", "design", "system", "technical"], section: "Development" },
   { title: "Agentic Framework", path: "/agentic-framework", keywords: ["agentic", "framework", "workflow", "agents", "ai"], section: "Development" },
-  
 ];
 
 export function GlobalSearch() {
