@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import type { Resource } from "@/data/resources";
+import { resources as localResources } from "@/data/resources";
 
 type ResourceType = Database["public"]["Enums"]["resource_type"];
 
@@ -14,6 +15,11 @@ const RESOURCE_TYPE_TO_CATEGORY: Record<string, string> = {
   tool: "Software",
 };
 
+// Build a lookup of local resource versions by name
+const localVersionMap = new Map(
+  localResources.filter(r => r.version).map(r => [r.name, r.version!])
+);
+
 const mapDbToResource = (row: any): Resource => {
   const meta = row.metadata || {};
   return {
@@ -23,6 +29,7 @@ const mapDbToResource = (row: any): Resource => {
     url: row.external_url || "",
     repoUrl: meta.repoUrl || "",
     dockerUrl: meta.dockerUrl || "",
+    version: meta.version || localVersionMap.get(row.name) || "",
     algorithm: meta.algorithm || row.description || "",
     computational: meta.computational || "",
     neuralNetworkArchitecture: meta.neuralNetworkArchitecture || "",
