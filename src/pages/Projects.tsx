@@ -544,7 +544,7 @@ const Projects = () => {
             onCellMouseOut={onCellMouseOut}
             animateRows={true}
             pagination={true}
-            paginationPageSize={10}
+            paginationPageSize={25}
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
