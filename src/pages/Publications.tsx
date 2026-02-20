@@ -191,9 +191,7 @@ export default function Publications() {
         flex: 2,
         minWidth: 300,
         cellRenderer: TitleCell,
-        wrapText: true,
-        autoHeight: true,
-        cellStyle: { lineHeight: "1.4", padding: "8px 12px" },
+        cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       },
       {
         field: "authors",
@@ -201,6 +199,7 @@ export default function Publications() {
         flex: 1,
         minWidth: 200,
         cellRenderer: AuthorsCell,
+        cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       },
       {
         field: "keywords",
@@ -208,9 +207,7 @@ export default function Publications() {
         flex: 1,
         minWidth: 180,
         cellRenderer: KeywordsCell,
-        wrapText: true,
-        autoHeight: true,
-        cellStyle: { padding: "4px 12px" },
+        cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
         filter: "agTextColumnFilter",
         filterValueGetter: (params) => {
           return params.data?.keywords?.join(", ") || "";
@@ -311,7 +308,7 @@ export default function Publications() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
-          <div className="ag-theme-alpine relative" style={{ height: "calc(100vh - 280px)", minHeight: "400px", width: "100%" }}>
+          <div className="ag-theme-alpine relative" style={{ width: "100%" }}>
             <AgGridReact
               ref={gridRef}
               rowData={displayedPubs}
@@ -319,13 +316,13 @@ export default function Publications() {
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
               
-              rowHeight={48}
+              rowHeight={44}
               headerHeight={40}
               animateRows
               pagination
-              paginationPageSize={20}
-              paginationPageSizeSelector={[10, 20, 50]}
-              domLayout="normal"
+              paginationPageSize={25}
+              paginationPageSizeSelector={[10, 25, 50]}
+              domLayout="autoHeight"
               suppressCellFocus={true}
               enableCellTextSelection={true}
               onCellMouseOver={onCellMouseOver}
