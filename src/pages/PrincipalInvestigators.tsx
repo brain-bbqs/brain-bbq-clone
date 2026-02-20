@@ -606,49 +606,41 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
   const primary = data.institutions[0];
   const remaining = data.institutions.length - 1;
   return (
-    <div className="flex items-center gap-1 py-1 overflow-hidden w-full">
-      <a
-        href={institutionUrl(primary)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-primary hover:underline truncate block transition-colors"
-        title={primary}
-      >
-        {primary}
-      </a>
-      {remaining > 0 && (
-        <HoverCard openDelay={150} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <span className="text-[10px] text-muted-foreground cursor-help shrink-0">+{remaining}</span>
-          </HoverCardTrigger>
-          <HoverCardContent side="bottom" align="start" className="w-72 p-3">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-              All Institutions ({data.institutions.length})
-            </p>
-            <div className="flex flex-col gap-1">
-              {data.institutions.map((inst, idx) => (
-                <a
-                  key={idx}
-                  href={institutionUrl(inst)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3 shrink-0" />
-                  {inst}
-                </a>
-              ))}
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      )}
-    </div>
+    <HoverCard openDelay={150} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <div className="flex items-center gap-1 py-1 overflow-hidden w-full cursor-help">
+          <span className="text-xs text-primary truncate block">{primary}</span>
+          {remaining > 0 && (
+            <span className="text-[10px] text-muted-foreground shrink-0">+{remaining}</span>
+          )}
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent side="bottom" align="start" className="w-80 p-3">
+        <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+          Institutions ({data.institutions.length})
+        </p>
+        <div className="flex flex-col gap-1.5">
+          {data.institutions.map((inst, idx) => (
+            <a
+              key={idx}
+              href={institutionUrl(inst)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3 shrink-0" />
+              {inst}
+            </a>
+          ))}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
 const ALL_COLUMNS = [
   { id: "investigator" as const, label: "Investigator", default: true, locked: true },
-  { id: "institution" as const, label: "Institution", default: true },
+  { id: "institution" as const, label: "Institutions", default: true },
   { id: "projects" as const, label: "Projects", default: true },
   { id: "funding" as const, label: "Funding", default: true },
   { id: "skills" as const, label: "Skills", default: true },
@@ -713,7 +705,7 @@ export default function PrincipalInvestigators() {
       autoHeight: true,
     },
     institution: {
-      headerName: "Institution",
+      headerName: "Institutions",
       width: 180,
       minWidth: 140,
       cellStyle: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
