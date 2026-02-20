@@ -150,7 +150,7 @@ export const resources: Resource[] = [
     implementation: "MATLAB", species: "Mouse (Mus musculus), Rat (Rattus norvegicus)", mcpStatus: "pending", containerized: false,
   },
   {
-    id: 16, category: "Software", name: "Anipose", url: "https://anipose.readthedocs.io/",
+    id: 16, category: "Software", name: "Anipose", url: "https://github.com/lambdaloop/anipose",
     version: "1.0.0",
     algorithm: "3D pose estimation from multi-camera views",
     computational: "Triangulation and calibration algorithms for 3D reconstruction from 2D poses",
