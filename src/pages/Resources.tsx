@@ -103,12 +103,13 @@ const Resources = () => {
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
     { field: "category", headerName: "Category", minWidth: 110, flex: 1, cellRenderer: CategoryBadge },
-    { field: "name", headerName: "Name", minWidth: 170, flex: 2, cellRenderer: NameLink },
-    { field: "version", headerName: "Version", minWidth: 100, flex: 1 },
-    { field: "implementation", headerName: "Language", minWidth: 100, flex: 1 },
-    { headerName: "Repo", minWidth: 90, flex: 1, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
-    { headerName: "Docker", minWidth: 110, flex: 1, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
-    { field: "mcpStatus", headerName: "MCP", minWidth: 130, flex: 1, cellRenderer: McpStatusBadge },
+    { field: "name", headerName: "Name", minWidth: 160, flex: 1.5, cellRenderer: NameLink },
+    { field: "algorithm", headerName: "Description", minWidth: 200, flex: 3 },
+    { field: "version", headerName: "Version", minWidth: 80, flex: 0.8 },
+    { field: "implementation", headerName: "Language", minWidth: 90, flex: 0.8 },
+    { headerName: "Repo", minWidth: 80, flex: 0.7, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
+    { headerName: "Docker", minWidth: 100, flex: 0.8, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
+    { field: "mcpStatus", headerName: "MCP", minWidth: 120, flex: 1, cellRenderer: McpStatusBadge },
   ], []);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
@@ -157,8 +158,13 @@ const Resources = () => {
             style={{ left: Math.min(hoverPosition.x + 15, window.innerWidth - 420), top: Math.min(hoverPosition.y + 10, window.innerHeight - 300) }}>
             <h3 className="font-semibold text-foreground mb-3">{hoveredRow.name}</h3>
             <div className="space-y-2 text-sm">
-              <div><span className="text-muted-foreground">Algorithm: </span><span className="text-foreground">{hoveredRow.algorithm}</span></div>
-              <div><span className="text-muted-foreground">Computational: </span><span className="text-foreground">{hoveredRow.computational}</span></div>
+              <div><span className="text-muted-foreground">Approach: </span><span className="text-foreground">{hoveredRow.computational}</span></div>
+              {hoveredRow.neuralNetworkArchitecture && hoveredRow.neuralNetworkArchitecture !== "N/A" && (
+                <div><span className="text-muted-foreground">Architecture: </span><span className="text-foreground">{hoveredRow.neuralNetworkArchitecture}</span></div>
+              )}
+              {hoveredRow.mlPipeline && hoveredRow.mlPipeline !== "N/A" && (
+                <div><span className="text-muted-foreground">Pipeline: </span><span className="text-foreground">{hoveredRow.mlPipeline}</span></div>
+              )}
               <div><span className="text-muted-foreground">Species: </span><span className="text-foreground">{hoveredRow.species}</span></div>
             </div>
           </div>
