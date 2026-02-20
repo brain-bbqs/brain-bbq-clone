@@ -335,7 +335,7 @@ export function HomeSearch() {
 
       {/* Search dropdown results */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-[9999]">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-[9999]" style={{ position: 'absolute' }}>
           {results.length === 0 ? (
             <div className="px-5 py-4 text-center">
               <p className="text-sm text-muted-foreground">
