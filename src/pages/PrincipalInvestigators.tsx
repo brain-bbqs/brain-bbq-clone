@@ -606,12 +606,12 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
   const primary = data.institutions[0];
   const remaining = data.institutions.length - 1;
   return (
-    <div className="flex items-center gap-1 py-1">
+    <div className="flex items-center gap-1 py-1 overflow-hidden w-full">
       <a
         href={institutionUrl(primary)}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-sm text-primary hover:underline truncate transition-colors"
+        className="text-xs text-primary hover:underline truncate block transition-colors"
         title={primary}
       >
         {primary}
@@ -714,8 +714,9 @@ export default function PrincipalInvestigators() {
     },
     institution: {
       headerName: "Institution",
-      width: 200,
-      minWidth: 150,
+      width: 180,
+      minWidth: 140,
+      cellStyle: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
       cellRenderer: (params: any) => <InstitutionCell data={params.data} />,
       filterValueGetter: (params) => (params.data?.institutions || []).join(", "),
     },
