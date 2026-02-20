@@ -102,16 +102,17 @@ const Resources = () => {
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    { field: "name", headerName: "Name", minWidth: 160, flex: 1.5, cellRenderer: NameLink },
+    { field: "name", headerName: "Name", minWidth: 180, flex: 1.5, cellRenderer: NameLink },
     {
-      field: "algorithm", headerName: "Description", minWidth: 250, flex: 3,
-      cellStyle: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+      field: "algorithm", headerName: "Description", minWidth: 300, flex: 3,
+      wrapText: true, autoHeight: true,
+      cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
     },
     { field: "version", headerName: "Version", width: 90, minWidth: 90, flex: 0 },
-    { field: "implementation", headerName: "Language", width: 100, minWidth: 100, flex: 0 },
+    { field: "implementation", headerName: "Language", width: 110, minWidth: 110, flex: 0 },
     { headerName: "Repo", width: 90, minWidth: 90, flex: 0, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
     { headerName: "Docker", width: 100, minWidth: 100, flex: 0, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
-    { field: "mcpStatus", headerName: "MCP", width: 120, minWidth: 120, flex: 0, cellRenderer: McpStatusBadge },
+    { field: "mcpStatus", headerName: "MCP", width: 130, minWidth: 130, flex: 0, cellRenderer: McpStatusBadge },
   ], []);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
