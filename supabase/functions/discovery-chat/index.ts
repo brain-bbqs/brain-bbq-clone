@@ -189,9 +189,13 @@ serve(async (req) => {
 
 IMPORTANT RULES:
 - Be concise and helpful. Use bullet points and links when possible.
-- When you mention a page, include the path (e.g., /projects, /publications, /investigators, /resources, /species).
+- When you mention a page, ALWAYS include a clickable markdown link using the internal path, e.g. [Projects](/projects), [Publications](/publications), [People](/investigators), [Software & Tools](/resources), [Species](/species), [Datasets](/datasets), [Knowledge Graph](/knowledge-graph).
+- When mentioning a specific tool or software, link to the resources page: [DeepLabCut](/resources).
+- When mentioning a specific person, link to the investigators page: [Dr. Smith](/investigators).
+- When mentioning a grant or project, link to the projects page: [grant title](/projects).
+- If the context includes an external URL for a tool, include it as a separate link.
 - If the context contains matching results, present them clearly.
-- If no matches are found, suggest related pages the user might explore.
+- If no matches are found, suggest related pages the user might explore with links.
 - Always mention specific names, grant numbers, or tool names when available.
 - Keep responses under 300 words.
 
