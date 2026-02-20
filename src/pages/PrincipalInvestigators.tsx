@@ -650,10 +650,10 @@ const ALL_COLUMNS = [
   { id: "investigator" as const, label: "Investigator", default: true, locked: true },
   { id: "institution" as const, label: "Institution", default: true },
   { id: "projects" as const, label: "Projects", default: true },
-  { id: "grants" as const, label: "Grants", default: true },
   { id: "funding" as const, label: "Funding", default: true },
-  { id: "skills" as const, label: "Skills", default: false },
-  { id: "researchAreas" as const, label: "Research Areas", default: false },
+  { id: "skills" as const, label: "Skills", default: true },
+  { id: "researchAreas" as const, label: "Research Areas", default: true },
+  { id: "grants" as const, label: "Grants", default: false },
 ];
 
 type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
