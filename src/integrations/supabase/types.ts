@@ -580,6 +580,7 @@ export type Database = {
           repo_url: string | null
           resource_id: string | null
           updated_at: string
+          version: string | null
         }
         Insert: {
           created_at?: string
@@ -592,6 +593,7 @@ export type Database = {
           repo_url?: string | null
           resource_id?: string | null
           updated_at?: string
+          version?: string | null
         }
         Update: {
           created_at?: string
@@ -604,6 +606,7 @@ export type Database = {
           repo_url?: string | null
           resource_id?: string | null
           updated_at?: string
+          version?: string | null
         }
         Relationships: [
           {

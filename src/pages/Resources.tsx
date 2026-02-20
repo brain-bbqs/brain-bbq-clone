@@ -102,13 +102,13 @@ const Resources = () => {
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    { field: "category", headerName: "Category", width: 120, cellRenderer: CategoryBadge },
-    { field: "name", headerName: "Name", width: 160, minWidth: 120, cellRenderer: NameLink },
-    { field: "version", headerName: "Version", width: 90 },
-    { field: "implementation", headerName: "Language", width: 90 },
-    { headerName: "Repo", width: 90, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
-    { headerName: "Docker", width: 100, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
-    { field: "mcpStatus", headerName: "MCP", width: 120, cellRenderer: McpStatusBadge },
+    { field: "category", headerName: "Category", width: 110, flex: 0, cellRenderer: CategoryBadge },
+    { field: "name", headerName: "Name", width: 170, flex: 0, cellRenderer: NameLink },
+    { field: "version", headerName: "Version", width: 100, flex: 0 },
+    { field: "implementation", headerName: "Language", width: 100, flex: 0 },
+    { headerName: "Repo", width: 90, flex: 0, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
+    { headerName: "Docker", width: 100, flex: 0, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
+    { field: "mcpStatus", headerName: "MCP", width: 130, flex: 0, cellRenderer: McpStatusBadge },
   ], []);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {

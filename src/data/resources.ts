@@ -20,7 +20,7 @@ export const resources: Resource[] = [
   // Software
   {
     id: 1, category: "Software", name: "idtracker.ai", url: "https://idtracker.ai/latest/",
-    version: "4.0.14",
+    version: "6.0.13",
     algorithm: "Multi-animal identity tracking and maintenance across video recordings",
     computational: "Deep learning-based individual identification without markers (up to 100 animals)",
     neuralNetworkArchitecture: "CNN (Convolutional Neural Network)",
@@ -29,7 +29,7 @@ export const resources: Resource[] = [
   },
   {
     id: 2, category: "Software", name: "SimBA", url: "https://github.com/sgoldenlab/simba",
-    version: "2.9.2",
+    version: "1.97.6",
     algorithm: "Supervised behavioral classification from pose data",
     computational: "Machine learning classifiers trained on user-annotated behaviors",
     neuralNetworkArchitecture: "N/A (uses traditional ML classifiers)",
@@ -38,7 +38,7 @@ export const resources: Resource[] = [
   },
   {
     id: 3, category: "Software", name: "Bonsai", url: "https://bonsai-rx.org/",
-    version: "2.8.5",
+    version: "2.9.0",
     algorithm: "Real-time heterogeneous data stream synchronization and processing",
     computational: "Visual dataflow programming with reactive extensions",
     neuralNetworkArchitecture: "N/A (infrastructure tool)", mlPipeline: "N/A (infrastructure tool)",
@@ -62,7 +62,7 @@ export const resources: Resource[] = [
   },
   {
     id: 6, category: "Software", name: "DeepLabCut", url: "https://deeplabcut.github.io/DeepLabCut/",
-    version: "3.0.4",
+    version: "2.3.10",
     algorithm: "Markerless pose estimation of user-defined body parts across species",
     computational: "Transfer learning with ResNet-based CNNs for keypoint detection",
     neuralNetworkArchitecture: "CNN (ResNet-50, ResNet-101, EfficientNet variants)",
