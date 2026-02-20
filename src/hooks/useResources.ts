@@ -29,7 +29,7 @@ const mapDbToResource = (row: any): Resource => {
     mlPipeline: meta.mlPipeline || "",
     implementation: meta.implementation || "",
     species: meta.species || "",
-    neuroMcpStatus: meta.neuroMcpStatus || "not-started",
+    mcpStatus: meta.mcpStatus || meta.neuroMcpStatus || "not-started",
     containerized: meta.containerized || false,
   };
 };

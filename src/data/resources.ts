@@ -5,13 +5,14 @@ export interface Resource {
   url: string;
   repoUrl?: string;
   dockerUrl?: string;
+  version?: string;
   algorithm: string;
   computational: string;
   neuralNetworkArchitecture: string;
   mlPipeline: string;
   implementation: string;
   species: string;
-  neuroMcpStatus: "trained" | "pending" | "not-started";
+  mcpStatus: "trained" | "pending" | "not-started";
   containerized: boolean;
 }
 
@@ -19,127 +20,143 @@ export const resources: Resource[] = [
   // Software
   {
     id: 1, category: "Software", name: "idtracker.ai", url: "https://idtracker.ai/latest/",
+    version: "4.0.14",
     algorithm: "Multi-animal identity tracking and maintenance across video recordings",
     computational: "Deep learning-based individual identification without markers (up to 100 animals)",
     neuralNetworkArchitecture: "CNN (Convolutional Neural Network)",
     mlPipeline: "Supervised learning with identity re-identification",
-    implementation: "Python", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 2, category: "Software", name: "SimBA", url: "https://github.com/sgoldenlab/simba",
+    version: "2.9.2",
     algorithm: "Supervised behavioral classification from pose data",
     computational: "Machine learning classifiers trained on user-annotated behaviors",
     neuralNetworkArchitecture: "N/A (uses traditional ML classifiers)",
     mlPipeline: "Supervised learning; user annotates behaviors → trains classifier (Random Forest, XGBoost, etc.) → predicts on new data",
-    implementation: "Python", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: true,
+    implementation: "Python", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: true,
   },
   {
     id: 3, category: "Software", name: "Bonsai", url: "https://bonsai-rx.org/",
+    version: "2.8.5",
     algorithm: "Real-time heterogeneous data stream synchronization and processing",
     computational: "Visual dataflow programming with reactive extensions",
     neuralNetworkArchitecture: "N/A (infrastructure tool)", mlPipeline: "N/A (infrastructure tool)",
-    implementation: ".NET", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: ".NET", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 4, category: "Software", name: "LabStreamingLayer", url: "https://labstreaminglayer.org/",
+    version: "1.16.2",
     algorithm: "Multi-source data streaming and temporal synchronization",
     computational: "Network-based middleware for time-stamped data alignment",
     neuralNetworkArchitecture: "N/A (infrastructure tool)", mlPipeline: "N/A (infrastructure tool)",
-    implementation: "C++", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "C++", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 5, category: "Software", name: "Open Ephys", url: "https://open-ephys.org/",
+    version: "0.6.7",
     algorithm: "Electrophysiology data acquisition and real-time processing",
     computational: "Modular signal processing pipeline for neural recordings",
     neuralNetworkArchitecture: "N/A (hardware/acquisition tool)", mlPipeline: "N/A (hardware/acquisition tool)",
-    implementation: "C++", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "C++", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 6, category: "Software", name: "DeepLabCut", url: "https://deeplabcut.github.io/DeepLabCut/",
+    version: "3.0.4",
     algorithm: "Markerless pose estimation of user-defined body parts across species",
     computational: "Transfer learning with ResNet-based CNNs for keypoint detection",
     neuralNetworkArchitecture: "CNN (ResNet-50, ResNet-101, EfficientNet variants)",
     mlPipeline: "Transfer learning: Pre-trained ImageNet weights → fine-tune on user-labeled frames (~200 frames) → predict keypoints on new videos → optional active learning iteration",
-    implementation: "Python", species: "Multi-species (mice, rats, primates, horses, birds, fish, humans, etc.)", neuroMcpStatus: "not-started", containerized: true,
+    implementation: "Python", species: "Multi-species (mice, rats, primates, horses, birds, fish, humans, etc.)", mcpStatus: "not-started", containerized: true,
   },
   {
     id: 7, category: "Software", name: "SLEAP", url: "https://sleap.ai/",
+    version: "1.4.1",
     algorithm: "Multi-animal pose tracking without markers",
     computational: "Deep learning (top-down and bottom-up approaches) for body landmark estimation",
     neuralNetworkArchitecture: "CNN (LEAP CNN, UNet, ResNet backbones)",
     mlPipeline: "Supervised learning: User labels frames → trains centroid + instance models → predicts poses → tracks identities across frames",
-    implementation: "Python", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: true,
+    implementation: "Python", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: true,
   },
   {
     id: 8, category: "Software", name: "DeepPoseKit", url: "https://github.com/jgraving/DeepPoseKit",
+    version: "0.3.9",
     algorithm: "Animal pose estimation from video",
     computational: "Deep learning with stacked hourglass networks or DenseNet",
     neuralNetworkArchitecture: "CNN (Stacked Hourglass, DenseNet)",
     mlPipeline: "Supervised learning: User annotates keypoints → trains encoder-decoder network → predicts on new frames",
-    implementation: "Python", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 9, category: "Software", name: "JAABA", url: "https://jaaba.sourceforge.net/",
+    version: "0.6.0",
     algorithm: "Automated behavior classification from video features",
     computational: "Supervised machine learning (Gentle AdaBoost) on per-frame features",
     neuralNetworkArchitecture: "N/A (uses boosting, not neural networks)",
     mlPipeline: "Supervised learning: Extract per-frame features (motion, posture) → user annotates behaviors → trains Gentle AdaBoost classifier → predicts behavior labels → iterative refinement",
-    implementation: "MATLAB", species: "Drosophila (fruit flies) - originally developed; adaptable to others", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "MATLAB", species: "Drosophila (fruit flies) - originally developed; adaptable to others", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 10, category: "Software", name: "MARS", url: "https://github.com/neuroethology/MARS",
+    version: "1.0.0",
     algorithm: "Automated social behavior classification in mouse pairs",
     computational: "Deep learning for pose estimation + temporal action recognition (behaviors: attack, mounting, investigation)",
     neuralNetworkArchitecture: "CNN + LSTM/Temporal Convolutional Networks",
     mlPipeline: "Two-stage: (1) Pose estimation (CNN) → (2) Action classification (temporal model on pose sequences) with behavior annotations",
-    implementation: "Python", species: "Mouse (Mus musculus)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Mouse (Mus musculus)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 11, category: "Software", name: "BENTO", url: "https://github.com/annkennedy/bento",
+    version: "1.3.0",
     algorithm: "Multimodal data synchronization and visualization for neurobehavioral analysis",
     computational: "Time-aligned integration of video, pose, neural, and audio streams",
     neuralNetworkArchitecture: "N/A (visualization/analysis tool)", mlPipeline: "N/A (visualization/analysis tool)",
-    implementation: "MATLAB", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "MATLAB", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 12, category: "Software", name: "MoSeq", url: "https://dattalab.github.io/moseq2-website/",
+    version: "1.2.0",
     algorithm: "Unsupervised behavioral segmentation into reusable action 'syllables'",
     computational: "Autoregressive hidden Markov models on 3D depth-video motion features",
     neuralNetworkArchitecture: "N/A (uses AR-HMM, not neural networks)",
     mlPipeline: "Unsupervised learning: Extract 3D pose from depth video → PCA dimensionality reduction → AR-HMM identifies behavioral syllables → characterize syllable usage",
-    implementation: "Python", species: "Mouse (Mus musculus) - primarily; adaptable to small rodents", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Mouse (Mus musculus) - primarily; adaptable to small rodents", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 13, category: "Software", name: "OpenPose", url: "https://github.com/CMU-Perceptual-Computing-Lab/openpose",
+    version: "1.7.0",
     algorithm: "Real-time multi-person 2D pose estimation (body, hands, face)",
     computational: "Part Affinity Fields (PAFs) with CNNs for keypoint detection and association",
     neuralNetworkArchitecture: "CNN (VGG-19 or MobileNet backbone with multi-stage refinement)",
     mlPipeline: "Supervised learning: Pre-trained on COCO/MPII datasets → predicts confidence maps for keypoints + PAFs for limb connections → greedy parsing for multi-person association",
-    implementation: "C++", species: "Human (Homo sapiens)", neuroMcpStatus: "not-started", containerized: true,
+    implementation: "C++", species: "Human (Homo sapiens)", mcpStatus: "not-started", containerized: true,
   },
   {
     id: 14, category: "Software", name: "OpenFace", url: "https://github.com/TadasBaltrusaitis/OpenFace",
+    version: "2.2.0",
     algorithm: "Facial behavior analysis: landmarks, head pose, gaze, action units",
     computational: "Constrained Local Neural Fields (CLNF) and regression models for facial features",
     neuralNetworkArchitecture: "CNN (for some components) + CLNF (hybrid model)",
     mlPipeline: "Pre-trained models: Facial landmark detection → head pose estimation → eye gaze tracking → AU intensity estimation",
-    implementation: "C++", species: "Human (Homo sapiens)", neuroMcpStatus: "not-started", containerized: true,
+    implementation: "C++", species: "Human (Homo sapiens)", mcpStatus: "not-started", containerized: true,
   },
   {
     id: 15, category: "Software", name: "DeepSqueak", url: "https://github.com/DrCoffey/DeepSqueak",
+    version: "3.0.0",
     algorithm: "Ultrasonic vocalization (USV) detection and analysis in rodents",
     computational: "CNN-based audio event detection with tonality features",
     neuralNetworkArchitecture: "CNN (operates on spectrogram images)",
     mlPipeline: "Supervised learning: Convert audio to spectrograms → CNN detects USV regions → classify call types → user can retrain with custom annotations",
-    implementation: "MATLAB", species: "Mouse (Mus musculus), Rat (Rattus norvegicus)", neuroMcpStatus: "pending", containerized: false,
+    implementation: "MATLAB", species: "Mouse (Mus musculus), Rat (Rattus norvegicus)", mcpStatus: "pending", containerized: false,
   },
   {
     id: 16, category: "Software", name: "Anipose", url: "https://anipose.readthedocs.io/",
+    version: "1.0.0",
     algorithm: "3D pose estimation from multi-camera views",
     computational: "Triangulation and calibration algorithms for 3D reconstruction from 2D poses",
     neuralNetworkArchitecture: "N/A (uses geometric methods; can integrate with DLC/SLEAP for 2D poses)",
     mlPipeline: "N/A (geometric triangulation; ML used only if 2D poses from DLC/SLEAP)",
-    implementation: "Python", species: "Multi-species (general purpose)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Multi-species (general purpose)", mcpStatus: "not-started", containerized: false,
   },
   // ML Models
   {
@@ -148,7 +165,7 @@ export const resources: Resource[] = [
     computational: "Transfer learning models (ResNet backbones) trained on species-specific datasets",
     neuralNetworkArchitecture: "CNN (ResNet-50, ResNet-101, EfficientNet variants)",
     mlPipeline: "Pre-trained models ready for transfer learning or direct inference; user can fine-tune on their data",
-    implementation: "Python", species: "Quadrupeds, mice, birds, humans, macaques, primates, horses", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Quadrupeds, mice, birds, humans, macaques, primates, horses", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 18, category: "ML Models", name: "DLC Organization", url: "https://huggingface.co/DeepLabCut",
@@ -156,15 +173,16 @@ export const resources: Resource[] = [
     computational: "Pre-trained neural networks for animal pose across species",
     neuralNetworkArchitecture: "CNN (various ResNet and EfficientNet architectures)",
     mlPipeline: "Pre-trained models for direct use or fine-tuning",
-    implementation: "Python", species: "Quadrupeds, birds, humans, multi-species", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Quadrupeds, birds, humans, multi-species", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 19, category: "ML Models", name: "CEBRA", url: "https://cebra.ai/",
+    version: "0.4.0",
     algorithm: "Dimensionality reduction revealing hidden structures in neural time series",
     computational: "Contrastive learning with auxiliary behavioral variables for consistent embeddings",
     neuralNetworkArchitecture: "CNN or MLP encoders (customizable)",
     mlPipeline: "Self-supervised/semi-supervised contrastive learning: Neural data + behavior labels → learn low-dimensional embeddings that separate behavioral states",
-    implementation: "Python", species: "Multi-species (general purpose for neural data)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Python", species: "Multi-species (general purpose for neural data)", mcpStatus: "not-started", containerized: false,
   },
   // Datasets
   {
@@ -173,7 +191,7 @@ export const resources: Resource[] = [
     computational: "Aggregated labeled images for transfer learning",
     neuralNetworkArchitecture: "N/A (dataset)",
     mlPipeline: "Training dataset: 80K labeled images for supervised pose estimation model training",
-    implementation: "Dataset", species: "Quadrupeds (dogs, cats, horses, etc.)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Dataset", species: "Quadrupeds (dogs, cats, horses, etc.)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 21, category: "Datasets", name: "SuperAnimal-TopViewMouse-5K", url: "https://huggingface.co/datasets/DeepLabCut/SuperAnimal-TopViewMouse-5K",
@@ -181,7 +199,7 @@ export const resources: Resource[] = [
     computational: "Labeled mouse images for model training",
     neuralNetworkArchitecture: "N/A (dataset)",
     mlPipeline: "Training dataset: 5K labeled images for supervised pose estimation",
-    implementation: "Dataset", species: "Mouse (Mus musculus)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Dataset", species: "Mouse (Mus musculus)", mcpStatus: "not-started", containerized: false,
   },
   // Benchmarks
   {
@@ -190,7 +208,7 @@ export const resources: Resource[] = [
     computational: "Ground-truth labeled test sets (TRI-MOUSE, PARENTING-MOUSE, etc.)",
     neuralNetworkArchitecture: "N/A (evaluation benchmark)",
     mlPipeline: "Test/validation datasets with ground truth for model evaluation (PCK, RMSE metrics)",
-    implementation: "Web", species: "Mouse (Mus musculus), Marmoset, Fish, Horse", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Web", species: "Mouse (Mus musculus), Marmoset, Fish, Horse", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 23, category: "Benchmarks", name: "Animal Pose Leaderboard", url: "https://paperswithcode.com/task/animal-pose-estimation",
@@ -198,7 +216,7 @@ export const resources: Resource[] = [
     computational: "Standardized metrics (PCK, RMSE) across benchmark datasets",
     neuralNetworkArchitecture: "N/A (evaluation platform)",
     mlPipeline: "Standardized evaluation protocol for comparing model performance",
-    implementation: "Web", species: "Multi-species (varies by benchmark)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Web", species: "Multi-species (varies by benchmark)", mcpStatus: "not-started", containerized: false,
   },
   {
     id: 24, category: "Benchmarks", name: "DLC Leaderboard", url: "https://huggingface.co/spaces/DeepLabCut/Leaderboard",
@@ -206,7 +224,7 @@ export const resources: Resource[] = [
     computational: "Benchmark-specific accuracy metrics",
     neuralNetworkArchitecture: "N/A (evaluation platform)",
     mlPipeline: "Standardized evaluation for DLC variants",
-    implementation: "Web", species: "Multi-species (varies by benchmark)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Web", species: "Multi-species (varies by benchmark)", mcpStatus: "not-started", containerized: false,
   },
   // Protocols
   {
@@ -215,6 +233,6 @@ export const resources: Resource[] = [
     computational: "Triangulation of 2D poses with camera calibration",
     neuralNetworkArchitecture: "CNN (for 2D pose); geometric methods for 3D",
     mlPipeline: "Protocol: Train 2D pose models per camera → calibrate cameras → triangulate to 3D coordinates",
-    implementation: "Protocol", species: "Multi-species (general methodology)", neuroMcpStatus: "not-started", containerized: false,
+    implementation: "Protocol", species: "Multi-species (general methodology)", mcpStatus: "not-started", containerized: false,
   },
 ];

@@ -63,7 +63,7 @@ const DockerLink = ({ data }: { data: Resource }) => {
   );
 };
 
-const NeuroMcpStatusBadge = ({ value }: { value: Resource["neuroMcpStatus"] }) => {
+const McpStatusBadge = ({ value }: { value: Resource["mcpStatus"] }) => {
   const statusConfig = {
     trained: { label: "Trained", className: "bg-green-500/20 text-green-400 border-green-500/30", icon: Check },
     pending: { label: "Pending", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: Circle },
@@ -104,10 +104,11 @@ const Resources = () => {
   const columnDefs = useMemo<ColDef<Resource>[]>(() => [
     { field: "category", headerName: "Category", width: 120, cellRenderer: CategoryBadge },
     { field: "name", headerName: "Name", width: 160, minWidth: 120, cellRenderer: NameLink },
+    { field: "version", headerName: "Version", width: 90 },
     { field: "implementation", headerName: "Language", width: 90 },
     { headerName: "Repo", width: 90, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
     { headerName: "Docker", width: 100, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
-    { field: "neuroMcpStatus", headerName: "NeuroMCP", width: 120, cellRenderer: NeuroMcpStatusBadge },
+    { field: "mcpStatus", headerName: "MCP", width: 120, cellRenderer: McpStatusBadge },
   ], []);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
