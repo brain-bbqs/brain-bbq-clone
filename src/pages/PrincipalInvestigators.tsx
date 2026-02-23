@@ -630,10 +630,10 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
 const ALL_COLUMNS = [
   { id: "investigator" as const, label: "Investigator", default: true, locked: true },
   { id: "institution" as const, label: "Institutions", default: true },
-  { id: "projects" as const, label: "Projects", default: true },
-  { id: "funding" as const, label: "Funding", default: true },
   { id: "skills" as const, label: "Skills", default: true },
   { id: "researchAreas" as const, label: "Research Areas", default: true },
+  { id: "projects" as const, label: "Projects", default: false },
+  { id: "funding" as const, label: "Funding", default: false },
   { id: "grants" as const, label: "Grants", default: false },
 ];
 
@@ -771,21 +771,6 @@ export default function PrincipalInvestigators() {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Investigators</p>
                     <p className="text-xl font-bold text-foreground">{rowData.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/10">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Funding</p>
-                    <p className="text-xl font-bold text-emerald-600">
-                      {totalFundingAll > 0 ? `$${(totalFundingAll / 1000000).toFixed(1)}M` : "—"}
-                    </p>
                   </div>
                 </div>
               </CardContent>
