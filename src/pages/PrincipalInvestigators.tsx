@@ -829,7 +829,7 @@ export default function PrincipalInvestigators() {
 
         <div
           className="ag-theme-alpine rounded-lg border border-border"
-          style={{ height: "calc(100vh - 380px)" }}
+          style={{ minHeight: "1700px" }}
         >
           <AgGridReact<PIRow>
             rowData={rowData}
@@ -838,7 +838,7 @@ export default function PrincipalInvestigators() {
             quickFilterText={quickFilterText}
             animateRows={true}
             pagination={true}
-            paginationPageSize={25}
+            paginationPageSize={50}
             paginationPageSizeSelector={[10, 25, 50, 100]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
