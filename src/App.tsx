@@ -15,10 +15,8 @@ import Roadmap from "./pages/Roadmap";
 import Auth from "./pages/Auth";
 import NeuroMCP from "./pages/NeuroMCP";
 import ConsortiaHistory from "./pages/ConsortiaHistory";
-import DesignDocs from "./pages/DesignDocs";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
-import AgenticFramework from "./pages/AgenticFramework";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
@@ -56,8 +54,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
               <Route path="/consortia-history" element={<ConsortiaHistory />} />
-              <Route path="/design-docs" element={<DesignDocs />} />
-              <Route path="/agentic-framework" element={<AgenticFramework />} />
+              
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
               
