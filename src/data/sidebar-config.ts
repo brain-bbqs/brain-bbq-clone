@@ -60,13 +60,7 @@ const scienceItems: NavItem[] = [
 
 const aiItems: NavItem[] = [];
 
-const experimentalItems: NavItem[] = [
-  { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
-  { title: "Chat Archive", url: "/consortia-history", icon: MessageSquare },
-  { title: "MCP Server", url: "/mcp-docs", icon: Plug },
-  { title: "Build MCP", url: "/mcp-tutorial", icon: Package },
-  { title: "MCP Registry", url: "/mcp-registry", icon: Globe },
-];
+const experimentalItems: NavItem[] = [];
 
 const knowledgeBaseItems: NavItem[] = [
   { title: "Explorer", url: "/knowledge-graph", icon: Globe },
@@ -105,11 +99,9 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
   { label: "Science", items: scienceItems },
-  { label: "Agentic AI Microservices", items: aiItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Developer Tools", items: softwareDocItems },
   { label: "Engineering", items: engineeringItems },
-  { label: "Experimental", items: experimentalItems },
   { label: "Legal", items: legalItems },
 ];
