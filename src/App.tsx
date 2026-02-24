@@ -21,7 +21,7 @@ import MetadataAssistant from "./pages/MetadataAssistant";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
-import ApiDocs from "./pages/ApiDocs";
+
 import McpDocs from "./pages/McpDocs";
 import McpTutorial from "./pages/McpTutorial";
 import McpRegistry from "./pages/McpRegistry";
@@ -61,7 +61,7 @@ const App = () => (
               
               <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
               <Route path="/data-sharing-policy" element={<DataSharingPolicy />} />
-              <Route path="/api-docs" element={<ApiDocs />} />
+              
               <Route path="/mcp-docs" element={<McpDocs />} />
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
               <Route path="/datasets" element={<Datasets />} />
