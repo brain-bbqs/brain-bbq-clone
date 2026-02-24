@@ -59,8 +59,8 @@ const scienceItems: NavItem[] = [
 ];
 
 const aiItems: NavItem[] = [
-  { title: "Neurodocker", url: "#", icon: Container },
-  { title: "Data Harmonizer", url: "#", icon: Database },
+  { title: "Neurodocker", url: "/neurodocker", icon: Container },
+  { title: "Data Harmonizer", url: "/data-harmonizer", icon: Database },
 ];
 
 const experimentalItems: NavItem[] = [
