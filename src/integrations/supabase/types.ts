@@ -311,6 +311,7 @@ export type Database = {
           embedding: string | null
           id: string
           metadata: Json | null
+          resource_id: string | null
           source_id: string
           source_type: string
           title: string
@@ -322,6 +323,7 @@ export type Database = {
           embedding?: string | null
           id?: string
           metadata?: Json | null
+          resource_id?: string | null
           source_id: string
           source_type: string
           title: string
@@ -333,12 +335,21 @@ export type Database = {
           embedding?: string | null
           id?: string
           metadata?: Json | null
+          resource_id?: string | null
           source_id?: string
           source_type?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_embeddings_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nih_grants_cache: {
         Row: {
