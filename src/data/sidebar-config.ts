@@ -58,10 +58,7 @@ const scienceItems: NavItem[] = [
   { title: "Computational Models", url: "/computational-models", icon: Sigma },
 ];
 
-const aiItems: NavItem[] = [
-  { title: "Neurodocker", url: "/neurodocker", icon: Container },
-  { title: "Data Harmonizer", url: "/data-harmonizer", icon: Database },
-];
+const aiItems: NavItem[] = [];
 
 const experimentalItems: NavItem[] = [
   { title: "NeuroMCP", url: "/neuromcp", icon: Bot },
