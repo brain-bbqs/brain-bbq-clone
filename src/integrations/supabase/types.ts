@@ -445,6 +445,89 @@ export type Database = {
           },
         ]
       }
+      project_metadata: {
+        Row: {
+          collaborators: Json | null
+          created_at: string
+          develope_hardware_type: string[] | null
+          develope_software_type: string[] | null
+          grant_id: string | null
+          grant_number: string
+          id: string
+          keywords: string[] | null
+          last_edited_by: string | null
+          metadata_completeness: number | null
+          presentations: Json | null
+          produce_data_modality: string[] | null
+          produce_data_type: string[] | null
+          related_project_ids: string[] | null
+          study_human: boolean | null
+          study_species: string[] | null
+          updated_at: string
+          use_analysis_method: string[] | null
+          use_analysis_types: string[] | null
+          use_approaches: string[] | null
+          use_sensors: string[] | null
+          website: string | null
+        }
+        Insert: {
+          collaborators?: Json | null
+          created_at?: string
+          develope_hardware_type?: string[] | null
+          develope_software_type?: string[] | null
+          grant_id?: string | null
+          grant_number: string
+          id?: string
+          keywords?: string[] | null
+          last_edited_by?: string | null
+          metadata_completeness?: number | null
+          presentations?: Json | null
+          produce_data_modality?: string[] | null
+          produce_data_type?: string[] | null
+          related_project_ids?: string[] | null
+          study_human?: boolean | null
+          study_species?: string[] | null
+          updated_at?: string
+          use_analysis_method?: string[] | null
+          use_analysis_types?: string[] | null
+          use_approaches?: string[] | null
+          use_sensors?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          collaborators?: Json | null
+          created_at?: string
+          develope_hardware_type?: string[] | null
+          develope_software_type?: string[] | null
+          grant_id?: string | null
+          grant_number?: string
+          id?: string
+          keywords?: string[] | null
+          last_edited_by?: string | null
+          metadata_completeness?: number | null
+          presentations?: Json | null
+          produce_data_modality?: string[] | null
+          produce_data_type?: string[] | null
+          related_project_ids?: string[] | null
+          study_human?: boolean | null
+          study_species?: string[] | null
+          updated_at?: string
+          use_analysis_method?: string[] | null
+          use_analysis_types?: string[] | null
+          use_approaches?: string[] | null
+          use_sensors?: string[] | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_metadata_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       publications: {
         Row: {
           author_orcids: Json | null
