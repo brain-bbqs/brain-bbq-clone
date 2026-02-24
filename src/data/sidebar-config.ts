@@ -94,7 +94,6 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
-  { label: "Science", items: scienceItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Engineering", items: engineeringItems },
