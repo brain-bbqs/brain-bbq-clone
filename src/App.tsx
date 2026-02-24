@@ -28,7 +28,7 @@ import McpRegistry from "./pages/McpRegistry";
 import Datasets from "./pages/Datasets";
 import Benchmarks from "./pages/Benchmarks";
 import MLModels from "./pages/MLModels";
-import ComputationalModels from "./pages/ComputationalModels";
+
 import Protocols from "./pages/Protocols";
 import Species from "./pages/Species";
 import NotFound from "./pages/NotFound";
@@ -67,7 +67,7 @@ const App = () => (
               <Route path="/datasets" element={<Datasets />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/ml-models" element={<MLModels />} />
-              <Route path="/computational-models" element={<ComputationalModels />} />
+              
               <Route path="/protocols" element={<Protocols />} />
               <Route path="/species" element={<Species />} />
               <Route path="/metadata-assistant" element={<MetadataAssistant />} />
