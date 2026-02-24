@@ -32,6 +32,8 @@ import MLModels from "./pages/MLModels";
 import ComputationalModels from "./pages/ComputationalModels";
 import Protocols from "./pages/Protocols";
 import Species from "./pages/Species";
+import NeuroDockerPage from "./pages/NeuroDocker";
+import DataHarmonizer from "./pages/DataHarmonizer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +74,8 @@ const App = () => (
               <Route path="/computational-models" element={<ComputationalModels />} />
               <Route path="/protocols" element={<Protocols />} />
               <Route path="/species" element={<Species />} />
+              <Route path="/neurodocker" element={<NeuroDockerPage />} />
+              <Route path="/data-harmonizer" element={<DataHarmonizer />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
