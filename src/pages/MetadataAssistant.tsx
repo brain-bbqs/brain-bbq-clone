@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectSelector } from "@/components/metadata/ProjectSelector";
 import { MetadataPanel } from "@/components/metadata/MetadataPanel";
+import { MetadataToolbar } from "@/components/metadata/MetadataToolbar";
+import { useMetadataEditor } from "@/hooks/useMetadataEditor";
 import { MessageCircle, ClipboardList } from "lucide-react";
 
 interface Grant {
@@ -17,8 +19,8 @@ interface Grant {
 
 export default function MetadataAssistant() {
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
+  const queryClient = useQueryClient();
 
-  // Fetch all grants
   const { data: grants = [], isLoading: grantsLoading } = useQuery({
     queryKey: ["metadata-grants"],
     queryFn: async () => {
@@ -32,7 +34,6 @@ export default function MetadataAssistant() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // Fetch metadata for selected grant
   const { data: metadata } = useQuery({
     queryKey: ["project-metadata", selectedGrant?.grant_number],
     queryFn: async () => {
@@ -43,12 +44,11 @@ export default function MetadataAssistant() {
         .eq("grant_number", selectedGrant.grant_number)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as Record<string, any> | null;
     },
     enabled: !!selectedGrant,
   });
 
-  // Fetch investigators for selected grant
   const { data: investigators = [] } = useQuery({
     queryKey: ["metadata-investigators", selectedGrant?.grant_number],
     queryFn: async () => {
@@ -66,37 +66,64 @@ export default function MetadataAssistant() {
     enabled: !!selectedGrant,
   });
 
+  const editor = useMetadataEditor({
+    grantNumber: selectedGrant?.grant_number || "",
+    grantId: selectedGrant?.id || "",
+    originalMetadata: metadata,
+    onCommitSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-metadata", selectedGrant?.grant_number] });
+    },
+  });
+
+  // Compute live completeness
+  const completeness = useMemo(() => {
+    const checkFields = [
+      "study_species", "use_approaches", "use_sensors", "produce_data_modality",
+      "produce_data_type", "use_analysis_types", "use_analysis_method",
+      "develope_software_type", "develope_hardware_type", "keywords", "website",
+    ];
+    const filled = checkFields.filter(f => {
+      const v = editor.getValue(f);
+      if (Array.isArray(v)) return v.length > 0;
+      if (typeof v === "string") return v.trim().length > 0;
+      return v !== null && v !== undefined;
+    });
+    return Math.round((filled.length / checkFields.length) * 100);
+  }, [editor]);
+
+  const handleSelectGrant = (grant: Grant) => {
+    editor.discardAll();
+    setSelectedGrant(grant);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      {/* Page header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <ClipboardList className="h-5 w-5 text-primary" />
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Metadata Assistant</h1>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Browse and review project metadata aligned with the{" "}
+          Browse and edit project metadata aligned with the{" "}
           <a href="https://sensein.group/bbqs_projects_models/index_bbqs_projects_metadata/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
             BBQS Projects Metadata Schema
           </a>.
-          Select a project to view its metadata fields.
+          Click the pencil icon to edit fields. Modified fields are highlighted in yellow.
         </p>
       </div>
 
-      {/* Project selector */}
       <div className="mb-6">
         <ProjectSelector
           grants={grants}
           selectedGrantId={selectedGrant?.id || null}
-          onSelect={setSelectedGrant}
+          onSelect={handleSelectGrant}
           isLoading={grantsLoading}
         />
       </div>
 
-      {/* Content area */}
       {selectedGrant ? (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left: future AI assistant placeholder */}
+          {/* Left: AI assistant placeholder */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <div className="bg-card border border-border rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[400px]">
               <div className="p-3 bg-primary/10 rounded-full mb-4">
@@ -116,11 +143,21 @@ export default function MetadataAssistant() {
           </div>
 
           {/* Right: metadata panel */}
-          <div className="lg:col-span-3 order-1 lg:order-2">
+          <div className="lg:col-span-3 order-1 lg:order-2 space-y-4">
+            <MetadataToolbar
+              hasChanges={editor.hasChanges}
+              changeCount={Object.keys(editor.changes).length}
+              onDiscard={editor.discardAll}
+              onCommit={editor.commitChanges}
+              isCommitting={editor.isCommitting}
+            />
             <MetadataPanel
               grant={selectedGrant}
-              metadata={metadata ? { ...metadata, collaborators: Array.isArray(metadata.collaborators) ? metadata.collaborators : [] } as any : null}
               investigators={investigators}
+              getValue={editor.getValue}
+              setFieldValue={editor.setFieldValue}
+              changedFields={editor.changedFields}
+              completeness={completeness}
             />
           </div>
         </div>
@@ -131,7 +168,7 @@ export default function MetadataAssistant() {
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-1">Select a Project</h3>
           <p className="text-sm text-muted-foreground max-w-md">
-            Choose a grant from the selector above to view and review its metadata fields.
+            Choose a grant from the selector above to view and edit its metadata fields.
           </p>
           {!grantsLoading && (
             <p className="text-xs text-muted-foreground mt-2">{grants.length} grants available</p>
