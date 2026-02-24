@@ -17,6 +17,7 @@ import NeuroMCP from "./pages/NeuroMCP";
 import ConsortiaHistory from "./pages/ConsortiaHistory";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
+import MetadataAssistant from "./pages/MetadataAssistant";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/computational-models" element={<ComputationalModels />} />
               <Route path="/protocols" element={<Protocols />} />
               <Route path="/species" element={<Species />} />
+              <Route path="/metadata-assistant" element={<MetadataAssistant />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

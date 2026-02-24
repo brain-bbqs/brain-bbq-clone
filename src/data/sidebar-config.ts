@@ -51,6 +51,7 @@ const toolsItems: NavItem[] = [
   { title: "Benchmarks", url: "/benchmarks", icon: BarChart3 },
   { title: "ML Models", url: "/ml-models", icon: Brain },
   { title: "Protocols", url: "/protocols", icon: BookOpen },
+  { title: "Metadata Assistant", url: "/metadata-assistant", icon: Package },
 ];
 
 const scienceItems: NavItem[] = [
