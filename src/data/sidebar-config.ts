@@ -80,14 +80,9 @@ const conferencesItems: NavItem[] = [
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
 ];
 
-const softwareDocItems: NavItem[] = [
-  { title: "Public API", url: "/api-docs", icon: Code },
-];
-
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Software Architecture", url: "/design-docs", icon: FileText },
-  { title: "Agentic Framework", url: "/agentic-framework", icon: Sparkles },
+  { title: "Public API", url: "/api-docs", icon: Code },
 ];
 
 const legalItems: NavItem[] = [
@@ -101,7 +96,6 @@ export const sidebarGroups: NavGroup[] = [
   { label: "Science", items: scienceItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
-  { label: "Developer Tools", items: softwareDocItems },
   { label: "Engineering", items: engineeringItems },
   { label: "Legal", items: legalItems },
 ];
