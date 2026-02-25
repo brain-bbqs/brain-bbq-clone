@@ -5,18 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 
 const DISPLAY_FIELDS = [
-  { key: "study_species", label: "Species" },
-  { key: "use_approaches", label: "Approaches" },
-  { key: "use_sensors", label: "Sensors" },
-  { key: "produce_data_modality", label: "Data Modality" },
-  { key: "produce_data_type", label: "Data Type" },
-  { key: "use_analysis_types", label: "Analysis Types" },
-  { key: "use_analysis_method", label: "Analysis Methods" },
-  { key: "develope_software_type", label: "Software" },
-  { key: "develope_hardware_type", label: "Hardware" },
-  { key: "keywords", label: "Keywords" },
-  { key: "website", label: "Website" },
-  { key: "study_human", label: "Studies Humans" },
+  { key: "study_species", label: "Species", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  { key: "use_approaches", label: "Approaches", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  { key: "use_sensors", label: "Sensors", color: "bg-violet-100 text-violet-800 border-violet-200" },
+  { key: "produce_data_modality", label: "Data Modality", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  { key: "produce_data_type", label: "Data Type", color: "bg-orange-100 text-orange-800 border-orange-200" },
+  { key: "use_analysis_types", label: "Analysis Types", color: "bg-rose-100 text-rose-800 border-rose-200" },
+  { key: "use_analysis_method", label: "Analysis Methods", color: "bg-cyan-100 text-cyan-800 border-cyan-200" },
+  { key: "develope_software_type", label: "Software", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  { key: "develope_hardware_type", label: "Hardware", color: "bg-slate-100 text-slate-800 border-slate-200" },
+  { key: "keywords", label: "Keywords", color: "bg-teal-100 text-teal-800 border-teal-200" },
+  { key: "website", label: "Website", color: "" },
+  { key: "study_human", label: "Studies Humans", color: "" },
 ];
 
 interface MetadataTableProps {
@@ -60,14 +60,14 @@ export function MetadataTable({ grantNumber, highlightFields = [] }: MetadataTab
           </TableRow>
         </TableHeader>
         <TableBody>
-          {DISPLAY_FIELDS.map(({ key, label }) => {
+          {DISPLAY_FIELDS.map(({ key, label, color }) => {
             const val = (project as any)[key];
             const isHighlighted = highlightFields.includes(key);
             return (
               <TableRow key={key} className={isHighlighted ? "bg-accent/10" : ""}>
                 <TableCell className="font-medium text-xs text-muted-foreground">{label}</TableCell>
                 <TableCell>
-                  {renderValue(val, isHighlighted)}
+                  {renderValue(val, isHighlighted, color)}
                 </TableCell>
               </TableRow>
             );
@@ -78,7 +78,7 @@ export function MetadataTable({ grantNumber, highlightFields = [] }: MetadataTab
   );
 }
 
-function renderValue(val: any, highlighted: boolean) {
+function renderValue(val: any, highlighted: boolean, colorClass: string) {
   if (val === null || val === undefined) {
     return <span className="text-muted-foreground/50 text-xs italic">Empty</span>;
   }
@@ -90,7 +90,11 @@ function renderValue(val: any, highlighted: boolean) {
     return (
       <div className="flex flex-wrap gap-1">
         {val.map((v, i) => (
-          <Badge key={i} variant={highlighted ? "default" : "secondary"} className="text-xs">
+          <Badge
+            key={i}
+            variant="outline"
+            className={`text-xs border ${colorClass || "bg-secondary text-secondary-foreground"}`}
+          >
             {v}
           </Badge>
         ))}
