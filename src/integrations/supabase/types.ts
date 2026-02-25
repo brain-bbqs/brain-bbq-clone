@@ -266,6 +266,74 @@ export type Database = {
           },
         ]
       }
+      feature_suggestions: {
+        Row: {
+          created_at: string
+          description: string | null
+          github_issue_number: number | null
+          github_issue_url: string | null
+          id: string
+          status: string
+          submitted_by: string | null
+          submitted_by_email: string | null
+          title: string
+          updated_at: string
+          votes: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          status?: string
+          submitted_by?: string | null
+          submitted_by_email?: string | null
+          title: string
+          updated_at?: string
+          votes?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          status?: string
+          submitted_by?: string | null
+          submitted_by_email?: string | null
+          title?: string
+          updated_at?: string
+          votes?: number
+        }
+        Relationships: []
+      }
+      feature_votes: {
+        Row: {
+          created_at: string
+          suggestion_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          suggestion_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          suggestion_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_votes_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "feature_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grant_investigators: {
         Row: {
           grant_number: string
