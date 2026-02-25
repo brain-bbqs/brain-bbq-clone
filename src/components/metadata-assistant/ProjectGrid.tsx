@@ -43,7 +43,11 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
         if (p) {
           for (const f of metaFields) {
             const v = p[f];
-            if (Array.isArray(v) ? v.length > 0 : typeof v === "boolean" ? v !== false : !!v) filled++;
+            if (v === null || v === undefined) continue;
+            if (Array.isArray(v) && v.length === 0) continue;
+            if (typeof v === "string" && v.trim() === "") continue;
+            // boolean false is a valid value (e.g. study_human = false), counts as filled
+            filled++;
           }
         }
         return {
@@ -89,7 +93,7 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
   }, [selectedGrant]);
 
   return (
-    <div className="ag-theme-alpine w-full" style={{ height: "240px" }}>
+    <div className="ag-theme-alpine w-full" style={{ height: "300px" }}>
       <AgGridReact
         rowData={rows || []}
         columnDefs={colDefs}
@@ -99,7 +103,8 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
         headerHeight={32}
         rowHeight={30}
         animateRows
-        pagination={false}
+        pagination
+        paginationPageSize={50}
       />
     </div>
   );
