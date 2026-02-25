@@ -41,3 +41,12 @@ verify_jwt = false
 
 [functions.seed-metadata]
 verify_jwt = false
+
+[functions.suggest-related]
+verify_jwt = false
+
+[functions.gap-analysis]
+verify_jwt = false
+
+[functions.normalize-tags]
+verify_jwt = false
