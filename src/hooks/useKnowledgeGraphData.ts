@@ -59,21 +59,21 @@ export function useKnowledgeGraphData() {
         supabase.from("grants").select("id, grant_number, title, abstract, award_amount, fiscal_year, nih_link").order("grant_number"),
         supabase.from("investigators").select("id, name, orcid, research_areas, skills"),
         supabase.from("grant_investigators").select("grant_number, investigator_id, role"),
-        supabase.from("projects" as any).select("*"),
+        supabase.from("projects").select("*"),
         supabase.from("publications").select("id, title, pmid, year, journal, citations, keywords"),
         supabase.from("resources").select("id, name, resource_type, description, external_url"),
-        supabase.from("project_publications" as any).select("project_id, publication_id"),
-        supabase.from("project_resources" as any).select("project_id, resource_id, relationship"),
+        supabase.from("project_publications").select("project_id, publication_id"),
+        supabase.from("project_resources").select("project_id, resource_id, relationship"),
       ]);
 
       const grants = grantsRes.data || [];
       const investigators = investigatorsRes.data || [];
       const grantInvestigators = grantInvRes.data || [];
-      const projectMetadata = (metadataRes.data || []) as any[];
+      const projectMetadata = metadataRes.data || [];
       const publications = pubsRes.data || [];
       const resources = resourcesRes.data || [];
-      const projPubs = (projPubsRes.data || []) as any[];
-      const projRes = (projResRes.data || []) as any[];
+      const projPubs = projPubsRes.data || [];
+      const projRes = projResRes.data || [];
 
       const nodes: GraphNode[] = [];
       const links: GraphLink[] = [];

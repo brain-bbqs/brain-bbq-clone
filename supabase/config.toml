@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.normalize-tags]
 verify_jwt = false
+
+[functions.metadata-chat]
+verify_jwt = false
