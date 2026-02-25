@@ -200,13 +200,20 @@ IMPORTANT RULES:
         console.error("DB update error:", updateErr);
       }
 
-      // Log to edit_history
+      // Log to edit_history with chat context
+      // Extract the last user message as chat context
+      const chatContext = messages.slice(-3).map((m: any) => ({
+        role: m.role,
+        content: typeof m.content === 'string' ? m.content.slice(0, 500) : '',
+      }));
+
       const historyRows = fieldsUpdated.map(field => ({
         grant_number,
         edited_by: "ai-assistant",
         field_name: field,
         old_value: (project as any)[field] ?? null,
         new_value: dbUpdates[field],
+        chat_context: chatContext,
       }));
       if (historyRows.length > 0) {
         await sb.from("edit_history").insert(historyRows);
