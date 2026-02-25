@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
@@ -5,15 +6,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Building2, FolderOpen, MessageSquare, History, LogOut } from "lucide-react";
+import { User, Building2, FolderOpen, MessageSquare, History, LogOut, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, isLoading: profileLoading, refetch } = useProfile();
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [nameValue, setNameValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const startEditing = () => {
+    setNameValue(profile?.full_name || "");
+    setEditing(true);
+  };
+
+  const saveName = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: nameValue.trim() || null })
+      .eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Failed to update name");
+    } else {
+      toast.success("Name updated");
+      setEditing(false);
+      refetch();
+    }
+  };
 
   // Fetch user's organization name
   const { data: orgName } = useQuery({
@@ -105,11 +133,33 @@ export default function Profile() {
               <div>
                 {profileLoading ? (
                   <Skeleton className="h-6 w-48" />
+                ) : editing ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      placeholder="Enter your name"
+                      className="h-8 w-56 text-sm"
+                      autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && saveName()}
+                    />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveName} disabled={saving}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : (
                   <>
-                    <h1 className="text-xl font-semibold text-foreground">
-                      {profile?.full_name || "No name set"}
-                    </h1>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-xl font-semibold text-foreground">
+                        {profile?.full_name || "No name set"}
+                      </h1>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startEditing}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                     <p className="text-sm text-muted-foreground">{profile?.email}</p>
                   </>
                 )}
