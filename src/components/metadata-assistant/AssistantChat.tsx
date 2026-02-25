@@ -48,52 +48,68 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-card">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-accent" />
-          <h2 className="text-sm font-semibold text-foreground">Metadata Assistant</h2>
-          {completeness > 0 && (
-            <div className="flex items-center gap-1.5 ml-2">
-              <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded-full transition-all duration-500"
-                  style={{ width: `${completeness}%` }}
-                />
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground leading-tight">Metadata Assistant</h2>
+            {completeness > 0 && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${completeness}%`,
+                      background: completeness >= 70
+                        ? "hsl(168, 55%, 42%)"
+                        : completeness >= 40
+                          ? "hsl(222, 47%, 35%)"
+                          : "hsl(220, 15%, 65%)",
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground">{completeness}%</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">{completeness}%</span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         {messages.length > 0 && (
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClear}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={onClear}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-            <Sparkles className="h-8 w-8 text-accent/50" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {projectTitle ? `Editing: ${projectTitle}` : "Select a project to begin"}
+          <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-4">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm border border-primary/10">
+              <Sparkles className="h-6 w-6 text-primary/60" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-base font-semibold text-foreground">
+                {projectTitle ? projectTitle : "Select a project to begin"}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Describe your experiments in plain language and I'll organize the metadata for you.
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                {projectTitle
+                  ? "Describe your experiments in plain language and I'll organize the metadata for you."
+                  : "Click on a project above to start curating its metadata with AI assistance."}
               </p>
             </div>
             {projectTitle && (
-              <div className="grid grid-cols-1 gap-2 w-full max-w-sm">
+              <div className="grid grid-cols-1 gap-2 w-full max-w-sm mt-1">
                 {STARTERS.map((s, i) => (
                   <button
                     key={i}
                     onClick={() => onSend(s)}
-                    className="text-left text-xs px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 text-muted-foreground transition-colors"
+                    className="group text-left text-xs px-4 py-2.5 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
                   >
+                    <span className="opacity-50 group-hover:opacity-80 mr-1.5">→</span>
                     {s}
                   </button>
                 ))}
@@ -105,11 +121,11 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         {messages.map((msg, i) => (
           <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
             {msg.role === "user" ? (
-              <div className="bg-primary text-primary-foreground rounded-2xl px-4 py-2.5 max-w-[85%] text-sm shadow-sm">
+              <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5 max-w-[85%] text-sm shadow-sm">
                 {msg.content}
               </div>
             ) : (
-              <div className="max-w-[85%] prose prose-sm dark:prose-invert text-sm text-muted-foreground">
+              <div className="max-w-[85%] bg-secondary/40 rounded-2xl rounded-bl-md px-4 py-3 prose prose-sm dark:prose-invert text-sm text-foreground">
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
             )}
@@ -118,13 +134,15 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
 
         {isLoading && (
           <div className="flex justify-start">
-            <TypingIndicator />
+            <div className="bg-secondary/40 rounded-2xl rounded-bl-md px-4 py-3">
+              <TypingIndicator />
+            </div>
           </div>
         )}
       </div>
 
       {/* Input */}
-      <div className="border-t border-border px-4 py-3 shrink-0">
+      <div className="border-t border-border px-5 py-4 shrink-0 bg-gradient-to-t from-secondary/20 to-transparent">
         <div className="flex items-end gap-2">
           <Textarea
             value={input}
@@ -132,14 +150,14 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             onKeyDown={handleKeyDown}
             placeholder="Describe your experiment, methods, species..."
             disabled={isLoading}
-            className="min-h-[44px] max-h-32 resize-none text-sm"
+            className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30"
             rows={1}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="shrink-0 h-10 w-10 rounded-full bg-primary hover:bg-primary/90"
+            className="shrink-0 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shadow-sm transition-all"
           >
             <Send className="h-4 w-4" />
           </Button>
