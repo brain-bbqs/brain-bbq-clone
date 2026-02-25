@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
@@ -224,7 +224,9 @@ const fetchGrants = async (): Promise<ProjectRow[]> => {
 };
 
 const Projects = () => {
-  const [quickFilterText, setQuickFilterText] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialFilter = searchParams.get("q") || "";
+  const [quickFilterText, setQuickFilterText] = useState(initialFilter);
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();

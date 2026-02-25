@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "react-router-dom";
+
 import { useState, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
@@ -641,7 +643,8 @@ type ColumnId = "investigator" | "institution" | "projects" | "grants" | "fundin
 
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
-  const [quickFilterText, setQuickFilterText] = useState("");
+  const [searchParams] = useSearchParams();
+  const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
