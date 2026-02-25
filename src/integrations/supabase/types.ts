@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      allowed_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allowed_domains_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_clicks: {
         Row: {
           created_at: string
@@ -489,6 +518,41 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_publications: {
         Row: {
           created_at: string
@@ -952,6 +1016,10 @@ export type Database = {
           source_type: string
           title: string
         }[]
+      }
+      user_can_edit_project: {
+        Args: { _grant_number: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -6,13 +6,17 @@ import { ProjectGrid } from "@/components/metadata-assistant/ProjectGrid";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
-import { Database, BookOpen, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCanEditProject } from "@/hooks/useCanEditProject";
+import { Database, BookOpen, X, ShieldAlert } from "lucide-react";
 
 export default function MetadataAssistant() {
+  const { user } = useAuth();
   const [showBanner, setShowBanner] = useState(() => {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
   const [grantNumber, setGrantNumber] = useState<string | null>(null);
+  const { canEdit } = useCanEditProject(grantNumber);
 
   const { data: grantTitle } = useQuery({
     queryKey: ["grant-title", grantNumber],
@@ -70,6 +74,24 @@ export default function MetadataAssistant() {
         <div className="border-b border-border shrink-0 overflow-auto max-h-[50vh]">
           <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
         </div>
+
+        {/* Permission banner */}
+        {grantNumber && !canEdit && user && (
+          <div className="border-b border-destructive/20 bg-destructive/5 px-5 py-2 shrink-0 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-xs text-foreground">
+              <span className="font-medium">Read-only mode.</span> Your organization doesn't have edit access to this project.
+            </p>
+          </div>
+        )}
+        {grantNumber && !user && (
+          <div className="border-b border-primary/20 bg-primary/5 px-5 py-2 shrink-0 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground">
+              <Link to="/auth" className="text-primary hover:underline font-medium">Sign in</Link> to edit project metadata.
+            </p>
+          </div>
+        )}
 
         {/* Chat + metadata table */}
         <div className="flex-1 flex min-h-0">
