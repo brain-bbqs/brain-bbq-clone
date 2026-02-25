@@ -36,13 +36,14 @@ const mainItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Resources", url: "/resources", icon: Database },
   { title: "BBQS Assistant", url: "/metadata-assistant", icon: Package },
   { title: "Data Provenance", url: "/data-provenance", icon: History },
+  { title: "Resources", url: "/resources", icon: Database },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
   { title: "Explorer", url: "/knowledge-graph", icon: Globe },
+  { title: "Knowledge Graph", url: "/knowledge-graph-viz", icon: Globe },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Species", url: "/species", icon: Bug },
   { title: "Publications", url: "/publications", icon: FileText },
@@ -70,8 +71,8 @@ const legalItems: NavItem[] = [
 
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
-  { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Tools", items: toolsItems },
+  { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Engineering", items: engineeringItems },

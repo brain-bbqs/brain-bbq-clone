@@ -26,6 +26,7 @@ import McpDocs from "./pages/McpDocs";
 import McpTutorial from "./pages/McpTutorial";
 import McpRegistry from "./pages/McpRegistry";
 import Species from "./pages/Species";
+import KnowledgeGraphViz from "./pages/KnowledgeGraphViz";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/mcp-docs" element={<McpDocs />} />
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
               <Route path="/species" element={<Species />} />
+              <Route path="/knowledge-graph-viz" element={<KnowledgeGraphViz />} />
               <Route path="/metadata-assistant" element={<MetadataAssistant />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
               {/* Redirects from old separate pages */}
