@@ -37,7 +37,7 @@ const mainItems: NavItem[] = [
 
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
-  { title: "Metadata Assistant", url: "/metadata-assistant", icon: Package },
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Package },
   { title: "Data Provenance", url: "/data-provenance", icon: History },
 ];
 
