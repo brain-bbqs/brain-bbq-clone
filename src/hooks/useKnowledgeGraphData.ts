@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 export interface GraphNode {
   id: string;
@@ -30,10 +31,29 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function useKnowledgeGraphData() {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription — invalidate query on projects table changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("kg-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["knowledge-graph-data"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery<GraphData>({
     queryKey: ["knowledge-graph-data"],
     queryFn: async () => {
-      // Fetch grants, investigators, grant_investigators, project_metadata in parallel
       const [grantsRes, investigatorsRes, grantInvRes, metadataRes] = await Promise.all([
         supabase.from("grants").select("id, grant_number, title, abstract, award_amount, fiscal_year, nih_link").order("grant_number"),
         supabase.from("investigators").select("id, name, orcid, research_areas, skills"),
@@ -53,10 +73,9 @@ export function useKnowledgeGraphData() {
 
       const nodes: GraphNode[] = [];
       const links: GraphLink[] = [];
-      const speciesSet = new Map<string, string>(); // species name -> node id
-      const metaTagSet = new Map<string, string>(); // tag -> node id
+      const speciesSet = new Map<string, string>();
+      const metaTagSet = new Map<string, string>();
 
-      // Create project nodes
       for (const g of grants) {
         const meta = projectMetadata.find(m => m.grant_number === g.grant_number);
         nodes.push({
@@ -68,30 +87,19 @@ export function useKnowledgeGraphData() {
           metadata: { ...g, projectMeta: meta },
         });
 
-        // Species edges from project_metadata
+        // Species edges
         const species = (meta as any)?.study_species || [];
         for (const sp of species) {
           if (!sp) continue;
           if (!speciesSet.has(sp)) {
             const sid = `species-${sp.toLowerCase().replace(/\s+/g, "-")}`;
             speciesSet.set(sp, sid);
-            nodes.push({
-              id: sid,
-              label: sp,
-              type: "species",
-              color: TYPE_COLORS.species,
-              radius: 10,
-            });
+            nodes.push({ id: sid, label: sp, type: "species", color: TYPE_COLORS.species, radius: 10 });
           }
-          links.push({
-            source: `project-${g.id}`,
-            target: speciesSet.get(sp)!,
-            type: "studies",
-            label: "studies",
-          });
+          links.push({ source: `project-${g.id}`, target: speciesSet.get(sp)!, type: "studies", label: "studies" });
         }
 
-        // Meta tag edges — approaches, sensors, data modalities, analysis methods
+        // Structured meta tag edges
         const tagFields = [
           { field: "use_approaches", label: "approach" },
           { field: "use_sensors", label: "sensor" },
@@ -106,24 +114,36 @@ export function useKnowledgeGraphData() {
             if (!metaTagSet.has(key)) {
               const tid = `meta-${key.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
               metaTagSet.set(key, tid);
+              nodes.push({ id: tid, label: tag, type: "meta_tag", color: TYPE_COLORS.meta_tag, radius: 7 });
+            }
+            links.push({ source: `project-${g.id}`, target: metaTagSet.get(key)!, type: label });
+          }
+        }
+
+        // Dynamic JSONB metadata → meta tag nodes (Phase 3: dynamic discovery)
+        const customMeta = (meta as any)?.metadata;
+        if (customMeta && typeof customMeta === "object") {
+          for (const [mKey, mValue] of Object.entries(customMeta)) {
+            const valStr = typeof mValue === "string" ? mValue : JSON.stringify(mValue);
+            // Create a meta tag for each key-value pair
+            const tagKey = `custom:${mKey}:${valStr}`;
+            if (!metaTagSet.has(tagKey)) {
+              const tid = `meta-${tagKey.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+              metaTagSet.set(tagKey, tid);
               nodes.push({
                 id: tid,
-                label: tag,
+                label: `${mKey}: ${valStr.length > 30 ? valStr.slice(0, 27) + "..." : valStr}`,
                 type: "meta_tag",
                 color: TYPE_COLORS.meta_tag,
-                radius: 7,
+                radius: 6,
               });
             }
-            links.push({
-              source: `project-${g.id}`,
-              target: metaTagSet.get(key)!,
-              type: label,
-            });
+            links.push({ source: `project-${g.id}`, target: metaTagSet.get(tagKey)!, type: "custom" });
           }
         }
       }
 
-      // Create investigator nodes and link to projects
+      // Investigator nodes
       const invMap = new Map(investigators.map(inv => [inv.id, inv]));
       const linkedInvIds = new Set<string>();
 
@@ -136,22 +156,10 @@ export function useKnowledgeGraphData() {
         const invNodeId = `inv-${inv.id}`;
         if (!linkedInvIds.has(inv.id)) {
           linkedInvIds.add(inv.id);
-          nodes.push({
-            id: invNodeId,
-            label: inv.name,
-            type: "investigator",
-            color: TYPE_COLORS.investigator,
-            radius: 11,
-            metadata: inv,
-          });
+          nodes.push({ id: invNodeId, label: inv.name, type: "investigator", color: TYPE_COLORS.investigator, radius: 11, metadata: inv });
         }
 
-        links.push({
-          source: `project-${grant.id}`,
-          target: invNodeId,
-          type: gi.role || "investigator",
-          label: gi.role === "pi" ? "PI" : "Co-PI",
-        });
+        links.push({ source: `project-${grant.id}`, target: invNodeId, type: gi.role || "investigator", label: gi.role === "pi" ? "PI" : "Co-PI" });
       }
 
       return { nodes, links };

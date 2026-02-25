@@ -2,6 +2,7 @@ import { X, Globe, User, Bug, Tag, FolderOpen, ExternalLink } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { MetadataPanel } from "@/components/metadata/MetadataPanel";
 import { MetadataToolbar } from "@/components/metadata/MetadataToolbar";
+import { CustomMetadataEditor } from "./CustomMetadataEditor";
 import { useMetadataEditor } from "@/hooks/useMetadataEditor";
 import { useQueryClient } from "@tanstack/react-query";
 import type { GraphNode } from "@/hooks/useKnowledgeGraphData";
@@ -64,6 +65,9 @@ function ProjectDrawerContent({ node }: { node: GraphNode }) {
   });
   const completeness = Math.round((filled.length / checkFields.length) * 100);
 
+  // Custom JSONB metadata
+  const currentCustomMeta = editor.getValue("metadata") || projectMeta?.metadata || {};
+
   return (
     <div className="space-y-4">
       <MetadataToolbar
@@ -80,6 +84,11 @@ function ProjectDrawerContent({ node }: { node: GraphNode }) {
         setFieldValue={editor.setFieldValue}
         changedFields={editor.changedFields}
         completeness={completeness}
+      />
+      <CustomMetadataEditor
+        metadata={typeof currentCustomMeta === "object" && currentCustomMeta !== null ? currentCustomMeta : {}}
+        onChange={(newMeta) => editor.setFieldValue("metadata", newMeta)}
+        isChanged={editor.changedFields.has("metadata")}
       />
     </div>
   );
