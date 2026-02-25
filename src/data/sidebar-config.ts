@@ -10,22 +10,11 @@ import {
   CalendarDays,
   Info,
   FileText,
-  FlaskConical,
-  MessageSquare,
-  Bot,
-  Container,
-  Wrench,
-  Sparkles,
-  Code,
-  Plug,
   Scale,
   Package,
   Globe,
   Database,
-  BarChart3,
-  Brain,
   Bug,
-  Sigma,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -46,21 +35,9 @@ const mainItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Software", url: "/resources", icon: Wrench },
-  { title: "Datasets", url: "/datasets", icon: Database },
-  { title: "Benchmarks", url: "/benchmarks", icon: BarChart3 },
-  { title: "ML Models", url: "/ml-models", icon: Brain },
-  { title: "Protocols", url: "/protocols", icon: BookOpen },
+  { title: "Resources", url: "/resources", icon: Database },
   { title: "Metadata Assistant", url: "/metadata-assistant", icon: Package },
 ];
-
-const scienceItems: NavItem[] = [
-  { title: "Computational Models", url: "/computational-models", icon: Sigma },
-];
-
-const aiItems: NavItem[] = [];
-
-const experimentalItems: NavItem[] = [];
 
 const knowledgeBaseItems: NavItem[] = [
   { title: "Explorer", url: "/knowledge-graph", icon: Globe },
