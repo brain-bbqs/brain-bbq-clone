@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { ForceGraph } from "@/components/knowledge-graph/ForceGraph";
 import { NodeDrawer } from "@/components/knowledge-graph/NodeDrawer";
 import { GraphLegend } from "@/components/knowledge-graph/GraphLegend";
+import { GraphAnalytics } from "@/components/knowledge-graph/GraphAnalytics";
 import { useKnowledgeGraphData } from "@/hooks/useKnowledgeGraphData";
 import type { GraphNode } from "@/hooks/useKnowledgeGraphData";
 import { Loader2, Network } from "lucide-react";
@@ -10,6 +11,7 @@ export default function MetadataAssistant() {
   const { data: graphData, isLoading } = useKnowledgeGraphData();
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
@@ -52,7 +54,14 @@ export default function MetadataAssistant() {
         </div>
       </div>
 
-      {/* D3 Force Graph - full page */}
+      {/* Graph Analytics panel */}
+      {showAnalytics && (
+        <div className="absolute top-16 left-4 z-10 w-56">
+          <GraphAnalytics graphData={graphData} />
+        </div>
+      )}
+
+      {/* D3 Force Graph */}
       <ForceGraph
         nodes={graphData.nodes}
         links={graphData.links}
@@ -75,7 +84,7 @@ export default function MetadataAssistant() {
             className="fixed inset-0 bg-black/30 z-40"
             onClick={handleCloseDrawer}
           />
-          <NodeDrawer node={selectedNode} onClose={handleCloseDrawer} />
+          <NodeDrawer node={selectedNode} onClose={handleCloseDrawer} graphData={graphData} />
         </>
       )}
     </div>

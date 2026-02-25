@@ -3,13 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { MetadataPanel } from "@/components/metadata/MetadataPanel";
 import { MetadataToolbar } from "@/components/metadata/MetadataToolbar";
 import { CustomMetadataEditor } from "./CustomMetadataEditor";
+import { CrossProjectDiscovery } from "./CrossProjectDiscovery";
+import { AiSuggestions } from "./AiSuggestions";
 import { useMetadataEditor } from "@/hooks/useMetadataEditor";
 import { useQueryClient } from "@tanstack/react-query";
-import type { GraphNode } from "@/hooks/useKnowledgeGraphData";
+import type { GraphNode, GraphData } from "@/hooks/useKnowledgeGraphData";
 
 interface NodeDrawerProps {
   node: GraphNode | null;
   onClose: () => void;
+  graphData?: GraphData | null;
 }
 
 const typeIcons = {
@@ -26,7 +29,7 @@ const typeLabels = {
   meta_tag: "Meta Tag",
 };
 
-function ProjectDrawerContent({ node }: { node: GraphNode }) {
+function ProjectDrawerContent({ node, graphData }: { node: GraphNode; graphData?: GraphData | null }) {
   const queryClient = useQueryClient();
   const meta = node.metadata;
   if (!meta) return null;
@@ -65,8 +68,26 @@ function ProjectDrawerContent({ node }: { node: GraphNode }) {
   });
   const completeness = Math.round((filled.length / checkFields.length) * 100);
 
-  // Custom JSONB metadata
   const currentCustomMeta = editor.getValue("metadata") || projectMeta?.metadata || {};
+
+  // Build existing fields map for AI suggestions
+  const existingFields: Record<string, any> = {};
+  for (const f of checkFields) {
+    const v = editor.getValue(f);
+    if (Array.isArray(v) && v.length > 0) existingFields[f] = v;
+    else if (typeof v === "string" && v.trim()) existingFields[f] = v;
+  }
+
+  // Get similar projects from graph data for AI context
+  const similarProjects = graphData?.nodes
+    .filter(n => n.type === "project" && n.id !== node.id && n.metadata?.projectMeta)
+    .slice(0, 3)
+    .map(n => ({
+      title: n.metadata?.title,
+      species: n.metadata?.projectMeta?.study_species,
+      approaches: n.metadata?.projectMeta?.use_approaches,
+      methods: n.metadata?.projectMeta?.use_analysis_method,
+    })) || [];
 
   return (
     <div className="space-y-4">
@@ -77,6 +98,24 @@ function ProjectDrawerContent({ node }: { node: GraphNode }) {
         onCommit={editor.commitChanges}
         isCommitting={editor.isCommitting}
       />
+
+      {/* AI Suggestions */}
+      <AiSuggestions
+        grantTitle={grant.title}
+        grantAbstract={grant.abstract}
+        existingFields={existingFields}
+        similarProjects={similarProjects}
+        onApplySuggestion={editor.setFieldValue}
+      />
+
+      {/* Cross-project discovery */}
+      {graphData && (
+        <CrossProjectDiscovery
+          currentProjectId={node.id}
+          graphData={graphData}
+        />
+      )}
+
       <MetadataPanel
         grant={grant}
         investigators={[]}
@@ -142,14 +181,13 @@ function GenericDrawerContent({ node }: { node: GraphNode }) {
   );
 }
 
-export function NodeDrawer({ node, onClose }: NodeDrawerProps) {
+export function NodeDrawer({ node, onClose, graphData }: NodeDrawerProps) {
   if (!node) return null;
 
   const Icon = typeIcons[node.type] || Tag;
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background border-l border-border z-50 flex flex-col shadow-2xl">
-      {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-border shrink-0">
         <div className="p-2 rounded-lg" style={{ backgroundColor: `${node.color}20` }}>
           <Icon className="h-4 w-4" style={{ color: node.color }} />
@@ -165,10 +203,9 @@ export function NodeDrawer({ node, onClose }: NodeDrawerProps) {
         </button>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto p-5">
         {node.type === "project" ? (
-          <ProjectDrawerContent node={node} />
+          <ProjectDrawerContent node={node} graphData={graphData} />
         ) : node.type === "investigator" ? (
           <InvestigatorDrawerContent node={node} />
         ) : (
