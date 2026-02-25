@@ -18,6 +18,7 @@ import ConsortiaHistory from "./pages/ConsortiaHistory";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
 import MetadataAssistant from "./pages/MetadataAssistant";
+import DataProvenance from "./pages/DataProvenance";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 import KnowledgeGraph from "./pages/KnowledgeGraph";
 import DataSharingPolicy from "./pages/DataSharingPolicy";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
               <Route path="/species" element={<Species />} />
               <Route path="/metadata-assistant" element={<MetadataAssistant />} />
+              <Route path="/data-provenance" element={<DataProvenance />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />

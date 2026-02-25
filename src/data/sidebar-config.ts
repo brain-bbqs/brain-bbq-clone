@@ -15,6 +15,7 @@ import {
   Globe,
   Database,
   Bug,
+  History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -37,6 +38,7 @@ const mainItems: NavItem[] = [
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
   { title: "Metadata Assistant", url: "/metadata-assistant", icon: Package },
+  { title: "Data Provenance", url: "/data-provenance", icon: History },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
