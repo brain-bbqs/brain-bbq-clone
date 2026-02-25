@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AgGridReact } from "ag-grid-react";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef, useState } from "react";
 import type { ColDef, RowClickedEvent, ICellRendererParams } from "ag-grid-community";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
 interface ProjectGridProps {
@@ -12,18 +14,27 @@ interface ProjectGridProps {
 
 function CompletenessRenderer(params: ICellRendererParams) {
   const val = params.value || 0;
-  const color = val >= 70 ? "hsl(140, 60%, 50%)" : val >= 40 ? "hsl(38, 90%, 50%)" : "hsl(220, 15%, 75%)";
+  // Navy-to-teal gradient: low = muted slate, mid = primary navy, high = teal/emerald
+  const color =
+    val >= 70
+      ? "hsl(168, 55%, 42%)"
+      : val >= 40
+        ? "hsl(222, 47%, 35%)"
+        : "hsl(220, 15%, 75%)";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div style={{ width: 48, height: 6, background: "hsl(220,15%,88%)", borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${val}%`, height: "100%", background: color, borderRadius: 3 }} />
       </div>
-      <span style={{ fontSize: 11 }}>{val}%</span>
+      <span style={{ fontSize: 11, fontWeight: 500, color: val >= 70 ? "hsl(168,55%,36%)" : undefined }}>{val}%</span>
     </div>
   );
 }
 
 export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) {
+  const gridRef = useRef<AgGridReact>(null);
+  const [searchText, setSearchText] = useState("");
+
   const { data: rows } = useQuery({
     queryKey: ["projects-completeness-grid"],
     queryFn: async () => {
@@ -46,7 +57,6 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
             if (v === null || v === undefined) continue;
             if (Array.isArray(v) && v.length === 0) continue;
             if (typeof v === "string" && v.trim() === "") continue;
-            // boolean false is a valid value (e.g. study_human = false), counts as filled
             filled++;
           }
         }
@@ -92,22 +102,45 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
     return params.data?.grant_number === selectedGrant ? "ag-row-selected" : "";
   }, [selectedGrant]);
 
+  const onSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchText(val);
+    gridRef.current?.api?.setGridOption("quickFilterText", val);
+  }, []);
+
   return (
-    <div className="ag-theme-alpine w-full">
-      <AgGridReact
-        rowData={rows || []}
-        columnDefs={colDefs}
-        onRowClicked={onRowClicked}
-        getRowClass={getRowClass}
-        suppressCellFocus
-        rowSelection="single"
-        headerHeight={32}
-        rowHeight={30}
-        animateRows
-        domLayout="autoHeight"
-        pagination
-        paginationPageSize={10}
-      />
+    <div className="space-y-0">
+      {/* Search bar */}
+      <div className="px-3 py-2 border-b border-border bg-card">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={searchText}
+            onChange={onSearchChange}
+            placeholder="Filter projects…"
+            className="pl-8 h-8 text-xs bg-background"
+          />
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="ag-theme-alpine w-full">
+        <AgGridReact
+          ref={gridRef}
+          rowData={rows || []}
+          columnDefs={colDefs}
+          onRowClicked={onRowClicked}
+          getRowClass={getRowClass}
+          suppressCellFocus
+          rowSelection="single"
+          headerHeight={32}
+          rowHeight={30}
+          animateRows
+          domLayout="autoHeight"
+          pagination
+          paginationPageSize={10}
+        />
+      </div>
     </div>
   );
 }
