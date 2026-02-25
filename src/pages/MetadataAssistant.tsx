@@ -88,15 +88,17 @@ export default function MetadataAssistant() {
           {/* Chat + metadata table */}
           <div className="flex-1 flex min-h-0">
             {/* Chat panel */}
-            <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0">
-              <AssistantChat
-                messages={messages}
-                isLoading={isLoading}
-                completeness={completeness}
-                onSend={sendMessage}
-                onClear={clearChat}
-                projectTitle={grantTitle || undefined}
-              />
+            <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0 p-3">
+              <div className="flex-1 flex flex-col min-h-0 rounded-xl border border-border shadow-sm overflow-hidden bg-card">
+                <AssistantChat
+                  messages={messages}
+                  isLoading={isLoading}
+                  completeness={completeness}
+                  onSend={sendMessage}
+                  onClear={clearChat}
+                  projectTitle={grantTitle || undefined}
+                />
+              </div>
             </div>
 
             {/* Metadata table panel */}
