@@ -739,6 +739,86 @@ export type Database = {
           },
         ]
       }
+      species: {
+        Row: {
+          common_name: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          name: string
+          resource_id: string | null
+          taxonomy_class: string | null
+          taxonomy_family: string | null
+          taxonomy_genus: string | null
+          taxonomy_order: string | null
+          updated_at: string
+        }
+        Insert: {
+          common_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          resource_id?: string | null
+          taxonomy_class?: string | null
+          taxonomy_family?: string | null
+          taxonomy_genus?: string | null
+          taxonomy_order?: string | null
+          updated_at?: string
+        }
+        Update: {
+          common_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          resource_id?: string | null
+          taxonomy_class?: string | null
+          taxonomy_family?: string | null
+          taxonomy_genus?: string | null
+          taxonomy_order?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "species_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taxonomies: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          label: string | null
+          metadata: Json | null
+          parent_value: string | null
+          value: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          metadata?: Json | null
+          parent_value?: string | null
+          value: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          metadata?: Json | null
+          parent_value?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
