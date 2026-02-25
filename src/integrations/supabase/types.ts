@@ -151,6 +151,47 @@ export type Database = {
           },
         ]
       }
+      edit_history: {
+        Row: {
+          created_at: string
+          edited_by: string
+          field_name: string
+          grant_number: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          project_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          edited_by?: string
+          field_name: string
+          grant_number: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          project_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          edited_by?: string
+          field_name?: string
+          grant_number?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edit_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grant_investigators: {
         Row: {
           grant_number: string
