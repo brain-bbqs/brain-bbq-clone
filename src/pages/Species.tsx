@@ -13,17 +13,17 @@ import "@/styles/ag-grid-theme.css";
 
 interface SpeciesRow {
   species: string;
+  commonName: string;
+  taxonomyClass: string;
   project: string;
   grantNumber: string;
-  grantId: string;
   behavior: string[];
   color: string;
 }
 
-// Assign colors by species for visual distinction
 const SPECIES_COLORS: Record<string, string> = {
   "mouse": "#81c784", "mice": "#81c784", "mus musculus": "#81c784",
-  "rat": "#aed581", "rats": "#aed581", "rats/mice": "#a5d6a7",
+  "rat": "#aed581", "rats": "#aed581",
   "human": "#ef9a9a", "homo sapiens": "#ef9a9a",
   "marmoset": "#ffe082", "callithrix jacchus": "#ffe082",
   "gerbil": "#ffb74d", "meriones unguiculatus": "#ffb74d",
@@ -49,36 +49,44 @@ function useSpeciesData() {
   return useQuery<SpeciesRow[]>({
     queryKey: ["species-grid"],
     queryFn: async () => {
-      const [grantsRes, metaRes] = await Promise.all([
+      // Fetch species table, grants, and projects in parallel
+      const [speciesRes, grantsRes, projectsRes] = await Promise.all([
+        (supabase.from("species" as any) as any).select("*"),
         supabase.from("grants").select("id, grant_number, title").order("grant_number"),
-        supabase.from("projects" as any).select("*"),
+        (supabase.from("projects" as any) as any).select("*"),
       ]);
       if (grantsRes.error) throw grantsRes.error;
-      if (metaRes.error) throw metaRes.error;
+
+      const speciesLookup = new Map<string, any>();
+      if (speciesRes.data) {
+        for (const s of speciesRes.data as any[]) {
+          speciesLookup.set(s.name.toLowerCase(), s);
+        }
+      }
 
       const grants = grantsRes.data || [];
-      const metadata = (metaRes.data || []) as any[];
+      const projects = (projectsRes.data || []) as any[];
       const rows: SpeciesRow[] = [];
 
       for (const grant of grants) {
-        const meta = metadata.find((m: any) => m.grant_number === grant.grant_number);
-        const species = (meta?.study_species || []) as string[];
-        if (species.length === 0) continue;
+        const meta = projects.find((m: any) => m.grant_number === grant.grant_number);
+        const speciesList = (meta?.study_species || []) as string[];
+        if (speciesList.length === 0) continue;
 
-        // Combine computational goals as behavior
         const behavior: string[] = [];
         if (meta?.use_approaches) behavior.push(...(meta.use_approaches as string[]));
-        // Also check the dynamic metadata column
         const dynMeta = meta?.metadata || {};
         if (dynMeta.behaviors) behavior.push(...(dynMeta.behaviors as string[]));
         if (dynMeta.ethological_goals) behavior.push(...(dynMeta.ethological_goals as string[]));
 
-        for (const sp of species) {
+        for (const sp of speciesList) {
+          const speciesInfo = speciesLookup.get(sp.toLowerCase());
           rows.push({
             species: sp,
+            commonName: speciesInfo?.common_name || "",
+            taxonomyClass: speciesInfo?.taxonomy_class || "",
             project: grant.title,
             grantNumber: grant.grant_number,
-            grantId: grant.id,
             behavior,
             color: getSpeciesColor(sp),
           });
@@ -135,8 +143,10 @@ export default function Species() {
   const columnDefs = useMemo<ColDef<SpeciesRow>[]>(
     () => [
       { field: "species", headerName: "Species", width: 160, cellRenderer: SpeciesBadge },
+      { field: "commonName", headerName: "Common Name", width: 130 },
+      { field: "taxonomyClass", headerName: "Class", width: 110 },
       { field: "project", headerName: "Project", width: 300, cellRenderer: ProjectLink },
-      { field: "behavior", headerName: "Behavior", flex: 1, minWidth: 300, cellRenderer: (params: any) => <BehaviorBadges value={params.value} /> },
+      { field: "behavior", headerName: "Behavior / Approaches", flex: 1, minWidth: 300, cellRenderer: (params: any) => <BehaviorBadges value={params.value} /> },
     ],
     []
   );
