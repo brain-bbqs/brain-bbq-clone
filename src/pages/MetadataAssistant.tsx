@@ -14,7 +14,7 @@ import { Network, Table2, Loader2 } from "lucide-react";
 
 export default function MetadataAssistant() {
   const [grantNumber, setGrantNumber] = useState<string | null>(null);
-  const [rightTab, setRightTab] = useState<string>("graph");
+  const [rightTab, setRightTab] = useState<string>("table");
   const [filterType, setFilterType] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
@@ -76,13 +76,13 @@ export default function MetadataAssistant() {
         <div className="hidden lg:flex flex-col flex-1 min-h-0">
           <Tabs value={rightTab} onValueChange={setRightTab} className="flex flex-col h-full">
             <TabsList className="mx-4 mt-3 w-fit shrink-0">
-              <TabsTrigger value="graph" className="gap-1.5 text-xs">
-                <Network className="h-3.5 w-3.5" />
-                Knowledge Graph
-              </TabsTrigger>
               <TabsTrigger value="table" className="gap-1.5 text-xs">
                 <Table2 className="h-3.5 w-3.5" />
                 Metadata Table
+              </TabsTrigger>
+              <TabsTrigger value="graph" className="gap-1.5 text-xs">
+                <Network className="h-3.5 w-3.5" />
+                Knowledge Graph
               </TabsTrigger>
             </TabsList>
 
