@@ -26,6 +26,7 @@ export interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
+  disabled?: boolean;
 }
 
 export interface NavGroup {
@@ -41,7 +42,7 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
 ];
 

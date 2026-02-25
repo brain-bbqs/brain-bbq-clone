@@ -35,24 +35,34 @@ export function AppSidebar() {
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton
-            asChild
-            isActive={isActive(item.url)}
-            tooltip={collapsed ? item.title : undefined}
-            className="py-3 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-          >
-            {item.url.startsWith("/") ? (
-              <Link to={item.url}>
-                <item.icon className="h-5 w-5" />
-                <span className="text-base">{item.title}</span>
-              </Link>
-            ) : (
-              <a href={item.url}>
-                <item.icon className="h-5 w-5" />
-                <span className="text-base">{item.title}</span>
-              </a>
-            )}
-          </SidebarMenuButton>
+          {item.disabled ? (
+            <SidebarMenuButton
+              tooltip={collapsed ? `${item.title} (coming soon)` : undefined}
+              className="py-3 text-base opacity-40 cursor-not-allowed pointer-events-none"
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-base">{item.title}</span>
+            </SidebarMenuButton>
+          ) : (
+            <SidebarMenuButton
+              asChild
+              isActive={isActive(item.url)}
+              tooltip={collapsed ? item.title : undefined}
+              className="py-3 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            >
+              {item.url.startsWith("/") ? (
+                <Link to={item.url}>
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-base">{item.title}</span>
+                </Link>
+              ) : (
+                <a href={item.url}>
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-base">{item.title}</span>
+                </a>
+              )}
+            </SidebarMenuButton>
+          )}
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
