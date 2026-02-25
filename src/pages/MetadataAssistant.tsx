@@ -58,7 +58,7 @@ export default function MetadataAssistant() {
               <Database className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-sm font-semibold text-foreground leading-tight">Metadata Workbench</h1>
+              <h1 className="text-sm font-semibold text-foreground leading-tight">BBQS Workbench</h1>
               <p className="text-[11px] text-muted-foreground">Curate project metadata across the consortium</p>
             </div>
           </div>
