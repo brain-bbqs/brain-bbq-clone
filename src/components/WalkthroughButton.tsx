@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { HelpCircle, X, ChevronRight, ChevronLeft, Compass, Database, MessageSquare, Plug, BookOpen, FlaskConical, Map, Brain, FolderOpen, Bot } from "lucide-react";
+import { HelpCircle, X, ChevronRight, ChevronLeft, Compass, BookOpen, FlaskConical, Map, Brain, FolderOpen, Users } from "lucide-react";
 
 interface Step {
   icon: typeof Compass;
@@ -28,28 +28,12 @@ const steps: Step[] = [
     color: "bg-[hsl(38_90%_50%)]",
   },
   {
-    icon: Brain,
-    title: "Cross-Species Synchronization",
-    description: "Compare ML models and tools across species. This view shows which computational approaches are shared and which are unique to each organism.",
-    route: "/ml-models",
-    cta: "Hover over cells to see tool details.",
-    color: "bg-[hsl(280_60%_50%)]",
-  },
-  {
     icon: FlaskConical,
     title: "Knowledge Graph Explorer",
     description: "Visualize relationships between projects, tools, and species using interactive Marr-level diagrams — Sankey flows, chord charts, and heatmaps.",
     route: "/knowledge-graph",
     cta: "Switch between diagram tabs to explore different views.",
     color: "bg-[hsl(150_60%_40%)]",
-  },
-  {
-    icon: Bot,
-    title: "NeuroMCP AI Chat",
-    description: "Ask questions about BBQS in natural language. The AI uses retrieval-augmented generation over the full knowledge base to give grounded answers.",
-    route: "/neuromcp",
-    cta: "Try asking: \"What tools are used for pose estimation?\"",
-    color: "bg-[hsl(0_70%_50%)]",
   },
   {
     icon: BookOpen,
@@ -60,12 +44,12 @@ const steps: Step[] = [
     color: "bg-[hsl(220_80%_55%)]",
   },
   {
-    icon: Plug,
-    title: "API & MCP Server",
-    description: "Developers and AI agents can access BBQS data programmatically. The REST API and MCP server are both fully documented with setup guides for Claude, Cursor, and more.",
-    route: "/api-docs",
-    cta: "Follow the setup guide to connect your AI tool.",
-    color: "bg-[hsl(25_80%_50%)]",
+    icon: Users,
+    title: "People & Working Groups",
+    description: "Meet the investigators behind BBQS projects and explore the consortium's working groups and community.",
+    route: "/investigators",
+    cta: "Click a PI to see their grants and publications.",
+    color: "bg-[hsl(280_60%_50%)]",
   },
   {
     icon: Map,
