@@ -5,50 +5,91 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { MARR_PROJECTS } from "@/data/marr-projects";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
-
-// Latin name mapping for species
-const LATIN_NAMES: Record<string, string> = {
-  "Cichlid": "Cichlidae",
-  "Mouse": "Mus musculus",
-  "Gerbil": "Meriones unguiculatus",
-  "Cowbird": "Molothrus ater",
-  "Rats/Mice": "Rattus / Mus",
-  "Human": "Homo sapiens",
-  "Sheep": "Ovis aries",
-  "Zebrafish/Fly": "Danio rerio / Drosophila",
-  "Acoel Worm": "Acoela",
-  "Ferret": "Mustela putorius furo",
-  "Capuchin Monkey": "Cebus capucinus",
-  "Marmoset": "Callithrix jacchus",
-};
 
 interface SpeciesRow {
   species: string;
-  latinName: string;
   project: string;
+  grantNumber: string;
   grantId: string;
-  behavior: string;
+  behavior: string[];
   color: string;
 }
 
-// Strip PI name prefix from shortName (e.g. "Dyer – Cichlid Arena" → "Cichlid Arena")
-const getProjectTitle = (shortName: string) => {
-  const parts = shortName.split(" – ");
-  return parts.length > 1 ? parts.slice(1).join(" – ").trim() : shortName;
+// Assign colors by species for visual distinction
+const SPECIES_COLORS: Record<string, string> = {
+  "mouse": "#81c784", "mice": "#81c784", "mus musculus": "#81c784",
+  "rat": "#aed581", "rats": "#aed581", "rats/mice": "#a5d6a7",
+  "human": "#ef9a9a", "homo sapiens": "#ef9a9a",
+  "marmoset": "#ffe082", "callithrix jacchus": "#ffe082",
+  "gerbil": "#ffb74d", "meriones unguiculatus": "#ffb74d",
+  "cichlid": "#4fc3f7", "cichlidae": "#4fc3f7",
+  "cowbird": "#ce93d8", "molothrus ater": "#ce93d8",
+  "ferret": "#f48fb1", "mustela putorius furo": "#f48fb1",
+  "sheep": "#bcaaa4", "ovis aries": "#bcaaa4",
+  "zebrafish": "#80deea", "danio rerio": "#80deea",
+  "capuchin": "#b39ddb", "cebus capucinus": "#b39ddb",
+  "worm": "#90a4ae", "acoel": "#90a4ae", "acoela": "#90a4ae",
+  "fly": "#ffcc80", "drosophila": "#ffcc80",
 };
 
-const rows: SpeciesRow[] = MARR_PROJECTS.map((p) => ({
-  species: p.species,
-  latinName: LATIN_NAMES[p.species] || "",
-  project: getProjectTitle(p.shortName),
-  grantId: p.id,
-  behavior: p.computational.join("; "),
-  color: p.color,
-}));
+function getSpeciesColor(species: string): string {
+  const lower = species.toLowerCase();
+  for (const [key, color] of Object.entries(SPECIES_COLORS)) {
+    if (lower.includes(key)) return color;
+  }
+  return "#78909c";
+}
+
+function useSpeciesData() {
+  return useQuery<SpeciesRow[]>({
+    queryKey: ["species-grid"],
+    queryFn: async () => {
+      const [grantsRes, metaRes] = await Promise.all([
+        supabase.from("grants").select("id, grant_number, title").order("grant_number"),
+        supabase.from("projects" as any).select("*"),
+      ]);
+      if (grantsRes.error) throw grantsRes.error;
+      if (metaRes.error) throw metaRes.error;
+
+      const grants = grantsRes.data || [];
+      const metadata = (metaRes.data || []) as any[];
+      const rows: SpeciesRow[] = [];
+
+      for (const grant of grants) {
+        const meta = metadata.find((m: any) => m.grant_number === grant.grant_number);
+        const species = (meta?.study_species || []) as string[];
+        if (species.length === 0) continue;
+
+        // Combine computational goals as behavior
+        const behavior: string[] = [];
+        if (meta?.use_approaches) behavior.push(...(meta.use_approaches as string[]));
+        // Also check the dynamic metadata column
+        const dynMeta = meta?.metadata || {};
+        if (dynMeta.behaviors) behavior.push(...(dynMeta.behaviors as string[]));
+        if (dynMeta.ethological_goals) behavior.push(...(dynMeta.ethological_goals as string[]));
+
+        for (const sp of species) {
+          rows.push({
+            species: sp,
+            project: grant.title,
+            grantNumber: grant.grant_number,
+            grantId: grant.id,
+            behavior,
+            color: getSpeciesColor(sp),
+          });
+        }
+      }
+
+      return rows;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
   <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
@@ -58,29 +99,22 @@ const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
 );
 
 const ProjectLink = ({ value, data }: { value: string; data: SpeciesRow }) => {
-  const grantId = data.grantId;
-  // Strip common prefixes like "1" or "5" from grant numbers for NIH Reporter links
-  const cleanId = grantId.replace(/^\d(?=[A-Z])/, "");
+  const cleanId = data.grantNumber.replace(/^\d(?=[A-Z])/, "");
   const url = `https://reporter.nih.gov/project-details/${cleanId}`;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer text-sm"
-    >
-      {value}
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer text-sm">
+      {value.length > 60 ? value.slice(0, 57) + "..." : value}
       <ExternalLink className="h-3 w-3 opacity-60" />
     </a>
   );
 };
 
-const BehaviorBadges = ({ value }: { value: string }) => {
-  if (!value) return null;
-  const items = value.split("; ");
+const BehaviorBadges = ({ value }: { value: string[] }) => {
+  if (!value || value.length === 0) return <span className="text-muted-foreground text-xs italic">Not set</span>;
   return (
     <div className="flex flex-wrap gap-1 py-1">
-      {items.map((item) => (
+      {value.map((item) => (
         <Badge key={item} variant="secondary" className="text-[10px] font-normal whitespace-nowrap">
           {item}
         </Badge>
@@ -91,6 +125,7 @@ const BehaviorBadges = ({ value }: { value: string }) => {
 
 export default function Species() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const { data: rows = [], isLoading } = useSpeciesData();
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, unSortIcon: true, wrapText: true, autoHeight: true }),
@@ -100,14 +135,13 @@ export default function Species() {
   const columnDefs = useMemo<ColDef<SpeciesRow>[]>(
     () => [
       { field: "species", headerName: "Species", width: 160, cellRenderer: SpeciesBadge },
-      { field: "latinName", headerName: "Taxonomy", width: 200, cellStyle: { fontStyle: "italic" } },
-      { field: "project", headerName: "Project", width: 260, cellRenderer: ProjectLink },
-      { field: "behavior", headerName: "Behavior", flex: 1, minWidth: 300, cellRenderer: BehaviorBadges },
+      { field: "project", headerName: "Project", width: 300, cellRenderer: ProjectLink },
+      { field: "behavior", headerName: "Behavior", flex: 1, minWidth: 300, cellRenderer: (params: any) => <BehaviorBadges value={params.value} /> },
     ],
     []
   );
 
-  const speciesCount = useMemo(() => new Set(rows.map((r) => r.species)).size, []);
+  const speciesCount = useMemo(() => new Set(rows.map((r) => r.species)).size, [rows]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,15 +160,12 @@ export default function Species() {
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {speciesCount} species · {rows.length} projects
+              {speciesCount} species · {rows.length} entries
             </span>
           </div>
         </div>
 
-        <div
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-          style={{ width: "100%" }}
-        >
+        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ width: "100%" }}>
           <AgGridReact<SpeciesRow>
             rowData={rows}
             columnDefs={columnDefs}
@@ -145,6 +176,12 @@ export default function Species() {
             suppressCellFocus={true}
             enableCellTextSelection={true}
             headerHeight={40}
+            loading={isLoading}
+            loadingOverlayComponent={() => (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading species data...
+              </div>
+            )}
           />
         </div>
       </div>
