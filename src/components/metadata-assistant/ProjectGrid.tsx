@@ -93,7 +93,7 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
   }, [selectedGrant]);
 
   return (
-    <div className="ag-theme-alpine w-full" style={{ height: "300px" }}>
+    <div className="ag-theme-alpine w-full">
       <AgGridReact
         rowData={rows || []}
         columnDefs={colDefs}
@@ -103,8 +103,9 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
         headerHeight={32}
         rowHeight={30}
         animateRows
+        domLayout="autoHeight"
         pagination
-        paginationPageSize={50}
+        paginationPageSize={20}
       />
     </div>
   );

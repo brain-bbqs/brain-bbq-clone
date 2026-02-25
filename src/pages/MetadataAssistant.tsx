@@ -69,8 +69,8 @@ export default function MetadataAssistant() {
       {/* Assistant tab */}
       {activeTab === "assistant" && (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Project completeness grid at top */}
-          <div className="border-b border-border shrink-0">
+          {/* Project completeness grid at top - scrollable */}
+          <div className="border-b border-border shrink-0 overflow-auto max-h-[50vh]">
             <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
           </div>
 
