@@ -51,15 +51,10 @@ const rows: SpeciesRow[] = MARR_PROJECTS.map((p) => ({
 }));
 
 const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
-  <div className="flex flex-col py-1">
-    <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
-      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
-      {value}
-    </span>
-    {data.latinName && (
-      <span className="text-xs text-muted-foreground italic ml-4">{data.latinName}</span>
-    )}
-  </div>
+  <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
+    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
+    {value}
+  </span>
 );
 
 const ProjectLink = ({ value, data }: { value: string; data: SpeciesRow }) => {
@@ -104,7 +99,8 @@ export default function Species() {
 
   const columnDefs = useMemo<ColDef<SpeciesRow>[]>(
     () => [
-      { field: "species", headerName: "Species", width: 180, cellRenderer: SpeciesBadge },
+      { field: "species", headerName: "Species", width: 160, cellRenderer: SpeciesBadge },
+      { field: "latinName", headerName: "Taxonomy", width: 200, cellStyle: { fontStyle: "italic" } },
       { field: "project", headerName: "Project", width: 260, cellRenderer: ProjectLink },
       { field: "behavior", headerName: "Behavior", flex: 1, minWidth: 300, cellRenderer: BehaviorBadges },
     ],
