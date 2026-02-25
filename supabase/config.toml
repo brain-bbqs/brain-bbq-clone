@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.discovery-chat]
 verify_jwt = false
+
+[functions.metadata-suggest]
+verify_jwt = false
