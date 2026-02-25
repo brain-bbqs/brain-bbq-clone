@@ -81,6 +81,82 @@ const McpStatusBadge = ({ value }: { value: Resource["mcpStatus"] }) => {
   );
 };
 
+// Column definitions per category — matching the original separate pages
+const softwareColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", minWidth: 180, flex: 1.5, cellRenderer: NameLink },
+  {
+    field: "algorithm", headerName: "Description", minWidth: 300, flex: 3,
+    wrapText: true, autoHeight: true,
+    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
+  },
+  { field: "version", headerName: "Version", width: 90, minWidth: 90, flex: 0 },
+  { field: "implementation", headerName: "Language", width: 110, minWidth: 110, flex: 0 },
+  { headerName: "Repo", width: 90, minWidth: 90, flex: 0, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
+  { headerName: "Docker", width: 100, minWidth: 100, flex: 0, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
+  { field: "mcpStatus", headerName: "MCP", width: 130, minWidth: 130, flex: 0, cellRenderer: McpStatusBadge },
+];
+
+const datasetColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", flex: 1, minWidth: 250, cellRenderer: NameLink },
+  {
+    field: "algorithm", headerName: "Description", minWidth: 300, flex: 2,
+    wrapText: true, autoHeight: true,
+    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
+  },
+  { field: "species", headerName: "Species", width: 250 },
+  { field: "implementation", headerName: "Format", width: 100 },
+];
+
+const benchmarkColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", flex: 1, minWidth: 250, cellRenderer: NameLink },
+  {
+    field: "algorithm", headerName: "Description", minWidth: 300, flex: 2,
+    wrapText: true, autoHeight: true,
+    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
+  },
+  { field: "species", headerName: "Species", width: 300 },
+  { field: "implementation", headerName: "Platform", width: 100 },
+];
+
+const mlModelColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", flex: 1, minWidth: 150, cellRenderer: NameLink },
+  { field: "neuralNetworkArchitecture", headerName: "Architecture", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
+  { field: "species", headerName: "Species", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
+  { field: "implementation", headerName: "Language", width: 110, minWidth: 90 },
+];
+
+const protocolColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", flex: 1, minWidth: 250, cellRenderer: NameLink },
+  {
+    field: "algorithm", headerName: "Description", minWidth: 300, flex: 2,
+    wrapText: true, autoHeight: true,
+    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
+  },
+  { field: "species", headerName: "Species", width: 300 },
+  { field: "implementation", headerName: "Format", width: 100 },
+];
+
+const allColumns: ColDef<Resource>[] = [
+  { field: "name", headerName: "Name", minWidth: 180, flex: 1.5, cellRenderer: NameLink },
+  { field: "category", headerName: "Type", width: 120, minWidth: 100, flex: 0, cellRenderer: (params: any) => <CategoryBadge value={params.value} /> },
+  {
+    field: "algorithm", headerName: "Description", minWidth: 250, flex: 3,
+    wrapText: true, autoHeight: true,
+    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
+  },
+  { field: "species", headerName: "Species", width: 150, minWidth: 120, flex: 0 },
+  { field: "implementation", headerName: "Language", width: 100, minWidth: 90, flex: 0 },
+];
+
+const columnsByCategory: Record<Category, ColDef<Resource>[]> = {
+  All: allColumns,
+  Software: softwareColumns,
+  Datasets: datasetColumns,
+  Benchmarks: benchmarkColumns,
+  "ML Models": mlModelColumns,
+  Protocols: protocolColumns,
+};
+
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("All");
@@ -95,20 +171,9 @@ const Resources = () => {
 
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, resizable: true, unSortIcon: true }), []);
 
-  const columnDefs = useMemo<ColDef<Resource>[]>(() => [
-    { field: "name", headerName: "Name", minWidth: 180, flex: 1.5, cellRenderer: NameLink },
-    { field: "category", headerName: "Type", width: 120, minWidth: 100, flex: 0, cellRenderer: (params: any) => <CategoryBadge value={params.value} /> },
-    {
-      field: "algorithm", headerName: "Description", minWidth: 250, flex: 3,
-      wrapText: true, autoHeight: true,
-      cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
-    },
-    { field: "species", headerName: "Species", width: 150, minWidth: 120, flex: 0 },
-    { field: "implementation", headerName: "Language", width: 100, minWidth: 90, flex: 0 },
-    { headerName: "Repo", width: 80, minWidth: 80, flex: 0, cellRenderer: (params: any) => <RepoLink data={params.data} /> },
-    { headerName: "Docker", width: 90, minWidth: 90, flex: 0, cellRenderer: (params: any) => <DockerLink data={params.data} /> },
-    { field: "mcpStatus", headerName: "MCP", width: 120, minWidth: 120, flex: 0, cellRenderer: McpStatusBadge },
-  ], []);
+  const columnDefs = useMemo<ColDef<Resource>[]>(() => {
+    return columnsByCategory[activeCategory];
+  }, [activeCategory]);
 
   const onCellMouseOver = useCallback((event: CellMouseOverEvent) => {
     if (event.data && event.event) {
@@ -123,7 +188,7 @@ const Resources = () => {
   }, []);
 
   const categoryColors: Record<string, string> = {
-    "All": "bg-primary text-primary-foreground",
+    "All": "bg-primary text-primary-foreground border-primary",
     "Software": "bg-blue-500/20 text-blue-400 border-blue-500/30",
     "Datasets": "bg-green-500/20 text-green-400 border-green-500/30",
     "Benchmarks": "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -146,9 +211,7 @@ const Resources = () => {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                   activeCategory === cat
-                    ? cat === "All"
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : `${categoryColors[cat]} border`
+                    ? categoryColors[cat]
                     : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
                 }`}
               >
@@ -165,6 +228,7 @@ const Resources = () => {
         </div>
         <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 300px)" }}>
           <AgGridReact<Resource>
+            key={activeCategory}
             rowData={filteredResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
             quickFilterText={quickFilterText} onCellMouseOver={onCellMouseOver} onCellMouseOut={onCellMouseOut}
             animateRows={true} pagination={true} paginationPageSize={25} paginationPageSizeSelector={[10, 25, 50, 100]}
