@@ -32,6 +32,7 @@ import Profile from "./pages/Profile";
 import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
+import DandiAssistant from "./pages/DandiAssistant";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/species" element={<Species />} />
               
               <Route path="/metadata-assistant" element={<MetadataAssistant />} />
+              <Route path="/dandi-assistant" element={<DandiAssistant />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
               <Route path="/profile" element={<Profile />} />

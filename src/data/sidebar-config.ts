@@ -17,6 +17,8 @@ import {
   Bug,
   History,
   Lightbulb,
+  Bot,
+  FlaskConical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -38,8 +40,12 @@ const mainItems: NavItem[] = [
   { title: "My Profile", url: "/profile", icon: Users },
 ];
 
+const assistantsItems: NavItem[] = [
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
+  { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
+];
+
 const toolsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Package },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Data Provenance", url: "/data-provenance", icon: History },
   { title: "Resources", url: "/resources", icon: Database },
@@ -77,6 +83,7 @@ const legalItems: NavItem[] = [
 
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
+  { label: "Assistants", items: assistantsItems },
   { label: "Tools", items: toolsItems },
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Community", items: communityItems },
