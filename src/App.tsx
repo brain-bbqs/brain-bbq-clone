@@ -30,6 +30,7 @@ import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import EngineeringDocs from "./pages/EngineeringDocs";
+import FeatureSuggestions from "./pages/FeatureSuggestions";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/data-provenance" element={<DataProvenance />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/engineering-docs" element={<EngineeringDocs />} />
+              <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
