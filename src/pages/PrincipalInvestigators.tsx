@@ -17,7 +17,7 @@ import { Loader2, Users, ExternalLink, DollarSign, Columns3 } from "lucide-react
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
-import { MARR_PROJECTS } from "@/data/marr-projects";
+
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -283,12 +283,7 @@ const SkillsCell = ({ data }: { data: PIRow }) => {
   const remaining = data.skills.length - shown.length;
 
   const getRelatedProjects = (skill: string) => {
-    const piKey = nameKey(data.displayName);
-    const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
-    return MARR_PROJECTS.filter(p => {
-      const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
-      return matchesPi && p.algorithmic.includes(skill);
-    });
+    return [] as any[];
   };
 
   const renderBadge = (skill: string, i: number) => {
@@ -349,12 +344,7 @@ const ResearchAreasCell = ({ data }: { data: PIRow }) => {
   const remaining = data.researchAreas.length - shown.length;
 
   const getRelatedProjects = (area: string) => {
-    const piKey = nameKey(data.displayName);
-    const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
-    return MARR_PROJECTS.filter(p => {
-      const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
-      return matchesPi && p.computational.includes(area);
-    });
+    return [] as any[];
   };
 
   const renderBadge = (area: string, i: number) => {
@@ -428,7 +418,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
   const grantByNumber = new Map(grants.map(g => [g.grant_number, g]));
   const orgById = new Map(orgs.map(o => [o.id, o]));
-  const bbqsGrantNumbers = new Set(MARR_PROJECTS.map(p => p.id));
+  const bbqsGrantNumbers = new Set(grants.map(g => g.grant_number));
 
   const piMap = new Map<string, PIRow>();
 
@@ -454,7 +444,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
       const coreNum = link.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
       const isBbqs = bbqsGrantNumbers.has(link.grant_number) || bbqsGrantNumbers.has(coreNum) ||
-        [...bbqsGrantNumbers].some(bn => link.grant_number.includes(bn) || bn.includes(coreNum));
+        [...bbqsGrantNumbers].some((bn: string) => link.grant_number.includes(bn) || bn.includes(coreNum));
 
       const coPiLinks = grantInvLinks.filter(gi => gi.grant_number === link.grant_number && gi.investigator_id !== inv.id);
       const coPis: CoPiInfo[] = coPiLinks.map(coLink => {
@@ -508,23 +498,8 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     });
   }
 
-  // Enrich with MARR_PROJECTS data for PIs without skills/research_areas
-  for (const [, pi] of piMap) {
-    if (pi.skills.length > 0 || pi.researchAreas.length > 0) continue;
-    const piKey = nameKey(pi.displayName);
-    const piGrantNumbers = new Set(pi.grants.map(g => g.grantNumber));
-    const matchingProjects = MARR_PROJECTS.filter(p =>
-      nameKey(p.pi) === piKey || piGrantNumbers.has(p.id)
-    );
-    const skills = new Set<string>();
-    const areas = new Set<string>();
-    matchingProjects.forEach(p => {
-      p.algorithmic.forEach(s => skills.add(s));
-      p.computational.forEach(a => areas.add(a));
-    });
-    pi.skills = Array.from(skills);
-    pi.researchAreas = Array.from(areas);
-  }
+  // Skills/research areas enrichment now comes from the DB directly
+  // (previously enriched from MARR_PROJECTS)
 
   // Enrich with nih-pi-grants for additional non-BBQS grants
   const profileIds = Array.from(piMap.values())
