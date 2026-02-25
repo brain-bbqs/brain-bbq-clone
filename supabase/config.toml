@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.metadata-suggest]
 verify_jwt = false
+
+[functions.seed-metadata]
+verify_jwt = false
