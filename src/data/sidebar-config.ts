@@ -33,6 +33,7 @@ export interface NavGroup {
 const mainItems: NavItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "About", url: "/about", icon: Info },
+  { title: "My Profile", url: "/profile", icon: Users },
 ];
 
 const toolsItems: NavItem[] = [

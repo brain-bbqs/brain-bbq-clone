@@ -28,6 +28,7 @@ import McpRegistry from "./pages/McpRegistry";
 import Species from "./pages/Species";
 import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/metadata-assistant" element={<MetadataAssistant />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
+              <Route path="/profile" element={<Profile />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
