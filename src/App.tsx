@@ -29,7 +29,8 @@ import Species from "./pages/Species";
 import Tutorials from "./pages/Tutorials";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
-import EngineeringDocs from "./pages/EngineeringDocs";
+import DataProvenanceDocs from "./pages/DataProvenanceDocs";
+import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 
 const queryClient = new QueryClient();
@@ -66,7 +67,8 @@ const App = () => (
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/engineering-docs" element={<EngineeringDocs />} />
+              <Route path="/engineering/data-provenance" element={<DataProvenanceDocs />} />
+              <Route path="/engineering/self-autonomy" element={<SelfAutonomyDocs />} />
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
