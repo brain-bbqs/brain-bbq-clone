@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useEditHistory } from "@/hooks/useEditHistory";
 
 export interface MetadataChanges {
   [fieldKey: string]: any;
@@ -16,6 +17,7 @@ interface UseMetadataEditorOptions {
 export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCommitSuccess }: UseMetadataEditorOptions) {
   const [changes, setChanges] = useState<MetadataChanges>({});
   const [isCommitting, setIsCommitting] = useState(false);
+  const { history: editHistory, isLoading: historyLoading, logChanges } = useEditHistory(grantNumber);
 
   const hasChanges = Object.keys(changes).length > 0;
 
@@ -86,6 +88,9 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
         .upsert(row, { onConflict: "grant_number" });
       if (error) throw error;
 
+      // Log field-level diffs to edit_history
+      await logChanges(null, changes, originalMetadata);
+
       toast({ title: "Changes committed", description: `${Object.keys(changes).length} field(s) updated.` });
       setChanges({});
       onCommitSuccess?.();
@@ -106,5 +111,7 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
     discardAll,
     commitChanges,
     isCommitting,
+    editHistory,
+    historyLoading,
   };
 }
