@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Check, Circle, Box, Loader2, Github, Container } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
-const CATEGORIES = ["All", "Software", "Datasets", "Benchmarks", "ML Models", "Protocols"] as const;
+const CATEGORIES = ["Software", "Datasets", "Benchmarks", "ML Models", "Protocols"] as const;
 type Category = typeof CATEGORIES[number];
 
 const CategoryBadge = ({ value }: { value: string }) => {
@@ -114,15 +114,12 @@ const benchmarkColumns: ColDef<Resource>[] = [
     wrapText: true, autoHeight: true,
     cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
   },
-  { field: "species", headerName: "Species", width: 300 },
-  { field: "implementation", headerName: "Platform", width: 100 },
 ];
 
 const mlModelColumns: ColDef<Resource>[] = [
   { field: "name", headerName: "Name", flex: 1, minWidth: 150, cellRenderer: NameLink },
   { field: "neuralNetworkArchitecture", headerName: "Architecture", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
   { field: "species", headerName: "Species", flex: 1.5, minWidth: 180, wrapText: true, autoHeight: true },
-  { field: "implementation", headerName: "Language", width: 110, minWidth: 90 },
 ];
 
 const protocolColumns: ColDef<Resource>[] = [
@@ -136,20 +133,7 @@ const protocolColumns: ColDef<Resource>[] = [
   { field: "implementation", headerName: "Format", width: 100 },
 ];
 
-const allColumns: ColDef<Resource>[] = [
-  { field: "name", headerName: "Name", minWidth: 180, flex: 1.5, cellRenderer: NameLink },
-  { field: "category", headerName: "Type", width: 120, minWidth: 100, flex: 0, cellRenderer: (params: any) => <CategoryBadge value={params.value} /> },
-  {
-    field: "algorithm", headerName: "Description", minWidth: 250, flex: 3,
-    wrapText: true, autoHeight: true,
-    cellStyle: { lineHeight: '1.4', paddingTop: '8px', paddingBottom: '8px', whiteSpace: 'normal', wordBreak: 'break-word' },
-  },
-  { field: "species", headerName: "Species", width: 150, minWidth: 120, flex: 0 },
-  { field: "implementation", headerName: "Language", width: 100, minWidth: 90, flex: 0 },
-];
-
 const columnsByCategory: Record<Category, ColDef<Resource>[]> = {
-  All: allColumns,
   Software: softwareColumns,
   Datasets: datasetColumns,
   Benchmarks: benchmarkColumns,
@@ -159,13 +143,12 @@ const columnsByCategory: Record<Category, ColDef<Resource>[]> = {
 
 const Resources = () => {
   const [quickFilterText, setQuickFilterText] = useState("");
-  const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [activeCategory, setActiveCategory] = useState<Category>("Software");
   const { data: allResources = [], isLoading } = useResources();
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   const filteredResources = useMemo(() => {
-    if (activeCategory === "All") return allResources;
     return allResources.filter(r => r.category === activeCategory);
   }, [allResources, activeCategory]);
 
@@ -188,7 +171,6 @@ const Resources = () => {
   }, []);
 
   const categoryColors: Record<string, string> = {
-    "All": "bg-primary text-primary-foreground border-primary",
     "Software": "bg-blue-500/20 text-blue-400 border-blue-500/30",
     "Datasets": "bg-green-500/20 text-green-400 border-green-500/30",
     "Benchmarks": "bg-orange-500/20 text-orange-400 border-orange-500/30",
