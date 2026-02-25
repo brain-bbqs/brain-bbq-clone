@@ -1,13 +1,17 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectGrid } from "@/components/metadata-assistant/ProjectGrid";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
-import { Database } from "lucide-react";
+import { Database, BookOpen, X } from "lucide-react";
 
 export default function MetadataAssistant() {
+  const [showBanner, setShowBanner] = useState(() => {
+    return !localStorage.getItem("bbqs-tutorial-dismissed");
+  });
   const [grantNumber, setGrantNumber] = useState<string | null>(null);
 
   const { data: grantTitle } = useQuery({
@@ -34,12 +38,32 @@ export default function MetadataAssistant() {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <Database className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground leading-tight">BBQS Workbench</h1>
             <p className="text-[11px] text-muted-foreground">Curate project metadata across the consortium</p>
           </div>
         </div>
       </div>
+
+      {/* Tutorial banner */}
+      {showBanner && (
+        <div className="border-b border-primary/20 bg-primary/5 px-5 py-2.5 shrink-0 flex items-center gap-3">
+          <BookOpen className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-xs text-foreground flex-1">
+            <span className="font-medium">New here?</span>{" "}
+            <Link to="/tutorials" className="text-primary hover:underline font-medium">
+              Take the interactive tutorial
+            </Link>{" "}
+            to learn how to curate your project metadata.
+          </p>
+          <button
+            onClick={() => { setShowBanner(false); localStorage.setItem("bbqs-tutorial-dismissed", "1"); }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col min-h-0">
         {/* Project completeness grid */}
