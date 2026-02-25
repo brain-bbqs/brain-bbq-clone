@@ -100,12 +100,26 @@ export default function MetadataAssistant() {
             </div>
 
             {/* Metadata table panel */}
-            <div className="hidden lg:flex flex-col flex-1 min-h-0 overflow-auto px-4 py-3">
+            <div className="hidden lg:flex flex-col flex-1 min-h-0 overflow-auto">
               {grantNumber ? (
-                <MetadataTable grantNumber={grantNumber} highlightFields={fieldsUpdated} />
+                <div className="px-5 py-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center">
+                      <Database className="h-3 w-3 text-primary" />
+                    </div>
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Metadata Fields</h3>
+                  </div>
+                  <MetadataTable grantNumber={grantNumber} highlightFields={fieldsUpdated} />
+                </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                  Click a project above to view metadata
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+                  <div className="h-12 w-12 rounded-xl bg-secondary/60 flex items-center justify-center">
+                    <Database className="h-5 w-5 text-muted-foreground/50" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">No project selected</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Click a project above to view and edit its metadata</p>
+                  </div>
                 </div>
               )}
             </div>
