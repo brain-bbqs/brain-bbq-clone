@@ -153,6 +153,7 @@ export type Database = {
       }
       edit_history: {
         Row: {
+          chat_context: Json | null
           created_at: string
           edited_by: string
           field_name: string
@@ -163,6 +164,7 @@ export type Database = {
           project_id: string | null
         }
         Insert: {
+          chat_context?: Json | null
           created_at?: string
           edited_by?: string
           field_name: string
@@ -173,6 +175,7 @@ export type Database = {
           project_id?: string | null
         }
         Update: {
+          chat_context?: Json | null
           created_at?: string
           edited_by?: string
           field_name?: string
