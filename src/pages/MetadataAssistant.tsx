@@ -1,24 +1,43 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
+import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
+import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { ForceGraph } from "@/components/knowledge-graph/ForceGraph";
-import { NodeDrawer } from "@/components/knowledge-graph/NodeDrawer";
 import { GraphLegend } from "@/components/knowledge-graph/GraphLegend";
-import { GraphAnalytics } from "@/components/knowledge-graph/GraphAnalytics";
 import { useKnowledgeGraphData } from "@/hooks/useKnowledgeGraphData";
+import { useMetadataChat } from "@/hooks/useMetadataChat";
 import type { GraphNode } from "@/hooks/useKnowledgeGraphData";
-import { Loader2, Network } from "lucide-react";
+import { Network, Table2, Loader2 } from "lucide-react";
 
 export default function MetadataAssistant() {
-  const { data: graphData, isLoading } = useKnowledgeGraphData();
-  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [grantNumber, setGrantNumber] = useState<string | null>(null);
+  const [rightTab, setRightTab] = useState<string>("graph");
   const [filterType, setFilterType] = useState<string | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+
+  // Fetch grant title for display
+  const { data: grantTitle } = useQuery({
+    queryKey: ["grant-title", grantNumber],
+    queryFn: async () => {
+      if (!grantNumber) return null;
+      const { data } = await supabase
+        .from("grants")
+        .select("title")
+        .eq("grant_number", grantNumber)
+        .maybeSingle();
+      return data?.title || null;
+    },
+    enabled: !!grantNumber,
+  });
+
+  const { messages, isLoading, completeness, fieldsUpdated, sendMessage, clearChat } = useMetadataChat(grantNumber);
+  const { data: graphData, isLoading: graphLoading } = useKnowledgeGraphData();
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
-  }, []);
-
-  const handleCloseDrawer = useCallback(() => {
-    setSelectedNode(null);
   }, []);
 
   const nodeCounts = useMemo(() => {
@@ -30,63 +49,80 @@ export default function MetadataAssistant() {
     return counts;
   }, [graphData]);
 
-  if (isLoading || !graphData) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm">Building knowledge graph...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-[calc(100vh-4rem)] bg-background relative overflow-hidden">
-      {/* Header bar */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
-        <div className="bg-card/90 backdrop-blur-sm border border-border rounded-xl px-4 py-2.5 flex items-center gap-2 shadow-lg">
-          <Network className="h-4 w-4 text-primary" />
-          <h1 className="text-sm font-semibold text-foreground">Knowledge Graph</h1>
-          <span className="text-xs text-muted-foreground ml-1">
-            {graphData.nodes.length} nodes · {graphData.links.length} edges
-          </span>
+    <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
+      {/* Top bar with project picker */}
+      <div className="border-b border-border px-4 py-3 shrink-0">
+        <div className="max-w-md">
+          <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
         </div>
       </div>
 
-      {/* Graph Analytics panel */}
-      {showAnalytics && (
-        <div className="absolute top-16 left-4 z-10 w-56">
-          <GraphAnalytics graphData={graphData} />
-        </div>
-      )}
-
-      {/* D3 Force Graph */}
-      <ForceGraph
-        nodes={graphData.nodes}
-        links={graphData.links}
-        onNodeClick={handleNodeClick}
-        selectedNodeId={selectedNode?.id}
-        filterType={filterType}
-      />
-
-      {/* Legend / filter bar */}
-      <GraphLegend
-        activeFilter={filterType}
-        onFilterChange={setFilterType}
-        nodeCounts={nodeCounts}
-      />
-
-      {/* Node detail drawer */}
-      {selectedNode && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 z-40"
-            onClick={handleCloseDrawer}
+      {/* Main split layout */}
+      <div className="flex-1 flex min-h-0">
+        {/* LEFT: Chat panel (dominant) */}
+        <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0">
+          <AssistantChat
+            messages={messages}
+            isLoading={isLoading}
+            completeness={completeness}
+            onSend={sendMessage}
+            onClear={clearChat}
+            projectTitle={grantTitle || undefined}
           />
-          <NodeDrawer node={selectedNode} onClose={handleCloseDrawer} graphData={graphData} />
-        </>
-      )}
+        </div>
+
+        {/* RIGHT: Graph + Table tabs */}
+        <div className="hidden lg:flex flex-col flex-1 min-h-0">
+          <Tabs value={rightTab} onValueChange={setRightTab} className="flex flex-col h-full">
+            <TabsList className="mx-4 mt-3 w-fit shrink-0">
+              <TabsTrigger value="graph" className="gap-1.5 text-xs">
+                <Network className="h-3.5 w-3.5" />
+                Knowledge Graph
+              </TabsTrigger>
+              <TabsTrigger value="table" className="gap-1.5 text-xs">
+                <Table2 className="h-3.5 w-3.5" />
+                Metadata Table
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="graph" className="flex-1 relative mt-0 min-h-0">
+              {graphLoading || !graphData ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <ForceGraph
+                    nodes={graphData.nodes}
+                    links={graphData.links}
+                    onNodeClick={handleNodeClick}
+                    selectedNodeId={selectedNode?.id}
+                    filterType={filterType}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <GraphLegend
+                      activeFilter={filterType}
+                      onFilterChange={setFilterType}
+                      nodeCounts={nodeCounts}
+                    />
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="table" className="flex-1 overflow-auto mt-0 px-4 py-3 min-h-0">
+              {grantNumber ? (
+                <MetadataTable grantNumber={grantNumber} highlightFields={fieldsUpdated} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                  Select a project to view metadata
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
