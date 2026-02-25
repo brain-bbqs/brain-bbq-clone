@@ -19,7 +19,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ReportIssueDialog } from "@/components/ReportIssueDialog";
+
 import type { NavItem } from "@/data/sidebar-config";
 
 export function AppSidebar() {
@@ -102,7 +102,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-2 space-y-2">
-        <ReportIssueDialog />
         {!loading && (
           user ? (
             <Button
