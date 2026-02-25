@@ -1,6 +1,5 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { WalkthroughButton } from "@/components/WalkthroughButton";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface LayoutProps {
@@ -19,7 +18,6 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </SidebarInset>
-        <WalkthroughButton />
       </div>
     </SidebarProvider>
   );
