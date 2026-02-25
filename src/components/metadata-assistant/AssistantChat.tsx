@@ -56,7 +56,7 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground leading-tight">Metadata Assistant</h2>
+            <h2 className="text-sm font-semibold text-foreground leading-tight">BBQS Assistant</h2>
             {completeness > 0 && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden">
