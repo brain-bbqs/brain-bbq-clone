@@ -69,8 +69,7 @@ const App = () => (
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/engineering/data-provenance" element={<DataProvenanceDocs />} />
-              <Route path="/engineering/self-autonomy" element={<SelfAutonomyDocs />} />
+              {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />

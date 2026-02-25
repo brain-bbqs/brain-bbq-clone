@@ -42,13 +42,11 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
 ];
 
 const toolsItems: NavItem[] = [
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
   { title: "Resources", url: "/resources", icon: Database },
 ];
 
@@ -74,8 +72,6 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Data Provenance Docs", url: "/engineering/data-provenance", icon: FileText },
-  { title: "Self-Autonomy Docs", url: "/engineering/self-autonomy", icon: FileText },
 ];
 
 const legalItems: NavItem[] = [
