@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,9 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Lightbulb, Star, ExternalLink, Loader2, Send, ArrowUpDown } from "lucide-react";
+import { Lightbulb, Star, Loader2, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
 
 interface Suggestion {
   id: string;
@@ -34,15 +37,14 @@ export default function FeatureSuggestions() {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [sortBy, setSortBy] = useState<"votes" | "created_at">("votes");
 
   const { data: suggestions = [], isLoading } = useQuery<Suggestion[]>({
-    queryKey: ["feature-suggestions", sortBy],
+    queryKey: ["feature-suggestions"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("feature_suggestions")
         .select("*")
-        .order(sortBy, { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
       return (data || []) as Suggestion[];
@@ -62,11 +64,10 @@ export default function FeatureSuggestions() {
     },
   });
 
-  const votedIds = new Set(userVotes.map((v) => v.suggestion_id));
+  const votedIds = useMemo(() => new Set(userVotes.map((v) => v.suggestion_id)), [userVotes]);
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      // 1. Create GitHub issue with "user-request" label
       const { data: ghData, error: ghError } = await supabase.functions.invoke("create-github-issue", {
         body: {
           title: `[Feature Request] ${title.trim()}`,
@@ -76,7 +77,6 @@ export default function FeatureSuggestions() {
       });
       if (ghError) throw ghError;
 
-      // 2. Insert into feature_suggestions table
       const { error: dbError } = await supabase.from("feature_suggestions").insert({
         title: title.trim(),
         description: description.trim() || null,
@@ -101,13 +101,10 @@ export default function FeatureSuggestions() {
   const voteMutation = useMutation({
     mutationFn: async (suggestionId: string) => {
       const hasVoted = votedIds.has(suggestionId);
-
       if (hasVoted) {
-        // Remove vote
         await supabase.from("feature_votes").delete().eq("user_id", user!.id).eq("suggestion_id", suggestionId);
         await supabase.from("feature_suggestions").update({ votes: suggestions.find(s => s.id === suggestionId)!.votes - 1 }).eq("id", suggestionId);
       } else {
-        // Add vote
         await supabase.from("feature_votes").insert({ user_id: user!.id, suggestion_id: suggestionId });
         await supabase.from("feature_suggestions").update({ votes: suggestions.find(s => s.id === suggestionId)!.votes + 1 }).eq("id", suggestionId);
       }
@@ -120,23 +117,97 @@ export default function FeatureSuggestions() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast.error("Please enter a title");
-      return;
-    }
-    if (title.length > 200) {
-      toast.error("Title must be under 200 characters");
-      return;
-    }
-    if (description.length > 2000) {
-      toast.error("Description must be under 2000 characters");
-      return;
-    }
+    if (!title.trim()) { toast.error("Please enter a title"); return; }
+    if (title.length > 200) { toast.error("Title must be under 200 characters"); return; }
+    if (description.length > 2000) { toast.error("Description must be under 2000 characters"); return; }
     submitMutation.mutate();
   };
 
+  const VoteCellRenderer = useCallback((params: ICellRendererParams) => {
+    const s = params.data as Suggestion;
+    const hasVoted = votedIds.has(s.id);
+    return (
+      <button
+        onClick={() => user ? voteMutation.mutate(s.id) : toast.error("Sign in to vote")}
+        className={`flex items-center gap-1 transition-colors ${hasVoted ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        title={hasVoted ? "Remove vote" : "Vote for this"}
+      >
+        <Star className={`h-4 w-4 ${hasVoted ? "fill-primary" : ""}`} />
+        <span className="text-xs font-semibold">{s.votes}</span>
+      </button>
+    );
+  }, [user, votedIds, voteMutation]);
+
+  const colDefs = useMemo<ColDef[]>(() => [
+    {
+      headerName: "Votes",
+      field: "votes",
+      width: 90,
+      cellRenderer: VoteCellRenderer,
+      sortable: true,
+      unSortIcon: true,
+    },
+    {
+      headerName: "Title",
+      field: "title",
+      flex: 2,
+      sortable: true,
+      unSortIcon: true,
+      wrapText: true,
+      autoHeight: true,
+    },
+    {
+      headerName: "Status",
+      field: "status",
+      width: 110,
+      sortable: true,
+      unSortIcon: true,
+      cellRenderer: (params: ICellRendererParams) => (
+        <Badge variant={params.value === "open" ? "secondary" : "outline"} className="text-[10px]">
+          {params.value}
+        </Badge>
+      ),
+    },
+    {
+      headerName: "Submitted",
+      field: "created_at",
+      width: 130,
+      sortable: true,
+      sort: "desc",
+      unSortIcon: true,
+      valueFormatter: (params) => format(new Date(params.value), "MMM d, yyyy"),
+    },
+    {
+      headerName: "By",
+      field: "submitted_by_email",
+      flex: 1,
+      sortable: true,
+      unSortIcon: true,
+    },
+    {
+      headerName: "GitHub",
+      field: "github_issue_url",
+      width: 100,
+      suppressCellFocus: true,
+      cellRenderer: (params: ICellRendererParams) => {
+        const s = params.data as Suggestion;
+        if (!s.github_issue_url) return null;
+        return (
+          <a
+            href={s.github_issue_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline font-medium"
+          >
+            #{s.github_issue_number}
+          </a>
+        );
+      },
+    },
+  ], [VoteCellRenderer]);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -198,83 +269,27 @@ export default function FeatureSuggestions() {
         </CardContent>
       </Card>
 
-      {/* Suggestions table */}
+      {/* Suggestions AG Grid table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">All Suggestions</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSortBy(sortBy === "votes" ? "created_at" : "votes")}
-              className="text-xs"
-            >
-              <ArrowUpDown className="h-3 w-3 mr-1" />
-              Sort by {sortBy === "votes" ? "newest" : "most voted"}
-            </Button>
-          </div>
+          <CardTitle className="text-base">All Suggestions</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : suggestions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No suggestions yet. Be the first!</p>
           ) : (
-            <div className="space-y-3">
-              {suggestions.map((s) => {
-                const hasVoted = votedIds.has(s.id);
-                return (
-                  <div
-                    key={s.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-secondary/20 transition-colors"
-                  >
-                    {/* Vote button */}
-                    <button
-                      onClick={() => user ? voteMutation.mutate(s.id) : toast.error("Sign in to vote")}
-                      className={`flex flex-col items-center gap-0.5 pt-1 min-w-[40px] transition-colors ${
-                        hasVoted ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      title={hasVoted ? "Remove vote" : "Vote for this"}
-                    >
-                      <Star className={`h-5 w-5 ${hasVoted ? "fill-primary" : ""}`} />
-                      <span className="text-xs font-semibold">{s.votes}</span>
-                    </button>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-foreground">{s.title}</p>
-                        <Badge
-                          variant={s.status === "open" ? "secondary" : "outline"}
-                          className="text-[10px]"
-                        >
-                          {s.status}
-                        </Badge>
-                      </div>
-                      {s.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.description}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                        <span>{format(new Date(s.created_at), "MMM d, yyyy")}</span>
-                        {s.submitted_by_email && <span>by {s.submitted_by_email}</span>}
-                        {s.github_issue_url && (
-                          <a
-                            href={s.github_issue_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline flex items-center gap-1"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            #{s.github_issue_number}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="ag-theme-custom">
+              <AgGridReact
+                rowData={suggestions}
+                columnDefs={colDefs}
+                domLayout="autoHeight"
+                suppressCellFocus={true}
+                pagination={true}
+                paginationPageSize={25}
+                defaultColDef={{ resizable: true }}
+              />
             </div>
           )}
         </CardContent>
