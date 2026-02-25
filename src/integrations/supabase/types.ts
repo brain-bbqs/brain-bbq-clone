@@ -445,7 +445,7 @@ export type Database = {
           },
         ]
       }
-      project_metadata: {
+      projects: {
         Row: {
           collaborators: Json | null
           created_at: string
@@ -456,6 +456,7 @@ export type Database = {
           id: string
           keywords: string[] | null
           last_edited_by: string | null
+          metadata: Json | null
           metadata_completeness: number | null
           presentations: Json | null
           produce_data_modality: string[] | null
@@ -480,6 +481,7 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           last_edited_by?: string | null
+          metadata?: Json | null
           metadata_completeness?: number | null
           presentations?: Json | null
           produce_data_modality?: string[] | null
@@ -504,6 +506,7 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           last_edited_by?: string | null
+          metadata?: Json | null
           metadata_completeness?: number | null
           presentations?: Json | null
           produce_data_modality?: string[] | null

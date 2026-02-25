@@ -82,7 +82,7 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
       row.metadata_completeness = Math.round((filled.length / checkFields.length) * 100);
 
       const { error } = await (supabase
-        .from("project_metadata") as any)
+        .from("projects" as any) as any)
         .upsert(row, { onConflict: "grant_number" });
       if (error) throw error;
 

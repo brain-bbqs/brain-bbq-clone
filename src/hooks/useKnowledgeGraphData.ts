@@ -38,7 +38,7 @@ export function useKnowledgeGraphData() {
         supabase.from("grants").select("id, grant_number, title, abstract, award_amount, fiscal_year, nih_link").order("grant_number"),
         supabase.from("investigators").select("id, name, orcid, research_areas, skills"),
         supabase.from("grant_investigators").select("grant_number, investigator_id, role"),
-        supabase.from("project_metadata").select("*"),
+        supabase.from("projects" as any).select("*"),
       ]);
 
       if (grantsRes.error) throw grantsRes.error;
@@ -49,7 +49,7 @@ export function useKnowledgeGraphData() {
       const grants = grantsRes.data || [];
       const investigators = investigatorsRes.data || [];
       const grantInvestigators = grantInvRes.data || [];
-      const projectMetadata = metadataRes.data || [];
+      const projectMetadata = (metadataRes.data || []) as any[];
 
       const nodes: GraphNode[] = [];
       const links: GraphLink[] = [];
