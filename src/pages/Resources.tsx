@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "react-router-dom";
+
 import { useState, useMemo, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
@@ -142,7 +144,8 @@ const columnsByCategory: Record<Category, ColDef<Resource>[]> = {
 };
 
 const Resources = () => {
-  const [quickFilterText, setQuickFilterText] = useState("");
+  const [searchParams] = useSearchParams();
+  const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
   const [activeCategory, setActiveCategory] = useState<Category>("Software");
   const { data: allResources = [], isLoading } = useResources();
   const [hoveredRow, setHoveredRow] = useState<Resource | null>(null);

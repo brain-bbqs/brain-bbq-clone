@@ -200,7 +200,7 @@ export default function Publications() {
   const grantFilter = searchParams.get("grant");
   const [hoveredRow, setHoveredRow] = useState<Publication | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
-  const [quickFilterText, setQuickFilterText] = useState("");
+  const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
 
   const { data: publications = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["publications"],

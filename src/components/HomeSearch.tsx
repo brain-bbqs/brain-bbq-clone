@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench, MessageCircle, ArrowRight, X } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Search, Users, FolderOpen, FileText, ChevronRight, Globe, Loader2, Wrench } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName } from "@/lib/pi-utils";
-import ReactMarkdown from "react-markdown";
 
 interface SearchResult {
   title: string;
@@ -71,7 +70,6 @@ const fetchSearchIndex = async () => {
     }
   }
 
-  // Merge grant publications with direct DB publications (dedupe by pmid)
   const seenPmids = new Set(publications.map(p => p.pmid));
   for (const row of pubRows) {
     const pmid = row.pmid || "";
@@ -90,21 +88,16 @@ const fetchSearchIndex = async () => {
 };
 
 /** Log a query anonymously */
-const logQuery = async (query: string, mode: "search" | "chat", resultsCount: number) => {
+const logQuery = async (query: string, resultsCount: number) => {
   try {
-    await supabase.from("search_queries").insert({ query, mode, results_count: resultsCount });
+    await supabase.from("search_queries").insert({ query, mode: "search", results_count: resultsCount });
   } catch { /* silent */ }
 };
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discovery-chat`;
-
 export function HomeSearch() {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"search" | "chat">("search");
   const [focused, setFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [chatResponse, setChatResponse] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -117,7 +110,7 @@ export function HomeSearch() {
   });
 
   const results = useMemo<SearchResult[]>(() => {
-    if (mode === "chat" || !query.trim()) return [];
+    if (!query.trim()) return [];
     const q = query.toLowerCase().trim();
     const matches: SearchResult[] = [];
 
@@ -158,16 +151,16 @@ export function HomeSearch() {
     }
 
     return matches.slice(0, 10);
-  }, [query, searchIndex, mode]);
+  }, [query, searchIndex]);
 
   // Log search queries (debounced)
   useEffect(() => {
-    if (mode !== "search" || !query.trim() || query.trim().length < 3) return;
-    const t = setTimeout(() => logQuery(query.trim(), "search", results.length), 2000);
+    if (!query.trim() || query.trim().length < 3) return;
+    const t = setTimeout(() => logQuery(query.trim(), results.length), 2000);
     return () => clearTimeout(t);
-  }, [query, results.length, mode]);
+  }, [query, results.length]);
 
-  const showDropdown = focused && query.trim().length > 0 && mode === "search";
+  const showDropdown = focused && query.trim().length > 0;
 
   useEffect(() => { setSelectedIndex(0); }, [results]);
 
@@ -188,149 +181,53 @@ export function HomeSearch() {
   }, []);
 
   const handleSelect = useCallback((result: SearchResult) => {
-    navigate(result.path);
+    // For non-page results, pass the search query to highlight the row
+    if (result.category !== "page") {
+      // Use the result title as the filter text for the destination grid
+      const filterText = result.category === "people"
+        ? result.title // person name
+        : result.category === "software"
+          ? result.title // tool name
+          : result.title.replace(/…$/, ""); // truncated titles
+      navigate(`${result.path}?q=${encodeURIComponent(filterText)}`);
+    } else {
+      navigate(result.path);
+    }
     setQuery("");
     setFocused(false);
     inputRef.current?.blur();
   }, [navigate]);
 
-  const handleChatSubmit = useCallback(async () => {
-    if (!query.trim() || chatLoading) return;
-    setChatLoading(true);
-    setChatResponse("");
-
-    try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ query: query.trim() }),
-      });
-
-      if (!resp.ok || !resp.body) {
-        const err = await resp.json().catch(() => ({ error: "Request failed" }));
-        setChatResponse(`⚠️ ${err.error || "Something went wrong. Please try again."}`);
-        setChatLoading(false);
-        return;
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIdx: number;
-        while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, newlineIdx);
-          buffer = buffer.slice(newlineIdx + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "" || !line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              fullText += content;
-              setChatResponse(fullText);
-            }
-          } catch { /* partial JSON, wait */ }
-        }
-      }
-    } catch (e) {
-      console.error("Discovery chat error:", e);
-      setChatResponse("⚠️ Connection error. Please try again.");
-    } finally {
-      setChatLoading(false);
-    }
-  }, [query, chatLoading]);
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (mode === "chat") {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChatSubmit(); }
-      return;
-    }
     if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, results.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
     else if (e.key === "Enter" && results[selectedIndex]) handleSelect(results[selectedIndex]);
     else if (e.key === "Escape") { setFocused(false); inputRef.current?.blur(); }
   };
 
-  const toggleMode = () => {
-    const newMode = mode === "search" ? "chat" : "search";
-    setMode(newMode);
-    setChatResponse("");
-    inputRef.current?.focus();
-  };
-
   return (
     <div ref={containerRef} className="relative w-full max-w-xl mx-auto">
-      {/* Mode toggle pills */}
-      <div className="flex justify-center gap-1 mb-3">
-        <button
-          onClick={() => { setMode("search"); setChatResponse(""); }}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all",
-            mode === "search"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-muted/60 text-muted-foreground hover:bg-muted"
-          )}
-        >
-          <Search className="h-3 w-3" /> Search
-        </button>
-        <button
-          onClick={toggleMode}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all",
-            mode === "chat"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-muted/60 text-muted-foreground hover:bg-muted"
-          )}
-        >
-          <MessageCircle className="h-3 w-3" /> Ask AI
-        </button>
-      </div>
-
-      {/* Search/Chat input */}
+      {/* Search input */}
       <div className={cn(
         "flex items-center gap-3 px-5 py-3.5 bg-background/90 backdrop-blur-sm border-2 rounded-2xl shadow-lg transition-all",
         focused ? "border-primary/50 shadow-primary/10 shadow-xl" : "border-border/60"
       )}>
-        {mode === "chat" ? (
-          <MessageCircle className="h-5 w-5 text-primary shrink-0" />
-        ) : (
-          <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-        )}
+        <Search className="h-5 w-5 text-muted-foreground shrink-0" />
         <input
           ref={inputRef}
           value={query}
           onChange={e => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
-          placeholder={mode === "chat" ? "Ask about people, tools, projects..." : "Search people, projects, publications..."}
+          placeholder="Search people, projects, publications..."
           className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none"
         />
-        {chatLoading && <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />}
-        {isLoading && focused && mode === "search" && (
+        {isLoading && focused && (
           <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
         )}
-        {mode === "chat" && query.trim() && !chatLoading && (
-          <button onClick={handleChatSubmit} className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        )}
-        {mode === "search" && (
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-mono bg-muted border border-border rounded-md text-muted-foreground">
-            ⌘K
-          </kbd>
-        )}
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-mono bg-muted border border-border rounded-md text-muted-foreground">
+          ⌘K
+        </kbd>
       </div>
 
       {/* Search dropdown results */}
@@ -341,12 +238,6 @@ export function HomeSearch() {
               <p className="text-sm text-muted-foreground">
                 {isLoading ? "Loading search index..." : `No results for "${query}"`}
               </p>
-              <button
-                onClick={toggleMode}
-                className="mt-2 text-xs text-primary hover:underline flex items-center gap-1 mx-auto"
-              >
-                <MessageCircle className="h-3 w-3" /> Try asking the AI assistant
-              </button>
             </div>
           ) : (
             <div className="py-1.5 max-h-[400px] overflow-y-auto divide-y divide-border/30">
@@ -392,72 +283,6 @@ export function HomeSearch() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Right-side chat slide-out panel */}
-      {mode === "chat" && (chatResponse || chatLoading) && (
-        <div className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-card border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
-          {/* Panel header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">AI Discovery</span>
-            </div>
-            <button
-              onClick={() => setChatResponse("")}
-              className="p-1.5 rounded-md hover:bg-muted transition-colors"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Query echo */}
-          <div className="px-5 py-3 border-b border-border/50 bg-muted/30 shrink-0">
-            <p className="text-xs text-muted-foreground">You asked:</p>
-            <p className="text-sm font-medium text-foreground mt-0.5">{query}</p>
-          </div>
-
-          {/* Response body */}
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {chatLoading && !chatResponse && (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Searching the BBQS database…
-              </div>
-            )}
-            <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-foreground leading-relaxed">
-              <ReactMarkdown
-                components={{
-                  a: ({ href, children }) => {
-                    // Internal links (paths like /projects) use router navigation
-                    if (href && href.startsWith("/")) {
-                      return (
-                        <Link
-                          to={href}
-                          className="text-primary underline underline-offset-2 hover:text-primary/80 font-medium"
-                        >
-                          {children}
-                        </Link>
-                      );
-                    }
-                    return (
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline underline-offset-2 hover:text-primary/80"
-                      >
-                        {children}
-                      </a>
-                    );
-                  },
-                }}
-              >
-                {chatResponse}
-              </ReactMarkdown>
-            </div>
-          </div>
         </div>
       )}
     </div>
