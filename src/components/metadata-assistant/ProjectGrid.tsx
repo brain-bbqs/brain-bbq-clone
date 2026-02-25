@@ -74,7 +74,7 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
       headerName: "Completeness",
       width: 130,
       cellRenderer: CompletenessRenderer,
-      sort: "asc" as const,
+      sort: "desc" as const,
     },
     {
       field: "last_edited_by",
@@ -100,12 +100,13 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
         onRowClicked={onRowClicked}
         getRowClass={getRowClass}
         suppressCellFocus
+        rowSelection="single"
         headerHeight={32}
         rowHeight={30}
         animateRows
         domLayout="autoHeight"
         pagination
-        paginationPageSize={20}
+        paginationPageSize={10}
       />
     </div>
   );
