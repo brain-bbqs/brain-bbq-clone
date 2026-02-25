@@ -10,7 +10,7 @@ import { GraphLegend } from "@/components/knowledge-graph/GraphLegend";
 import { useKnowledgeGraphData } from "@/hooks/useKnowledgeGraphData";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
 import type { GraphNode } from "@/hooks/useKnowledgeGraphData";
-import { Network, Sparkles, Loader2 } from "lucide-react";
+import { Network, Sparkles, Loader2, Database } from "lucide-react";
 
 export default function MetadataAssistant() {
   const [grantNumber, setGrantNumber] = useState<string | null>(null);
@@ -50,31 +50,42 @@ export default function MetadataAssistant() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
-      {/* Top tabs */}
-      <div className="border-b border-border px-4 py-2 shrink-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="assistant" className="gap-1.5 text-xs">
-              <Sparkles className="h-3.5 w-3.5" />
-              Metadata Assistant
-            </TabsTrigger>
-            <TabsTrigger value="graph" className="gap-1.5 text-xs">
-              <Network className="h-3.5 w-3.5" />
-              Knowledge Graph
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Page header with tabs */}
+      <div className="border-b border-border px-5 py-3 shrink-0 bg-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <Database className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-foreground leading-tight">Metadata Workbench</h1>
+              <p className="text-[11px] text-muted-foreground">Curate project metadata across the consortium</p>
+            </div>
+          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-secondary/50">
+              <TabsTrigger value="assistant" className="gap-1.5 text-xs">
+                <Sparkles className="h-3.5 w-3.5" />
+                Assistant
+              </TabsTrigger>
+              <TabsTrigger value="graph" className="gap-1.5 text-xs">
+                <Network className="h-3.5 w-3.5" />
+                Knowledge Graph
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* Assistant tab */}
       {activeTab === "assistant" && (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Project completeness grid at top - scrollable */}
+          {/* Project completeness grid */}
           <div className="border-b border-border shrink-0 overflow-auto max-h-[50vh]">
             <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
           </div>
 
-          {/* Chat + metadata table below */}
+          {/* Chat + metadata table */}
           <div className="flex-1 flex min-h-0">
             {/* Chat panel */}
             <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0">
