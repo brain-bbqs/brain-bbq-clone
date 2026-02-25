@@ -445,6 +445,75 @@ export type Database = {
           },
         ]
       }
+      project_publications: {
+        Row: {
+          created_at: string
+          project_id: string
+          publication_id: string
+        }
+        Insert: {
+          created_at?: string
+          project_id: string
+          publication_id: string
+        }
+        Update: {
+          created_at?: string
+          project_id?: string
+          publication_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_publications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_publications_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_resources: {
+        Row: {
+          created_at: string
+          project_id: string
+          relationship: string
+          resource_id: string
+        }
+        Insert: {
+          created_at?: string
+          project_id: string
+          relationship?: string
+          resource_id: string
+        }
+        Update: {
+          created_at?: string
+          project_id?: string
+          relationship?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_resources_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           collaborators: Json | null

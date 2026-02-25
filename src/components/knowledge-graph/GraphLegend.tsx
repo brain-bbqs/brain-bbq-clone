@@ -9,6 +9,8 @@ const items: LegendItem[] = [
   { label: "Species", color: "hsl(140, 60%, 50%)", type: "species" },
   { label: "Investigators", color: "hsl(30, 80%, 55%)", type: "investigator" },
   { label: "Meta Tags", color: "hsl(280, 50%, 60%)", type: "meta_tag" },
+  { label: "Publications", color: "hsl(350, 65%, 55%)", type: "publication" },
+  { label: "Resources", color: "hsl(180, 55%, 50%)", type: "resource" },
 ];
 
 interface GraphLegendProps {
