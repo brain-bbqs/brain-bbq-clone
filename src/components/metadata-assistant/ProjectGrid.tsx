@@ -29,18 +29,27 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
     queryFn: async () => {
       const [grantsRes, projectsRes] = await Promise.all([
         supabase.from("grants").select("grant_number, title").order("grant_number"),
-        supabase.from("projects").select("grant_number, metadata_completeness, last_edited_by"),
+        supabase.from("projects").select("grant_number, last_edited_by, study_species, use_approaches, use_sensors, produce_data_modality, produce_data_type, use_analysis_types, use_analysis_method, develope_software_type, develope_hardware_type, keywords, website, study_human"),
       ]);
       const grants = grantsRes.data || [];
       const projects = projectsRes.data || [];
       const projMap = new Map(projects.map(p => [p.grant_number, p]));
 
+      const metaFields = ["study_species","use_approaches","use_sensors","produce_data_modality","produce_data_type","use_analysis_types","use_analysis_method","develope_software_type","develope_hardware_type","keywords","website","study_human"] as const;
+
       return grants.map(g => {
-        const p = projMap.get(g.grant_number);
+        const p = projMap.get(g.grant_number) as any;
+        let filled = 0;
+        if (p) {
+          for (const f of metaFields) {
+            const v = p[f];
+            if (Array.isArray(v) ? v.length > 0 : typeof v === "boolean" ? v !== false : !!v) filled++;
+          }
+        }
         return {
           grant_number: g.grant_number,
           title: g.title,
-          completeness: p?.metadata_completeness ?? 0,
+          completeness: p ? Math.round((filled / metaFields.length) * 100) : 0,
           last_edited_by: p?.last_edited_by || "—",
         };
       });
@@ -80,7 +89,7 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
   }, [selectedGrant]);
 
   return (
-    <div className="ag-theme-alpine w-full" style={{ height: "200px" }}>
+    <div className="ag-theme-alpine w-full" style={{ height: "240px" }}>
       <AgGridReact
         rowData={rows || []}
         columnDefs={colDefs}
