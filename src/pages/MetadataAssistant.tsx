@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
+import { ProjectGrid } from "@/components/metadata-assistant/ProjectGrid";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { ForceGraph } from "@/components/knowledge-graph/ForceGraph";
@@ -50,12 +50,9 @@ export default function MetadataAssistant() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
-      {/* Top bar: project picker + tabs */}
-      <div className="border-b border-border px-4 py-3 shrink-0 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="w-full sm:max-w-md">
-          <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
-        </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="sm:ml-auto">
+      {/* Top tabs */}
+      <div className="border-b border-border px-4 py-2 shrink-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="assistant" className="gap-1.5 text-xs">
               <Sparkles className="h-3.5 w-3.5" />
@@ -69,34 +66,43 @@ export default function MetadataAssistant() {
         </Tabs>
       </div>
 
-      {/* Tab content */}
+      {/* Assistant tab */}
       {activeTab === "assistant" && (
-        <div className="flex-1 flex min-h-0">
-          {/* Chat panel */}
-          <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0">
-            <AssistantChat
-              messages={messages}
-              isLoading={isLoading}
-              completeness={completeness}
-              onSend={sendMessage}
-              onClear={clearChat}
-              projectTitle={grantTitle || undefined}
-            />
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Project completeness grid at top */}
+          <div className="border-b border-border shrink-0">
+            <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
           </div>
 
-          {/* Metadata table panel */}
-          <div className="hidden lg:flex flex-col flex-1 min-h-0 overflow-auto px-4 py-3">
-            {grantNumber ? (
-              <MetadataTable grantNumber={grantNumber} highlightFields={fieldsUpdated} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                Select a project to view metadata
-              </div>
-            )}
+          {/* Chat + metadata table below */}
+          <div className="flex-1 flex min-h-0">
+            {/* Chat panel */}
+            <div className="w-full lg:w-1/2 xl:w-[55%] border-r border-border flex flex-col min-h-0">
+              <AssistantChat
+                messages={messages}
+                isLoading={isLoading}
+                completeness={completeness}
+                onSend={sendMessage}
+                onClear={clearChat}
+                projectTitle={grantTitle || undefined}
+              />
+            </div>
+
+            {/* Metadata table panel */}
+            <div className="hidden lg:flex flex-col flex-1 min-h-0 overflow-auto px-4 py-3">
+              {grantNumber ? (
+                <MetadataTable grantNumber={grantNumber} highlightFields={fieldsUpdated} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                  Click a project above to view metadata
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
+      {/* Knowledge Graph tab */}
       {activeTab === "graph" && (
         <div className="flex-1 relative min-h-0">
           {graphLoading || !graphData ? (
