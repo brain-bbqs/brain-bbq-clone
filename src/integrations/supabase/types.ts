@@ -180,6 +180,48 @@ export type Database = {
           },
         ]
       }
+      custom_field_usage: {
+        Row: {
+          category: string | null
+          closest_canonical: string | null
+          created_at: string
+          field_name: string
+          field_value: string
+          id: string
+          levenshtein_distance: number | null
+          promoted: boolean
+          promoted_at: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          category?: string | null
+          closest_canonical?: string | null
+          created_at?: string
+          field_name: string
+          field_value: string
+          id?: string
+          levenshtein_distance?: number | null
+          promoted?: boolean
+          promoted_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          category?: string | null
+          closest_canonical?: string | null
+          created_at?: string
+          field_name?: string
+          field_value?: string
+          id?: string
+          levenshtein_distance?: number | null
+          promoted?: boolean
+          promoted_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       edit_history: {
         Row: {
           chat_context: Json | null
@@ -483,6 +525,36 @@ export type Database = {
           id?: string
           started_at?: string
           status?: string
+        }
+        Relationships: []
+      }
+      ontology_standards: {
+        Row: {
+          abbreviation: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          url: string | null
+        }
+        Insert: {
+          abbreviation?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          url?: string | null
+        }
+        Update: {
+          abbreviation?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          url?: string | null
         }
         Relationships: []
       }
