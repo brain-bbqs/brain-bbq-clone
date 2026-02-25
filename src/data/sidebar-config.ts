@@ -65,6 +65,7 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Engineering Docs", url: "/engineering-docs", icon: FileText },
 ];
 
 const legalItems: NavItem[] = [
