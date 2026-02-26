@@ -42,12 +42,12 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
+  { title: "Data Provenance", url: "/data-provenance", icon: History, disabled: true },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Resources", url: "/resources", icon: Database },
 ];
