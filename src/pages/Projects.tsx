@@ -489,9 +489,6 @@ const Projects = () => {
             </Card>
           </div>
           
-          {/* Funding Visualizations */}
-          <FundingCharts data={rowData} />
-          
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Input
               type="text"
