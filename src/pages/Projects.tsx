@@ -565,6 +565,9 @@ const Projects = () => {
           />
         </div>
 
+        {/* Funding Visualizations */}
+        <FundingCharts data={rowData} />
+
         {/* Hover Detail Card */}
         {hoveredRow && (
           <div
