@@ -82,10 +82,10 @@ const legalItems: NavItem[] = [
 
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
+  { label: "Community", items: communityItems },
   { label: "Assistants", items: assistantsItems },
   { label: "Tools", items: toolsItems },
   { label: "Knowledge Base", items: knowledgeBaseItems },
-  { label: "Community", items: communityItems },
   { label: "Conferences", items: conferencesItems },
   { label: "Engineering", items: engineeringItems },
   { label: "Legal", items: legalItems },
