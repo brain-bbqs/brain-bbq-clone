@@ -101,8 +101,24 @@ function deepSanitize<T>(value: T): T {
   return value;
 }
 
+// ── Fetch learned correction patterns ──
+async function getCorrectionHints(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("correction_pattern_summary")
+      .select("field_name, action, value, frequency")
+      .order("frequency", { ascending: false })
+      .limit(20);
+    if (!data?.length) return "";
+    const hints = data.map((r: any) =>
+      `- Users frequently ${r.action} "${r.value}" in ${r.field_name} (${r.frequency}x)`
+    ).join("\n");
+    return `\n\nLEARNED PATTERNS from past user corrections (apply these proactively):\n${hints}`;
+  } catch { return ""; }
+}
+
 // ── LLM extraction via Lovable AI ──
-async function extractWithLLM(text: string, apiKey: string) {
+async function extractWithLLM(text: string, apiKey: string, correctionHints: string) {
   const truncated = text.slice(0, 12000); // Stay within token limits
 
   const systemPrompt = `You are a neuroscience paper metadata extractor. Extract structured metadata from academic papers aligned to the BBQS LinkML schema.
@@ -121,7 +137,7 @@ Return a JSON object with these fields (use only values from the provided enums 
 - develope_hardware_type: array (free-text)
 - keywords: array of 5-10 relevant keywords
 
-Only return values you are confident about. Use empty arrays for uncertain fields. Return ONLY valid JSON, no markdown.`;
+Only return values you are confident about. Use empty arrays for uncertain fields. Return ONLY valid JSON, no markdown.${correctionHints}`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -281,8 +297,9 @@ Deno.serve(async (req) => {
       // Rule-based extraction
       const regexResults = extractWithRegex(extractedText);
 
-      // LLM extraction
-      const llmResults = await extractWithLLM(extractedText, openaiKey);
+      // LLM extraction (with learned correction patterns)
+      const correctionHints = await getCorrectionHints(supabase);
+      const llmResults = await extractWithLLM(extractedText, openaiKey, correctionHints);
 
       const safeExtractedText = sanitizeTextForDb(extractedText);
       const safeRegexResults = deepSanitize(regexResults);
@@ -356,12 +373,35 @@ Deno.serve(async (req) => {
 
       const result = await chatRefine(messages, currentData, openaiKey);
 
-      // If there are field updates, apply them
+      // If there are field updates, apply them and log corrections
       if (Object.keys(result.field_updates).length > 0) {
         await supabase
           .from("paper_extractions")
           .update(result.field_updates)
           .eq("id", extraction_id);
+
+        // Log each correction for pattern learning
+        const corrections: any[] = [];
+        for (const [field, newVal] of Object.entries(result.field_updates)) {
+          const oldVal = (currentData as any)[field];
+          if (Array.isArray(newVal) && Array.isArray(oldVal)) {
+            // Detect added values
+            for (const v of newVal) {
+              if (!oldVal.includes(v)) {
+                corrections.push({ extraction_id, field_name: field, action: "add", value: v, user_id: user?.id });
+              }
+            }
+            // Detect removed values
+            for (const v of oldVal) {
+              if (!newVal.includes(v)) {
+                corrections.push({ extraction_id, field_name: field, action: "remove", value: v, user_id: user?.id });
+              }
+            }
+          }
+        }
+        if (corrections.length > 0) {
+          await supabase.from("extraction_corrections").insert(corrections);
+        }
       }
 
       return new Response(JSON.stringify(result), {

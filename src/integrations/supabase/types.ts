@@ -266,6 +266,44 @@ export type Database = {
           },
         ]
       }
+      extraction_corrections: {
+        Row: {
+          action: string
+          created_at: string
+          extraction_id: string
+          field_name: string
+          id: string
+          user_id: string | null
+          value: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          extraction_id: string
+          field_name: string
+          id?: string
+          user_id?: string | null
+          value: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          extraction_id?: string
+          field_name?: string
+          id?: string
+          user_id?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_corrections_extraction_id_fkey"
+            columns: ["extraction_id"]
+            isOneToOne: false
+            referencedRelation: "paper_extractions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_suggestions: {
         Row: {
           created_at: string
@@ -1222,7 +1260,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      correction_pattern_summary: {
+        Row: {
+          action: string | null
+          field_name: string | null
+          frequency: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       search_knowledge_embeddings: {
