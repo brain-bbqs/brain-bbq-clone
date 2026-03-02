@@ -658,6 +658,90 @@ export type Database = {
           },
         ]
       }
+      paper_extractions: {
+        Row: {
+          authors: string | null
+          chat_messages: Json | null
+          created_at: string
+          develope_hardware_type: string[] | null
+          develope_software_type: string[] | null
+          doi: string | null
+          extracted_metadata: Json | null
+          filename: string
+          grant_numbers: string[] | null
+          id: string
+          keywords: string[] | null
+          orcids: string[] | null
+          produce_data_modality: string[] | null
+          produce_data_type: string[] | null
+          raw_text: string | null
+          status: string
+          storage_path: string | null
+          study_species: string[] | null
+          title: string | null
+          updated_at: string
+          use_analysis_method: string[] | null
+          use_analysis_types: string[] | null
+          use_approaches: string[] | null
+          use_sensors: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          authors?: string | null
+          chat_messages?: Json | null
+          created_at?: string
+          develope_hardware_type?: string[] | null
+          develope_software_type?: string[] | null
+          doi?: string | null
+          extracted_metadata?: Json | null
+          filename: string
+          grant_numbers?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          orcids?: string[] | null
+          produce_data_modality?: string[] | null
+          produce_data_type?: string[] | null
+          raw_text?: string | null
+          status?: string
+          storage_path?: string | null
+          study_species?: string[] | null
+          title?: string | null
+          updated_at?: string
+          use_analysis_method?: string[] | null
+          use_analysis_types?: string[] | null
+          use_approaches?: string[] | null
+          use_sensors?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          authors?: string | null
+          chat_messages?: Json | null
+          created_at?: string
+          develope_hardware_type?: string[] | null
+          develope_software_type?: string[] | null
+          doi?: string | null
+          extracted_metadata?: Json | null
+          filename?: string
+          grant_numbers?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          orcids?: string[] | null
+          produce_data_modality?: string[] | null
+          produce_data_type?: string[] | null
+          raw_text?: string | null
+          status?: string
+          storage_path?: string | null
+          study_species?: string[] | null
+          title?: string | null
+          updated_at?: string
+          use_analysis_method?: string[] | null
+          use_analysis_types?: string[] | null
+          use_approaches?: string[] | null
+          use_sensors?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
