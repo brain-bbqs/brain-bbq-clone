@@ -69,10 +69,10 @@ export default function PaperExtractor() {
         title="Paper Extractor | BBQS"
         description="Extract structured metadata from neuroscience papers using AI-powered NER aligned to the BBQS LinkML schema."
       />
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        {/* Top bar */}
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-between">
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        {/* Top section: Header + Upload */}
+        <div className="shrink-0 px-6 py-5 border-b border-border">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-foreground">Paper Extractor</h1>
               <p className="text-sm text-muted-foreground">
@@ -85,89 +85,66 @@ export default function PaperExtractor() {
               </Button>
             )}
           </div>
-        </div>
 
-        {/* Three-panel layout */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-0 overflow-hidden">
-          {/* Panel 1: Upload */}
-          <div className="border-r border-border flex flex-col overflow-auto p-5">
-            <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Upload className="h-4 w-4 text-primary" /> Upload PDF
-            </h2>
-
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                "flex-1 min-h-[200px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all",
-                dragOver
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/40 hover:bg-primary/5",
-                isExtracting && "pointer-events-none opacity-60",
-              )}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFile(f);
-                }}
-              />
-              {isExtracting ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Extracting entities...</p>
-                </div>
-              ) : extraction ? (
-                <div className="flex flex-col items-center gap-3">
-                  <CheckCircle2 className="h-8 w-8 text-primary" />
+          {/* Upload zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all",
+              extraction ? "py-4 px-6" : "py-8 px-6",
+              dragOver
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40 hover:bg-primary/5",
+              isExtracting && "pointer-events-none opacity-60",
+            )}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            {isExtracting ? (
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Extracting entities...</p>
+              </div>
+            ) : extraction ? (
+              <div className="flex items-center gap-4 w-full">
+                <CheckCircle2 className="h-6 w-6 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{extraction.filename}</p>
-                  <p className="text-xs text-muted-foreground">Click or drop another PDF to replace</p>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5">
+                    {extraction.title && <span className="truncate max-w-xs">{extraction.title}</span>}
+                    {extraction.doi && <span className="text-primary shrink-0">{extraction.doi}</span>}
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 px-6 text-center">
-                  <FileText className="h-10 w-10 text-muted-foreground/50" />
-                  <p className="text-sm font-medium text-foreground">
-                    Drop a PDF here or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Neuroscience papers work best — entities are extracted using the BBQS LinkML schema
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Quick stats */}
-            {extraction && (
-              <div className="mt-4 space-y-2">
-                {extraction.title && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Title</p>
-                    <p className="text-sm text-foreground">{extraction.title}</p>
-                  </div>
-                )}
-                {extraction.authors && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">Authors</p>
-                    <p className="text-sm text-foreground truncate">{extraction.authors}</p>
-                  </div>
-                )}
-                {extraction.doi && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">DOI</p>
-                    <p className="text-sm text-primary">{extraction.doi}</p>
-                  </div>
-                )}
+                <p className="text-xs text-muted-foreground shrink-0">Drop another PDF to replace</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <Upload className="h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-foreground">
+                  Drop a PDF here or click to browse
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Neuroscience papers work best — entities are extracted using the BBQS LinkML schema
+                </p>
               </div>
             )}
           </div>
+        </div>
 
-          {/* Panel 2: Chat */}
+        {/* Bottom: Two-panel layout — Chat + Results */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden">
+          {/* Panel: Chat */}
           <div className="border-r border-border flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2 shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -256,7 +233,7 @@ export default function PaperExtractor() {
             </div>
           </div>
 
-          {/* Panel 3: Results */}
+          {/* Panel: Results */}
           <div className="flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-border shrink-0">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
