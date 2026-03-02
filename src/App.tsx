@@ -33,6 +33,7 @@ import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
+import ComputationalModels from "./pages/ComputationalModels";
 
 const queryClient = new QueryClient();
 
