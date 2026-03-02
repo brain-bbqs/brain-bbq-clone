@@ -11,7 +11,7 @@ interface HierarchyNodeExtra extends d3.HierarchyNode<TreeNode> {
   _children?: HierarchyNodeExtra[] | null;
   x0?: number;
   y0?: number;
-  id?: number;
+  _id?: number;
 }
 
 export function CollapsibleTree({ data, width = 928 }: CollapsibleTreeProps) {
