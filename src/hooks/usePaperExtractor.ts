@@ -1,0 +1,149 @@
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export interface PaperExtraction {
+  id: string;
+  filename: string;
+  status: string;
+  title: string | null;
+  authors: string | null;
+  doi: string | null;
+  grant_numbers: string[];
+  orcids: string[];
+  study_species: string[];
+  use_sensors: string[];
+  use_approaches: string[];
+  produce_data_modality: string[];
+  produce_data_type: string[];
+  use_analysis_method: string[];
+  use_analysis_types: string[];
+  develope_software_type: string[];
+  develope_hardware_type: string[];
+  keywords: string[];
+}
+
+export interface ChatMsg {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export function usePaperExtractor() {
+  const [extraction, setExtraction] = useState<PaperExtraction | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const { toast } = useToast();
+
+  const uploadAndExtract = useCallback(async (file: File) => {
+    setIsExtracting(true);
+    setChatMessages([]);
+    setExtraction(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please sign in to use the Paper Extractor.");
+
+      // Read PDF as text (client-side; we send raw text to edge fn)
+      const text = await file.text();
+
+      // Create extraction record
+      const { data: record, error: insertErr } = await supabase
+        .from("paper_extractions")
+        .insert({
+          user_id: user.id,
+          filename: file.name,
+          status: "processing",
+        })
+        .select()
+        .single();
+
+      if (insertErr) throw insertErr;
+
+      // Upload file to storage
+      const storagePath = `${user.id}/${record.id}/${file.name}`;
+      await supabase.storage.from("paper-uploads").upload(storagePath, file);
+
+      // Update storage path
+      await supabase
+        .from("paper_extractions")
+        .update({ storage_path: storagePath })
+        .eq("id", record.id);
+
+      // Call extraction edge function
+      const { data, error } = await supabase.functions.invoke("paper-extract", {
+        body: { action: "extract", text, extraction_id: record.id },
+      });
+
+      if (error) throw error;
+
+      setExtraction({
+        id: record.id,
+        filename: file.name,
+        status: "completed",
+        ...data.extraction,
+      });
+
+      toast({ title: "Extraction complete", description: `Extracted metadata from ${file.name}` });
+    } catch (err: any) {
+      console.error("Extraction error:", err);
+      toast({ title: "Extraction failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [toast]);
+
+  const sendChat = useCallback(async (content: string) => {
+    if (!extraction || !content.trim()) return;
+
+    const userMsg: ChatMsg = { role: "user", content: content.trim() };
+    setChatMessages(prev => [...prev, userMsg]);
+    setIsChatLoading(true);
+
+    try {
+      const allMessages = [...chatMessages, userMsg].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("paper-extract", {
+        body: { action: "chat", messages: allMessages, extraction_id: extraction.id },
+      });
+
+      if (error) throw error;
+
+      const assistantMsg: ChatMsg = {
+        role: "assistant",
+        content: data.reply || "I couldn't process that.",
+      };
+      setChatMessages(prev => [...prev, assistantMsg]);
+
+      // If fields were updated, refresh extraction
+      if (data.field_updates && Object.keys(data.field_updates).length > 0) {
+        setExtraction(prev => prev ? { ...prev, ...data.field_updates } : prev);
+      }
+    } catch (err: any) {
+      setChatMessages(prev => [
+        ...prev,
+        { role: "assistant", content: `Error: ${err.message}` },
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  }, [extraction, chatMessages]);
+
+  const clearAll = useCallback(() => {
+    setExtraction(null);
+    setChatMessages([]);
+  }, []);
+
+  return {
+    extraction,
+    isExtracting,
+    chatMessages,
+    isChatLoading,
+    uploadAndExtract,
+    sendChat,
+    clearAll,
+  };
+}

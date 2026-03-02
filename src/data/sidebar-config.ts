@@ -20,6 +20,7 @@ import {
   Bot,
   FlaskConical,
   BrainCircuit,
+  ScanSearch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -45,6 +46,7 @@ const mainItems: NavItem[] = [
 const assistantsItems: NavItem[] = [
   { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
+  { title: "Paper Extractor", url: "/paper-extractor", icon: ScanSearch },
 ];
 
 const toolsItems: NavItem[] = [

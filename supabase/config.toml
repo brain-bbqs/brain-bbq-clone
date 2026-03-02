@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.metadata-chat]
 verify_jwt = false
+
+[functions.paper-extract]
+verify_jwt = false
