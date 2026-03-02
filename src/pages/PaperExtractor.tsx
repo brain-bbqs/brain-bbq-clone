@@ -66,7 +66,7 @@ export default function PaperExtractor() {
     queryFn: async () => {
       const { data } = await supabase
         .from("paper_extractions")
-        .select("id, filename, title, authors, doi, status, study_species, use_approaches, keywords, grant_numbers, created_at")
+        .select("id, filename, title, doi, keywords, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       return data || [];
@@ -103,52 +103,20 @@ export default function PaperExtractor() {
     {
       headerName: "Title",
       field: "title",
-      flex: 2,
-      minWidth: 220,
+      flex: 3,
+      minWidth: 250,
       cellRenderer: (params: any) => params.value || params.data?.filename || "Untitled",
     },
-    { headerName: "Authors", field: "authors", flex: 1, minWidth: 140 },
-    { headerName: "DOI", field: "doi", width: 160 },
-    {
-      headerName: "Species",
-      field: "study_species",
-      width: 150,
-      cellRenderer: (params: any) => {
-        const vals = params.value as string[] | null;
-        if (!vals?.length) return "—";
-        return vals.join(", ");
-      },
-    },
-    {
-      headerName: "Grant IDs",
-      field: "grant_numbers",
-      width: 150,
-      cellRenderer: (params: any) => {
-        const vals = params.value as string[] | null;
-        if (!vals?.length) return "—";
-        return vals.join(", ");
-      },
-    },
+    { headerName: "DOI", field: "doi", flex: 1, minWidth: 140 },
     {
       headerName: "Keywords",
       field: "keywords",
-      flex: 1,
-      minWidth: 160,
+      flex: 2,
+      minWidth: 200,
       cellRenderer: (params: any) => {
         const vals = params.value as string[] | null;
         if (!vals?.length) return "—";
-        return vals.slice(0, 3).join(", ") + (vals.length > 3 ? ` +${vals.length - 3}` : "");
-      },
-    },
-    {
-      headerName: "Status",
-      field: "status",
-      width: 100,
-      cellRenderer: (params: any) => {
-        const s = params.value;
-        if (s === "completed") return "✓ Done";
-        if (s === "processing") return "⏳";
-        return s;
+        return vals.slice(0, 4).join(", ") + (vals.length > 4 ? ` +${vals.length - 4}` : "");
       },
     },
     {
