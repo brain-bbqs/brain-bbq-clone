@@ -19,6 +19,7 @@ import {
   Lightbulb,
   Bot,
   FlaskConical,
+  BrainCircuit,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -50,6 +51,7 @@ const toolsItems: NavItem[] = [
   { title: "Data Provenance", url: "/data-provenance", icon: History, disabled: true },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Resources", url: "/resources", icon: Database },
+  { title: "Computational Models", url: "/computational-models", icon: BrainCircuit },
 ];
 
 const knowledgeBaseItems: NavItem[] = [

@@ -33,6 +33,7 @@ import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
+import ComputationalModels from "./pages/ComputationalModels";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
+              <Route path="/computational-models" element={<ComputationalModels />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
