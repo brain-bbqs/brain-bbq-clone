@@ -66,7 +66,7 @@ export default function PaperExtractor() {
     queryFn: async () => {
       const { data } = await supabase
         .from("paper_extractions")
-        .select("id, filename, title, doi, keywords, created_at")
+        .select("id, filename, title, keywords, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       return data || [];
@@ -103,19 +103,12 @@ export default function PaperExtractor() {
     {
       headerName: "Title",
       field: "title",
-      flex: 2,
-      minWidth: 200,
+      flex: 3,
+      minWidth: 250,
       wrapText: true,
       autoHeight: true,
       cellRenderer: (params: any) => params.value || params.data?.filename || "Untitled",
       cellStyle: { lineHeight: "1.4", padding: "8px 12px" },
-    },
-    {
-      headerName: "DOI",
-      field: "doi",
-      width: 180,
-      cellStyle: { fontSize: "12px", fontFamily: "monospace", padding: "8px 12px" },
-      cellRenderer: (params: any) => params.value || "—",
     },
     {
       headerName: "Keywords",
