@@ -80,6 +80,27 @@ function extractWithRegex(text: string) {
   return { grant_numbers: grants, orcids, dois, study_species: species };
 }
 
+function sanitizeTextForDb(value: string) {
+  return value
+    .replace(/\u0000/g, "")
+    .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function deepSanitize<T>(value: T): T {
+  if (typeof value === "string") return sanitizeTextForDb(value) as T;
+  if (Array.isArray(value)) return value.map((v) => deepSanitize(v)) as T;
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = deepSanitize(v);
+    }
+    return out as T;
+  }
+  return value;
+}
+
 // ── LLM extraction via Lovable AI ──
 async function extractWithLLM(text: string, apiKey: string) {
   const truncated = text.slice(0, 12000); // Stay within token limits
@@ -263,25 +284,29 @@ Deno.serve(async (req) => {
       // LLM extraction
       const llmResults = await extractWithLLM(extractedText, openaiKey);
 
+      const safeExtractedText = sanitizeTextForDb(extractedText);
+      const safeRegexResults = deepSanitize(regexResults);
+      const safeLlmResults = deepSanitize(llmResults) as Record<string, any>;
+
       // Merge: regex results take priority for structured identifiers
       const merged = {
-        title: llmResults.title || null,
-        authors: llmResults.authors || null,
-        doi: regexResults.dois[0] || null,
-        grant_numbers: regexResults.grant_numbers,
-        orcids: regexResults.orcids,
+        title: safeLlmResults.title || null,
+        authors: safeLlmResults.authors || null,
+        doi: safeRegexResults.dois[0] || null,
+        grant_numbers: safeRegexResults.grant_numbers,
+        orcids: safeRegexResults.orcids,
         study_species: [
-          ...new Set([...regexResults.study_species, ...(llmResults.study_species || [])]),
+          ...new Set([...(safeRegexResults.study_species || []), ...(safeLlmResults.study_species || [])]),
         ],
-        use_sensors: llmResults.use_sensors || [],
-        use_approaches: llmResults.use_approaches || [],
-        produce_data_modality: llmResults.produce_data_modality || [],
-        produce_data_type: llmResults.produce_data_type || [],
-        use_analysis_method: llmResults.use_analysis_method || [],
-        use_analysis_types: llmResults.use_analysis_types || [],
-        develope_software_type: llmResults.develope_software_type || [],
-        develope_hardware_type: llmResults.develope_hardware_type || [],
-        keywords: llmResults.keywords || [],
+        use_sensors: safeLlmResults.use_sensors || [],
+        use_approaches: safeLlmResults.use_approaches || [],
+        produce_data_modality: safeLlmResults.produce_data_modality || [],
+        produce_data_type: safeLlmResults.produce_data_type || [],
+        use_analysis_method: safeLlmResults.use_analysis_method || [],
+        use_analysis_types: safeLlmResults.use_analysis_types || [],
+        develope_software_type: safeLlmResults.develope_software_type || [],
+        develope_hardware_type: safeLlmResults.develope_hardware_type || [],
+        keywords: safeLlmResults.keywords || [],
       };
 
       // Update extraction record
@@ -289,9 +314,9 @@ Deno.serve(async (req) => {
         .from("paper_extractions")
         .update({
           ...merged,
-          raw_text: extractedText.slice(0, 50000),
+          raw_text: safeExtractedText.slice(0, 50000),
           status: "completed",
-          extracted_metadata: { regex: regexResults, llm: llmResults },
+          extracted_metadata: { regex: safeRegexResults, llm: safeLlmResults },
         })
         .eq("id", extraction_id);
 
