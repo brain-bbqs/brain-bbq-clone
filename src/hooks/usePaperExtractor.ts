@@ -28,15 +28,19 @@ export interface ChatMsg {
   content: string;
 }
 
+export type ExtractionStep = "idle" | "reading" | "uploading" | "extracting" | "done";
+
 export function usePaperExtractor() {
   const [extraction, setExtraction] = useState<PaperExtraction | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionStep, setExtractionStep] = useState<ExtractionStep>("idle");
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const { toast } = useToast();
 
   const uploadAndExtract = useCallback(async (file: File) => {
     setIsExtracting(true);
+    setExtractionStep("reading");
     setChatMessages([]);
     setExtraction(null);
 
@@ -52,6 +56,8 @@ export function usePaperExtractor() {
         binary += String.fromCharCode(bytes[i]);
       }
       const base64 = btoa(binary);
+
+      setExtractionStep("uploading");
 
       // Create extraction record
       const { data: record, error: insertErr } = await supabase
@@ -76,6 +82,8 @@ export function usePaperExtractor() {
         .update({ storage_path: storagePath })
         .eq("id", record.id);
 
+      setExtractionStep("extracting");
+
       // Call extraction edge function
       const { data, error } = await supabase.functions.invoke("paper-extract", {
         body: { action: "extract", pdf_base64: base64, extraction_id: record.id },
@@ -83,6 +91,7 @@ export function usePaperExtractor() {
 
       if (error) throw error;
 
+      setExtractionStep("done");
       setExtraction({
         id: record.id,
         filename: file.name,
@@ -93,6 +102,7 @@ export function usePaperExtractor() {
       toast({ title: "Extraction complete", description: `Extracted metadata from ${file.name}` });
     } catch (err: any) {
       console.error("Extraction error:", err);
+      setExtractionStep("idle");
       toast({ title: "Extraction failed", description: err.message, variant: "destructive" });
     } finally {
       setIsExtracting(false);
@@ -141,11 +151,13 @@ export function usePaperExtractor() {
   const clearAll = useCallback(() => {
     setExtraction(null);
     setChatMessages([]);
+    setExtractionStep("idle");
   }, []);
 
   return {
     extraction,
     isExtracting,
+    extractionStep,
     chatMessages,
     isChatLoading,
     uploadAndExtract,

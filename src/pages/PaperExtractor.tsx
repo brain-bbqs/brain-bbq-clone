@@ -4,6 +4,7 @@ import {
   Database, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,7 +52,7 @@ const ENTITY_FIELDS = [
 
 export default function PaperExtractor() {
   const {
-    extraction, isExtracting, chatMessages, isChatLoading,
+    extraction, isExtracting, extractionStep, chatMessages, isChatLoading,
     uploadAndExtract, sendChat, clearAll,
   } = usePaperExtractor();
 
@@ -217,9 +218,31 @@ export default function PaperExtractor() {
               }}
             />
             {isExtracting ? (
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground font-medium">Extracting entities from PDF…</p>
+              <div className="flex flex-col items-center gap-3 w-full max-w-md">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {extractionStep === "reading" && "Reading PDF…"}
+                    {extractionStep === "uploading" && "Uploading to storage…"}
+                    {extractionStep === "extracting" && "AI is extracting entities…"}
+                    {extractionStep === "done" && "Finalizing…"}
+                  </p>
+                </div>
+                <Progress
+                  value={
+                    extractionStep === "reading" ? 15 :
+                    extractionStep === "uploading" ? 40 :
+                    extractionStep === "extracting" ? 75 :
+                    extractionStep === "done" ? 100 : 0
+                  }
+                  className="h-2 w-full"
+                />
+                <div className="flex justify-between w-full text-[10px] text-muted-foreground/60">
+                  <span className={cn(extractionStep === "reading" && "text-primary font-medium")}>Read</span>
+                  <span className={cn(extractionStep === "uploading" && "text-primary font-medium")}>Upload</span>
+                  <span className={cn(extractionStep === "extracting" && "text-primary font-medium")}>Extract</span>
+                  <span className={cn(extractionStep === "done" && "text-primary font-medium")}>Done</span>
+                </div>
               </div>
             ) : extraction ? (
               <div className="flex items-center gap-4 w-full">
