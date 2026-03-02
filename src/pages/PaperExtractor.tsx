@@ -103,26 +103,39 @@ export default function PaperExtractor() {
     {
       headerName: "Title",
       field: "title",
-      flex: 3,
-      minWidth: 250,
+      flex: 2,
+      minWidth: 200,
+      wrapText: true,
+      autoHeight: true,
       cellRenderer: (params: any) => params.value || params.data?.filename || "Untitled",
+      cellStyle: { lineHeight: "1.4", padding: "8px 12px" },
     },
-    { headerName: "DOI", field: "doi", flex: 1, minWidth: 140 },
+    {
+      headerName: "DOI",
+      field: "doi",
+      width: 180,
+      cellStyle: { fontSize: "12px", fontFamily: "monospace", padding: "8px 12px" },
+      cellRenderer: (params: any) => params.value || "—",
+    },
     {
       headerName: "Keywords",
       field: "keywords",
       flex: 2,
       minWidth: 200,
+      wrapText: true,
+      autoHeight: true,
+      cellStyle: { lineHeight: "1.4", padding: "8px 12px", fontSize: "12px" },
       cellRenderer: (params: any) => {
         const vals = params.value as string[] | null;
         if (!vals?.length) return "—";
-        return vals.slice(0, 4).join(", ") + (vals.length > 4 ? ` +${vals.length - 4}` : "");
+        return vals.slice(0, 5).join(" · ");
       },
     },
     {
       headerName: "Date",
       field: "created_at",
-      width: 110,
+      width: 100,
+      cellStyle: { fontSize: "12px", padding: "8px 12px" },
       valueFormatter: (params: any) =>
         params.value ? new Date(params.value).toLocaleDateString() : "",
     },
