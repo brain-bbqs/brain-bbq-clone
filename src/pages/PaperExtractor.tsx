@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
-  Upload, FileText, Send, Sparkles, Trash2, Loader2, CheckCircle2, X,
+  Upload, FileText, Send, Sparkles, Trash2, Loader2, CheckCircle2,
+  Clock, Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +13,11 @@ import { PageMeta } from "@/components/PageMeta";
 import ReactMarkdown from "react-markdown";
 import { usePaperExtractor } from "@/hooks/usePaperExtractor";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "@/styles/ag-grid-theme.css";
 
 const ENTITY_FIELDS = [
   { key: "study_species", label: "Species" },
@@ -39,14 +45,30 @@ export default function PaperExtractor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
+  // Fetch past extractions
+  const { data: pastExtractions, refetch } = useQuery({
+    queryKey: ["paper-extractions"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("paper_extractions")
+        .select("id, filename, title, authors, doi, status, study_species, use_approaches, keywords, grant_numbers, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data || [];
+    },
+  });
+
+  // Refetch when a new extraction completes
+  useEffect(() => {
+    if (extraction?.status === "completed") refetch();
+  }, [extraction?.status, refetch]);
+
   useEffect(() => {
     chatScrollRef.current?.scrollTo(0, chatScrollRef.current.scrollHeight);
   }, [chatMessages, isChatLoading]);
 
   const handleFile = useCallback((file: File) => {
-    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
-      return;
-    }
+    if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) return;
     uploadAndExtract(file);
   }, [uploadAndExtract]);
 
@@ -63,15 +85,74 @@ export default function PaperExtractor() {
     setChatInput("");
   };
 
+  const gridColDefs = useMemo<ColDef[]>(() => [
+    {
+      headerName: "Title",
+      field: "title",
+      flex: 2,
+      minWidth: 200,
+      cellRenderer: (params: any) => params.value || params.data?.filename || "Untitled",
+    },
+    { headerName: "Authors", field: "authors", flex: 1, minWidth: 140 },
+    { headerName: "DOI", field: "doi", width: 160 },
+    {
+      headerName: "Species",
+      field: "study_species",
+      width: 150,
+      cellRenderer: (params: any) => {
+        const vals = params.value as string[] | null;
+        if (!vals?.length) return "—";
+        return vals.join(", ");
+      },
+    },
+    {
+      headerName: "Grant IDs",
+      field: "grant_numbers",
+      width: 150,
+      cellRenderer: (params: any) => {
+        const vals = params.value as string[] | null;
+        if (!vals?.length) return "—";
+        return vals.join(", ");
+      },
+    },
+    {
+      headerName: "Keywords",
+      field: "keywords",
+      flex: 1,
+      minWidth: 140,
+      cellRenderer: (params: any) => {
+        const vals = params.value as string[] | null;
+        if (!vals?.length) return "—";
+        return vals.slice(0, 3).join(", ") + (vals.length > 3 ? ` +${vals.length - 3}` : "");
+      },
+    },
+    {
+      headerName: "Status",
+      field: "status",
+      width: 100,
+      cellRenderer: (params: any) => {
+        const s = params.value;
+        return s === "completed" ? "✓ Done" : s === "processing" ? "⏳" : s;
+      },
+    },
+    {
+      headerName: "Date",
+      field: "created_at",
+      width: 110,
+      valueFormatter: (params: any) =>
+        params.value ? new Date(params.value).toLocaleDateString() : "",
+    },
+  ], []);
+
   return (
     <>
       <PageMeta
         title="Paper Extractor | BBQS"
         description="Extract structured metadata from neuroscience papers using AI-powered NER aligned to the BBQS LinkML schema."
       />
-      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
-        {/* Top section: Header + Upload */}
-        <div className="shrink-0 px-6 py-5 border-b border-border">
+      <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+        {/* Header */}
+        <div className="shrink-0 px-6 py-5 border-b border-border bg-card">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-foreground">Paper Extractor</h1>
@@ -142,10 +223,10 @@ export default function PaperExtractor() {
           </div>
         </div>
 
-        {/* Bottom: Two-panel layout — Chat + Results */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden">
+        {/* Two-panel: Chat + Results */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border-b border-border" style={{ height: "min(55vh, 520px)" }}>
           {/* Panel: Chat */}
-          <div className="border-r border-border flex flex-col overflow-hidden">
+          <div className="border-r border-border flex flex-col overflow-hidden bg-card">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2 shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
               <Sparkles className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">Refine Extraction</h2>
@@ -163,9 +244,7 @@ export default function PaperExtractor() {
 
               {extraction && chatMessages.length === 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Extraction complete! Try asking:
-                  </p>
+                  <p className="text-sm text-muted-foreground">Extraction complete! Try asking:</p>
                   {[
                     "What sensors were detected?",
                     "Add 'deep learning' to approaches",
@@ -233,61 +312,82 @@ export default function PaperExtractor() {
             </div>
           </div>
 
-          {/* Panel: Results */}
-          <div className="flex flex-col overflow-hidden">
+          {/* Panel: Extracted Entities */}
+          <div className="flex flex-col overflow-hidden bg-card">
             <div className="px-4 py-3 border-b border-border shrink-0">
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" /> Extracted Entities
+                {extraction && (
+                  <Badge variant="secondary" className="text-[10px] ml-auto">
+                    {ENTITY_FIELDS.reduce((acc, { key }) => {
+                      const v = (extraction as any)[key] as string[] | undefined;
+                      return acc + (v?.length || 0);
+                    }, 0)} total
+                  </Badge>
+                )}
               </h2>
             </div>
 
-            <ScrollArea className="flex-1 px-4 py-4">
+            <ScrollArea className="flex-1 px-4 py-3">
               {!extraction ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
+                <div className="flex flex-col items-center justify-center h-48 text-center gap-3">
                   <FileText className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">
-                    Extracted metadata will appear here
-                  </p>
+                  <p className="text-sm text-muted-foreground">Extracted metadata will appear here</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {ENTITY_FIELDS.map(({ key, label }) => {
                     const values = (extraction as any)[key] as string[] | undefined;
-                    if (!values || values.length === 0) {
-                      return (
-                        <Card key={key} className="border-border/50">
-                          <CardHeader className="py-2 px-3">
-                            <CardTitle className="text-xs font-medium text-muted-foreground">{label}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="px-3 pb-2">
-                            <p className="text-xs text-muted-foreground italic">No entities extracted</p>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
                     return (
-                      <Card key={key} className="border-border/50">
-                        <CardHeader className="py-2 px-3">
-                          <CardTitle className="text-xs font-medium text-muted-foreground flex items-center justify-between">
-                            {label}
-                            <Badge variant="secondary" className="text-[10px]">{values.length}</Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-3 pb-2">
+                      <div key={key} className="rounded-lg border border-border p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-medium text-muted-foreground">{label}</span>
+                          {values && values.length > 0 && (
+                            <Badge variant="secondary" className="text-[10px] h-4">{values.length}</Badge>
+                          )}
+                        </div>
+                        {!values || values.length === 0 ? (
+                          <p className="text-xs text-muted-foreground/60 italic">—</p>
+                        ) : (
                           <div className="flex flex-wrap gap-1.5">
                             {values.map((v, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {v}
-                              </Badge>
+                              <Badge key={i} variant="outline" className="text-xs">{v}</Badge>
                             ))}
                           </div>
-                        </CardContent>
-                      </Card>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               )}
             </ScrollArea>
+          </div>
+        </div>
+
+        {/* Bottom: Extractions History AG Grid */}
+        <div className="px-6 py-5 bg-card">
+          <div className="flex items-center gap-2 mb-3">
+            <Database className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Extraction History</h2>
+            <Badge variant="secondary" className="text-[10px]">{pastExtractions?.length || 0}</Badge>
+          </div>
+
+          <div className="ag-theme-alpine border border-border rounded-lg overflow-hidden">
+            <AgGridReact
+              rowData={pastExtractions || []}
+              columnDefs={gridColDefs}
+              domLayout="autoHeight"
+              suppressCellFocus
+              pagination
+              paginationPageSize={10}
+              defaultColDef={{
+                sortable: true,
+                resizable: true,
+                filter: true,
+                unSortIcon: true,
+              }}
+              overlayNoRowsTemplate="<span class='text-muted-foreground text-sm'>No papers extracted yet — upload one above</span>"
+            />
           </div>
         </div>
       </div>
