@@ -102,26 +102,25 @@ Return a JSON object with these fields (use only values from the provided enums 
 
 Only return values you are confident about. Use empty arrays for uncertain fields. Return ONLY valid JSON, no markdown.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Extract metadata from this paper text:\n\n${truncated}` },
       ],
       temperature: 0.1,
-      response_format: { type: "json_object" },
     }),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${err}`);
+    throw new Error(`AI gateway error: ${response.status} - ${err}`);
   }
 
   const data = await response.json();
@@ -149,14 +148,14 @@ Help the user refine the extraction. When they ask to add/remove/change entities
 If you update fields, include a JSON block in your response like: \`\`\`json\n{"field_updates": {"field_name": ["new", "values"]}}\n\`\`\`
 Otherwise just discuss naturally.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "google/gemini-3-flash-preview",
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       temperature: 0.3,
     }),
@@ -164,7 +163,7 @@ Otherwise just discuss naturally.`;
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${err}`);
+    throw new Error(`AI gateway error: ${response.status} - ${err}`);
   }
 
   const data = await response.json();
@@ -191,7 +190,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
+    const openaiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
     const authHeader = req.headers.get("authorization");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
