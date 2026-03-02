@@ -44,8 +44,14 @@ export function usePaperExtractor() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Please sign in to use the Paper Extractor.");
 
-      // Read PDF as text (client-side; we send raw text to edge fn)
-      const text = await file.text();
+      // Read PDF as base64 (PDFs are binary, can't use .text())
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
 
       // Create extraction record
       const { data: record, error: insertErr } = await supabase
@@ -72,7 +78,7 @@ export function usePaperExtractor() {
 
       // Call extraction edge function
       const { data, error } = await supabase.functions.invoke("paper-extract", {
-        body: { action: "extract", text, extraction_id: record.id },
+        body: { action: "extract", pdf_base64: base64, extraction_id: record.id },
       });
 
       if (error) throw error;

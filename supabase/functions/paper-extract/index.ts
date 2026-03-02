@@ -207,20 +207,61 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === "extract") {
-      // Phase 1: Extract from raw text
-      const { text, extraction_id } = body;
-      if (!text || !extraction_id) {
-        return new Response(JSON.stringify({ error: "text and extraction_id required" }), {
+      const { pdf_base64, extraction_id } = body;
+      if (!pdf_base64 || !extraction_id) {
+        return new Response(JSON.stringify({ error: "pdf_base64 and extraction_id required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
+      // Decode base64 PDF to bytes, then extract readable text
+      const binaryStr = atob(pdf_base64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      // Extract printable text from PDF binary (simple text extraction)
+      const rawText = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+      // Pull text between BT/ET markers and parenthesized strings
+      const textChunks: string[] = [];
+      // Method 1: Extract parenthesized text strings from PDF
+      const parenRegex = /\(([^)]{2,})\)/g;
+      let m: RegExpExecArray | null;
+      while ((m = parenRegex.exec(rawText)) !== null) {
+        const cleaned = m[1]
+          .replace(/\\n/g, " ")
+          .replace(/\\r/g, " ")
+          .replace(/\\\\/g, "\\")
+          .replace(/\\([()])/g, "$1")
+          .trim();
+        if (cleaned.length > 1 && /[a-zA-Z]/.test(cleaned)) {
+          textChunks.push(cleaned);
+        }
+      }
+      const text = textChunks.join(" ").replace(/\s+/g, " ").trim();
+
+      if (!text || text.length < 50) {
+        // Fallback: just grab all printable ASCII runs
+        const printableRuns = rawText.match(/[a-zA-Z0-9 .,;:!?()\-'"\/]{10,}/g) || [];
+        const fallbackText = printableRuns.join(" ").slice(0, 30000);
+        if (fallbackText.length < 50) {
+          return new Response(JSON.stringify({ error: "Could not extract readable text from this PDF. Try a text-based (non-scanned) PDF." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        // Use fallback text
+        var extractedText = fallbackText;
+      } else {
+        var extractedText = text.slice(0, 30000);
+      }
+
       // Rule-based extraction
-      const regexResults = extractWithRegex(text);
+      const regexResults = extractWithRegex(extractedText);
 
       // LLM extraction
-      const llmResults = await extractWithLLM(text, openaiKey);
+      const llmResults = await extractWithLLM(extractedText, openaiKey);
 
       // Merge: regex results take priority for structured identifiers
       const merged = {
@@ -248,7 +289,7 @@ Deno.serve(async (req) => {
         .from("paper_extractions")
         .update({
           ...merged,
-          raw_text: text.slice(0, 50000),
+          raw_text: extractedText.slice(0, 50000),
           status: "completed",
           extracted_metadata: { regex: regexResults, llm: llmResults },
         })
