@@ -30,7 +30,7 @@ export function CollapsibleTree({ data, width = 928 }: CollapsibleTreeProps) {
     const marginBottom = 10;
     const marginLeft = 60;
 
-    const root = d3.hierarchy<TreeNode>(data) as HierarchyNodeExtra;
+    const root = d3.hierarchy<TreeNode>(data) as unknown as HierarchyNodeExtra;
     const dx = 28;
     const dy = (width - marginRight - marginLeft) / (1 + root.height);
 
