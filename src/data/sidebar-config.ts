@@ -51,8 +51,6 @@ const assistantsItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
-  { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Resources", url: "/resources", icon: Database },
   { title: "Computational Models", url: "/computational-models", icon: BrainCircuit },
 ];
