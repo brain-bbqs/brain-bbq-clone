@@ -7,6 +7,41 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function generateEmbeddingLovable(text: string, apiKey: string): Promise<number[] | null> {
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.[0]?.embedding ?? null;
+  } catch { return null; }
+}
+
+async function writeBackInteraction(
+  supabase: any, apiKey: string,
+  opts: { userMessage: string; assistantResponse: string }
+) {
+  try {
+    const content = `User asked: ${opts.userMessage}\n\nAssistant answered: ${opts.assistantResponse}`;
+    const embedding = await generateEmbeddingLovable(content, apiKey);
+    if (!embedding) return;
+    await supabase.from("knowledge_embeddings").upsert({
+      source_type: "chat_interaction",
+      source_id: `discovery-chat_${Date.now()}`,
+      title: `[discovery-chat] ${opts.userMessage.slice(0, 180)}`,
+      content: content.slice(0, 4000),
+      embedding: `[${embedding.join(",")}]`,
+      metadata: {
+        function: "discovery-chat",
+        timestamp: new Date().toISOString(),
+      },
+    }, { onConflict: "source_id" });
+  } catch (e) { console.error("Embedding write-back error:", e); }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
@@ -28,51 +63,32 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // --- 1. Get embedding for user query ---
-    const embeddingRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/embeddings",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "text-embedding-3-small",
-          input: query,
-        }),
-      }
-    );
+    const queryEmbedding = await generateEmbeddingLovable(query, LOVABLE_API_KEY);
 
     let ragContext = "";
 
-    if (embeddingRes.ok) {
-      const embData = await embeddingRes.json();
-      const queryEmbedding = embData?.data?.[0]?.embedding;
-
-      if (queryEmbedding) {
-        // --- 2. Semantic search ---
-        const { data: matches } = await supabase.rpc(
-          "search_knowledge_embeddings",
-          {
-            query_embedding: `[${queryEmbedding.join(",")}]`,
-            match_threshold: 0.5,
-            match_count: 8,
-          }
-        );
-
-        if (matches?.length) {
-          ragContext = matches
-            .map(
-              (m: any) =>
-                `[${m.source_type}] ${m.title}\n${m.content.slice(0, 600)}`
-            )
-            .join("\n---\n");
+    if (queryEmbedding) {
+      // --- 2. Semantic search ---
+      const { data: matches } = await supabase.rpc(
+        "search_knowledge_embeddings",
+        {
+          query_embedding: `[${queryEmbedding.join(",")}]`,
+          match_threshold: 0.5,
+          match_count: 8,
         }
+      );
+
+      if (matches?.length) {
+        ragContext = matches
+          .map(
+            (m: any) =>
+              `[${m.source_type}] ${m.title}\n${m.content.slice(0, 600)}`
+          )
+          .join("\n---\n");
       }
     }
 
     // --- 3. Also do a direct DB search for people, projects, tools ---
-    // Extract meaningful keywords (drop stop words, keep 2+ char words)
     const STOP_WORDS = new Set(["the","a","an","is","are","was","were","be","been","being","have","has","had","do","does","did","will","would","shall","should","may","might","must","can","could","of","in","to","for","with","on","at","by","from","as","into","through","during","before","after","above","below","between","out","off","over","under","again","further","then","once","here","there","where","when","why","how","all","both","each","few","more","most","other","some","such","no","nor","not","only","own","same","so","than","too","very","just","about","what","which","who","whom","this","that","these","those","i","me","my","we","our","you","your","he","him","his","she","her","it","its","they","them","their","and","but","or","if","while","because","until","find","show","tell","give","get","know","want","like","need","use","look","help","let","say","see","go","come","make","take"]);
     const keywords = query
       .toLowerCase()
@@ -80,10 +96,8 @@ serve(async (req) => {
       .split(/\s+/)
       .filter((w) => w.length >= 2 && !STOP_WORDS.has(w));
 
-    // Build OR-style search: search each keyword against each table
     const searchQueries = keywords.length > 0 ? keywords : [query.toLowerCase()];
 
-    // For each keyword, do parallel searches and merge results
     const allPiResults: any[] = [];
     const allGrantResults: any[] = [];
     const allPubResults: any[] = [];
@@ -92,36 +106,15 @@ serve(async (req) => {
     const searchPromises = searchQueries.flatMap((kw) => {
       const pattern = `%${kw}%`;
       return [
-        supabase
-          .from("investigators")
-          .select("name, email, orcid, research_areas")
-          .ilike("name", pattern)
-          .limit(5)
-          .then((r) => { if (r.data) allPiResults.push(...r.data); }),
-        supabase
-          .from("grants")
-          .select("title, grant_number, abstract")
-          .ilike("title", pattern)
-          .limit(5)
-          .then((r) => { if (r.data) allGrantResults.push(...r.data); }),
-        supabase
-          .from("publications")
-          .select("title, pmid, journal, year, authors")
-          .ilike("title", pattern)
-          .limit(5)
-          .then((r) => { if (r.data) allPubResults.push(...r.data); }),
-        supabase
-          .from("resources")
-          .select("name, description, external_url, resource_type, metadata")
-          .or(`name.ilike.${pattern},description.ilike.${pattern}`)
-          .limit(10)
-          .then((r) => { if (r.data) allToolResults.push(...r.data); }),
+        supabase.from("investigators").select("name, email, orcid, research_areas").ilike("name", pattern).limit(5).then((r) => { if (r.data) allPiResults.push(...r.data); }),
+        supabase.from("grants").select("title, grant_number, abstract").ilike("title", pattern).limit(5).then((r) => { if (r.data) allGrantResults.push(...r.data); }),
+        supabase.from("publications").select("title, pmid, journal, year, authors").ilike("title", pattern).limit(5).then((r) => { if (r.data) allPubResults.push(...r.data); }),
+        supabase.from("resources").select("name, description, external_url, resource_type, metadata").or(`name.ilike.${pattern},description.ilike.${pattern}`).limit(10).then((r) => { if (r.data) allToolResults.push(...r.data); }),
       ];
     });
 
     await Promise.all(searchPromises);
 
-    // Deduplicate by name/title
     const dedupe = <T extends Record<string, any>>(arr: T[], key: string): T[] => {
       const seen = new Set<string>();
       return arr.filter((item) => {
@@ -139,50 +132,29 @@ serve(async (req) => {
 
     const dbContext: string[] = [];
     if (piRes.data?.length) {
-      dbContext.push(
-        "INVESTIGATORS:\n" +
-          piRes.data
-            .map(
-              (p: any) =>
-                `- ${p.name}${p.orcid ? ` (ORCID: ${p.orcid})` : ""}${p.research_areas?.length ? ` — Areas: ${p.research_areas.join(", ")}` : ""}`
-            )
-            .join("\n")
-      );
+      dbContext.push("INVESTIGATORS:\n" + piRes.data.map((p: any) => `- ${p.name}${p.orcid ? ` (ORCID: ${p.orcid})` : ""}${p.research_areas?.length ? ` — Areas: ${p.research_areas.join(", ")}` : ""}`).join("\n"));
     }
     if (grantRes.data?.length) {
-      dbContext.push(
-        "GRANTS:\n" +
-          grantRes.data.map((g: any) => `- ${g.title} (${g.grant_number})`).join("\n")
-      );
+      dbContext.push("GRANTS:\n" + grantRes.data.map((g: any) => `- ${g.title} (${g.grant_number})`).join("\n"));
     }
     if (pubRes.data?.length) {
-      dbContext.push(
-        "PUBLICATIONS:\n" +
-          pubRes.data
-            .map((p: any) => `- ${p.title}${p.pmid ? ` (PMID: ${p.pmid})` : ""}${p.journal ? ` — ${p.journal}` : ""}${p.year ? ` (${p.year})` : ""}`)
-            .join("\n")
-      );
+      dbContext.push("PUBLICATIONS:\n" + pubRes.data.map((p: any) => `- ${p.title}${p.pmid ? ` (PMID: ${p.pmid})` : ""}${p.journal ? ` — ${p.journal}` : ""}${p.year ? ` (${p.year})` : ""}`).join("\n"));
     }
     if (toolRes.data?.length) {
-      dbContext.push(
-        "SOFTWARE TOOLS & RESOURCES:\n" +
-          toolRes.data.map((t: any) => {
-            const meta = t.metadata || {};
-            const parts = [`- **${t.name}** (${t.resource_type}): ${t.description || ""}`];
-            if (meta.algorithm) parts.push(`  Algorithm: ${meta.algorithm}`);
-            if (meta.species) parts.push(`  Species: ${meta.species}`);
-            if (t.external_url) parts.push(`  URL: ${t.external_url}`);
-            return parts.join("\n");
-          }).join("\n")
-      );
+      dbContext.push("SOFTWARE TOOLS & RESOURCES:\n" + toolRes.data.map((t: any) => {
+        const meta = t.metadata || {};
+        const parts = [`- **${t.name}** (${t.resource_type}): ${t.description || ""}`];
+        if (meta.algorithm) parts.push(`  Algorithm: ${meta.algorithm}`);
+        if (meta.species) parts.push(`  Species: ${meta.species}`);
+        if (t.external_url) parts.push(`  URL: ${t.external_url}`);
+        return parts.join("\n");
+      }).join("\n"));
     }
 
     const fullContext = [ragContext, ...dbContext].filter(Boolean).join("\n\n===\n\n");
 
     // --- 4. Log query anonymously ---
-    await supabase
-      .from("search_queries")
-      .insert({ query, mode: "chat", results_count: (piRes.data?.length || 0) + (grantRes.data?.length || 0) + (pubRes.data?.length || 0) + (toolRes.data?.length || 0) });
+    await supabase.from("search_queries").insert({ query, mode: "chat", results_count: (piRes.data?.length || 0) + (grantRes.data?.length || 0) + (pubRes.data?.length || 0) + (toolRes.data?.length || 0) });
 
     // --- 5. Call Lovable AI ---
     const systemPrompt = `You are a discovery assistant for the BBQS (Brain Behavior Quantification & Synchronization) consortium website. Your job is to help researchers find relevant people, projects, publications, software tools, datasets, and resources within the consortium.
@@ -224,26 +196,49 @@ ${fullContext || "No specific matches found in the database for this query."}`;
     if (!response.ok) {
       const status = response.status;
       if (status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Please try again shortly." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Rate limited. Please try again shortly." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const t = await response.text();
       console.error("AI gateway error:", status, t);
-      return new Response(
-        JSON.stringify({ error: "AI gateway error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(response.body, {
+    // Tee stream: one for client, one to collect for write-back
+    const [clientStream, collectorStream] = response.body!.tee();
+
+    // Fire-and-forget: collect full response and write back embedding
+    (async () => {
+      try {
+        const reader = collectorStream.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("data: ") && line !== "data: [DONE]") {
+              try {
+                const json = JSON.parse(line.slice(6));
+                const delta = json.choices?.[0]?.delta?.content;
+                if (delta) fullContent += delta;
+              } catch {}
+            }
+          }
+        }
+        if (fullContent && query) {
+          await writeBackInteraction(supabase, LOVABLE_API_KEY, {
+            userMessage: query,
+            assistantResponse: fullContent,
+          });
+        }
+      } catch (e) { console.error("Stream collection error:", e); }
+    })();
+
+    return new Response(clientStream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
