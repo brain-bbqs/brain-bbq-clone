@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.paper-extract]
 verify_jwt = false
+
+[functions.computational-kg-chat]
+verify_jwt = false
