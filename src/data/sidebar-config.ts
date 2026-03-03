@@ -40,7 +40,6 @@ const mainItems: NavItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "About", url: "/about", icon: Info },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
-  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb },
   { title: "My Profile", url: "/profile", icon: Users },
 ];
 
@@ -77,6 +76,7 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb },
 ];
 
 const legalItems: NavItem[] = [
