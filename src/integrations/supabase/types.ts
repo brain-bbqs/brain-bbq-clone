@@ -180,6 +180,45 @@ export type Database = {
           },
         ]
       }
+      computational_triples: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json | null
+          object: string
+          object_type: string
+          predicate: string
+          subject: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          object: string
+          object_type?: string
+          predicate: string
+          subject: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json | null
+          object?: string
+          object_type?: string
+          predicate?: string
+          subject?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_field_usage: {
         Row: {
           category: string | null
