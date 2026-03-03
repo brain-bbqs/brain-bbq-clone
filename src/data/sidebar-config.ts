@@ -56,10 +56,10 @@ const toolsItems: NavItem[] = [
 
 const knowledgeBaseItems: NavItem[] = [
   { title: "Explorer", url: "/knowledge-graph", icon: Globe },
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Species", url: "/species", icon: Bug },
   { title: "Publications", url: "/publications", icon: FileText },
+  { title: "Data Provenance", url: "/data-provenance", icon: History },
 ];
 
 const communityItems: NavItem[] = [
