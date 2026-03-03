@@ -44,13 +44,13 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
   { title: "Paper Extractor", url: "/paper-extractor", icon: ScanSearch },
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Data Provenance", url: "/data-provenance", icon: History, disabled: true },
+  { title: "Data Provenance", url: "/data-provenance", icon: History },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Resources", url: "/resources", icon: Database },
   { title: "Computational Models", url: "/computational-models", icon: BrainCircuit },
