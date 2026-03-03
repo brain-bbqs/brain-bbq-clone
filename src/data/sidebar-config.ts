@@ -76,6 +76,7 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb },
 ];
 
 const legalItems: NavItem[] = [
