@@ -11,9 +11,30 @@ function getSessionId(): string {
   return sid;
 }
 
+async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function useAnalytics() {
   const location = useLocation();
   const lastPath = useRef<string>("");
+  const userIdRef = useRef<string | null>(null);
+
+  // Resolve user id once on mount and on auth changes
+  useEffect(() => {
+    getCurrentUserId().then((uid) => { userIdRef.current = uid; });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      userIdRef.current = session?.user?.id ?? null;
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Track page views on route change
   useEffect(() => {
@@ -28,6 +49,7 @@ export function useAnalytics() {
       referrer: document.referrer || null,
       user_agent: navigator.userAgent,
       session_id: sessionId,
+      user_id: userIdRef.current,
     }).then(() => {});
   }, [location.pathname]);
 
@@ -59,6 +81,7 @@ export function useAnalytics() {
         element_href: href,
         section,
         session_id: sessionId,
+        user_id: userIdRef.current,
       }).then(() => {});
     };
 
