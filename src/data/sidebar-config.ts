@@ -44,7 +44,7 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot, disabled: true },
+  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
   { title: "Paper Extractor", url: "/paper-extractor", icon: ScanSearch },
 ];
