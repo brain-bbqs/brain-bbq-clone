@@ -109,6 +109,45 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_external_link: boolean
+          link: string | null
+          link_text: string | null
+          posted_by: string | null
+          posted_by_email: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_external_link?: boolean
+          link?: string | null
+          link_text?: string | null
+          posted_by?: string | null
+          posted_by_email?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_external_link?: boolean
+          link?: string | null
+          link_text?: string | null
+          posted_by?: string | null
+          posted_by_email?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
