@@ -119,6 +119,7 @@ export type Database = {
           link_text: string | null
           posted_by: string | null
           posted_by_email: string | null
+          resource_id: string | null
           title: string
           updated_at: string
         }
@@ -131,6 +132,7 @@ export type Database = {
           link_text?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
+          resource_id?: string | null
           title: string
           updated_at?: string
         }
@@ -143,10 +145,19 @@ export type Database = {
           link_text?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
+          resource_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "announcements_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_conversations: {
         Row: {
@@ -1450,6 +1461,8 @@ export type Database = {
         | "protocol"
         | "benchmark"
         | "ml_model"
+        | "job"
+        | "announcement"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1588,6 +1601,8 @@ export const Constants = {
         "protocol",
         "benchmark",
         "ml_model",
+        "job",
+        "announcement",
       ],
     },
   },
