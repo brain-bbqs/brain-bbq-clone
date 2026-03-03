@@ -29,6 +29,54 @@ function calcCompleteness(project: Record<string, any>): number {
   return Math.round((filled.length / COMPLETENESS_FIELDS.length) * 100);
 }
 
+async function generateEmbedding(text: string, apiKey: string): Promise<number[] | null> {
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.[0]?.embedding ?? null;
+  } catch { return null; }
+}
+
+async function searchKnowledge(supabase: any, query: string, apiKey: string, limit = 5) {
+  const embedding = await generateEmbedding(query, apiKey);
+  if (!embedding) return [];
+  const { data } = await supabase.rpc("search_knowledge_embeddings", {
+    query_embedding: `[${embedding.join(",")}]`,
+    match_threshold: 0.5,
+    match_count: limit,
+  });
+  return data || [];
+}
+
+async function writeBackInteraction(
+  supabase: any, apiKey: string,
+  opts: { userMessage: string; assistantResponse: string; functionName: string; toolCalls?: any[]; metadata?: any }
+) {
+  try {
+    const content = `User asked: ${opts.userMessage}\n\nAssistant answered: ${opts.assistantResponse}`;
+    const embedding = await generateEmbedding(content, apiKey);
+    if (!embedding) return;
+    await supabase.from("knowledge_embeddings").upsert({
+      source_type: "chat_interaction",
+      source_id: `${opts.functionName}_${Date.now()}`,
+      title: `[${opts.functionName}] ${opts.userMessage.slice(0, 180)}`,
+      content: content.slice(0, 4000),
+      embedding: `[${embedding.join(",")}]`,
+      metadata: {
+        function: opts.functionName,
+        tool_calls: opts.toolCalls || [],
+        timestamp: new Date().toISOString(),
+        ...opts.metadata,
+      },
+    }, { onConflict: "source_id" });
+  } catch (e) { console.error("Embedding write-back error:", e); }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -64,6 +112,13 @@ serve(async (req) => {
       }
     }
 
+    // RAG: search shared knowledge base for additional context
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content || "";
+    const ragContexts = await searchKnowledge(sb, lastUserMsg, LOVABLE_API_KEY, 5);
+    const ragSection = ragContexts.length > 0
+      ? `\n\n## Related Knowledge Base Context:\n${ragContexts.map((c: any) => `[${c.source_type}] ${c.title}: ${c.content.slice(0, 400)}`).join("\n---\n")}`
+      : "";
+
     const systemPrompt = `You are a metadata assistant for the BBQS (Brain Behavior Quantification and Synchronization) neuroscience consortium. Scientists will describe their experiments, methods, species, tools, and data in natural language. Your job is to:
 
 1. Understand what they're describing
@@ -91,7 +146,8 @@ IMPORTANT RULES:
 - MERGE new values with existing arrays — never overwrite existing values
 - Use canonical/standardized names when possible
 - Be conversational and helpful — scientists should feel like they're talking to a knowledgeable colleague
-- After updating, summarize what changed and ask if there's more to add`;
+- After updating, summarize what changed and ask if there's more to add
+${ragSection}`;
 
     const tools = [{
       type: "function" as const,
@@ -201,13 +257,12 @@ IMPORTANT RULES:
       }
 
       // Log to edit_history with chat context
-      // Extract the last user message as chat context
       const chatContext = messages.slice(-3).map((m: any) => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content.slice(0, 500) : '',
       }));
 
-      const historyRows = fieldsUpdated.map(field => ({
+      const historyRows = fieldsUpdated.map((field: string) => ({
         grant_number,
         edited_by: "ai-assistant",
         field_name: field,
@@ -256,6 +311,15 @@ IMPORTANT RULES:
         finalContent = followUpResult.choices?.[0]?.message?.content || finalContent;
       }
     }
+
+    // Write back interaction to knowledge_embeddings (fire-and-forget)
+    writeBackInteraction(sb, LOVABLE_API_KEY, {
+      userMessage: lastUserMsg,
+      assistantResponse: finalContent,
+      functionName: "metadata-chat",
+      toolCalls: fieldsUpdated.map(f => ({ field: f, value: dbUpdates[f] })),
+      metadata: { grant_number, fields_updated: fieldsUpdated },
+    });
 
     return new Response(JSON.stringify({
       reply: finalContent,
