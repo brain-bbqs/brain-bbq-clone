@@ -39,6 +39,7 @@ export interface NavGroup {
 const mainItems: NavItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "About", url: "/about", icon: Info },
+  { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb },
   { title: "My Profile", url: "/profile", icon: Users },
 ];
@@ -50,15 +51,13 @@ const assistantsItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
-  { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "Resources", url: "/resources", icon: Database },
   { title: "Computational Models", url: "/computational-models", icon: BrainCircuit },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
   { title: "Explorer", url: "/knowledge-graph", icon: Globe },
-  
+  { title: "Data Provenance", url: "/data-provenance", icon: History },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Species", url: "/species", icon: Bug },
   { title: "Publications", url: "/publications", icon: FileText },
