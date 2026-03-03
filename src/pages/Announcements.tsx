@@ -63,14 +63,21 @@ const Announcements = () => {
               <CardContent>
                 <p className="text-muted-foreground">
                   {announcement.content}
-                  {announcement.link && (
+                  {announcement.link && announcement.external ? (
+                    <>
+                      {" "}
+                      <a href={announcement.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        {announcement.linkText} ↗
+                      </a>
+                    </>
+                  ) : announcement.link ? (
                     <>
                       {" "}
                       <Link to={announcement.link} className="text-primary hover:underline">
                         {announcement.linkText}
                       </Link>
                     </>
-                  )}
+                  ) : null}
                 </p>
               </CardContent>
             </Card>
