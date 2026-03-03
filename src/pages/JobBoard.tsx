@@ -75,7 +75,7 @@ export default function JobBoard() {
   const postJob = useMutation({
     mutationFn: async (data: JobFormData) => {
       if (!user) throw new Error("Must be signed in");
-      const { error } = await supabase.from("jobs").insert({
+      const { error } = await (supabase as any).from("jobs").insert({
         ...data,
         posted_by: user.id,
         posted_by_email: user.email,
