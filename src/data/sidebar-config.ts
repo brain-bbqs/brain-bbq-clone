@@ -68,7 +68,7 @@ const communityItems: NavItem[] = [
   { title: "People", url: "/investigators", icon: Users },
   { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Announcements", url: "/announcements", icon: Bell },
-  { title: "Job Board", url: "#", icon: Briefcase },
+  { title: "Job Board", url: "/jobs", icon: Briefcase },
   { title: "Calendar", url: "#", icon: CalendarDays },
 ];
 
