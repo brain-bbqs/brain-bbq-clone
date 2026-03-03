@@ -77,8 +77,6 @@ const DataSharingPolicy = () => {
         </p>
       </div>
 
-      {/* Data Flow Visualization */}
-      <DataFlowDiagram />
 
       {/* Version History */}
       <VersionHistoryGrid />
