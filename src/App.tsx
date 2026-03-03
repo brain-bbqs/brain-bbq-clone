@@ -35,6 +35,7 @@ import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
 import ComputationalModels from "./pages/ComputationalModels";
 import PaperExtractor from "./pages/PaperExtractor";
+import JobBoard from "./pages/JobBoard";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               <Route path="/computational-models" element={<ComputationalModels />} />
               <Route path="/paper-extractor" element={<PaperExtractor />} />
+              <Route path="/jobs" element={<JobBoard />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />

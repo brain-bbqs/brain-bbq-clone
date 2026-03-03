@@ -564,6 +564,74 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          application_url: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          department: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          institution: string
+          is_active: boolean
+          job_type: string
+          location: string | null
+          posted_by: string | null
+          posted_by_email: string | null
+          resource_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_url?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          institution: string
+          is_active?: boolean
+          job_type?: string
+          location?: string | null
+          posted_by?: string | null
+          posted_by_email?: string | null
+          resource_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_url?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          institution?: string
+          is_active?: boolean
+          job_type?: string
+          location?: string | null
+          posted_by?: string | null
+          posted_by_email?: string | null
+          resource_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_embeddings: {
         Row: {
           content: string
