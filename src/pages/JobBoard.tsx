@@ -235,7 +235,7 @@ export default function JobBoard() {
           >
             All {jobs?.length ? `(${jobs.length})` : ""}
           </button>
-          {Object.entries(jobCounts).map(([type, count]) => (
+          {Object.entries(jobCounts).map(([type, count]: [string, number]) => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
