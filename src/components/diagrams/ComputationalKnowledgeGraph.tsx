@@ -491,7 +491,8 @@ export function ComputationalKnowledgeGraph() {
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const { width } = entries[0].contentRect;
-      setDimensions({ width: Math.max(400, width), height: Math.max(500, Math.min(750, width * 0.65)) });
+      const vh = window.innerHeight;
+      setDimensions({ width: Math.max(400, width), height: Math.max(500, vh - 200) });
     });
     ro.observe(el);
     return () => ro.disconnect();
