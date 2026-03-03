@@ -36,6 +36,7 @@ import DandiAssistant from "./pages/DandiAssistant";
 import ComputationalModels from "./pages/ComputationalModels";
 import PaperExtractor from "./pages/PaperExtractor";
 import JobBoard from "./pages/JobBoard";
+import Calendar from "./pages/Calendar";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/computational-models" element={<ComputationalModels />} />
               <Route path="/paper-extractor" element={<PaperExtractor />} />
               <Route path="/jobs" element={<JobBoard />} />
+              <Route path="/calendar" element={<Calendar />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
