@@ -25,13 +25,18 @@ const LATIN_NAMES: Record<string, string> = {
   "Marmoset": "Callithrix jacchus",
 };
 
+interface ProjectInfo {
+  name: string;
+  grantId: string;
+}
+
 interface SpeciesRow {
   species: string;
   latinName: string;
-  project: string;
-  grantId: string;
-  behavior: string;
+  projects: ProjectInfo[];
+  behaviors: string[];
   color: string;
+  projectCount: number;
 }
 
 const getProjectTitle = (shortName: string) => {
@@ -39,44 +44,69 @@ const getProjectTitle = (shortName: string) => {
   return parts.length > 1 ? parts.slice(1).join(" – ").trim() : shortName;
 };
 
-const rows: SpeciesRow[] = MARR_PROJECTS.map((p) => ({
-  species: p.species,
-  latinName: LATIN_NAMES[p.species] || "",
-  project: getProjectTitle(p.shortName),
-  grantId: p.id,
-  behavior: p.computational.join("; "),
-  color: p.color,
-}));
+// Group projects by species
+const rows: SpeciesRow[] = (() => {
+  const grouped = new Map<string, { projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
+
+  for (const p of MARR_PROJECTS) {
+    const existing = grouped.get(p.species);
+    const project: ProjectInfo = { name: getProjectTitle(p.shortName), grantId: p.id };
+    if (existing) {
+      existing.projects.push(project);
+      p.computational.forEach((b) => existing.behaviors.add(b));
+    } else {
+      grouped.set(p.species, {
+        projects: [project],
+        behaviors: new Set(p.computational),
+        color: p.color,
+      });
+    }
+  }
+
+  return Array.from(grouped.entries()).map(([species, data]) => ({
+    species,
+    latinName: LATIN_NAMES[species] || "",
+    projects: data.projects,
+    behaviors: Array.from(data.behaviors),
+    color: data.color,
+    projectCount: data.projects.length,
+  }));
+})();
 
 const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
   <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
     {value}
+    <Badge variant="secondary" className="text-[10px] ml-1">{data.projectCount}</Badge>
   </span>
 );
 
-const ProjectLink = ({ value, data }: { value: string; data: SpeciesRow }) => {
-  const cleanId = data.grantId.replace(/^\d(?=[A-Z])/, "");
-  const url = `https://reporter.nih.gov/project-details/${cleanId}`;
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer text-sm"
-    >
-      {value}
-      <ExternalLink className="h-3 w-3 opacity-60" />
-    </a>
-  );
-};
+const ProjectLinks = ({ data }: { value: any; data: SpeciesRow }) => (
+  <div className="flex flex-col gap-1 py-1">
+    {data.projects.map((p) => {
+      const cleanId = p.grantId.replace(/^\d(?=[A-Z])/, "");
+      const url = `https://reporter.nih.gov/project-details/${cleanId}`;
+      return (
+        <a
+          key={p.grantId}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-medium transition-colors cursor-pointer text-sm"
+        >
+          {p.name}
+          <ExternalLink className="h-3 w-3 opacity-60 shrink-0" />
+        </a>
+      );
+    })}
+  </div>
+);
 
-const BehaviorBadges = ({ value }: { value: string }) => {
-  if (!value) return null;
-  const items = value.split("; ");
+const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
+  if (!data.behaviors.length) return null;
   return (
     <div className="flex flex-wrap gap-1 py-1">
-      {items.map((item) => (
+      {data.behaviors.map((item) => (
         <Badge key={item} variant="secondary" className="text-[10px] font-normal whitespace-nowrap">
           {item}
         </Badge>
@@ -95,15 +125,15 @@ export default function Species() {
 
   const columnDefs = useMemo<ColDef<SpeciesRow>[]>(
     () => [
-      { field: "species", headerName: "Species", width: 160, cellRenderer: SpeciesBadge },
+      { field: "species", headerName: "Species", width: 180, cellRenderer: SpeciesBadge },
       { field: "latinName", headerName: "Taxonomy", width: 200, cellStyle: { fontStyle: "italic" } },
-      { field: "project", headerName: "Project", width: 260, cellRenderer: ProjectLink },
-      { field: "behavior", headerName: "Behavior", flex: 1, minWidth: 300, cellRenderer: BehaviorBadges },
+      { field: "projects", headerName: "Projects", width: 300, cellRenderer: ProjectLinks,
+        getQuickFilterText: (params) => params.data?.projects.map((p) => p.name).join(" ") || "" },
+      { field: "behaviors", headerName: "Behaviors", flex: 1, minWidth: 300, cellRenderer: BehaviorBadges,
+        getQuickFilterText: (params) => params.data?.behaviors.join(" ") || "" },
     ],
     []
   );
-
-  const speciesCount = useMemo(() => new Set(rows.map((r) => r.species)).size, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +152,7 @@ export default function Species() {
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {speciesCount} species · {rows.length} projects
+              {rows.length} species · {MARR_PROJECTS.length} projects
             </span>
           </div>
         </div>
