@@ -283,6 +283,9 @@ export type Database = {
           new_value: Json | null
           old_value: Json | null
           project_id: string | null
+          validation_checks: Json | null
+          validation_protocols: string[] | null
+          validation_status: string | null
         }
         Insert: {
           chat_context?: Json | null
@@ -294,6 +297,9 @@ export type Database = {
           new_value?: Json | null
           old_value?: Json | null
           project_id?: string | null
+          validation_checks?: Json | null
+          validation_protocols?: string[] | null
+          validation_status?: string | null
         }
         Update: {
           chat_context?: Json | null
@@ -305,6 +311,9 @@ export type Database = {
           new_value?: Json | null
           old_value?: Json | null
           project_id?: string | null
+          validation_checks?: Json | null
+          validation_protocols?: string[] | null
+          validation_status?: string | null
         }
         Relationships: [
           {
