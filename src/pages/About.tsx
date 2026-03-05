@@ -1,6 +1,8 @@
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageMeta } from "@/components/PageMeta";
+import VisionSection from "@/components/VisionSection";
+import MissionSection from "@/components/MissionSection";
 
 export default function About() {
   return (
@@ -15,8 +17,12 @@ export default function About() {
           </p>
         </div>
 
+        {/* Vision & Mission */}
+        <VisionSection />
+        <MissionSection />
+
         {/* Video Section */}
-        <div className="mb-12">
+        <div className="mb-12 mt-8">
           <div className="aspect-video rounded-lg overflow-hidden border border-border bg-muted">
             <iframe
               src="https://www.youtube.com/embed/UrvmYz41wsA"
