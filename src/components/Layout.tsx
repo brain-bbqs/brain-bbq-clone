@@ -2,6 +2,8 @@ import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/com
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { PanelLeft } from "lucide-react";
+import { EntitySummaryProvider } from "@/contexts/EntitySummaryContext";
+import { EntitySummaryModal } from "@/components/entity-summary/EntitySummaryModal";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,16 +29,19 @@ export function Layout({ children }: LayoutProps) {
   useAnalytics();
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <FloatingTrigger />
-        <SidebarInset className="flex flex-col flex-1">
-          <main className="flex-1">
-            {children}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <EntitySummaryProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <FloatingTrigger />
+          <SidebarInset className="flex flex-col flex-1">
+            <main className="flex-1">
+              {children}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+      <EntitySummaryModal />
+    </EntitySummaryProvider>
   );
 }

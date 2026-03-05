@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
