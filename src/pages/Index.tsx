@@ -7,17 +7,7 @@ import {
   Database,
   FolderOpen,
   Scale,
-  Bell,
-  Briefcase,
-  CalendarDays,
-  Calendar,
-  FlaskConical,
-  ScanSearch,
-  Bug,
-  FileText,
-  History,
-  Map,
-  Lightbulb,
+  ChevronRight,
 } from "lucide-react";
 
 interface NavCard {
@@ -55,12 +45,13 @@ const navCards: NavCard[] = [
     ],
   },
   {
-    title: "Tools",
-    description: "Software, datasets, benchmarks, and resources for neuroscience research.",
+    title: "Tools & Tutorials",
+    description: "Software, datasets, benchmarks, resources, and learning materials.",
     icon: Database,
     color: "hsl(38 90% 50%)",
     links: [
       { label: "Resources", to: "/resources" },
+      { label: "Tutorials", to: "/tutorials" },
     ],
   },
   {
@@ -103,42 +94,56 @@ const Index = () => {
       </div>
 
       {/* Navigation Cards */}
-      <main className="px-4 sm:px-6 pb-16 -mt-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <main className="px-4 sm:px-6 pb-16 mt-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {navCards.map((card) => (
             <div
               key={card.title}
-              className="group relative bg-card border border-border rounded-xl p-5 hover:shadow-lg transition-all duration-200 hover:border-primary/30"
+              className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl transition-all duration-200 hover:border-primary/30"
             >
               {/* Color accent bar */}
               <div
-                className="absolute top-0 left-4 right-4 h-1 rounded-b-full opacity-70 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0 left-5 right-5 h-1.5 rounded-b-full opacity-70 group-hover:opacity-100 transition-opacity"
                 style={{ backgroundColor: card.color }}
               />
 
-              <div className="flex items-start gap-3 mt-2 mb-3">
+              <div className="flex items-start gap-4 mt-3 mb-4">
                 <div
-                  className="p-2 rounded-lg shrink-0"
-                  style={{ backgroundColor: `${card.color}18` }}
+                  className="p-3 rounded-xl shrink-0"
+                  style={{ backgroundColor: `${card.color}20` }}
                 >
-                  <card.icon className="h-5 w-5" style={{ color: card.color }} />
+                  <card.icon className="h-6 w-6" style={{ color: card.color }} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-foreground text-base">{card.title}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  <h2 className="font-bold text-foreground text-lg">{card.title}</h2>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     {card.description}
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {card.links.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="inline-flex items-center text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg border transition-all duration-150 hover:shadow-sm"
+                    style={{
+                      borderColor: `${card.color}40`,
+                      color: card.color,
+                      backgroundColor: `${card.color}08`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = `${card.color}18`;
+                      e.currentTarget.style.borderColor = `${card.color}60`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = `${card.color}08`;
+                      e.currentTarget.style.borderColor = `${card.color}40`;
+                    }}
                   >
                     {link.label}
+                    <ChevronRight className="h-3.5 w-3.5 opacity-50" />
                   </Link>
                 ))}
               </div>
