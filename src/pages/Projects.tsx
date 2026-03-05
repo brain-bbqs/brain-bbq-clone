@@ -253,7 +253,26 @@ const Projects = () => {
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [selectedPi, setSelectedPi] = useState<string>("");
+
+  // Extract unique PI names for filter
+  const uniquePis = useMemo(() => {
+    const piSet = new Set<string>();
+    rowData.forEach(row => {
+      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim())).filter(Boolean);
+      names.forEach(n => piSet.add(n));
+    });
+    return Array.from(piSet).sort();
+  }, [rowData]);
+
+  // Filtered data based on PI selection
+  const filteredData = useMemo(() => {
+    if (!selectedPi) return rowData;
+    return rowData.filter(row => {
+      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim()));
+      return names.includes(selectedPi);
+    });
+  }, [rowData, selectedPi]);
 
   // Fetch grants from server cache (data refreshed via cron/admin)
   const { data: rowData = [], isLoading: loading, refetch } = useQuery({
