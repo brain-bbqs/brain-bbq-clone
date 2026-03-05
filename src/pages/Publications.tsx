@@ -387,12 +387,7 @@ export default function Publications() {
               onCellMouseOut={onCellMouseOut}
             />
           </div>
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              onGridReady={onGridReady}
-              quickFilterText={quickFilterText}
-              
-              rowHeight={44}
+        )
               headerHeight={40}
               animateRows
               pagination
