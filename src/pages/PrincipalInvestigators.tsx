@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
-import { getAllWorkingGroupChairNames } from "@/data/working-group-chairs";
+import { isWorkingGroupChair } from "@/data/working-group-chairs";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
