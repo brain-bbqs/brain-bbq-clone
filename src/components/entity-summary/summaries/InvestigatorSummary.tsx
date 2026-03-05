@@ -358,6 +358,17 @@ export function InvestigatorSummary({ id }: { id: string }) {
               {data.organizations.length > 0 && ` · ${data.organizations.map((o) => o.name).join(", ")}`}
             </p>
           </div>
+          {isOwner && (
+            <Badge variant="outline" className="gap-1 text-xs bg-primary/10 text-primary border-primary/30">
+              <UserCheck className="h-3 w-3" /> Your Profile
+            </Badge>
+          )}
+          {canClaim && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleClaim} disabled={isClaiming}>
+              <UserPlus className="h-3.5 w-3.5" />
+              {isClaiming ? "Claiming..." : "This is me"}
+            </Button>
+          )}
           <div className="text-right">
             <span className={`text-lg font-bold ${completeness === 100 ? "text-primary" : completeness >= 70 ? "text-yellow-500" : "text-destructive"}`}>
               {completeness}%
