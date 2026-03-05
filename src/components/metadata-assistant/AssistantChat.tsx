@@ -21,13 +21,6 @@ interface AssistantChatProps {
   fieldsUpdated?: string[];
 }
 
-const STARTERS = [
-  "What metadata fields are missing for this project?",
-  "Validate my metadata against BIDS, NWB, and HED standards",
-  "Who else in the consortium uses similar metadata?",
-  "What do I need to change to make this project compliant?",
-  "Help me describe my experiments to fill in the gaps",
-];
 
 function ValidationChecklist({ validation }: { validation: ValidationResult }) {
   const [expanded, setExpanded] = useState(true);
