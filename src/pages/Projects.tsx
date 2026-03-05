@@ -593,7 +593,7 @@ const Projects = () => {
 
         {isMobile ? (
           <MobileCardList
-            items={rowData
+            items={filteredData
               .filter((r) => !quickFilterText || r.title.toLowerCase().includes(quickFilterText.toLowerCase()) || r.contactPi.toLowerCase().includes(quickFilterText.toLowerCase()))
               .map((r) => ({
                 id: r.grantNumber,
