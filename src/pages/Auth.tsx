@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Mail, Lock, Loader2, User } from "lucide-react";
+import { Mail, Lock, Loader2, User, Globe } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 interface AllowedDomain {
@@ -19,6 +20,7 @@ interface AllowedDomain {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -26,11 +28,76 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("");
   const [loading, setLoading] = useState(false);
+  const [globusLoading, setGlobusLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) navigate("/");
   }, [user, navigate]);
+
+  // Handle Globus callback
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      handleGlobusCallback(code);
+    }
+  }, [searchParams]);
+
+  const handleGlobusCallback = async (code: string) => {
+    setGlobusLoading(true);
+    try {
+      const redirectUri = `${window.location.origin}/auth`;
+      const { data, error } = await supabase.functions.invoke("globus-auth", {
+        body: { action: "callback", code, redirect_uri: redirectUri },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Globus authentication failed");
+      }
+
+      // Use the token_hash to verify OTP and get session
+      const { error: otpError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: "magiclink",
+      });
+
+      if (otpError) {
+        throw otpError;
+      }
+
+      toast.success(`Welcome, ${data.name || data.email}!`);
+      // Clear the code from URL
+      window.history.replaceState({}, "", "/auth");
+      navigate("/");
+    } catch (err: any) {
+      console.error("Globus callback error:", err);
+      toast.error(err.message || "Globus sign-in failed");
+      // Clear the code from URL
+      window.history.replaceState({}, "", "/auth");
+    } finally {
+      setGlobusLoading(false);
+    }
+  };
+
+  const handleGlobusLogin = async () => {
+    setGlobusLoading(true);
+    try {
+      const redirectUri = `${window.location.origin}/auth`;
+      const { data, error } = await supabase.functions.invoke("globus-auth", {
+        body: { action: "login", redirect_uri: redirectUri },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Failed to start Globus login");
+      }
+
+      // Redirect to Globus authorization
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start Globus login");
+      setGlobusLoading(false);
+    }
+  };
 
   const { data: allowedDomains = [] } = useQuery<AllowedDomain[]>({
     queryKey: ["allowed-domains"],
@@ -92,6 +159,20 @@ export default function Auth() {
     }
   };
 
+  // Show loading if processing Globus callback
+  if (globusLoading && searchParams.get("code")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-12 flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Signing in with Globus…</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
@@ -106,6 +187,29 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Globus Sign-In */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full mb-4"
+            onClick={handleGlobusLogin}
+            disabled={globusLoading}
+          >
+            {globusLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Globe className="mr-2 h-4 w-4" />
+            )}
+            Sign in with Globus
+          </Button>
+
+          <div className="relative my-4">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+              or
+            </span>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
