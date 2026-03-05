@@ -1,24 +1,106 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Building2, FolderOpen, MessageSquare, History, LogOut, LogIn, Pencil, Check, X } from "lucide-react";
+import { User, Building2, FolderOpen, MessageSquare, History, LogOut, LogIn, Pencil, Check, X, Plus, Tag, FlaskConical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+// Editable tag list component for skills / research areas
+function EditableTagList({
+  label,
+  icon: Icon,
+  items,
+  onSave,
+}: {
+  label: string;
+  icon: React.ElementType;
+  items: string[];
+  onSave: (updated: string[]) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const addItem = () => {
+    const val = draft.trim();
+    if (!val || items.includes(val)) { setDraft(""); return; }
+    onSave([...items, val]);
+    setDraft("");
+    setAdding(false);
+  };
+
+  const removeItem = (item: string) => {
+    onSave(items.filter((i) => i !== item));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5" />
+          {label}
+        </span>
+        {!adding && (
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setAdding(true)}>
+            <Plus className="h-3 w-3 mr-1" /> Add
+          </Button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <Badge key={item} variant="secondary" className="gap-1 pr-1">
+            {item}
+            <button
+              onClick={() => removeItem(item)}
+              className="ml-0.5 hover:text-destructive transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+        {items.length === 0 && !adding && (
+          <span className="text-xs text-muted-foreground italic">None yet — click Add to get started</span>
+        )}
+      </div>
+      {adding && (
+        <div className="flex items-center gap-1.5 mt-2">
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={`Add ${label.toLowerCase()}…`}
+            className="h-7 text-sm flex-1"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addItem();
+              if (e.key === "Escape") { setAdding(false); setDraft(""); }
+            }}
+          />
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={addItem}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setAdding(false); setDraft(""); }}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Profile() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, refetch } = useProfile();
   const navigate = useNavigate();
   const { open } = useEntitySummary();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -44,6 +126,39 @@ export default function Profile() {
       refetch();
     }
   };
+
+  // Fetch linked investigator for this user (by email match)
+  const { data: linkedInvestigator } = useQuery({
+    queryKey: ["profile-investigator", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("investigators")
+        .select("id, skills, research_areas, email")
+        .ilike("email", user!.email!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  // Mutation to update investigator skills / research_areas
+  const updateInvestigator = useMutation({
+    mutationFn: async ({ field, value }: { field: string; value: string[] }) => {
+      if (!linkedInvestigator) throw new Error("No linked investigator");
+      const { error } = await supabase
+        .from("investigators")
+        .update({ [field]: value })
+        .eq("id", linkedInvestigator.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-investigator", user?.email] });
+      toast.success("Profile updated");
+    },
+    onError: () => {
+      toast.error("Failed to update");
+    },
+  });
 
   // Fetch user's organization name
   const { data: orgName } = useQuery({
@@ -253,6 +368,32 @@ export default function Profile() {
           </CardContent>
         )}
       </Card>
+
+      {/* Skills & Research Areas */}
+      {linkedInvestigator && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Skills &amp; Research Areas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <EditableTagList
+              label="Skills"
+              icon={Tag}
+              items={linkedInvestigator.skills || []}
+              onSave={(updated) => updateInvestigator.mutate({ field: "skills", value: updated })}
+            />
+            <EditableTagList
+              label="Research Areas"
+              icon={FlaskConical}
+              items={linkedInvestigator.research_areas || []}
+              onSave={(updated) => updateInvestigator.mutate({ field: "research_areas", value: updated })}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Editable projects */}
       <Card>
