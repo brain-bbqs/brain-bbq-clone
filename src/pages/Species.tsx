@@ -78,13 +78,31 @@ const rows: SpeciesRow[] = (() => {
   }));
 })();
 
-const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
-  <span className="inline-flex items-center gap-1.5 font-semibold text-sm">
-    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
-    {value}
-    <Badge variant="secondary" className="text-[10px] ml-1">{data.projectCount}</Badge>
-  </span>
-);
+const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => {
+  const { open } = useEntitySummary();
+
+  const openSpecies = async () => {
+    const { data: sp } = await supabase
+      .from("species")
+      .select("id, resource_id")
+      .or(`common_name.ilike.${value},name.ilike.${value}`)
+      .maybeSingle();
+    if (sp) {
+      open({ type: "species", id: sp.id, resourceId: sp.resource_id || undefined, label: value });
+    }
+  };
+
+  return (
+    <button
+      onClick={openSpecies}
+      className="inline-flex items-center gap-1.5 font-semibold text-sm text-primary hover:underline cursor-pointer"
+    >
+      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
+      {value}
+      <Badge variant="secondary" className="text-[10px] ml-1">{data.projectCount}</Badge>
+    </button>
+  );
+};
 
 const ProjectLinks = ({ data }: { value: any; data: SpeciesRow }) => {
   const { open } = useEntitySummary();
