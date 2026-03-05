@@ -690,7 +690,7 @@ export default function PrincipalInvestigators() {
   const allColumnDefs = useMemo<Record<ColumnId, ColDef<PIRow>>>(() => ({
     investigator: {
       field: "displayName",
-      headerName: "Investigator",
+      headerName: "Name",
       flex: 1.2,
       minWidth: 220,
       cellRenderer: NameCell,
