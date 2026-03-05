@@ -92,7 +92,7 @@ export function AppSidebar() {
           </Link>
           {!collapsed && (
             <button
-              onClick={() => isMobile ? setOpenMobile(false) : document.querySelector<HTMLButtonElement>('[data-sidebar="trigger"]')?.click()}
+              onClick={() => isMobile ? setOpenMobile(false) : toggleSidebar()}
               className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0"
               title="Close sidebar"
             >
