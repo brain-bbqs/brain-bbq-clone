@@ -324,7 +324,7 @@ const Projects = () => {
       wrapText: true,
       autoHeight: true,
       cellRenderer: InstitutionCell,
-      cellStyle: { whiteSpace: 'normal', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
+      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
     },
     {
       field: "publicationCount",
