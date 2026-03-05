@@ -5,12 +5,13 @@ import { SummaryField } from "../SummaryField";
 import { SummaryTabs } from "../SummaryTabs";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInvestigatorOwnership } from "@/hooks/useInvestigatorOwnership";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { ExternalLink, FileText, User, Pencil, Check, X } from "lucide-react";
+import { ExternalLink, FileText, User, Pencil, Check, X, UserCheck, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Editable inline field
