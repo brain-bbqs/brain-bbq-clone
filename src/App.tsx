@@ -20,7 +20,7 @@ import About from "./pages/About";
 import MetadataAssistant from "./pages/MetadataAssistant";
 import DataProvenance from "./pages/DataProvenance";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
-import KnowledgeGraph from "./pages/KnowledgeGraph";
+
 import DataSharingPolicy from "./pages/DataSharingPolicy";
 import McpDocs from "./pages/McpDocs";
 import McpTutorial from "./pages/McpTutorial";
