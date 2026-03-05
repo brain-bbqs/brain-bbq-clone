@@ -226,6 +226,7 @@ const fetchGrants = async (): Promise<ProjectRow[]> => {
 };
 
 const Projects = () => {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("q") || "";
   const [quickFilterText, setQuickFilterText] = useState(initialFilter);
