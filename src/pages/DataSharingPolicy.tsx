@@ -45,10 +45,10 @@ const VersionHistoryGrid = () => {
 
   return (
     <section className="mb-10">
-      <h2 className="text-lg font-semibold text-foreground mb-3">Version History</h2>
+      <h2 className="text-xl font-bold text-foreground mb-4">Version History</h2>
       <div
         className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-        style={{ height: Math.min(500, versionHistory.length * 52 + 56) }}
+        style={{ width: "100%" }}
       >
         <AgGridReact
           rowData={versionHistory}
@@ -57,7 +57,7 @@ const VersionHistoryGrid = () => {
           animateRows={true}
           suppressCellFocus={true}
           enableCellTextSelection={true}
-          domLayout={versionHistory.length <= 10 ? "autoHeight" : "normal"}
+          domLayout="autoHeight"
         />
       </div>
     </section>
