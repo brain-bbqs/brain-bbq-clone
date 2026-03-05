@@ -752,7 +752,7 @@ export default function PrincipalInvestigators() {
         case "co_pi":
           return pi.grants.some((g) => g.role !== "contact_pi");
         case "wg_chair":
-          return wgChairNames.has(pi.displayName.toLowerCase());
+          return isWorkingGroupChair(pi.displayName);
         default:
           return true;
       }
