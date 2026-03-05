@@ -15,7 +15,7 @@ export function ProjectPicker({ value, onChange }: ProjectPickerProps) {
       const { data } = await supabase
         .from("grants")
         .select("grant_number, title")
-        .order("grant_number");
+        .order("title");
       return data || [];
     },
   });
