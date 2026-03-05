@@ -61,3 +61,6 @@ verify_jwt = false
 verify_jwt = false
 
 
+[functions.metadata-validate]
+verify_jwt = false
+
