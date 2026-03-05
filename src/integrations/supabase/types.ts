@@ -583,6 +583,7 @@ export type Database = {
           scholar_id: string | null
           skills: string[] | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -596,6 +597,7 @@ export type Database = {
           scholar_id?: string | null
           skills?: string[] | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -609,6 +611,7 @@ export type Database = {
           scholar_id?: string | null
           skills?: string[] | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1237,6 +1240,7 @@ export type Database = {
       resources: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           external_url: string | null
           id: string
@@ -1247,6 +1251,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           external_url?: string | null
           id?: string
@@ -1257,6 +1262,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           external_url?: string | null
           id?: string
@@ -1452,6 +1458,14 @@ export type Database = {
       }
       user_can_edit_project: {
         Args: { _grant_number: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_investigator: {
+        Args: { _investigator_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_resource: {
+        Args: { _resource_id: string; _user_id: string }
         Returns: boolean
       }
     }

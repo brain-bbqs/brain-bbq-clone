@@ -5,12 +5,13 @@ import { SummaryField } from "../SummaryField";
 import { SummaryTabs } from "../SummaryTabs";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInvestigatorOwnership } from "@/hooks/useInvestigatorOwnership";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { ExternalLink, FileText, User, Pencil, Check, X } from "lucide-react";
+import { ExternalLink, FileText, User, Pencil, Check, X, UserCheck, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Editable inline field
@@ -100,13 +101,14 @@ export function InvestigatorSummary({ id }: { id: string }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, isClaimed, claim, isClaiming } = useInvestigatorOwnership(id);
 
   const { data, isLoading } = useQuery({
     queryKey: ["entity-investigator", id],
     queryFn: async () => {
       const { data: inv, error } = await supabase
         .from("investigators")
-        .select("*, resource_id")
+        .select("*, resource_id, user_id")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -148,8 +150,20 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
-  // Check if current user can edit this investigator (matches email)
-  const canEdit = user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase();
+  // Can edit if: user owns this investigator (via user_id link) OR email matches (legacy)
+  const canEdit = isOwner || (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
+  // Show claim button if: user is logged in, investigator is unclaimed, and user doesn't own it
+  const canClaim = user && !isClaimed && !isOwner && !canEdit;
+
+  const handleClaim = async () => {
+    try {
+      await claim();
+      toast({ title: "Profile claimed!", description: "You can now edit this investigator profile." });
+      queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] });
+    } catch (e: any) {
+      toast({ title: "Claim failed", description: e.message || "Could not claim this profile.", variant: "destructive" });
+    }
+  };
 
   const updateField = useMutation({
     mutationFn: async ({ field, value }: { field: string; value: any }) => {
@@ -344,6 +358,17 @@ export function InvestigatorSummary({ id }: { id: string }) {
               {data.organizations.length > 0 && ` · ${data.organizations.map((o) => o.name).join(", ")}`}
             </p>
           </div>
+          {isOwner && (
+            <Badge variant="outline" className="gap-1 text-xs bg-primary/10 text-primary border-primary/30">
+              <UserCheck className="h-3 w-3" /> Your Profile
+            </Badge>
+          )}
+          {canClaim && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleClaim} disabled={isClaiming}>
+              <UserPlus className="h-3.5 w-3.5" />
+              {isClaiming ? "Claiming..." : "This is me"}
+            </Button>
+          )}
           <div className="text-right">
             <span className={`text-lg font-bold ${completeness === 100 ? "text-primary" : completeness >= 70 ? "text-yellow-500" : "text-destructive"}`}>
               {completeness}%
