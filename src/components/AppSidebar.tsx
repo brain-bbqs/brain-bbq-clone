@@ -55,7 +55,7 @@ export function AppSidebar() {
               className="py-3 text-base hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
             >
               {item.url.startsWith("/") ? (
-                <Link to={item.url}>
+                <Link to={item.url} onClick={handleNavClick}>
                   <item.icon className="h-5 w-5" />
                   <span className="text-base">{item.title}</span>
                 </Link>
