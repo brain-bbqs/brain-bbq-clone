@@ -31,6 +31,8 @@ function SummaryContent() {
     case "ml_model":
     case "protocol":
       return <ResourceSummary id={current.id} />;
+    case "working_group":
+      return <WorkingGroupSummary id={current.id} />;
     default:
       return <GenericSummary id={current.id} type={current.type} />;
   }
