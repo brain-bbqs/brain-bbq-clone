@@ -7,17 +7,7 @@ import {
   Database,
   FolderOpen,
   Scale,
-  Bell,
-  Briefcase,
-  CalendarDays,
-  Calendar,
-  FlaskConical,
-  ScanSearch,
-  Bug,
-  FileText,
-  History,
-  Map,
-  Lightbulb,
+  ChevronRight,
 } from "lucide-react";
 
 interface NavCard {
