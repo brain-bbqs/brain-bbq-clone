@@ -488,6 +488,11 @@ const DataSharingPolicy = () => {
           <li>All of Us Consent to Join</li>
         </ul>
       </section>
+
+      <Separator className="my-8" />
+
+      {/* Version History — at the bottom */}
+      <VersionHistoryGrid />
     </div>
   );
 };
