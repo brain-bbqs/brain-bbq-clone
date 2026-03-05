@@ -907,6 +907,20 @@ export default function PrincipalInvestigators() {
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-xs"
             />
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              {ROLE_FILTERS.map((rf) => (
+                <Button
+                  key={rf.id}
+                  variant={roleFilter === rf.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRoleFilter(rf.id)}
+                  className="text-xs h-7 px-3"
+                >
+                  {rf.label}
+                </Button>
+              ))}
+            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5">
