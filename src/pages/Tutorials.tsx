@@ -29,7 +29,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "Select Your Project",
     subtitle: "Find your grant in the Project Grid",
     description:
-      "Open the BBQS Assistant and you'll see a grid of consortium projects. Each card shows the grant number and a completeness score. Click your project to start curating.",
+      "Open the Metadata Assistant and you'll see a grid of consortium projects. Each card shows the grant number and a completeness score. Click your project to start curating.",
     actions: [
       { label: "Locate your grant", detail: "Find your NIH grant number in the project grid" },
       { label: "Check the progress bar", detail: "It shows how much metadata has been filled in" },
