@@ -17,12 +17,13 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, ExternalLink, DollarSign, Columns3 } from "lucide-react";
+import { Loader2, Users, ExternalLink, DollarSign, Columns3, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
+import { getAllWorkingGroupChairNames } from "@/data/working-group-chairs";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -716,19 +717,47 @@ const ALL_COLUMNS = [
 
 type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
+type RoleFilter = "all" | "pi" | "co_pi" | "wg_chair";
+
+const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "pi", label: "PIs" },
+  { id: "co_pi", label: "Co-PIs" },
+  { id: "wg_chair", label: "WG Chairs" },
+];
+
+const wgChairNames = getAllWorkingGroupChairNames();
+
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
-  const { data: rowData = [], isLoading } = useQuery({
+  const { data: rawRowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
     queryFn: fetchPIs,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+
+  const rowData = useMemo(() => {
+    if (roleFilter === "all") return rawRowData;
+    return rawRowData.filter((pi) => {
+      switch (roleFilter) {
+        case "pi":
+          return pi.grants.some((g) => g.role === "contact_pi");
+        case "co_pi":
+          return pi.grants.some((g) => g.role !== "contact_pi");
+        case "wg_chair":
+          return wgChairNames.has(pi.displayName.toLowerCase());
+        default:
+          return true;
+      }
+    });
+  }, [rawRowData, roleFilter]);
 
   const totalFundingAll = useMemo(() => {
     const seen = new Set<string>();
@@ -878,6 +907,20 @@ export default function PrincipalInvestigators() {
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-xs"
             />
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              {ROLE_FILTERS.map((rf) => (
+                <Button
+                  key={rf.id}
+                  variant={roleFilter === rf.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRoleFilter(rf.id)}
+                  className="text-xs h-7 px-3"
+                >
+                  {rf.label}
+                </Button>
+              ))}
+            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5">
