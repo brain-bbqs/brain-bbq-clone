@@ -717,19 +717,47 @@ const ALL_COLUMNS = [
 
 type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
+type RoleFilter = "all" | "pi" | "co_pi" | "wg_chair";
+
+const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "pi", label: "PIs" },
+  { id: "co_pi", label: "Co-PIs" },
+  { id: "wg_chair", label: "WG Chairs" },
+];
+
+const wgChairNames = getAllWorkingGroupChairNames();
+
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
-  const { data: rowData = [], isLoading } = useQuery({
+  const { data: rawRowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
     queryFn: fetchPIs,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+
+  const rowData = useMemo(() => {
+    if (roleFilter === "all") return rawRowData;
+    return rawRowData.filter((pi) => {
+      switch (roleFilter) {
+        case "pi":
+          return pi.grants.some((g) => g.role === "contact_pi");
+        case "co_pi":
+          return pi.grants.some((g) => g.role !== "contact_pi");
+        case "wg_chair":
+          return wgChairNames.has(pi.displayName.toLowerCase());
+        default:
+          return true;
+      }
+    });
+  }, [rawRowData, roleFilter]);
 
   const totalFundingAll = useMemo(() => {
     const seen = new Set<string>();
