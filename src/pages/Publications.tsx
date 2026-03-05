@@ -41,12 +41,14 @@ const fetchPublications = async (): Promise<Publication[]> => {
 };
 
 const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
-  if (!data?.pubmedLink) return <span>{value}</span>;
+  const { open } = useEntitySummary();
+  if (!data?.id) return <span>{value}</span>;
   return (
-    <a href={data.pubmedLink} target="_blank" rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors">
-      {value}<ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
-    </a>
+    <button
+      onClick={() => open({ type: "publication", id: data.id, resourceId: data.resourceId, label: data.title })}
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors text-left">
+      {value}
+    </button>
   );
 };
 
