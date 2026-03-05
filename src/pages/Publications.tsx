@@ -20,9 +20,9 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 interface AuthorOrcid { name: string; orcid: string; }
 
 interface Publication {
-  pmid: string; title: string; year: number; journal: string; authors: string;
+  id: string; pmid: string; title: string; year: number; journal: string; authors: string;
   citations: number; rcr: number; grantNumber: string; pubmedLink: string;
-  keywords: string[]; authorOrcids: AuthorOrcid[];
+  keywords: string[]; authorOrcids: AuthorOrcid[]; resourceId?: string;
 }
 
 const fetchPublications = async (): Promise<Publication[]> => {
