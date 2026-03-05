@@ -302,6 +302,7 @@ export default function DataProvenance() {
               headerHeight={36}
             />
           </div>
+          </div>
         )}
       </div>
     </div>

@@ -864,6 +864,7 @@ export default function PrincipalInvestigators() {
             )}
           />
         </div>
+        </div>
       </div>
     </div>
   );

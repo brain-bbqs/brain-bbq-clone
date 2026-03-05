@@ -174,6 +174,7 @@ export default function Species() {
             headerHeight={40}
           />
         </div>
+        </div>
       </div>
     </div>
   );

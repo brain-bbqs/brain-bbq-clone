@@ -565,6 +565,7 @@ const Projects = () => {
             )}
           />
         </div>
+        </div>
 
         {/* Funding Visualizations */}
         <FundingCharts data={rowData} />

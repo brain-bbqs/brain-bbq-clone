@@ -292,6 +292,7 @@ export default function FeatureSuggestions() {
                 defaultColDef={{ resizable: true }}
               />
             </div>
+            </div>
           )}
         </CardContent>
       </Card>

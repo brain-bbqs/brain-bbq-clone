@@ -291,7 +291,9 @@ export default function Publications() {
     return { text: "Below Avg", className: "text-muted-foreground" };
   };
 
-
+            {/* end ag grid */}
+          </div>
+          </div>
   const clearFilter = () => {
     setSearchParams({});
   };
