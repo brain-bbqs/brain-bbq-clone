@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, LogOut } from "lucide-react";
+import { LogIn, LogOut, PanelLeftClose } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
@@ -23,7 +23,7 @@ import {
 import type { NavItem } from "@/data/sidebar-config";
 
 export function AppSidebar() {
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
@@ -76,7 +76,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-sidebar-accent/30">
               <img
                 src={bbqsLogoIcon}
@@ -85,12 +85,20 @@ export function AppSidebar() {
               />
             </div>
             {!collapsed && (
-              <span className="font-semibold text-sidebar-foreground text-xs leading-tight">
+              <span className="font-semibold text-sidebar-foreground text-xs leading-tight truncate">
                 Brain Behavior Quantification & Synchronization
               </span>
             )}
           </Link>
-          <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent rounded-md" />
+          {!collapsed && (
+            <button
+              onClick={() => isMobile ? setOpenMobile(false) : toggleSidebar()}
+              className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0"
+              title="Close sidebar"
+            >
+              <PanelLeftClose className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </SidebarHeader>
 
