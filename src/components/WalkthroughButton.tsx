@@ -27,14 +27,8 @@ const steps: Step[] = [
     cta: "Try clicking a project to explore its details.",
     color: "bg-[hsl(38_90%_50%)]",
   },
-  {
-    icon: FlaskConical,
-    title: "Knowledge Graph Explorer",
-    description: "Visualize relationships between projects, tools, and species using interactive Marr-level diagrams — Sankey flows, chord charts, and heatmaps.",
-    route: "/knowledge-graph",
-    cta: "Switch between diagram tabs to explore different views.",
-    color: "bg-[hsl(150_60%_40%)]",
-  },
+
+
   {
     icon: BookOpen,
     title: "Publications",

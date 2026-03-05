@@ -20,7 +20,7 @@ import About from "./pages/About";
 import MetadataAssistant from "./pages/MetadataAssistant";
 import DataProvenance from "./pages/DataProvenance";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
-import KnowledgeGraph from "./pages/KnowledgeGraph";
+
 import DataSharingPolicy from "./pages/DataSharingPolicy";
 import McpDocs from "./pages/McpDocs";
 import McpTutorial from "./pages/McpTutorial";
@@ -33,7 +33,7 @@ import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
-import ComputationalModels from "./pages/ComputationalModels";
+
 import PaperExtractor from "./pages/PaperExtractor";
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
@@ -62,7 +62,7 @@ const App = () => (
               <Route path="/consortia-history" element={<ConsortiaHistory />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
-              <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+              
               <Route path="/data-sharing-policy" element={<DataSharingPolicy />} />
               <Route path="/mcp-docs" element={<McpDocs />} />
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
@@ -75,7 +75,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
-              <Route path="/computational-models" element={<ComputationalModels />} />
+              
               <Route path="/paper-extractor" element={<PaperExtractor />} />
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/calendar" element={<Calendar />} />

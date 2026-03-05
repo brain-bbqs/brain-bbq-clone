@@ -13,7 +13,7 @@ interface SearchablePage {
 const PAGES: SearchablePage[] = [
   { title: "Home", path: "/", keywords: ["home", "dashboard", "overview", "bbqs", "brain", "behavior"], section: "General" },
   { title: "About", path: "/about", keywords: ["about", "mission", "consortium", "overview"], section: "General" },
-  { title: "Explorer", path: "/knowledge-graph", keywords: ["knowledge", "graph", "ontology", "entities", "ner", "extraction", "explorer"], section: "Knowledge Base" },
+  
   { title: "Projects", path: "/projects", keywords: ["projects", "grants", "research", "labs", "marr", "nih", "r34", "r61", "u01"], section: "Knowledge Base" },
   { title: "Publications", path: "/publications", keywords: ["publications", "papers", "journals", "articles", "doi", "pubmed"], section: "Knowledge Base" },
 
@@ -24,7 +24,7 @@ const PAGES: SearchablePage[] = [
   { title: "Protocols", path: "/protocols", keywords: ["protocols", "methods", "3d pose", "methodology"], section: "Tools" },
 
   { title: "Species", path: "/species", keywords: ["species", "mouse", "rat", "primate", "fish", "fly", "drosophila", "zebrafish", "bird"], section: "Science" },
-  { title: "Computational Models", path: "/computational-models", keywords: ["computational", "models", "marr", "levels", "analysis", "framework"], section: "Science" },
+  
 
   { title: "NeuroMCP (Hannah)", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai", "assistant", "ask"], section: "AI" },
 
