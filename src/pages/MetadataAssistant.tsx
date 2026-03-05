@@ -32,7 +32,7 @@ export default function MetadataAssistant() {
     enabled: !!grantNumber,
   });
 
-  const { messages, isLoading, completeness, fieldsUpdated, sendMessage, clearChat } = useMetadataChat(grantNumber);
+  const { messages, isLoading, completeness, fieldsUpdated, lastValidation, sendMessage, clearChat } = useMetadataChat(grantNumber);
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
