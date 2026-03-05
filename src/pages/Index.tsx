@@ -127,15 +127,16 @@ const Index = () => {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg border transition-all duration-150 hover:shadow-sm"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg border transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.03] cursor-pointer"
                     style={{
                       borderColor: `${card.color}40`,
                       color: card.color,
                       backgroundColor: `${card.color}08`,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = `${card.color}18`;
-                      e.currentTarget.style.borderColor = `${card.color}60`;
+                      e.currentTarget.style.backgroundColor = `${card.color}22`;
+                      e.currentTarget.style.borderColor = card.color;
+                      e.currentTarget.style.color = card.color;
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = `${card.color}08`;
@@ -143,7 +144,7 @@ const Index = () => {
                     }}
                   >
                     {link.label}
-                    <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                    <ChevronRight className="h-3.5 w-3.5 opacity-60" />
                   </Link>
                 ))}
               </div>
