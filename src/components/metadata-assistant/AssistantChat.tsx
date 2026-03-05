@@ -30,7 +30,7 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
 
   const statusIcon = (status: string) => {
     if (status === "pass") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
-    if (status === "warn") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />;
+    if (status === "warning") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />;
     return <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />;
   };
 
