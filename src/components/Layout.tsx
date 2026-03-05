@@ -1,18 +1,25 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { PanelLeft } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 function FloatingTrigger() {
-  const { state, isMobile, openMobile } = useSidebar();
-  // Show on desktop when collapsed, or on mobile when sheet is closed
+  const { state, isMobile, openMobile, toggleSidebar } = useSidebar();
   const show = isMobile ? !openMobile : state === "collapsed";
   if (!show) return null;
   return (
-    <SidebarTrigger className="fixed top-3 left-3 z-50 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent rounded-md shadow-md" />
+    <button
+      onClick={toggleSidebar}
+      className="fixed top-3 left-3 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent shadow-lg border border-border transition-all duration-200 hover:shadow-xl"
+      title="Open sidebar"
+    >
+      <PanelLeft className="h-5 w-5" />
+      <span className="text-xs font-medium hidden sm:inline">Menu</span>
+    </button>
   );
 }
 
