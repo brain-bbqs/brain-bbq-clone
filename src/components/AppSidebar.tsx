@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogIn, LogOut, PanelLeftClose, X, Lock } from "lucide-react";
+import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { sidebarGroups } from "@/data/sidebar-config";
 
