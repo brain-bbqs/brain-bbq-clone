@@ -159,7 +159,7 @@ export function WorkingGroupSummary({ id }: { id: string }) {
       </SummaryField>
 
       {/* Documentation & Resources */}
-      {(data.charterUrl || data.resourcesUrl) && (
+      {(data.charterUrl || data.resourcesUrl || data.additionalLinks?.length) && (
         <div className="pt-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Documentation & Resources
@@ -187,6 +187,19 @@ export function WorkingGroupSummary({ id }: { id: string }) {
                 <LinkIcon className="h-3 w-3 ml-auto" />
               </a>
             )}
+            {data.additionalLinks?.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className="flex items-center gap-2 text-sm text-primary hover:underline font-medium rounded-lg border border-border p-3 hover:bg-accent/50 transition-colors"
+              >
+                <LinkIcon className="h-4 w-4" />
+                {link.label}
+                {link.external && <ExternalLink className="h-3 w-3 ml-auto" />}
+              </a>
+            ))}
           </div>
         </div>
       )}
