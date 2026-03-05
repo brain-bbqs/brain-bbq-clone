@@ -154,7 +154,6 @@ export default function Publications() {
 
   const columnDefs: ColDef<Publication>[] = useMemo(() => [
     { field: "title", headerName: "Title", flex: 2, minWidth: 300, cellRenderer: TitleCell, cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-    { field: "authors", headerName: "Authors", flex: 1, minWidth: 200, wrapText: true, autoHeight: true, cellRenderer: AuthorsCell, cellStyle: { whiteSpace: 'normal', lineHeight: '1.5', paddingTop: '6px', paddingBottom: '6px' } },
     { field: "keywords", headerName: "Keywords", flex: 1, minWidth: 220, cellRenderer: KeywordsCell, autoHeight: true, cellStyle: { overflow: 'visible', lineHeight: '1.4' }, filter: "agTextColumnFilter", filterValueGetter: (params) => params.data?.keywords?.join(", ") || "" },
     { field: "citations", headerName: "Citations", width: 100, flex: 0, sort: "desc" },
   ], []);
