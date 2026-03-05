@@ -456,8 +456,8 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const piGrantLinks = grantInvLinks.filter(gi => gi.investigator_id === inv.id);
     let piAsPi = 0;
     let piAsCoPi = 0;
-    const piGrants: GrantInfo[] = [];
     const institutions = new Set<string>();
+    const orgInfos: OrgInfo[] = [];
 
     for (const link of piGrantLinks) {
       const grant = grantByNumber.get(link.grant_number);
