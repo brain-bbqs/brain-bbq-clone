@@ -7,6 +7,7 @@ import {
   Database,
   FolderOpen,
   Scale,
+  Wrench,
   ChevronRight,
 } from "lucide-react";
 
