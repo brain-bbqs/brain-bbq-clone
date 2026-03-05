@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Trash2, CheckCircle2, AlertTriangle, XCircle, Shield } from "lucide-react";
+import { Send, Sparkles, Trash2, CheckCircle2, AlertTriangle, XCircle, Shield, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -25,81 +25,95 @@ const STARTERS = [
   "What metadata fields are still missing?",
 ];
 
-function ValidationBanner({ validation }: { validation: ValidationResult }) {
-  const statusConfig = {
-    approved: {
-      icon: CheckCircle2,
-      label: "All Checks Passed",
-      bg: "bg-emerald-500/10 border-emerald-500/20",
-      text: "text-emerald-600 dark:text-emerald-400",
-      badgeBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    },
-    needs_review: {
-      icon: AlertTriangle,
-      label: "Warnings Detected",
-      bg: "bg-amber-500/10 border-amber-500/20",
-      text: "text-amber-600 dark:text-amber-400",
-      badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    },
-    rejected: {
-      icon: XCircle,
-      label: "Validation Failed",
-      bg: "bg-red-500/10 border-red-500/20",
-      text: "text-red-600 dark:text-red-400",
-      badgeBg: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
-    },
+function ValidationChecklist({ validation }: { validation: ValidationResult }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const statusIcon = (status: string) => {
+    if (status === "pass") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
+    if (status === "warning") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />;
+    return <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />;
   };
 
-  const config = statusConfig[validation.overall_status];
-  const Icon = config.icon;
+  const overallConfig = {
+    approved: { label: "All Checks Passed", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+    needs_review: { label: "Warnings Found", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+    rejected: { label: "Issues Found", color: "text-red-600 dark:text-red-400", bg: "bg-red-500/10 border-red-500/20" },
+  };
+  const overall = overallConfig[validation.overall_status];
+
+  // Group checks by protocol
+  const byProtocol: Record<string, typeof validation.checks> = {};
+  for (const check of validation.checks) {
+    const proto = check.protocol || "general";
+    if (!byProtocol[proto]) byProtocol[proto] = [];
+    byProtocol[proto].push(check);
+  }
 
   return (
-    <div className={cn("rounded-xl border p-3 mx-1 mb-3", config.bg)}>
-      <div className="flex items-center gap-2 mb-2">
-        <Shield className={cn("h-3.5 w-3.5", config.text)} />
-        <span className={cn("text-xs font-semibold uppercase tracking-wide", config.text)}>
-          Validation Protocols
+    <div className={cn("rounded-xl border mx-1 mb-3 overflow-hidden", overall.bg)}>
+      {/* Header - clickable */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-foreground/5 transition-colors"
+      >
+        <Shield className={cn("h-3.5 w-3.5 shrink-0", overall.color)} />
+        <span className={cn("text-xs font-semibold uppercase tracking-wide", overall.color)}>
+          {overall.label}
         </span>
-        <Badge variant="outline" className={cn("text-[10px] ml-auto", config.badgeBg)}>
-          <Icon className="h-3 w-3 mr-1" />
-          {config.label}
-        </Badge>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5 mb-2">
-        {validation.protocols_run.map((protocol) => (
-          <Badge
-            key={protocol}
-            variant="outline"
-            className="text-[10px] px-2 py-0.5 bg-background/50 border-border/50 text-foreground/70"
-          >
-            {protocol}
-          </Badge>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-          {validation.summary.passed} passed
-        </span>
-        {validation.summary.warnings > 0 && (
-          <span className="flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3 text-amber-500" />
-            {validation.summary.warnings} warnings
+        <div className="flex items-center gap-2 ml-auto text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-0.5">
+            <CheckCircle2 className="h-3 w-3 text-emerald-500" />{validation.summary.passed}
           </span>
-        )}
-        {validation.summary.failed > 0 && (
-          <span className="flex items-center gap-1">
-            <XCircle className="h-3 w-3 text-red-500" />
-            {validation.summary.failed} failed
-          </span>
-        )}
-      </div>
+          {validation.summary.warnings > 0 && (
+            <span className="flex items-center gap-0.5">
+              <AlertTriangle className="h-3 w-3 text-amber-500" />{validation.summary.warnings}
+            </span>
+          )}
+          {validation.summary.failed > 0 && (
+            <span className="flex items-center gap-0.5">
+              <XCircle className="h-3 w-3 text-red-500" />{validation.summary.failed}
+            </span>
+          )}
+        </div>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+      </button>
+
+      {/* Checklist items */}
+      {expanded && (
+        <div className="border-t border-border/30 px-3 py-2 space-y-1">
+          {Object.entries(byProtocol).map(([protocol, checks]) => (
+            <div key={protocol}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mt-1 mb-0.5 px-0.5">
+                {protocol}
+              </p>
+              {checks.map((check, idx) => (
+                <div
+                  key={idx}
+                  className={cn(
+                    "flex items-start gap-2 py-1.5 px-2 rounded-lg text-xs",
+                    check.status === "fail" && "bg-red-500/5",
+                    check.status === "warning" && "bg-amber-500/5",
+                  )}
+                >
+                  {statusIcon(check.status)}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-foreground/90">{check.message}</span>
+                    {check.suggestions && check.suggestions.length > 0 && (
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">
+                        💡 {check.suggestions.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[9px] text-muted-foreground/50 shrink-0 mt-0.5">{check.field}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
 export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -207,10 +221,10 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 </div>
               )}
             </div>
-            {/* Show validation banner after the last assistant message */}
+            {/* Show validation checklist after the last assistant message */}
             {msg.role === "assistant" && i === messages.length - 1 && lastValidation && (
               <div className="mt-3">
-                <ValidationBanner validation={lastValidation} />
+                <ValidationChecklist validation={lastValidation} />
               </div>
             )}
           </div>
