@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
 import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
 import { SuggestedActions, WORKFLOW_ACTIONS } from "@/components/metadata-assistant/SuggestedActions";
+import { VoiceAgentButton } from "@/components/metadata-assistant/VoiceAgentButton";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage, ValidationResult } from "@/hooks/useMetadataChat";
 import { cn } from "@/lib/utils";
