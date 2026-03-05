@@ -313,7 +313,7 @@ const Projects = () => {
       wrapText: true,
       autoHeight: true,
       cellRenderer: PiCell,
-      cellStyle: { whiteSpace: 'normal', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
+      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
       valueGetter: (params) => params.data?.allPis || params.data?.contactPi || '',
     },
     {
