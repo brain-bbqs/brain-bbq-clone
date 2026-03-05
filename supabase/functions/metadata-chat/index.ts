@@ -77,6 +77,75 @@ async function writeBackInteraction(
   } catch (e) { console.error("Embedding write-back error:", e); }
 }
 
+/** Call the metadata-validate function internally */
+async function runValidationPipeline(
+  changes: { field: string; values: string[] }[],
+  supabaseUrl: string,
+  supabaseKey: string,
+): Promise<any> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/metadata-validate`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ changes }),
+    });
+    if (!res.ok) {
+      console.error("Validation call failed:", res.status);
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.error("Validation pipeline error:", e);
+    return null;
+  }
+}
+
+/** Format validation results into a markdown section for the AI to include */
+function formatValidationReport(validation: any): string {
+  if (!validation) return "";
+
+  const statusEmoji: Record<string, string> = {
+    pass: "✅",
+    warning: "⚠️",
+    fail: "❌",
+  };
+
+  let report = "\n\n---\n### 🔬 Validation Protocol Results\n\n";
+
+  for (const protocol of (validation.protocols_run || [])) {
+    const checks = validation.by_protocol?.[protocol] || [];
+    const passes = checks.filter((c: any) => c.status === "pass").length;
+    const warns = checks.filter((c: any) => c.status === "warning").length;
+    const fails = checks.filter((c: any) => c.status === "fail").length;
+
+    const protocolEmoji = fails > 0 ? "❌" : warns > 0 ? "⚠️" : "✅";
+    report += `**${protocolEmoji} ${protocol}** — ${passes} passed`;
+    if (warns > 0) report += `, ${warns} warnings`;
+    if (fails > 0) report += `, ${fails} failed`;
+    report += "\n";
+
+    for (const check of checks) {
+      report += `  ${statusEmoji[check.status]} ${check.message}\n`;
+      if (check.suggestions?.length) {
+        report += `    💡 Suggestions: ${check.suggestions.join(", ")}\n`;
+      }
+    }
+    report += "\n";
+  }
+
+  const statusLabel: Record<string, string> = {
+    approved: "✅ **All checks passed** — changes auto-approved.",
+    needs_review: "⚠️ **Warnings detected** — changes applied but review recommended.",
+    rejected: "❌ **Validation failed** — some changes were not applied. See details above.",
+  };
+
+  report += statusLabel[validation.overall_status] || "";
+  return report;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -112,7 +181,7 @@ serve(async (req) => {
       }
     }
 
-    // RAG: search shared knowledge base for additional context
+    // RAG: search shared knowledge base
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content || "";
     const ragContexts = await searchKnowledge(sb, lastUserMsg, LOVABLE_API_KEY, 5);
     const ragSection = ragContexts.length > 0
@@ -124,7 +193,8 @@ serve(async (req) => {
 1. Understand what they're describing
 2. Extract structured metadata from their description
 3. Use the update_project_metadata tool to save the extracted data
-4. Confirm what you updated and ask if anything is missing
+4. The system will automatically run validation protocols (BIDS, NWB, HED) on your proposed changes
+5. Include the validation results in your response so the user can see what passed/failed
 
 The project you're working with:
 - Grant: ${grant?.grant_number || grant_number}
@@ -146,7 +216,7 @@ IMPORTANT RULES:
 - MERGE new values with existing arrays — never overwrite existing values
 - Use canonical/standardized names when possible
 - Be conversational and helpful — scientists should feel like they're talking to a knowledgeable colleague
-- After updating, summarize what changed and ask if there's more to add
+- After updating, include the validation protocol results and summarize what changed
 ${ragSection}`;
 
     const tools = [{
@@ -175,7 +245,7 @@ ${ragSection}`;
       },
     }];
 
-    // First AI call — may produce a tool call
+    // First AI call
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -213,19 +283,26 @@ ${ragSection}`;
     const choice = aiResult.choices?.[0];
     const assistantMessage = choice?.message;
 
-    // Check if AI wants to call the tool
     const toolCalls = assistantMessage?.tool_calls || [];
     let dbUpdates: Record<string, any> = {};
     const fieldsUpdated: string[] = [];
+    let validationResult: any = null;
+    let validationReport = "";
 
     for (const tc of toolCalls) {
       if (tc.function?.name === "update_project_metadata") {
         const args = JSON.parse(tc.function.arguments);
 
-        // Merge arrays with existing values
+        // Build proposed changes for validation
+        const proposedChanges: { field: string; values: string[] }[] = [];
+
         for (const [key, val] of Object.entries(args)) {
           if (Array.isArray(val) && val.length > 0) {
             const existing = Array.isArray((project as any)[key]) ? (project as any)[key] : [];
+            const newOnly = (val as string[]).filter((v: string) => !existing.includes(v));
+            if (newOnly.length > 0) {
+              proposedChanges.push({ field: key, values: newOnly });
+            }
             const merged = [...new Set([...existing, ...val as string[]])];
             dbUpdates[key] = merged;
             fieldsUpdated.push(key);
@@ -237,10 +314,32 @@ ${ragSection}`;
             fieldsUpdated.push(key);
           }
         }
+
+        // Run validation pipeline on proposed changes
+        if (proposedChanges.length > 0) {
+          validationResult = await runValidationPipeline(
+            proposedChanges, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+          );
+          validationReport = formatValidationReport(validationResult);
+        }
+
+        // If validation rejected, remove failed fields
+        if (validationResult?.overall_status === "rejected") {
+          const failedFields = new Set(
+            (validationResult.checks || [])
+              .filter((c: any) => c.status === "fail")
+              .map((c: any) => c.field)
+          );
+          for (const f of failedFields) {
+            delete dbUpdates[f];
+            const idx = fieldsUpdated.indexOf(f);
+            if (idx >= 0) fieldsUpdated.splice(idx, 1);
+          }
+        }
       }
     }
 
-    // Apply DB updates if any
+    // Apply DB updates if any remain
     if (Object.keys(dbUpdates).length > 0) {
       const merged = { ...(project || {}), ...dbUpdates };
       dbUpdates.metadata_completeness = calcCompleteness(merged);
@@ -256,7 +355,7 @@ ${ragSection}`;
         console.error("DB update error:", updateErr);
       }
 
-      // Log to edit_history with chat context
+      // Log to edit_history
       const chatContext = messages.slice(-3).map((m: any) => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content.slice(0, 500) : '',
@@ -275,22 +374,33 @@ ${ragSection}`;
       }
     }
 
-    // If there were tool calls, do a second AI call with tool results to get the final response
+    // Second AI call with tool results + validation
     let finalContent = assistantMessage?.content || "";
 
     if (toolCalls.length > 0) {
+      const toolResultContent: any = {
+        success: true,
+        fields_updated: fieldsUpdated,
+        new_completeness: dbUpdates.metadata_completeness,
+      };
+
+      if (validationResult) {
+        toolResultContent.validation = {
+          overall_status: validationResult.overall_status,
+          summary: validationResult.summary,
+          protocols_run: validationResult.protocols_run,
+        };
+        toolResultContent.validation_report = validationReport;
+      }
+
       const followUpMessages = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: systemPrompt + `\n\nIMPORTANT: Include the validation protocol results in your response. Here is the formatted report to include:\n${validationReport}` },
         ...messages,
         assistantMessage,
         ...toolCalls.map((tc: any) => ({
           role: "tool" as const,
           tool_call_id: tc.id,
-          content: JSON.stringify({
-            success: true,
-            fields_updated: fieldsUpdated,
-            new_completeness: dbUpdates.metadata_completeness,
-          }),
+          content: JSON.stringify(toolResultContent),
         })),
       ];
 
@@ -312,19 +422,25 @@ ${ragSection}`;
       }
     }
 
-    // Write back interaction to knowledge_embeddings (fire-and-forget)
+    // Write back interaction
     writeBackInteraction(sb, LOVABLE_API_KEY, {
       userMessage: lastUserMsg,
       assistantResponse: finalContent,
       functionName: "metadata-chat",
       toolCalls: fieldsUpdated.map(f => ({ field: f, value: dbUpdates[f] })),
-      metadata: { grant_number, fields_updated: fieldsUpdated },
+      metadata: { grant_number, fields_updated: fieldsUpdated, validation: validationResult?.overall_status },
     });
 
     return new Response(JSON.stringify({
       reply: finalContent,
       fields_updated: fieldsUpdated,
       metadata_completeness: dbUpdates.metadata_completeness ?? (project as any).metadata_completeness ?? 0,
+      validation: validationResult ? {
+        overall_status: validationResult.overall_status,
+        summary: validationResult.summary,
+        protocols_run: validationResult.protocols_run,
+        checks: validationResult.checks,
+      } : null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
