@@ -146,6 +146,7 @@ const columnsByCategory: Record<Category, ColDef<Resource>[]> = {
 };
 
 const Resources = () => {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
   const [activeCategory, setActiveCategory] = useState<Category>("Software");
