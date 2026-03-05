@@ -38,7 +38,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: MousePointerClick,
     color: "from-[hsl(210,85%,55%)] to-[hsl(210,70%,45%)]",
     linkedRoute: "/metadata-assistant",
-    linkedLabel: "Open BBQS Assistant",
+    linkedLabel: "Open Metadata Assistant",
     tip: "Projects with low completeness scores are the ones that need your input most!",
     visual: "project-grid",
   },
