@@ -3,6 +3,8 @@
 import { useSearchParams } from "react-router-dom";
 
 import { useState, useMemo, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
