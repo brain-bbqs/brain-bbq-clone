@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { InvestigatorSummary } from "./summaries/InvestigatorSummary";
 import { GrantSummary } from "./summaries/GrantSummary";
 import { PublicationSummary } from "./summaries/PublicationSummary";
-import { SoftwareSummary } from "./summaries/SoftwareSummary";
 import { SpeciesSummary } from "./summaries/SpeciesSummary";
 import { OrganizationSummary } from "./summaries/OrganizationSummary";
+import { ResourceSummary } from "./summaries/ResourceSummary";
 import { GenericSummary } from "./summaries/GenericSummary";
 
 function SummaryContent() {
@@ -20,12 +20,16 @@ function SummaryContent() {
       return <GrantSummary id={current.id} />;
     case "publication":
       return <PublicationSummary id={current.id} />;
-    case "software":
-      return <SoftwareSummary id={current.id} />;
     case "species":
       return <SpeciesSummary id={current.id} />;
     case "organization":
       return <OrganizationSummary id={current.id} />;
+    case "software":
+    case "dataset":
+    case "benchmark":
+    case "ml_model":
+    case "protocol":
+      return <ResourceSummary id={current.id} />;
     default:
       return <GenericSummary id={current.id} type={current.type} />;
   }
