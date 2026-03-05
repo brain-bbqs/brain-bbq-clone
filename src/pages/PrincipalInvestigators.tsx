@@ -726,7 +726,7 @@ const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "wg_chair", label: "WG Chairs" },
 ];
 
-const wgChairNames = getAllWorkingGroupChairNames();
+// wgChairNames removed — using isWorkingGroupChair() instead
 
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
