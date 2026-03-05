@@ -387,8 +387,11 @@ export default function Publications() {
               onCellMouseOut={onCellMouseOut}
             />
           </div>
-        )
-              headerHeight={40}
+        )}
+      </div>
+    </div>
+  );
+}
               animateRows
               pagination
               paginationPageSize={25}
