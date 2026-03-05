@@ -253,6 +253,16 @@ const Projects = () => {
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Fetch grants from server cache (data refreshed via cron/admin)
+  const { data: rowData = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["nih-grants"],
+    queryFn: fetchGrants,
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+
   const [selectedPi, setSelectedPi] = useState<string>("");
 
   // Extract unique PI names for filter
@@ -273,14 +283,6 @@ const Projects = () => {
       return names.includes(selectedPi);
     });
   }, [rowData, selectedPi]);
-
-  // Fetch grants from server cache (data refreshed via cron/admin)
-  const { data: rowData = [], isLoading: loading, refetch } = useQuery({
-    queryKey: ["nih-grants"],
-    queryFn: fetchGrants,
-    staleTime: 60 * 60 * 1000, // 1 hour (data is cached server-side)
-    gcTime: 24 * 60 * 60 * 1000, // 24 hour client cache
-  });
 
   // Calculate metrics
   const totalFunding = useMemo(() => 
