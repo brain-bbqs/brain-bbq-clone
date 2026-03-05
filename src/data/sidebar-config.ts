@@ -44,9 +44,9 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "BBQS Assistant", url: "/metadata-assistant", icon: Bot },
   { title: "DANDI Assistant", url: "/dandi-assistant", icon: FlaskConical },
-  { title: "Paper Extractor", url: "/paper-extractor", icon: ScanSearch },
+  { title: "BBQS Assistant (Beta)", url: "/metadata-assistant", icon: Bot },
+  { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch },
 ];
 
 const toolsItems: NavItem[] = [
