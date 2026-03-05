@@ -221,8 +221,8 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         )}
       </div>
 
-      {/* Workflow stepper */}
-      {projectTitle && (
+      {/* Workflow stepper - only shows when metadata is being updated */}
+      {projectTitle && fieldsUpdated.length > 0 && (
         <WorkflowStepper
           messageCount={messages.length}
           hasValidation={!!lastValidation}
