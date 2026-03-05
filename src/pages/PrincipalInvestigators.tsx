@@ -500,6 +500,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       const org = orgById.get(ol.organization_id);
       if (org) {
         institutions.add(org.name);
+        orgInfos.push({ id: org.id, name: org.name, resourceId: org.resource_id || undefined });
         piGrants.forEach(g => { if (!g.institution) g.institution = org.name; });
       }
     }
