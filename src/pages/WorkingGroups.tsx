@@ -53,9 +53,9 @@ const workingGroups: WGData[] = [
     name: "WG-Standards",
     shortName: "Standards",
     entityId: "wg-standards",
-    description: "Establishing data formats, metadata schemas, and interoperability standards like NWB across the consortium.",
+    description: "Establishing and promoting adoption of data standards for novel sensors and multimodal data integration to facilitate FAIR sharing.",
     chairs: [
-      { name: "Oliver Ruebel", url: "https://dav.lbl.gov/~oruebel/" },
+      { name: "Oliver Ruebel", url: "https://crd.lbl.gov/divisions/scidata/computational-biosciences/members/staff/oliver-ruebel-bio/" },
       { name: "Melissa Kline Struhl", url: "https://eccl.mit.edu/team-profiles/melissa-kline-struhl" },
     ],
   },

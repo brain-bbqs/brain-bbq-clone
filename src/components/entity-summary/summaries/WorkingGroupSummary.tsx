@@ -10,6 +10,7 @@ export interface WorkingGroupData {
   deliverables: string[];
   charterUrl?: string;
   resourcesUrl?: string;
+  additionalLinks?: { label: string; url: string; external?: boolean }[];
   chairs: { name: string; url: string | null }[];
   contactChairs?: string;
   mailingList?: string;
@@ -81,12 +82,26 @@ const WORKING_GROUPS: Record<string, WorkingGroupData> = {
     name: "WG-Standards",
     shortName: "Standards",
     purpose:
-      "Establishing data formats, metadata schemas, and interoperability standards like NWB across the consortium.",
-    deliverables: [],
+      "The Working Group on Data Standards aims to establish and promote the adoption of data standards for novel sensors and multimodal data integration within the BBQS community. This effort is essential to facilitate FAIR (Findable, Accessible, Interoperable, Reusable) sharing and reuse of brain behavior data, ensuring consistency, interoperability, and integration of data and metadata to support scientific research and collaboration.",
+    deliverables: [
+      "Inventory Behavior Data Standards: Identify and review existing data standards, publish an organized catalog accessible via the BBQS web portal",
+      "Develop Guidelines and Best Practices: Identify fault lines between standards, formulate use-case driven minimum information requirements for BBQS data",
+      "Coordinate and Promote Enhancement of Standards: Facilitate community working groups, collaborate with standards bodies, create crosswalks to link metadata fields to ontologies",
+      "Facilitate Adoption and Use of BBQS Standards: Create online tutorials, develop curated controlled term sets, develop mechanisms for annotating existing standards",
+    ],
+    charterUrl:
+      "https://docs.google.com/document/d/1WIVI8HZF4-IfZZ61UjCZx2K7NyYx_CaTuIHmhFo7eYw/edit?usp=sharing",
+    resourcesUrl: "/resources?search=WG-Standards",
+    additionalLinks: [
+      { label: "Standards Guidelines", url: "https://docs.google.com/document/d/1vIJ01La9G76FfGywS3IbG4o1GR4qquS31MoJ2B4_4os/edit?usp=sharing", external: true },
+      { label: "The Ecosystem of Standards in Neuroscience (SfN 2025 Poster)", url: "https://zenodo.org/records/18333008", external: true },
+    ],
     chairs: [
-      { name: "Oliver Ruebel", url: "https://dav.lbl.gov/~oruebel/" },
+      { name: "Oliver Ruebel", url: "https://crd.lbl.gov/divisions/scidata/computational-biosciences/members/staff/oliver-ruebel-bio/" },
       { name: "Melissa Kline Struhl", url: "https://eccl.mit.edu/team-profiles/melissa-kline-struhl" },
     ],
+    contactChairs: "wg-chairs@brain-bbqs.org",
+    mailingList: "wg-standards@brain-bbqs.org",
   },
 };
 
@@ -144,7 +159,7 @@ export function WorkingGroupSummary({ id }: { id: string }) {
       </SummaryField>
 
       {/* Documentation & Resources */}
-      {(data.charterUrl || data.resourcesUrl) && (
+      {(data.charterUrl || data.resourcesUrl || data.additionalLinks?.length) && (
         <div className="pt-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Documentation & Resources
@@ -172,6 +187,19 @@ export function WorkingGroupSummary({ id }: { id: string }) {
                 <LinkIcon className="h-3 w-3 ml-auto" />
               </a>
             )}
+            {data.additionalLinks?.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className="flex items-center gap-2 text-sm text-primary hover:underline font-medium rounded-lg border border-border p-3 hover:bg-accent/50 transition-colors"
+              >
+                <LinkIcon className="h-4 w-4" />
+                {link.label}
+                {link.external && <ExternalLink className="h-3 w-3 ml-auto" />}
+              </a>
+            ))}
           </div>
         </div>
       )}
