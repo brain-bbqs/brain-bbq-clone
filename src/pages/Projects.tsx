@@ -107,20 +107,6 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
-const openNihReporterProfile = async (pi: PiDetail, displayName: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
-      body: { first_name: pi.firstName, last_name: pi.lastName },
-    });
-    if (!error && data?.url) {
-      window.open(data.url, "_blank");
-      return;
-    }
-  } catch {
-    // fallback below
-  }
-  window.open(piProfileUrl(displayName), "_blank");
-};
 
 const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   const { open } = useEntitySummary();
