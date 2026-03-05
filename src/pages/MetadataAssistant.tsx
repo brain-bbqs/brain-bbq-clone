@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ProjectGrid } from "@/components/metadata-assistant/ProjectGrid";
+import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
