@@ -130,7 +130,19 @@ const openNihReporterProfile = async (pi: PiDetail, displayName: string) => {
 };
 
 const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
+  const { open } = useEntitySummary();
   const piDetails = data.piDetails;
+
+  const openInvestigator = async (name: string) => {
+    const { data: inv } = await supabase
+      .from("investigators")
+      .select("id, resource_id")
+      .ilike("name", `%${name.split(" ").pop()}%`)
+      .maybeSingle();
+    if (inv) {
+      open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: name });
+    }
+  };
   
   if (piDetails && piDetails.length > 0) {
     return (
@@ -141,10 +153,10 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
             <span key={i}>
               <span
                 className="text-primary hover:underline cursor-pointer"
-                title={`View ${displayName} on NIH Reporter`}
+                title={`View ${displayName}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  openNihReporterProfile(pi, displayName);
+                  openInvestigator(displayName);
                 }}
               >
                 {displayName}
@@ -157,7 +169,6 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
     );
   }
 
-  // Fallback: parse from allPis string
   const piNames = (data.allPis || "").split(/[,;]/).map((n) => n.trim()).filter(Boolean);
   const normalizedNames = piNames.map(normalizePiName);
 
@@ -165,15 +176,16 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
     <span className="truncate block max-w-full">
       {normalizedNames.map((name, i) => (
         <span key={i}>
-          <a
-            href={piProfileUrl(name)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-            title={`Search ${name} on Google Scholar`}
+          <span
+            className="text-primary hover:underline cursor-pointer"
+            title={`View ${name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              openInvestigator(name);
+            }}
           >
             {name}
-          </a>
+          </span>
           {i < normalizedNames.length - 1 ? ", " : ""}
         </span>
       ))}
