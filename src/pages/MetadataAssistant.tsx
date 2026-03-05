@@ -70,9 +70,10 @@ export default function MetadataAssistant() {
       )}
 
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Project completeness grid */}
-        <div className="border-b border-border shrink-0 overflow-auto max-h-[50vh]">
-          <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
+        {/* Project selector */}
+        <div className="border-b border-border shrink-0 px-5 py-3 bg-card">
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
+          <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
         </div>
 
         {/* Permission banner */}
