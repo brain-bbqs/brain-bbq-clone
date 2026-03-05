@@ -29,6 +29,7 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   disabled?: boolean;
+  authRequired?: boolean;
 }
 
 export interface NavGroup {
