@@ -136,6 +136,7 @@ export default function Species() {
     ],
     []
   );
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-background">
