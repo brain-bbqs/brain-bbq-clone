@@ -232,26 +232,6 @@ export default function DataProvenance() {
   const gridRef = useRef<AgGridReact>(null);
   const [quickFilter, setQuickFilter] = useState("");
 
-  // Auth gate
-  if (!user) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-background">
-        <div className="text-center space-y-4 max-w-sm px-6">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-            <LogIn className="h-6 w-6 text-primary" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground">Sign in to view Data Provenance</h2>
-          <p className="text-sm text-muted-foreground">
-            The audit log is available to authenticated consortium members.
-          </p>
-          <Link to="/auth">
-            <Button className="mt-2">Sign In</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   const { data: history, isLoading } = useQuery({
     queryKey: ["edit-history-all"],
     queryFn: async () => {
@@ -262,6 +242,7 @@ export default function DataProvenance() {
         .limit(500);
       return data || [];
     },
+    enabled: !!user,
   });
 
   const { data: grants } = useQuery({
@@ -270,6 +251,7 @@ export default function DataProvenance() {
       const { data } = await supabase.from("grants").select("grant_number, title");
       return data || [];
     },
+    enabled: !!user,
   });
 
   const grantMap = useMemo(() => {
