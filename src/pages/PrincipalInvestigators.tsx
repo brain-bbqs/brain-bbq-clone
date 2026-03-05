@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
-import { getAllWorkingGroupChairNames } from "@/data/working-group-chairs";
+import { isWorkingGroupChair } from "@/data/working-group-chairs";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -726,7 +726,7 @@ const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "wg_chair", label: "WG Chairs" },
 ];
 
-const wgChairNames = getAllWorkingGroupChairNames();
+// wgChairNames removed — using isWorkingGroupChair() instead
 
 /* ── Main component ── */
 export default function PrincipalInvestigators() {
@@ -752,7 +752,7 @@ export default function PrincipalInvestigators() {
         case "co_pi":
           return pi.grants.some((g) => g.role !== "contact_pi");
         case "wg_chair":
-          return wgChairNames.has(pi.displayName.toLowerCase());
+          return isWorkingGroupChair(pi.displayName);
         default:
           return true;
       }
