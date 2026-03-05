@@ -17,6 +17,7 @@ interface AssistantChatProps {
   onClear: () => void;
   projectTitle?: string;
   lastValidation?: ValidationResult | null;
+  fieldsUpdated?: string[];
 }
 
 const STARTERS = [
