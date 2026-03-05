@@ -303,13 +303,14 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
       {/* Input */}
       <div className="border-t border-border px-5 py-4 shrink-0 bg-gradient-to-t from-secondary/20 to-transparent">
         <div className="flex items-end gap-2">
+          <VoiceAgentButton />
           <Textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe your experiment, methods, species..."
             disabled={isLoading}
-            className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30"
+            className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30 flex-1"
             rows={1}
           />
           <Button
