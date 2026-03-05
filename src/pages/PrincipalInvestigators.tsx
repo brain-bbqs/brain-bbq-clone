@@ -847,7 +847,7 @@ export default function PrincipalInvestigators() {
                 </div>
               </PopoverContent>
             </Popover>
-            <span className="text-sm text-muted-foreground">{rowData.length} investigators</span>
+            <span className="text-sm text-muted-foreground">{rowData.length} people</span>
           </div>
         </div>
 

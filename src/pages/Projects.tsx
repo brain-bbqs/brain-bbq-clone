@@ -356,7 +356,7 @@ const Projects = () => {
     },
     {
       field: "institution",
-      headerName: "Organization",
+      headerName: "Institution",
       width: 200,
       minWidth: 200,
       maxWidth: 200,
