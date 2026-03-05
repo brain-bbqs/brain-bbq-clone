@@ -43,6 +43,12 @@ interface GrantInfo {
   coPis: CoPiInfo[];
 }
 
+interface OrgInfo {
+  id: string;
+  name: string;
+  resourceId?: string;
+}
+
 interface PIRow {
   id: string;
   name: string;
@@ -55,6 +61,7 @@ interface PIRow {
   totalProjects: number;
   totalFunding: number;
   institutions: string[];
+  orgs: OrgInfo[];
   grants: GrantInfo[];
   skills: string[];
   researchAreas: string[];
