@@ -608,39 +608,42 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
 /* ── Institution cell ── */
 const InstitutionCell = ({ data }: { data: PIRow }) => {
-  if (!data?.institutions || data.institutions.length === 0) return <span className="text-muted-foreground">—</span>;
-  const primary = data.institutions[0];
-  const remaining = data.institutions.length - 1;
+  const { open } = useEntitySummary();
+  if (!data?.orgs || data.orgs.length === 0) return <span className="text-muted-foreground">—</span>;
+  const primary = data.orgs[0];
+  const remaining = data.orgs.length - 1;
   return (
-    <HoverCard openDelay={150} closeDelay={100}>
-      <HoverCardTrigger asChild>
-        <div className="flex items-center gap-1 py-1 overflow-hidden w-full cursor-help">
-          <span className="text-xs text-primary truncate block">{primary}</span>
-          {remaining > 0 && (
-            <span className="text-[10px] text-muted-foreground shrink-0">+{remaining}</span>
-          )}
-        </div>
-      </HoverCardTrigger>
-      <HoverCardContent side="bottom" align="start" className="w-80 p-3">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-          Institutions ({data.institutions.length})
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {data.institutions.map((inst, idx) => (
-            <a
-              key={idx}
-              href={institutionUrl(inst)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-            >
-              <ExternalLink className="h-3 w-3 shrink-0" />
-              {inst}
-            </a>
-          ))}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+    <div className="flex items-center gap-1 py-1 overflow-hidden w-full">
+      <button
+        onClick={() => open({ type: "organization", id: primary.id, resourceId: primary.resourceId, label: primary.name })}
+        className="text-xs text-primary hover:underline truncate block text-left cursor-pointer"
+      >
+        {primary.name}
+      </button>
+      {remaining > 0 && (
+        <HoverCard openDelay={150} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <span className="text-[10px] text-muted-foreground shrink-0 cursor-help">+{remaining}</span>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-80 p-3">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+              All Institutions ({data.orgs.length})
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {data.orgs.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => open({ type: "organization", id: org.id, resourceId: org.resourceId, label: org.name })}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline text-left"
+                >
+                  {org.name}
+                </button>
+              ))}
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </div>
   );
 };
 
