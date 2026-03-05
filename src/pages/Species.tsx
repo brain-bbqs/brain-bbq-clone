@@ -131,6 +131,7 @@ const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
 
 export default function Species() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [view, setView] = useState<"table" | "heatmap">("table");
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, unSortIcon: true, wrapText: true, autoHeight: true }),
