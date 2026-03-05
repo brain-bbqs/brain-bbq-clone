@@ -8,6 +8,7 @@ import { SpeciesSummary } from "./summaries/SpeciesSummary";
 import { OrganizationSummary } from "./summaries/OrganizationSummary";
 import { ResourceSummary } from "./summaries/ResourceSummary";
 import { GenericSummary } from "./summaries/GenericSummary";
+import { WorkingGroupSummary } from "./summaries/WorkingGroupSummary";
 
 function SummaryContent() {
   const { current } = useEntitySummary();
@@ -30,6 +31,8 @@ function SummaryContent() {
     case "ml_model":
     case "protocol":
       return <ResourceSummary id={current.id} />;
+    case "working_group":
+      return <WorkingGroupSummary id={current.id} />;
     default:
       return <GenericSummary id={current.id} type={current.type} />;
   }

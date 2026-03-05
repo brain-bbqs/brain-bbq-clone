@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageMeta } from "@/components/PageMeta";
 import { ExternalLink, BarChart3, Cpu, Scale, BookOpen, Users } from "lucide-react";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import type { LucideIcon } from "lucide-react";
 
 const WG_COLORS = [
@@ -13,8 +14,8 @@ const WG_COLORS = [
 interface WGData {
   name: string;
   shortName: string;
+  entityId: string; // key into WorkingGroupSummary data
   description: string;
-  href: string;
   chairs: { name: string; url: string | null }[];
 }
 
@@ -22,8 +23,8 @@ const workingGroups: WGData[] = [
   {
     name: "WG-Analytics",
     shortName: "Analytics",
+    entityId: "wg-analytics",
     description: "Developing shared analytical frameworks, pipelines, and computational methods for cross-project neural data analysis.",
-    href: "#analytics",
     chairs: [
       { name: "Kristofer Bouchard", url: "https://biosciences.lbl.gov/profiles/kristofer-e-bouchard/" },
       { name: "Han Yi", url: "https://scholar.google.com/citations?user=MdrCoqAAAAAJ&hl=en" },
@@ -32,15 +33,15 @@ const workingGroups: WGData[] = [
   {
     name: "WG-Devices",
     shortName: "Devices",
+    entityId: "wg-devices",
     description: "Coordinating neural device development, hardware standards, and recording technology across consortium labs.",
-    href: "#devices",
     chairs: [{ name: "TBD", url: null }],
   },
   {
     name: "WG-Ethics, Legal, and Social Issues (WG-ELSI)",
     shortName: "ELSI",
+    entityId: "wg-elsi",
     description: "Addressing ethical, legal, and social implications of brain research, ensuring responsible innovation and data governance.",
-    href: "#elsi",
     chairs: [
       { name: "Laura Cabrera", url: "https://rockethics.psu.edu/people/laura-cabrera/" },
     ],
@@ -48,8 +49,8 @@ const workingGroups: WGData[] = [
   {
     name: "WG-Standards",
     shortName: "Standards",
+    entityId: "wg-standards",
     description: "Establishing data formats, metadata schemas, and interoperability standards like NWB across the consortium.",
-    href: "#standards",
     chairs: [
       { name: "Oliver Ruebel", url: "https://dav.lbl.gov/~oruebel/" },
       { name: "Melissa Kline Struhl", url: "https://eccl.mit.edu/team-profiles/melissa-kline-struhl" },
@@ -58,6 +59,8 @@ const workingGroups: WGData[] = [
 ];
 
 const WorkingGroups = () => {
+  const { open } = useEntitySummary();
+
   return (
     <div className="min-h-screen bg-background">
       <PageMeta title="Working Groups | BBQS" description="BBQS consortium working groups" />
@@ -96,7 +99,14 @@ const WorkingGroups = () => {
               return (
                 <Card
                   key={wg.name}
-                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 ${color.border} border`}
+                  className={`group overflow-hidden hover:shadow-lg transition-all duration-300 ${color.border} border cursor-pointer`}
+                  onClick={() =>
+                    open({
+                      type: "working_group",
+                      id: wg.entityId,
+                      label: wg.name,
+                    })
+                  }
                 >
                   <div className={`h-1.5 ${color.accent}`} />
                   <CardHeader className={`${color.bg} pb-3`}>
@@ -124,6 +134,7 @@ const WorkingGroups = () => {
                               target="_blank"
                               rel="noopener noreferrer"
                               className={`inline-flex items-center gap-1 text-sm ${color.text} hover:underline font-medium`}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               {member.name}
                               <ExternalLink className="w-3 h-3" />
