@@ -57,4 +57,7 @@ verify_jwt = false
 [functions.paper-extract]
 verify_jwt = false
 
+[functions.globus-auth]
+verify_jwt = false
+
 
