@@ -264,26 +264,7 @@ const Projects = () => {
     gcTime: 24 * 60 * 60 * 1000,
   });
 
-  const [selectedPi, setSelectedPi] = useState<string>("");
-
-  // Extract unique PI names for filter
-  const uniquePis = useMemo(() => {
-    const piSet = new Set<string>();
-    rowData.forEach(row => {
-      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim())).filter(Boolean);
-      names.forEach(n => piSet.add(n));
-    });
-    return Array.from(piSet).sort();
-  }, [rowData]);
-
-  // Filtered data based on PI selection
-  const filteredData = useMemo(() => {
-    if (!selectedPi) return rowData;
-    return rowData.filter(row => {
-      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim()));
-      return names.includes(selectedPi);
-    });
-  }, [rowData, selectedPi]);
+  const filteredData = rowData;
 
   // Calculate metrics
   const totalFunding = useMemo(() => 
