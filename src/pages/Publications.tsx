@@ -30,11 +30,13 @@ const fetchPublications = async (): Promise<Publication[]> => {
   if (error) throw error;
   if (!data) return [];
   return data.map((pub) => ({
+    id: pub.id,
     pmid: pub.pmid || "", title: pub.title, year: pub.year || 0, journal: pub.journal || "",
     authors: pub.authors || "", citations: pub.citations || 0, rcr: Number(pub.rcr) || 0, grantNumber: "",
     pubmedLink: pub.pubmed_link || (pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""),
     keywords: Array.isArray(pub.keywords) ? pub.keywords : [],
     authorOrcids: Array.isArray(pub.author_orcids) ? (pub.author_orcids as unknown as AuthorOrcid[]) : [],
+    resourceId: pub.resource_id || undefined,
   }));
 };
 
