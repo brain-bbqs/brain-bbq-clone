@@ -11,6 +11,8 @@ import { MARR_PROJECTS } from "@/data/marr-projects";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
+import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
+import { Table, Grid3X3 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const LATIN_NAMES: Record<string, string> = {
@@ -129,6 +131,7 @@ const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
 
 export default function Species() {
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [view, setView] = useState<"table" | "heatmap">("table");
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, unSortIcon: true, wrapText: true, autoHeight: true }),
@@ -156,6 +159,23 @@ export default function Species() {
           <p className="text-muted-foreground mb-4">
             Overview of species studied across BBQS consortium projects and the behaviors being investigated.
           </p>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+              <button
+                onClick={() => setView("table")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Table className="h-4 w-4" /> Table
+              </button>
+              <button
+                onClick={() => setView("heatmap")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "heatmap" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Grid3X3 className="h-4 w-4" /> Explorer
+              </button>
+            </div>
+          </div>
+          {view === "table" && (
           <div className="flex items-center gap-4 mb-4">
             <input
               type="text"
@@ -168,9 +188,12 @@ export default function Species() {
               {rows.length} species · {MARR_PROJECTS.length} projects
             </span>
           </div>
+          )}
         </div>
 
-        {isMobile ? (
+        {view === "heatmap" ? (
+          <SpeciesHeatmap />
+        ) : isMobile ? (
           <MobileCardList
             items={rows
               .filter((r) => !quickFilterText || r.species.toLowerCase().includes(quickFilterText.toLowerCase()))
