@@ -244,20 +244,20 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
               </p>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 {projectTitle
-                  ? "Describe your experiments in plain language and I'll organize the metadata for you. Changes are validated against BIDS, NWB, and HED standards."
+                  ? "Choose a workflow below to get started, or describe your experiments in plain language."
                   : "Click on a project above to start curating its metadata with AI assistance."}
               </p>
             </div>
             {projectTitle && (
-              <div className="grid grid-cols-1 gap-2 w-full max-w-sm mt-1">
-                {STARTERS.map((s, i) => (
+              <div className="grid grid-cols-2 gap-2 w-full max-w-md mt-1">
+                {WORKFLOW_ACTIONS.map((action, i) => (
                   <button
                     key={i}
-                    onClick={() => onSend(s)}
-                    className="group text-left text-xs px-4 py-2.5 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
+                    onClick={() => onSend(action.prompt)}
+                    className="group flex items-start gap-2.5 text-left text-xs px-3.5 py-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
                   >
-                    <span className="opacity-50 group-hover:opacity-80 mr-1.5">→</span>
-                    {s}
+                    <span className="text-primary/60 group-hover:text-primary mt-0.5 shrink-0">{action.icon}</span>
+                    <span className="leading-snug font-medium">{action.label}</span>
                   </button>
                 ))}
               </div>
@@ -283,6 +283,16 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
               <div className="mt-3">
                 <ValidationChecklist validation={lastValidation} />
               </div>
+            )}
+            {/* Show suggested follow-up actions after the last assistant message */}
+            {msg.role === "assistant" && i === messages.length - 1 && (
+              <SuggestedActions
+                onSend={onSend}
+                lastAssistantMsg={msg.content}
+                hasValidation={!!lastValidation}
+                fieldsUpdated={fieldsUpdated}
+                isLoading={isLoading}
+              />
             )}
           </div>
         ))}
