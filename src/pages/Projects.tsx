@@ -290,7 +290,7 @@ const Projects = () => {
   const columnDefs = useMemo<ColDef<ProjectRow>[]>(() => [
     {
       field: "grantNumber",
-      headerName: "Type",
+      headerName: "Grant Type",
       width: 80,
       minWidth: 80,
       maxWidth: 80,
