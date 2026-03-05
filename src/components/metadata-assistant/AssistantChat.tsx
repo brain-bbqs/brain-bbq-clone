@@ -27,11 +27,38 @@ const STARTERS = [
 
 function ValidationChecklist({ validation }: { validation: ValidationResult }) {
   const [expanded, setExpanded] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(0);
 
-  const statusIcon = (status: string) => {
-    if (status === "pass") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
-    if (status === "warning") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />;
-    return <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />;
+  // Flatten all checks with a global index for staggered reveal
+  const allChecks: { protocol: string; check: (typeof validation.checks)[0]; globalIdx: number }[] = [];
+  const byProtocol: Record<string, typeof validation.checks> = {};
+  let gi = 0;
+  for (const check of validation.checks) {
+    const proto = check.protocol || "general";
+    if (!byProtocol[proto]) byProtocol[proto] = [];
+    byProtocol[proto].push(check);
+    allChecks.push({ protocol: proto, check, globalIdx: gi++ });
+  }
+  const totalChecks = allChecks.length;
+
+  // Staggered reveal effect
+  useEffect(() => {
+    setVisibleCount(0);
+    if (totalChecks === 0) return;
+    let current = 0;
+    const interval = setInterval(() => {
+      current++;
+      setVisibleCount(current);
+      if (current >= totalChecks) clearInterval(interval);
+    }, 180);
+    return () => clearInterval(interval);
+  }, [totalChecks, validation]);
+
+  const statusIcon = (status: string, revealed: boolean) => {
+    if (!revealed) return <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0 animate-pulse" />;
+    if (status === "pass") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 animate-scale-in" />;
+    if (status === "warning") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 animate-scale-in" />;
+    return <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0 animate-scale-in" />;
   };
 
   const overallConfig = {
@@ -40,14 +67,10 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
     rejected: { label: "Issues Found", color: "text-red-600 dark:text-red-400", bg: "bg-red-500/10 border-red-500/20" },
   };
   const overall = overallConfig[validation.overall_status];
+  const allRevealed = visibleCount >= totalChecks;
 
-  // Group checks by protocol
-  const byProtocol: Record<string, typeof validation.checks> = {};
-  for (const check of validation.checks) {
-    const proto = check.protocol || "general";
-    if (!byProtocol[proto]) byProtocol[proto] = [];
-    byProtocol[proto].push(check);
-  }
+  // Track which global index each protocol/check maps to
+  let globalCounter = 0;
 
   return (
     <div className={cn("rounded-xl border mx-1 mb-3 overflow-hidden", overall.bg)}>
@@ -58,57 +81,78 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
       >
         <Shield className={cn("h-3.5 w-3.5 shrink-0", overall.color)} />
         <span className={cn("text-xs font-semibold uppercase tracking-wide", overall.color)}>
-          {overall.label}
+          {allRevealed ? overall.label : "Running checks…"}
         </span>
         <div className="flex items-center gap-2 ml-auto text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-0.5">
-            <CheckCircle2 className="h-3 w-3 text-emerald-500" />{validation.summary.passed}
-          </span>
-          {validation.summary.warnings > 0 && (
-            <span className="flex items-center gap-0.5">
-              <AlertTriangle className="h-3 w-3 text-amber-500" />{validation.summary.warnings}
-            </span>
-          )}
-          {validation.summary.failed > 0 && (
-            <span className="flex items-center gap-0.5">
-              <XCircle className="h-3 w-3 text-red-500" />{validation.summary.failed}
-            </span>
+          {allRevealed ? (
+            <>
+              <span className="flex items-center gap-0.5">
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />{validation.summary.passed}
+              </span>
+              {validation.summary.warnings > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <AlertTriangle className="h-3 w-3 text-amber-500" />{validation.summary.warnings}
+                </span>
+              )}
+              {validation.summary.failed > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <XCircle className="h-3 w-3 text-red-500" />{validation.summary.failed}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted-foreground/60">{visibleCount}/{totalChecks}</span>
           )}
         </div>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", expanded && "rotate-180")} />
       </button>
 
       {/* Checklist items */}
       {expanded && (
         <div className="border-t border-border/30 px-3 py-2 space-y-1">
-          {Object.entries(byProtocol).map(([protocol, checks]) => (
-            <div key={protocol}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mt-1 mb-0.5 px-0.5">
-                {protocol}
-              </p>
-              {checks.map((check, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    "flex items-start gap-2 py-1.5 px-2 rounded-lg text-xs",
-                    check.status === "fail" && "bg-red-500/5",
-                    check.status === "warning" && "bg-amber-500/5",
-                  )}
-                >
-                  {statusIcon(check.status)}
-                  <div className="flex-1 min-w-0">
-                    <span className="text-foreground/90">{check.message}</span>
-                    {check.suggestions && check.suggestions.length > 0 && (
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">
-                        💡 {check.suggestions.join(", ")}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[9px] text-muted-foreground/50 shrink-0 mt-0.5">{check.field}</span>
-                </div>
-              ))}
-            </div>
-          ))}
+          {Object.entries(byProtocol).map(([protocol, checks]) => {
+            const startIdx = globalCounter;
+            globalCounter += checks.length;
+            // Only show protocol header once at least one check in it is visible
+            if (visibleCount <= startIdx) return null;
+            return (
+              <div key={protocol}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mt-1 mb-0.5 px-0.5 animate-fade-in">
+                  {protocol}
+                </p>
+                {checks.map((check, idx) => {
+                  const gi = startIdx + idx;
+                  const revealed = gi < visibleCount;
+                  const justAppeared = gi === visibleCount - 1;
+                  if (gi >= visibleCount) return null;
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-start gap-2 py-1.5 px-2 rounded-lg text-xs transition-all duration-300",
+                        justAppeared && "animate-fade-in",
+                        revealed && check.status === "fail" && "bg-red-500/5",
+                        revealed && check.status === "warning" && "bg-amber-500/5",
+                      )}
+                    >
+                      {statusIcon(check.status, revealed)}
+                      <div className="flex-1 min-w-0">
+                        <span className={cn("text-foreground/90 transition-opacity duration-200", !revealed && "opacity-50")}>
+                          {check.message}
+                        </span>
+                        {revealed && check.suggestions && check.suggestions.length > 0 && (
+                          <span className="block text-[10px] text-muted-foreground mt-0.5 animate-fade-in">
+                            💡 {check.suggestions.join(", ")}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[9px] text-muted-foreground/50 shrink-0 mt-0.5">{check.field}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
