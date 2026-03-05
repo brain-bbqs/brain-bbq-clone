@@ -10,6 +10,7 @@ export interface WorkingGroupData {
   deliverables: string[];
   charterUrl?: string;
   resourcesUrl?: string;
+  additionalLinks?: { label: string; url: string; external?: boolean }[];
   chairs: { name: string; url: string | null }[];
   contactChairs?: string;
   mailingList?: string;
