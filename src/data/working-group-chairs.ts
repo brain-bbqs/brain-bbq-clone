@@ -9,32 +9,36 @@ const WG_CHAIRS: { name: string; group: string }[] = [
   { name: "Melissa Kline Struhl", group: "WG-Standards" },
 ];
 
-// Extract last names for fuzzy matching against investigator display names
-const chairLastNames = new Set(
-  WG_CHAIRS.map((c) => c.name.split(" ").pop()!.toLowerCase())
-);
+function normalize(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_\s]+/g, " ")
+    .trim();
+}
+
+// Extract key name parts (first name + last name fragments) for each chair
+const chairNameParts = WG_CHAIRS.map((c) => {
+  const parts = normalize(c.name).split(" ");
+  return { parts, firstName: parts[0], lastName: parts[parts.length - 1] };
+});
 
 /**
  * Check if a display name matches a working group chair.
- * Uses both full-name exact match and last-name match with first-initial check.
+ * Uses normalized partial matching: if the investigator's name contains
+ * both the chair's first name and last name, it's a match.
  */
 export function isWorkingGroupChair(displayName: string): boolean {
-  const lower = displayName.toLowerCase().trim();
-  // Exact full name match
-  if (WG_CHAIRS.some((c) => c.name.toLowerCase() === lower)) return true;
-  // Last name match + first letter check
-  const parts = lower.split(/[,\s]+/).filter(Boolean);
-  for (const chair of WG_CHAIRS) {
-    const chairParts = chair.name.toLowerCase().split(" ");
-    const chairLast = chairParts[chairParts.length - 1];
-    const chairFirst = chairParts[0];
-    if (
-      parts.some((p) => p === chairLast) &&
-      parts.some((p) => p.startsWith(chairFirst[0]))
-    ) {
-      return true;
-    }
+  const norm = normalize(displayName);
+
+  for (const chair of chairNameParts) {
+    // Check if investigator name contains both the first and last name of the chair
+    const hasFirst = norm.includes(chair.firstName);
+    const hasLast = norm.includes(chair.lastName);
+    if (hasFirst && hasLast) return true;
   }
+
   return false;
 }
 
