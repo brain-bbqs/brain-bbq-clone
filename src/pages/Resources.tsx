@@ -11,6 +11,8 @@ import type { Resource } from "@/data/resources";
 import { useResources } from "@/hooks/useResources";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Check, Circle, Box, Loader2, Github, Container } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 import "@/styles/ag-grid-theme.css";
 
 const CATEGORIES = ["Software", "Datasets", "Benchmarks", "ML Models", "Protocols"] as const;
