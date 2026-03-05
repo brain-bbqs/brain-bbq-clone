@@ -44,8 +44,8 @@ export function AppSidebar() {
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                tooltip={collapsed ? (locked ? "Sign in to access" : `${item.title} (coming soon)`) : undefined}
-                className="py-3 text-base opacity-40 cursor-not-allowed"
+                tooltip={locked ? "Please sign in to view this page" : `${item.title} (coming soon)`}
+                className="py-3 text-base opacity-40 cursor-pointer"
                 onClick={locked ? () => {
                   handleNavClick();
                   window.location.href = "/auth";
@@ -53,7 +53,6 @@ export function AppSidebar() {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="text-base">{item.title}</span>
-                {locked && !collapsed && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
               </SidebarMenuButton>
             </SidebarMenuItem>
           );
