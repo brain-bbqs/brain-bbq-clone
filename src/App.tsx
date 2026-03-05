@@ -33,7 +33,7 @@ import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
-import ComputationalModels from "./pages/ComputationalModels";
+
 import PaperExtractor from "./pages/PaperExtractor";
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
