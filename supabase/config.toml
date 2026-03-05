@@ -64,3 +64,6 @@ verify_jwt = false
 [functions.metadata-validate]
 verify_jwt = false
 
+[functions.elevenlabs-conversation-token]
+verify_jwt = false
+

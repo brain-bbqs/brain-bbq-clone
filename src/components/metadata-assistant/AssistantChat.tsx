@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
 import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
 import { SuggestedActions, WORKFLOW_ACTIONS } from "@/components/metadata-assistant/SuggestedActions";
+import { VoiceAgentButton } from "@/components/metadata-assistant/VoiceAgentButton";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage, ValidationResult } from "@/hooks/useMetadataChat";
 import { cn } from "@/lib/utils";
@@ -302,13 +303,14 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
       {/* Input */}
       <div className="border-t border-border px-5 py-4 shrink-0 bg-gradient-to-t from-secondary/20 to-transparent">
         <div className="flex items-end gap-2">
+          <VoiceAgentButton />
           <Textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe your experiment, methods, species..."
             disabled={isLoading}
-            className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30"
+            className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30 flex-1"
             rows={1}
           />
           <Button
