@@ -92,15 +92,15 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
                   className={cn(
                     "flex items-start gap-2 py-1.5 px-2 rounded-lg text-xs",
                     check.status === "fail" && "bg-red-500/5",
-                    check.status === "warn" && "bg-amber-500/5",
+                    check.status === "warning" && "bg-amber-500/5",
                   )}
                 >
                   {statusIcon(check.status)}
                   <div className="flex-1 min-w-0">
                     <span className="text-foreground/90">{check.message}</span>
-                    {check.suggestion && (
+                    {check.suggestions && check.suggestions.length > 0 && (
                       <span className="block text-[10px] text-muted-foreground mt-0.5">
-                        💡 {check.suggestion}
+                        💡 {check.suggestions.join(", ")}
                       </span>
                     )}
                   </div>
