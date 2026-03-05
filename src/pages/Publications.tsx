@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw, ExternalLink } from "lucide-react";
 import { piProfileUrl } from "@/lib/pi-utils";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +20,9 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 interface AuthorOrcid { name: string; orcid: string; }
 
 interface Publication {
-  pmid: string; title: string; year: number; journal: string; authors: string;
+  id: string; pmid: string; title: string; year: number; journal: string; authors: string;
   citations: number; rcr: number; grantNumber: string; pubmedLink: string;
-  keywords: string[]; authorOrcids: AuthorOrcid[];
+  keywords: string[]; authorOrcids: AuthorOrcid[]; resourceId?: string;
 }
 
 const fetchPublications = async (): Promise<Publication[]> => {
@@ -29,21 +30,25 @@ const fetchPublications = async (): Promise<Publication[]> => {
   if (error) throw error;
   if (!data) return [];
   return data.map((pub) => ({
+    id: pub.id,
     pmid: pub.pmid || "", title: pub.title, year: pub.year || 0, journal: pub.journal || "",
     authors: pub.authors || "", citations: pub.citations || 0, rcr: Number(pub.rcr) || 0, grantNumber: "",
     pubmedLink: pub.pubmed_link || (pub.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/` : ""),
     keywords: Array.isArray(pub.keywords) ? pub.keywords : [],
     authorOrcids: Array.isArray(pub.author_orcids) ? (pub.author_orcids as unknown as AuthorOrcid[]) : [],
+    resourceId: pub.resource_id || undefined,
   }));
 };
 
 const TitleCell = ({ value, data }: { value: string; data: Publication }) => {
-  if (!data?.pubmedLink) return <span>{value}</span>;
+  const { open } = useEntitySummary();
+  if (!data?.id) return <span>{value}</span>;
   return (
-    <a href={data.pubmedLink} target="_blank" rel="noopener noreferrer"
-      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors">
-      {value}<ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
-    </a>
+    <button
+      onClick={() => open({ type: "publication", id: data.id, resourceId: data.resourceId, label: data.title })}
+      className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1.5 font-medium transition-colors text-left">
+      {value}
+    </button>
   );
 };
 

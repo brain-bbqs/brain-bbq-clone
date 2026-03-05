@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -43,6 +44,7 @@ interface GrantInfo {
 }
 
 interface PIRow {
+  id: string;
   name: string;
   displayName: string;
   firstName: string;
@@ -56,6 +58,7 @@ interface PIRow {
   grants: GrantInfo[];
   skills: string[];
   researchAreas: string[];
+  resourceId?: string;
 }
 
 const nameKey = (name: string): string =>
@@ -85,13 +88,14 @@ const openNihReporterProfile = async (pi: PIRow) => {
 
 /* ── Name + Institution cell (merged) ── */
 const NameCell = ({ data }: { data: PIRow }) => {
+  const { open } = useEntitySummary();
   return (
     <div className="flex items-center gap-1.5 py-1">
       <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <button
-        onClick={() => openNihReporterProfile(data)}
+        onClick={() => open({ type: "investigator", id: data.id, resourceId: data.resourceId, label: data.displayName })}
         className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors text-left text-sm leading-tight"
-        title={`View ${data.displayName} on NIH Reporter`}
+        title={`View summary for ${data.displayName}`}
       >
         {data.displayName}
       </button>
@@ -496,6 +500,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const totalFunding = piGrants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
 
     piMap.set(key, {
+      id: inv.id,
       name: inv.name,
       displayName,
       firstName: nameParts[0] || "",
@@ -509,6 +514,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       grants: piGrants,
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
+      resourceId: inv.resource_id || undefined,
     });
   }
 
