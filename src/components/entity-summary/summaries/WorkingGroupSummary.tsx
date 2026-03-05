@@ -40,9 +40,22 @@ const WORKING_GROUPS: Record<string, WorkingGroupData> = {
     name: "WG-Devices",
     shortName: "Devices",
     purpose:
-      "Coordinating neural device development, hardware standards, and recording technology across consortium labs.",
-    deliverables: [],
-    chairs: [{ name: "TBD", url: null }],
+      "The Device WG aims to compile a comprehensive protocol document to define best practices for multimodal data acquisition and device integration. Specifically, this working group will document and generalize challenges and solutions related to hardware, sensors, calibration, and synchronization processes, with an emphasis on compiling and sharing solutions across laboratories.",
+    deliverables: [
+      "Schedule recurring monthly meetings starting in September to finalize and approve the group's charter",
+      "Document the inventory of devices used in BBQS projects",
+      "Collaborate with the Standards and Analytics Working Groups to develop protocols and standards for post-recording procedures",
+      "Develop a shared repository of protocols for device setup, synchronization, and troubleshooting",
+      "Publish a best-practices and tools resource paper",
+      "Standardize reporting guidelines for synchronization processes",
+      "Promote adoption of the BBQS framework across the research community",
+    ],
+    resourcesUrl: "/resources?search=WG-Devices",
+    chairs: [
+      { name: "Alireza Kazemi", url: "https://alirezakazemi.com" },
+      { name: "Uros Topalovic", url: "https://scholar.google.com/citations?user=7Q02lPoAAAAJ&hl=en" },
+    ],
+    mailingList: "wg-devices@brain-bbqs.org",
   },
   "wg-elsi": {
     name: "WG-Ethics, Legal, and Social Issues (WG-ELSI)",

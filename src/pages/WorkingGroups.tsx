@@ -34,8 +34,11 @@ const workingGroups: WGData[] = [
     name: "WG-Devices",
     shortName: "Devices",
     entityId: "wg-devices",
-    description: "Coordinating neural device development, hardware standards, and recording technology across consortium labs.",
-    chairs: [{ name: "TBD", url: null }],
+    description: "Compiling best practices for multimodal data acquisition, device integration, calibration, and synchronization across laboratories.",
+    chairs: [
+      { name: "Alireza Kazemi", url: "https://alirezakazemi.com" },
+      { name: "Uros Topalovic", url: "https://scholar.google.com/citations?user=7Q02lPoAAAAJ&hl=en" },
+    ],
   },
   {
     name: "WG-Ethics, Legal, and Social Issues (WG-ELSI)",
