@@ -9,7 +9,8 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import "@/styles/ag-grid-theme.css";
 
 const LATIN_NAMES: Record<string, string> = {
