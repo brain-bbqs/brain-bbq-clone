@@ -8,6 +8,7 @@ import { SpeciesSummary } from "./summaries/SpeciesSummary";
 import { OrganizationSummary } from "./summaries/OrganizationSummary";
 import { ResourceSummary } from "./summaries/ResourceSummary";
 import { GenericSummary } from "./summaries/GenericSummary";
+import { WorkingGroupSummary } from "./summaries/WorkingGroupSummary";
 
 function SummaryContent() {
   const { current } = useEntitySummary();
