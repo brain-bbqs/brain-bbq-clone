@@ -294,8 +294,8 @@ export default function DataProvenance() {
               quickFilterText={quickFilter}
               animateRows
               pagination
-              paginationPageSize={25}
-              paginationPageSizeSelector={[10, 25, 50, 100]}
+              paginationPageSize={100}
+              paginationPageSizeSelector={[25, 50, 100, 200]}
               suppressCellFocus
               enableCellTextSelection
               rowHeight={40}
