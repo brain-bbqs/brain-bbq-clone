@@ -615,8 +615,54 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
   if (!data?.orgs || data.orgs.length === 0) return <span className="text-muted-foreground">—</span>;
   const primary = data.orgs[0];
   const remaining = data.orgs.length - 1;
+
+  // Derive logo from institution name for common patterns
+  const getLogoDomain = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes("mit") || lower.includes("massachusetts institute")) return "mit.edu";
+    if (lower.includes("harvard")) return "harvard.edu";
+    if (lower.includes("stanford")) return "stanford.edu";
+    if (lower.includes("columbia")) return "columbia.edu";
+    if (lower.includes("johns hopkins")) return "jhu.edu";
+    if (lower.includes("caltech")) return "caltech.edu";
+    if (lower.includes("carnegie mellon")) return "cmu.edu";
+    if (lower.includes("boston")) return "bu.edu";
+    if (lower.includes("northwestern")) return "northwestern.edu";
+    if (lower.includes("georgia")) return "gatech.edu";
+    if (lower.includes("princeton")) return "princeton.edu";
+    if (lower.includes("yale")) return "yale.edu";
+    if (lower.includes("cornell")) return "cornell.edu";
+    if (lower.includes("duke")) return "duke.edu";
+    if (lower.includes("upenn") || lower.includes("university of pennsylvania")) return "upenn.edu";
+    if (lower.includes("uc berkeley") || lower.includes("berkeley")) return "berkeley.edu";
+    if (lower.includes("ucla")) return "ucla.edu";
+    if (lower.includes("ucsd") || lower.includes("san diego")) return "ucsd.edu";
+    if (lower.includes("ucsf") || lower.includes("san francisco")) return "ucsf.edu";
+    if (lower.includes("uc davis")) return "ucdavis.edu";
+    if (lower.includes("michigan")) return "umich.edu";
+    if (lower.includes("washington") && lower.includes("university")) return "uw.edu";
+    if (lower.includes("nyu") || lower.includes("new york university")) return "nyu.edu";
+    if (lower.includes("emory")) return "emory.edu";
+    if (lower.includes("allen institute")) return "alleninstitute.org";
+    if (lower.includes("rockefeller")) return "rockefeller.edu";
+    if (lower.includes("salk")) return "salk.edu";
+    if (lower.includes("janelia")) return "janelia.org";
+    return null;
+  };
+
+  const logoDomain = getLogoDomain(primary.name);
+  const logoUrl = logoDomain ? `https://logo.clearbit.com/${logoDomain}` : null;
+
   return (
-    <div className="flex items-center gap-1 py-1 overflow-hidden w-full">
+    <div className="flex items-center gap-1.5 py-1 overflow-hidden w-full">
+      {logoUrl && (
+        <img
+          src={logoUrl}
+          alt=""
+          className="w-4 h-4 rounded-sm object-contain shrink-0"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
+      )}
       <button
         onClick={() => open({ type: "organization", id: primary.id, resourceId: primary.resourceId, label: primary.name })}
         className="text-xs text-primary hover:underline truncate block text-left cursor-pointer"
@@ -633,15 +679,23 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
               All Institutions ({data.orgs.length})
             </p>
             <div className="flex flex-col gap-1.5">
-              {data.orgs.map((org) => (
-                <button
-                  key={org.id}
-                  onClick={() => open({ type: "organization", id: org.id, resourceId: org.resourceId, label: org.name })}
-                  className="flex items-center gap-1.5 text-xs text-primary hover:underline text-left"
-                >
-                  {org.name}
-                </button>
-              ))}
+              {data.orgs.map((org) => {
+                const orgLogoDomain = getLogoDomain(org.name);
+                const orgLogoUrl = orgLogoDomain ? `https://logo.clearbit.com/${orgLogoDomain}` : null;
+                return (
+                  <button
+                    key={org.id}
+                    onClick={() => open({ type: "organization", id: org.id, resourceId: org.resourceId, label: org.name })}
+                    className="flex items-center gap-1.5 text-xs text-primary hover:underline text-left"
+                  >
+                    {orgLogoUrl && (
+                      <img src={orgLogoUrl} alt="" className="w-4 h-4 rounded-sm object-contain shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    )}
+                    {org.name}
+                  </button>
+                );
+              })}
             </div>
           </HoverCardContent>
         </HoverCard>

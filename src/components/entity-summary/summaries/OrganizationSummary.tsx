@@ -113,16 +113,30 @@ export function OrganizationSummary({ id }: { id: string }) {
     </div>
   );
 
+  const logoDomain = data.url ? new URL(data.url.startsWith("http") ? data.url : `https://${data.url}`).hostname : null;
+  const logoUrl = logoDomain ? `https://logo.clearbit.com/${logoDomain}` : null;
+
   return (
     <div>
       <div className="px-6 pt-6 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={`${data.name} logo`}
+              className="w-10 h-10 rounded-full object-contain bg-white border border-border"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+              }}
+            />
+          ) : null}
+          <div className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center ${logoUrl ? "hidden" : ""}`}>
             <Building className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">{data.name}</h2>
-            <p className="text-sm text-muted-foreground">Organization</p>
+            <p className="text-sm text-muted-foreground">Institution</p>
           </div>
         </div>
       </div>
