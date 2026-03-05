@@ -616,7 +616,7 @@ const Projects = () => {
               suppressCellFocus={true}
               enableCellTextSelection={true}
               domLayout="autoHeight"
-              rowHeight={36}
+              
               headerHeight={40}
               loading={loading}
               loadingOverlayComponent={() => (
