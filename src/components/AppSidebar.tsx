@@ -42,10 +42,10 @@ export function AppSidebar() {
         const locked = item.authRequired && !user;
 
         if (item.disabled || locked) {
-          return (
+          const btn = (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                tooltip={locked ? "Please sign in to view this page" : `${item.title} (coming soon)`}
+                tooltip={collapsed ? (locked ? "Please sign in to view this page" : `${item.title} (coming soon)`) : undefined}
                 className="py-3 text-base opacity-40 cursor-pointer"
                 onClick={locked ? () => {
                   handleNavClick();
@@ -57,6 +57,17 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           );
+
+          if (!collapsed && locked) {
+            return (
+              <Tooltip key={item.title}>
+                <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                <TooltipContent side="right">Please sign in to view this page</TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return btn;
         }
 
         return (
