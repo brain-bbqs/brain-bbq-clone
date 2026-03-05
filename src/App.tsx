@@ -75,7 +75,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
-              <Route path="/computational-models" element={<ComputationalModels />} />
+              
               <Route path="/paper-extractor" element={<PaperExtractor />} />
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/calendar" element={<Calendar />} />

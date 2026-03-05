@@ -19,7 +19,7 @@ const PAGES = [
   { title: "People", path: "/investigators", keywords: ["people", "investigators", "pi"], category: "page" as const },
   { title: "Software & Tools", path: "/resources", keywords: ["resources", "tools", "software"], category: "page" as const },
   { title: "Datasets", path: "/datasets", keywords: ["datasets", "data"], category: "page" as const },
-  { title: "Knowledge Graph", path: "/knowledge-graph", keywords: ["knowledge", "graph", "explorer"], category: "page" as const },
+  
   { title: "NeuroMCP", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai"], category: "page" as const },
   { title: "Species", path: "/species", keywords: ["species", "animal", "model"], category: "page" as const },
   { title: "Working Groups", path: "/working-groups", keywords: ["working", "groups"], category: "page" as const },

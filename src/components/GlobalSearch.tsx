@@ -24,7 +24,7 @@ const PAGES: SearchablePage[] = [
   { title: "Protocols", path: "/protocols", keywords: ["protocols", "methods", "3d pose", "methodology"], section: "Tools" },
 
   { title: "Species", path: "/species", keywords: ["species", "mouse", "rat", "primate", "fish", "fly", "drosophila", "zebrafish", "bird"], section: "Science" },
-  { title: "Computational Models", path: "/computational-models", keywords: ["computational", "models", "marr", "levels", "analysis", "framework"], section: "Science" },
+  
 
   { title: "NeuroMCP (Hannah)", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai", "assistant", "ask"], section: "AI" },
 
