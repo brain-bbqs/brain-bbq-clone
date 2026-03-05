@@ -368,6 +368,9 @@ ${ragSection}`;
         old_value: (project as any)[field] ?? null,
         new_value: dbUpdates[field],
         chat_context: chatContext,
+        validation_status: validationResult?.overall_status ?? null,
+        validation_protocols: validationResult?.protocols_run ?? [],
+        validation_checks: validationResult?.checks?.filter((c: any) => c.field === field) ?? null,
       }));
       if (historyRows.length > 0) {
         await sb.from("edit_history").insert(historyRows);

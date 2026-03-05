@@ -6,10 +6,14 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { History, Search, Loader2, User, Bot, MessageSquare } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { History, Search, Loader2, User, Bot, MessageSquare, Shield, CheckCircle2, AlertTriangle, XCircle, LogIn } from "lucide-react";
 import { useState, useMemo, useCallback, useRef } from "react";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
@@ -24,6 +28,9 @@ interface EditRow {
   new_value: any;
   chat_context: any;
   project_title?: string;
+  validation_status?: string | null;
+  validation_protocols?: string[] | null;
+  validation_checks?: any | null;
 }
 
 interface ChatMessage {
@@ -112,6 +119,74 @@ const ValueCell = ({ value, data, colDef }: ICellRendererParams) => {
   );
 };
 
+const ValidationCell = ({ data }: ICellRendererParams) => {
+  const status = data.validation_status;
+  const protocols: string[] = data.validation_protocols || [];
+  const checks: any[] = data.validation_checks || [];
+
+  if (!status) {
+    return <span className="text-muted-foreground/40 text-xs italic">—</span>;
+  }
+
+  const config = {
+    approved: { icon: CheckCircle2, label: "Approved", className: "text-emerald-600 dark:text-emerald-400" },
+    needs_review: { icon: AlertTriangle, label: "Review", className: "text-amber-600 dark:text-amber-400" },
+    rejected: { icon: XCircle, label: "Rejected", className: "text-red-600 dark:text-red-400" },
+  }[status] || { icon: Shield, label: status, className: "text-muted-foreground" };
+
+  const Icon = config.icon;
+  const passCount = checks.filter((c: any) => c.status === "pass").length;
+  const warnCount = checks.filter((c: any) => c.status === "warning").length;
+  const failCount = checks.filter((c: any) => c.status === "fail").length;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1.5 cursor-default">
+            <Icon className={`h-3.5 w-3.5 ${config.className}`} />
+            <span className={`text-xs font-medium ${config.className}`}>{config.label}</span>
+            {protocols.length > 0 && (
+              <Badge variant="outline" className="text-[9px] px-1 py-0 text-muted-foreground">
+                {protocols.length}
+              </Badge>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs p-3">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold flex items-center gap-1.5">
+              <Shield className="h-3 w-3" /> Validation Protocols
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {protocols.map((p, i) => (
+                <Badge key={i} variant="outline" className="text-[10px]">{p}</Badge>
+              ))}
+            </div>
+            <div className="flex gap-3 text-[11px] text-muted-foreground">
+              {passCount > 0 && <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-500" />{passCount}</span>}
+              {warnCount > 0 && <span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-amber-500" />{warnCount}</span>}
+              {failCount > 0 && <span className="flex items-center gap-1"><XCircle className="h-3 w-3 text-red-500" />{failCount}</span>}
+            </div>
+            {checks.length > 0 && (
+              <div className="border-t border-border pt-1.5 space-y-1 max-h-32 overflow-y-auto">
+                {checks.slice(0, 6).map((c: any, i: number) => (
+                  <p key={i} className="text-[10px] text-muted-foreground">
+                    {c.status === "pass" ? "✅" : c.status === "warning" ? "⚠️" : "❌"} {c.message}
+                  </p>
+                ))}
+                {checks.length > 6 && (
+                  <p className="text-[10px] text-muted-foreground">+{checks.length - 6} more</p>
+                )}
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 const ChatContextCell = ({ data }: ICellRendererParams) => {
   const chatContext: ChatMessage[] = data.chat_context;
   if (!chatContext || !Array.isArray(chatContext) || chatContext.length === 0) {
@@ -153,6 +228,7 @@ const ChatContextCell = ({ data }: ICellRendererParams) => {
 };
 
 export default function DataProvenance() {
+  const { user } = useAuth();
   const gridRef = useRef<AgGridReact>(null);
   const [quickFilter, setQuickFilter] = useState("");
 
@@ -166,6 +242,7 @@ export default function DataProvenance() {
         .limit(500);
       return data || [];
     },
+    enabled: !!user,
   });
 
   const { data: grants } = useQuery({
@@ -174,6 +251,7 @@ export default function DataProvenance() {
       const { data } = await supabase.from("grants").select("grant_number, title");
       return data || [];
     },
+    enabled: !!user,
   });
 
   const grantMap = useMemo(() => {
@@ -216,6 +294,12 @@ export default function DataProvenance() {
       cellRenderer: EditorCell,
     },
     {
+      field: "validation_status",
+      headerName: "Validation",
+      width: 140,
+      cellRenderer: ValidationCell,
+    },
+    {
       field: "old_value",
       headerName: "Old Value",
       width: 180,
@@ -245,6 +329,26 @@ export default function DataProvenance() {
   const onFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setQuickFilter(e.target.value);
   }, []);
+
+  // Auth gate - after all hooks
+  if (!user) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 max-w-sm px-6">
+          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+            <LogIn className="h-6 w-6 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground">Sign in to view Data Provenance</h2>
+          <p className="text-sm text-muted-foreground">
+            The audit log is available to authenticated consortium members.
+          </p>
+          <Link to="/auth">
+            <Button className="mt-2">Sign In</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background">
