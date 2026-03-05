@@ -11,6 +11,8 @@ import { MARR_PROJECTS } from "@/data/marr-projects";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
+import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
+import { Table, Grid3X3 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
 const LATIN_NAMES: Record<string, string> = {
