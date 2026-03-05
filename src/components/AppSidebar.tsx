@@ -23,13 +23,17 @@ import {
 import type { NavItem } from "@/data/sidebar-config";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
   const { user, signOut, loading } = useAuth();
 
   const isActive = (path: string) => currentPath === path;
+
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
