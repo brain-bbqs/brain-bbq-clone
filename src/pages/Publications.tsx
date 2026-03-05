@@ -197,6 +197,7 @@ const KeywordsCell = ({ value }: { value: string[] }) => {
 };
 
 export default function Publications() {
+  const isMobile = useIsMobile();
   const gridRef = useRef<AgGridReact>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const grantFilter = searchParams.get("grant");
