@@ -15,15 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
+import { normalizePiName } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
@@ -114,20 +107,6 @@ const TruncatedCell = ({ value }: { value: string }) => {
   );
 };
 
-const openNihReporterProfile = async (pi: PiDetail, displayName: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke("nih-reporter-search", {
-      body: { first_name: pi.firstName, last_name: pi.lastName },
-    });
-    if (!error && data?.url) {
-      window.open(data.url, "_blank");
-      return;
-    }
-  } catch {
-    // fallback below
-  }
-  window.open(piProfileUrl(displayName), "_blank");
-};
 
 const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   const { open } = useEntitySummary();
@@ -146,7 +125,7 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   
   if (piDetails && piDetails.length > 0) {
     return (
-      <span className="truncate block max-w-full">
+      <span className="block w-full max-w-full whitespace-normal break-words leading-[1.4]">
         {piDetails.map((pi, i) => {
           const displayName = normalizePiName(pi.fullName);
           return (
@@ -173,7 +152,7 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   const normalizedNames = piNames.map(normalizePiName);
 
   return (
-    <span className="truncate block max-w-full">
+    <span className="block w-full max-w-full whitespace-normal break-words leading-[1.4]">
       {normalizedNames.map((name, i) => (
         <span key={i}>
           <span
@@ -214,7 +193,7 @@ const InstitutionCell = ({ value }: { value: string }) => {
         <TooltipTrigger asChild>
           <button
             onClick={openOrg}
-            className="truncate block max-w-full text-primary hover:underline cursor-pointer text-left"
+            className="block w-full max-w-full whitespace-normal break-words leading-[1.4] text-primary hover:underline cursor-pointer text-left"
           >
             {value}
           </button>
@@ -285,26 +264,7 @@ const Projects = () => {
     gcTime: 24 * 60 * 60 * 1000,
   });
 
-  const [selectedPi, setSelectedPi] = useState<string>("");
-
-  // Extract unique PI names for filter
-  const uniquePis = useMemo(() => {
-    const piSet = new Set<string>();
-    rowData.forEach(row => {
-      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim())).filter(Boolean);
-      names.forEach(n => piSet.add(n));
-    });
-    return Array.from(piSet).sort();
-  }, [rowData]);
-
-  // Filtered data based on PI selection
-  const filteredData = useMemo(() => {
-    if (!selectedPi) return rowData;
-    return rowData.filter(row => {
-      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim()));
-      return names.includes(selectedPi);
-    });
-  }, [rowData, selectedPi]);
+  const filteredData = rowData;
 
   // Calculate metrics
   const totalFunding = useMemo(() => 
@@ -353,7 +313,7 @@ const Projects = () => {
       wrapText: true,
       autoHeight: true,
       cellRenderer: PiCell,
-      cellStyle: { whiteSpace: 'normal', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
+      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
       valueGetter: (params) => params.data?.allPis || params.data?.contactPi || '',
     },
     {
@@ -364,7 +324,7 @@ const Projects = () => {
       wrapText: true,
       autoHeight: true,
       cellRenderer: InstitutionCell,
-      cellStyle: { whiteSpace: 'normal', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
+      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
     },
     {
       field: "publicationCount",
@@ -637,7 +597,7 @@ const Projects = () => {
               suppressCellFocus={true}
               enableCellTextSelection={true}
               domLayout="autoHeight"
-              rowHeight={36}
+              
               headerHeight={40}
               loading={loading}
               loadingOverlayComponent={() => (
