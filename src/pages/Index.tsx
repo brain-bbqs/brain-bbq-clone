@@ -55,12 +55,13 @@ const navCards: NavCard[] = [
     ],
   },
   {
-    title: "Tools",
-    description: "Software, datasets, benchmarks, and resources for neuroscience research.",
+    title: "Tools & Tutorials",
+    description: "Software, datasets, benchmarks, resources, and learning materials.",
     icon: Database,
     color: "hsl(38 90% 50%)",
     links: [
       { label: "Resources", to: "/resources" },
+      { label: "Tutorials", to: "/tutorials" },
     ],
   },
   {
