@@ -45,7 +45,7 @@ const mainItems: NavItem[] = [
 
 const assistantsItems: NavItem[] = [
   { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical },
-  { title: "BBQS Assistant (Beta)", url: "/metadata-assistant", icon: Bot },
+  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot },
   { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch },
 ];
 

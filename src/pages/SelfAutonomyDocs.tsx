@@ -245,7 +245,7 @@ export default function SelfAutonomyDocs() {
 
         <div className="space-y-3">
           {[
-            { step: "1", title: "Open the BBQS Assistant", desc: "Navigate to the BBQS Assistant page and select your project from the grid." },
+            { step: "1", title: "Open the Metadata Assistant", desc: "Navigate to the Metadata Assistant page and select your project from the grid." },
             { step: "2", title: "Describe your metadata in natural language", desc: "Tell the AI assistant about your project's unique characteristics. For example: \"We use a custom multi-electrode array with 512 channels\" or \"Our analysis involves a novel spike sorting algorithm called WaveClus3\"." },
             { step: "3", title: "The AI extracts structured fields", desc: "The metadata-chat edge function parses your description and extracts structured key-value pairs. If a value matches an existing taxonomy (even approximately), it normalizes it automatically." },
             { step: "4", title: "Novel values are tracked", desc: "If your value doesn't match any existing canonical term (Levenshtein distance > 4), it's recorded in the custom_field_usage table with a count of 1." },

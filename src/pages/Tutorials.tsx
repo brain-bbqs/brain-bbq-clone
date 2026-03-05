@@ -29,7 +29,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "Select Your Project",
     subtitle: "Find your grant in the Project Grid",
     description:
-      "Open the BBQS Assistant and you'll see a grid of consortium projects. Each card shows the grant number and a completeness score. Click your project to start curating.",
+      "Open the Metadata Assistant and you'll see a grid of consortium projects. Each card shows the grant number and a completeness score. Click your project to start curating.",
     actions: [
       { label: "Locate your grant", detail: "Find your NIH grant number in the project grid" },
       { label: "Check the progress bar", detail: "It shows how much metadata has been filled in" },
@@ -38,7 +38,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: MousePointerClick,
     color: "from-[hsl(210,85%,55%)] to-[hsl(210,70%,45%)]",
     linkedRoute: "/metadata-assistant",
-    linkedLabel: "Open BBQS Assistant",
+    linkedLabel: "Open Metadata Assistant",
     tip: "Projects with low completeness scores are the ones that need your input most!",
     visual: "project-grid",
   },
@@ -261,7 +261,7 @@ export default function Tutorials() {
             Getting Started with BBQS
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-md mx-auto">
-            Learn how to use the BBQS Assistant to describe your research, curate metadata, and discover connections across the consortium.
+            Learn how to use the Metadata Assistant to describe your research, curate metadata, and discover connections across the consortium.
           </p>
 
           <Button onClick={() => setCurrentStep(0)} size="lg" className="gap-2 px-8">
