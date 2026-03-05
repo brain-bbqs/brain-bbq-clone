@@ -29,6 +29,7 @@ export interface NavItem {
   url: string;
   icon: LucideIcon;
   disabled?: boolean;
+  authRequired?: boolean;
 }
 
 export interface NavGroup {
@@ -40,13 +41,13 @@ const mainItems: NavItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "About", url: "/about", icon: Info },
   { title: "Tutorials", url: "/tutorials", icon: BookOpen },
-  { title: "My Profile", url: "/profile", icon: Users },
+  { title: "My Profile", url: "/profile", icon: Users, authRequired: true },
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical },
-  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot },
-  { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch },
+  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical, authRequired: true },
+  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot, authRequired: true },
+  { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch, authRequired: true },
 ];
 
 const toolsItems: NavItem[] = [
@@ -74,8 +75,8 @@ const conferencesItems: NavItem[] = [
 ];
 
 const engineeringItems: NavItem[] = [
-  { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb },
+  { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
+  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb, authRequired: true },
 ];
 
 const legalItems: NavItem[] = [

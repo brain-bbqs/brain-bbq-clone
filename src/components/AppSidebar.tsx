@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LogIn, LogOut, PanelLeftClose, X, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
@@ -37,17 +37,30 @@ export function AppSidebar() {
 
   const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.title}>
-          {item.disabled ? (
-            <SidebarMenuButton
-              tooltip={collapsed ? `${item.title} (coming soon)` : undefined}
-              className="py-3 text-base opacity-40 cursor-not-allowed pointer-events-none"
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-base">{item.title}</span>
-            </SidebarMenuButton>
-          ) : (
+      {items.map((item) => {
+        const locked = item.authRequired && !user;
+
+        if (item.disabled || locked) {
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                tooltip={collapsed ? (locked ? "Sign in to access" : `${item.title} (coming soon)`) : undefined}
+                className="py-3 text-base opacity-40 cursor-not-allowed"
+                onClick={locked ? () => {
+                  handleNavClick();
+                  window.location.href = "/auth";
+                } : undefined}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-base">{item.title}</span>
+                {locked && !collapsed && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        }
+
+        return (
+          <SidebarMenuItem key={item.title}>
             <SidebarMenuButton
               asChild
               isActive={isActive(item.url)}
@@ -66,9 +79,9 @@ export function AppSidebar() {
                 </a>
               )}
             </SidebarMenuButton>
-          )}
-        </SidebarMenuItem>
-      ))}
+          </SidebarMenuItem>
+        );
+      })}
     </SidebarMenu>
   );
 
