@@ -137,8 +137,8 @@ const Resources = () => {
               quickFilterText={quickFilterText}
               animateRows={true}
               pagination={true}
-              paginationPageSize={50}
-              paginationPageSizeSelector={[10, 25, 50, 100]}
+              paginationPageSize={100}
+              paginationPageSizeSelector={[25, 50, 100, 200]}
               suppressCellFocus={true}
               enableCellTextSelection={true}
               rowHeight={36}

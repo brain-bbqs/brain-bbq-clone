@@ -84,26 +84,35 @@ const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => (
   </span>
 );
 
-const ProjectLinks = ({ data }: { value: any; data: SpeciesRow }) => (
-  <div className="flex flex-col gap-1 py-1">
-    {data.projects.map((p) => {
-      const cleanId = p.grantId.replace(/^\d(?=[A-Z])/, "");
-      const url = `https://reporter.nih.gov/project-details/${cleanId}`;
-      return (
-        <a
+const ProjectLinks = ({ data }: { value: any; data: SpeciesRow }) => {
+  const { open } = useEntitySummary();
+
+  const openGrant = async (grantId: string, name: string) => {
+    const cleanId = grantId.replace(/^\d(?=[A-Z])/, "");
+    const { data: grant } = await supabase
+      .from("grants")
+      .select("id, resource_id")
+      .eq("grant_number", cleanId)
+      .maybeSingle();
+    if (grant) {
+      open({ type: "grant", id: grant.id, resourceId: grant.resource_id || undefined, label: name });
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 py-1">
+      {data.projects.map((p) => (
+        <button
           key={p.grantId}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:text-primary/80 hover:underline inline-flex items-center gap-1 font-medium transition-colors cursor-pointer text-sm"
+          onClick={() => openGrant(p.grantId, p.name)}
+          className="text-primary hover:underline font-medium cursor-pointer text-sm text-left"
         >
           {p.name}
-          <ExternalLink className="h-3 w-3 opacity-60 shrink-0" />
-        </a>
-      );
-    })}
-  </div>
-);
+        </button>
+      ))}
+    </div>
+  );
+};
 
 const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
   if (!data.behaviors.length) return null;
