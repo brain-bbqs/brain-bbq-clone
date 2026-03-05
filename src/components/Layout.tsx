@@ -7,8 +7,10 @@ interface LayoutProps {
 }
 
 function FloatingTrigger() {
-  const { state } = useSidebar();
-  if (state !== "collapsed") return null;
+  const { state, isMobile, openMobile } = useSidebar();
+  // Show on desktop when collapsed, or on mobile when sheet is closed
+  const show = isMobile ? !openMobile : state === "collapsed";
+  if (!show) return null;
   return (
     <SidebarTrigger className="fixed top-3 left-3 z-50 bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent rounded-md shadow-md" />
   );
