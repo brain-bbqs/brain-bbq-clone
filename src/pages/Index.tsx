@@ -7,6 +7,7 @@ import {
   Database,
   FolderOpen,
   Scale,
+  Wrench,
   ChevronRight,
 } from "lucide-react";
 
@@ -73,6 +74,16 @@ const navCards: NavCard[] = [
     color: "hsl(0 0% 45%)",
     links: [
       { label: "Data Sharing Policy", to: "/data-sharing-policy" },
+    ],
+  },
+  {
+    title: "Engineering",
+    description: "Track development progress, suggest features, and view the roadmap.",
+    icon: Wrench,
+    color: "hsl(200 60% 50%)",
+    links: [
+      { label: "Roadmap", to: "/roadmap" },
+      { label: "Suggest a Feature", to: "/feature-suggestions" },
     ],
   },
 ];
