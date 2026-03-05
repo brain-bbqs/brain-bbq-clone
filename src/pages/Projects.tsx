@@ -194,23 +194,33 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
 };
 
 const InstitutionCell = ({ value }: { value: string }) => {
+  const { open } = useEntitySummary();
   if (!value) return <span className="text-muted-foreground">—</span>;
-  const searchUrl = institutionUrl(value);
+
+  const openOrg = async () => {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("id, resource_id")
+      .ilike("name", `%${value}%`)
+      .maybeSingle();
+    if (org) {
+      open({ type: "organization", id: org.id, resourceId: org.resource_id || undefined, label: value });
+    }
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <a
-            href={searchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="truncate block max-w-full text-foreground hover:text-primary hover:underline transition-colors"
+          <button
+            onClick={openOrg}
+            className="truncate block max-w-full text-primary hover:underline cursor-pointer text-left"
           >
             {value}
-          </a>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>Visit {value}</p>
+          <p>View {value}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
