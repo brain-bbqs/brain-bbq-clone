@@ -221,10 +221,10 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 </div>
               )}
             </div>
-            {/* Show validation banner after the last assistant message */}
+            {/* Show validation checklist after the last assistant message */}
             {msg.role === "assistant" && i === messages.length - 1 && lastValidation && (
               <div className="mt-3">
-                <ValidationBanner validation={lastValidation} />
+                <ValidationChecklist validation={lastValidation} />
               </div>
             )}
           </div>
