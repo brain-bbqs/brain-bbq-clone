@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, LogOut, PanelLeftClose } from "lucide-react";
+import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
@@ -75,8 +75,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <Link to="/" className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center justify-between px-2 py-2">
+          <Link to="/" className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-sidebar-accent/30">
               <img
                 src={bbqsLogoIcon}
@@ -88,10 +88,10 @@ export function AppSidebar() {
           {!collapsed && (
             <button
               onClick={() => isMobile ? setOpenMobile(false) : toggleSidebar()}
-              className="flex items-center justify-center w-9 h-9 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0 border border-sidebar-accent"
+              className="flex items-center justify-center w-10 h-10 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors shrink-0"
               title="Close sidebar"
             >
-              <PanelLeftClose className="h-5 w-5" />
+              {isMobile ? <X className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
             </button>
           )}
         </div>
