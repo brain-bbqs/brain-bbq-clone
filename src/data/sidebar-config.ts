@@ -45,9 +45,9 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical },
-  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot },
-  { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch },
+  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical, authRequired: true },
+  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot, authRequired: true },
+  { title: "Paper Extractor (Beta)", url: "/paper-extractor", icon: ScanSearch, authRequired: true },
 ];
 
 const toolsItems: NavItem[] = [
