@@ -498,6 +498,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const totalFunding = piGrants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
 
     piMap.set(key, {
+      id: inv.id,
       name: inv.name,
       displayName,
       firstName: nameParts[0] || "",
