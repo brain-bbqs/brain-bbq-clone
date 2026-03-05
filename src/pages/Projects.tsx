@@ -566,23 +566,6 @@ const Projects = () => {
               className="max-w-md"
             />
 
-            <div className="flex items-center gap-2">
-              <Select value={selectedPi} onValueChange={setSelectedPi}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by PI..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {uniquePis.map(pi => (
-                    <SelectItem key={pi} value={pi}>{pi}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedPi && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedPi("")}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
             
             <Button
               variant="outline"
