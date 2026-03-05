@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -252,9 +259,30 @@ const Projects = () => {
   const { data: rowData = [], isLoading: loading, refetch } = useQuery({
     queryKey: ["nih-grants"],
     queryFn: fetchGrants,
-    staleTime: 60 * 60 * 1000, // 1 hour (data is cached server-side)
-    gcTime: 24 * 60 * 60 * 1000, // 24 hour client cache
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
   });
+
+  const [selectedPi, setSelectedPi] = useState<string>("");
+
+  // Extract unique PI names for filter
+  const uniquePis = useMemo(() => {
+    const piSet = new Set<string>();
+    rowData.forEach(row => {
+      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim())).filter(Boolean);
+      names.forEach(n => piSet.add(n));
+    });
+    return Array.from(piSet).sort();
+  }, [rowData]);
+
+  // Filtered data based on PI selection
+  const filteredData = useMemo(() => {
+    if (!selectedPi) return rowData;
+    return rowData.filter(row => {
+      const names = (row.allPis || row.contactPi || "").split(/[,;]/).map(n => normalizePiName(n.trim()));
+      return names.includes(selectedPi);
+    });
+  }, [rowData, selectedPi]);
 
   // Calculate metrics
   const totalFunding = useMemo(() => 
@@ -513,6 +541,24 @@ const Projects = () => {
               onChange={(e) => setQuickFilterText(e.target.value)}
               className="max-w-md"
             />
+
+            <div className="flex items-center gap-2">
+              <Select value={selectedPi} onValueChange={setSelectedPi}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by PI..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniquePis.map(pi => (
+                    <SelectItem key={pi} value={pi}>{pi}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedPi && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedPi("")}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             
             <Button
               variant="outline"
@@ -547,7 +593,7 @@ const Projects = () => {
 
         {isMobile ? (
           <MobileCardList
-            items={rowData
+            items={filteredData
               .filter((r) => !quickFilterText || r.title.toLowerCase().includes(quickFilterText.toLowerCase()) || r.contactPi.toLowerCase().includes(quickFilterText.toLowerCase()))
               .map((r) => ({
                 id: r.grantNumber,
@@ -571,7 +617,7 @@ const Projects = () => {
             className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
           >
             <AgGridReact<ProjectRow>
-              rowData={rowData}
+              rowData={filteredData}
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
               quickFilterText={quickFilterText}
