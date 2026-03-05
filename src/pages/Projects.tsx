@@ -125,7 +125,7 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   
   if (piDetails && piDetails.length > 0) {
     return (
-      <span className="truncate block max-w-full">
+      <span className="block max-w-full whitespace-normal break-words leading-[1.4]">
         {piDetails.map((pi, i) => {
           const displayName = normalizePiName(pi.fullName);
           return (
