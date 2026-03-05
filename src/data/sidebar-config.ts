@@ -19,7 +19,7 @@ import {
   Lightbulb,
   Bot,
   FlaskConical,
-  BrainCircuit,
+  
   ScanSearch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
