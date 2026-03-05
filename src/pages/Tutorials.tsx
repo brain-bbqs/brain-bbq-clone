@@ -261,7 +261,7 @@ export default function Tutorials() {
             Getting Started with BBQS
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-md mx-auto">
-            Learn how to use the BBQS Assistant to describe your research, curate metadata, and discover connections across the consortium.
+            Learn how to use the Metadata Assistant to describe your research, curate metadata, and discover connections across the consortium.
           </p>
 
           <Button onClick={() => setCurrentStep(0)} size="lg" className="gap-2 px-8">

@@ -39,7 +39,7 @@ export default function DataProvenanceDocs() {
         <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
           <p className="font-medium text-foreground">How it works:</p>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-            <li>User edits a field via the BBQS Assistant chat or metadata table</li>
+            <li>User edits a field via the Metadata Assistant chat or metadata table</li>
             <li>The frontend calls <code className="bg-muted px-1 rounded text-xs">useEditHistory.logChanges()</code> after a successful commit</li>
             <li>A row is inserted into the <code className="bg-muted px-1 rounded text-xs">edit_history</code> table with the diff</li>
             <li>Supabase Realtime broadcasts the insert to all connected clients</li>
