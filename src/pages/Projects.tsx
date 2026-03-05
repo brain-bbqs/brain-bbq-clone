@@ -617,7 +617,7 @@ const Projects = () => {
             className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
           >
             <AgGridReact<ProjectRow>
-              rowData={rowData}
+              rowData={filteredData}
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
               quickFilterText={quickFilterText}
