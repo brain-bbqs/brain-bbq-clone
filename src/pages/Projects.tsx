@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
 import { AgGridReact } from "ag-grid-react";
@@ -224,6 +226,7 @@ const fetchGrants = async (): Promise<ProjectRow[]> => {
 };
 
 const Projects = () => {
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("q") || "";
   const [quickFilterText, setQuickFilterText] = useState(initialFilter);
@@ -529,45 +532,64 @@ const Projects = () => {
           </div>
         </div>
 
-        <div className="ag-grid-mobile-wrapper">
-        <div
-          id="grants-grid"
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-        >
-          <AgGridReact<ProjectRow>
-            rowData={rowData}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            quickFilterText={quickFilterText}
-            onCellMouseOver={onCellMouseOver}
-            onCellMouseOut={onCellMouseOut}
-            animateRows={true}
-            pagination={true}
-            paginationPageSize={50}
-            paginationPageSizeSelector={[10, 25, 50, 100]}
-            suppressCellFocus={true}
-            enableCellTextSelection={true}
-            domLayout="autoHeight"
-            rowHeight={36}
-            headerHeight={40}
-            loading={loading}
-            loadingOverlayComponent={() => (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span>Loading...</span>
-              </div>
-            )}
-            noRowsOverlayComponent={() => (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span>Fetching projects...</span>
-              </div>
-            )}
+        {isMobile ? (
+          <MobileCardList
+            items={rowData
+              .filter((r) => !quickFilterText || r.title.toLowerCase().includes(quickFilterText.toLowerCase()) || r.contactPi.toLowerCase().includes(quickFilterText.toLowerCase()))
+              .map((r) => ({
+                id: r.grantNumber,
+                title: r.title,
+                titleHref: r.nihLink,
+                fields: [
+                  { label: "Grant", value: r.grantNumber },
+                  { label: "PI", value: r.contactPi },
+                  { label: "Institution", value: r.institution },
+                  { label: "Year", value: String(r.fiscalYear) },
+                  { label: "Award", value: r.awardAmount ? `$${(r.awardAmount / 1000).toFixed(0)}K` : "—" },
+                  { label: "Pubs", value: String(r.publicationCount) },
+                ],
+              }))}
+            emptyMessage="No projects found"
           />
-        </div>
-        </div>
-
-        {/* Funding Visualizations */}
+        ) : (
+          <div className="ag-grid-mobile-wrapper">
+          <div
+            id="grants-grid"
+            className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
+          >
+            <AgGridReact<ProjectRow>
+              rowData={rowData}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              quickFilterText={quickFilterText}
+              onCellMouseOver={onCellMouseOver}
+              onCellMouseOut={onCellMouseOut}
+              animateRows={true}
+              pagination={true}
+              paginationPageSize={50}
+              paginationPageSizeSelector={[10, 25, 50, 100]}
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
+              domLayout="autoHeight"
+              rowHeight={36}
+              headerHeight={40}
+              loading={loading}
+              loadingOverlayComponent={() => (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span>Loading...</span>
+                </div>
+              )}
+              noRowsOverlayComponent={() => (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span>Fetching projects...</span>
+                </div>
+              )}
+            />
+          </div>
+          </div>
+        )}
         <FundingCharts data={rowData} />
 
         {/* Hover Detail Card */}

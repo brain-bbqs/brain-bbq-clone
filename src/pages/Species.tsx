@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
@@ -134,6 +136,7 @@ export default function Species() {
     ],
     []
   );
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-background">
@@ -157,24 +160,30 @@ export default function Species() {
           </div>
         </div>
 
-        <div className="ag-grid-mobile-wrapper">
-        <div
-          className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-          style={{ width: "100%" }}
-        >
-          <AgGridReact<SpeciesRow>
-            rowData={rows}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            quickFilterText={quickFilterText}
-            animateRows={true}
-            domLayout="autoHeight"
-            suppressCellFocus={true}
-            enableCellTextSelection={true}
-            headerHeight={40}
+        {isMobile ? (
+          <MobileCardList
+            items={rows
+              .filter((r) => !quickFilterText || r.species.toLowerCase().includes(quickFilterText.toLowerCase()))
+              .map((r) => ({
+                id: r.species,
+                title: r.species,
+                fields: [
+                  { label: "Latin Name", value: r.latinName || "—" },
+                  { label: "Projects", value: String(r.projectCount) },
+                  { label: "Behaviors", value: r.behaviors.join(", ") || "—" },
+                ],
+              }))}
+            emptyMessage="No species found"
           />
-        </div>
-        </div>
+        ) : (
+          <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ width: "100%" }}>
+            <AgGridReact<SpeciesRow>
+              rowData={rows} columnDefs={columnDefs} defaultColDef={defaultColDef}
+              quickFilterText={quickFilterText} animateRows={true} domLayout="autoHeight"
+              suppressCellFocus={true} enableCellTextSelection={true} headerHeight={40}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
