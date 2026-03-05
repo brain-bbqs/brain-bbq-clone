@@ -85,13 +85,24 @@ export function AppSidebar() {
               />
             </div>
           </Link>
-          {!collapsed && (
+          {isMobile ? (
             <button
-              onClick={() => isMobile ? setOpenMobile(false) : toggleSidebar()}
+              onClick={() => setOpenMobile(false)}
+              className="flex items-center gap-1 h-10 px-3 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors shrink-0"
+              title="Close menu"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+              <span className="text-xs font-semibold">Close</span>
+            </button>
+          ) : !collapsed && (
+            <button
+              onClick={toggleSidebar}
               className="flex items-center justify-center w-10 h-10 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors shrink-0"
               title="Close sidebar"
+              aria-label="Close sidebar"
             >
-              {isMobile ? <X className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+              <PanelLeftClose className="h-5 w-5" />
             </button>
           )}
         </div>
