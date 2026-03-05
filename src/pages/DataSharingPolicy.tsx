@@ -79,8 +79,6 @@ const DataSharingPolicy = () => {
 
 
 
-      {/* Version History */}
-      <VersionHistoryGrid />
 
       <Separator className="my-8" />
 
