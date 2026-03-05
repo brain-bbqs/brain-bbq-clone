@@ -17,6 +17,7 @@ interface AssistantChatProps {
   onClear: () => void;
   projectTitle?: string;
   lastValidation?: ValidationResult | null;
+  fieldsUpdated?: string[];
 }
 
 const STARTERS = [
@@ -160,7 +161,7 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
     </div>
   );
 }
-export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation }: AssistantChatProps) {
+export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation, fieldsUpdated = [] }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -220,8 +221,8 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         )}
       </div>
 
-      {/* Workflow stepper */}
-      {projectTitle && (
+      {/* Workflow stepper - only shows when metadata is being updated */}
+      {projectTitle && fieldsUpdated.length > 0 && (
         <WorkflowStepper
           messageCount={messages.length}
           hasValidation={!!lastValidation}

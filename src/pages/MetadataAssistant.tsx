@@ -107,6 +107,7 @@ export default function MetadataAssistant() {
                 onClear={clearChat}
                 projectTitle={grantTitle || undefined}
                 lastValidation={lastValidation}
+                fieldsUpdated={fieldsUpdated}
               />
             </div>
           </div>
