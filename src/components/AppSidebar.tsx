@@ -156,11 +156,11 @@ export function AppSidebar() {
               {!collapsed && <span>Sign Out</span>}
             </Button>
           ) : (
-            <Link to="/auth">
+            <Link to="/auth" onClick={handleNavClick}>
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
-                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                className="w-full justify-start gap-2"
               >
                 <LogIn className="h-4 w-4" />
                 {!collapsed && <span>Sign In</span>}
