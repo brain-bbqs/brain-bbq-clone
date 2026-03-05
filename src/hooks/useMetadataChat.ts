@@ -6,11 +6,27 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ValidationCheck {
+  protocol: string;
+  field: string;
+  status: "pass" | "warning" | "fail";
+  message: string;
+  suggestions?: string[];
+}
+
+export interface ValidationResult {
+  overall_status: "approved" | "needs_review" | "rejected";
+  summary: { total_checks: number; passed: number; warnings: number; failed: number };
+  protocols_run: string[];
+  checks: ValidationCheck[];
+}
+
 interface MetadataChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   completeness: number;
   fieldsUpdated: string[];
+  lastValidation: ValidationResult | null;
 }
 
 export function useMetadataChat(grantNumber: string | null) {
@@ -19,6 +35,7 @@ export function useMetadataChat(grantNumber: string | null) {
     isLoading: false,
     completeness: 0,
     fieldsUpdated: [],
+    lastValidation: null,
   });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -30,6 +47,7 @@ export function useMetadataChat(grantNumber: string | null) {
       ...prev,
       messages: [...prev.messages, userMsg],
       isLoading: true,
+      lastValidation: null,
     }));
 
     try {
@@ -55,6 +73,7 @@ export function useMetadataChat(grantNumber: string | null) {
         isLoading: false,
         completeness: data.metadata_completeness ?? prev.completeness,
         fieldsUpdated: data.fields_updated?.length ? data.fields_updated : prev.fieldsUpdated,
+        lastValidation: data.validation ?? null,
       }));
     } catch (err: any) {
       console.error("metadata-chat error:", err);
@@ -67,7 +86,7 @@ export function useMetadataChat(grantNumber: string | null) {
   }, [grantNumber, state.messages]);
 
   const clearChat = useCallback(() => {
-    setState({ messages: [], isLoading: false, completeness: 0, fieldsUpdated: [] });
+    setState({ messages: [], isLoading: false, completeness: 0, fieldsUpdated: [], lastValidation: null });
   }, []);
 
   return {
@@ -75,6 +94,7 @@ export function useMetadataChat(grantNumber: string | null) {
     isLoading: state.isLoading,
     completeness: state.completeness,
     fieldsUpdated: state.fieldsUpdated,
+    lastValidation: state.lastValidation,
     sendMessage,
     clearChat,
   };
