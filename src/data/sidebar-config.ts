@@ -19,8 +19,6 @@ import {
   Lightbulb,
   Bot,
   FlaskConical,
-  
-  ScanSearch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
