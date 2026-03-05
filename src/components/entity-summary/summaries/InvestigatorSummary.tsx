@@ -101,13 +101,14 @@ export function InvestigatorSummary({ id }: { id: string }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, isClaimed, claim, isClaiming } = useInvestigatorOwnership(id);
 
   const { data, isLoading } = useQuery({
     queryKey: ["entity-investigator", id],
     queryFn: async () => {
       const { data: inv, error } = await supabase
         .from("investigators")
-        .select("*, resource_id")
+        .select("*, resource_id, user_id")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -149,8 +150,20 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
-  // Check if current user can edit this investigator (matches email)
-  const canEdit = user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase();
+  // Can edit if: user owns this investigator (via user_id link) OR email matches (legacy)
+  const canEdit = isOwner || (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
+  // Show claim button if: user is logged in, investigator is unclaimed, and user doesn't own it
+  const canClaim = user && !isClaimed && !isOwner && !canEdit;
+
+  const handleClaim = async () => {
+    try {
+      await claim();
+      toast({ title: "Profile claimed!", description: "You can now edit this investigator profile." });
+      queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] });
+    } catch (e: any) {
+      toast({ title: "Claim failed", description: e.message || "Could not claim this profile.", variant: "destructive" });
+    }
+  };
 
   const updateField = useMutation({
     mutationFn: async ({ field, value }: { field: string; value: any }) => {
