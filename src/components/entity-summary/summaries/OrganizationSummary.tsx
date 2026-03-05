@@ -2,11 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SummaryField } from "../SummaryField";
 import { SummaryTabs } from "../SummaryTabs";
-import { EntityComments } from "../EntityComments";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileText, MessageSquare, Building } from "lucide-react";
+import { ExternalLink, FileText, Building, Shield, Scale } from "lucide-react";
 
 export function OrganizationSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
@@ -27,7 +26,13 @@ export function OrganizationSummary({ id }: { id: string }) {
         ? await supabase.from("investigators").select("id, name, resource_id").in("id", invIds)
         : { data: [] };
 
-      return { ...org, investigators: investigators || [] };
+      // Get allowed domains for this org
+      const { data: domains } = await supabase
+        .from("allowed_domains")
+        .select("domain")
+        .eq("organization_id", id);
+
+      return { ...org, investigators: investigators || [], domains: domains || [] };
     },
   });
 
@@ -44,11 +49,20 @@ export function OrganizationSummary({ id }: { id: string }) {
           </a>
         </SummaryField>
       )}
+      {data.domains.length > 0 && (
+        <SummaryField label="Email Domains">
+          <div className="flex flex-wrap gap-1.5">
+            {data.domains.map((d: any) => (
+              <Badge key={d.domain} variant="secondary" className="text-xs">{d.domain}</Badge>
+            ))}
+          </div>
+        </SummaryField>
+      )}
       {data.investigators.length > 0 && (
         <div className="pt-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Investigators ({data.investigators.length})</h3>
           <div className="flex flex-wrap gap-2">
-            {data.investigators.map((inv) => (
+            {data.investigators.map((inv: any) => (
               <Badge
                 key={inv.id}
                 variant="outline"
@@ -61,6 +75,41 @@ export function OrganizationSummary({ id }: { id: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+
+  const complianceContent = (
+    <div className="space-y-4 p-1">
+      <div className="rounded-lg border border-border p-4 bg-muted/20">
+        <div className="flex items-center gap-2 mb-3">
+          <Shield className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Data Sharing Agreements</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Data sharing and use agreements between this institution and the consortium. Contact the institution's research office for details.
+        </p>
+        <Badge variant="outline" className="mt-2 text-xs">Status: Active Participant</Badge>
+      </div>
+
+      <div className="rounded-lg border border-border p-4 bg-muted/20">
+        <div className="flex items-center gap-2 mb-3">
+          <Scale className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">IRB & Compliance</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Institutional Review Board approvals and animal use protocols associated with grants at this institution.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-border p-4 bg-muted/20">
+        <div className="flex items-center gap-2 mb-3">
+          <FileText className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Open Source Licensing</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Institutional policies on open-source licensing for software and tools developed under consortium grants.
+        </p>
+      </div>
     </div>
   );
 
@@ -79,7 +128,7 @@ export function OrganizationSummary({ id }: { id: string }) {
       </div>
       <SummaryTabs tabs={[
         { id: "summary", label: "Summary", icon: <FileText className="h-3.5 w-3.5" />, content: summaryContent },
-        { id: "comments", label: "Comments", icon: <MessageSquare className="h-3.5 w-3.5" />, content: data.resource_id ? <EntityComments resourceId={data.resource_id} /> : <p className="text-sm text-muted-foreground italic">Comments not available.</p> },
+        { id: "compliance", label: "Compliance & Policy", icon: <Shield className="h-3.5 w-3.5" />, content: complianceContent },
       ]} />
     </div>
   );

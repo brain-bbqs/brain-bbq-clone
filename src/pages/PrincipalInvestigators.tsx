@@ -43,6 +43,12 @@ interface GrantInfo {
   coPis: CoPiInfo[];
 }
 
+interface OrgInfo {
+  id: string;
+  name: string;
+  resourceId?: string;
+}
+
 interface PIRow {
   id: string;
   name: string;
@@ -55,6 +61,7 @@ interface PIRow {
   totalProjects: number;
   totalFunding: number;
   institutions: string[];
+  orgs: OrgInfo[];
   grants: GrantInfo[];
   skills: string[];
   researchAreas: string[];
@@ -451,6 +458,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     let piAsCoPi = 0;
     const piGrants: GrantInfo[] = [];
     const institutions = new Set<string>();
+    const orgInfos: OrgInfo[] = [];
 
     for (const link of piGrantLinks) {
       const grant = grantByNumber.get(link.grant_number);
@@ -493,6 +501,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       const org = orgById.get(ol.organization_id);
       if (org) {
         institutions.add(org.name);
+        orgInfos.push({ id: org.id, name: org.name, resourceId: org.resource_id || undefined });
         piGrants.forEach(g => { if (!g.institution) g.institution = org.name; });
       }
     }
@@ -511,6 +520,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       totalProjects: piGrantLinks.length,
       totalFunding,
       institutions: Array.from(institutions),
+      orgs: orgInfos,
       grants: piGrants,
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
@@ -601,39 +611,42 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
 /* ── Institution cell ── */
 const InstitutionCell = ({ data }: { data: PIRow }) => {
-  if (!data?.institutions || data.institutions.length === 0) return <span className="text-muted-foreground">—</span>;
-  const primary = data.institutions[0];
-  const remaining = data.institutions.length - 1;
+  const { open } = useEntitySummary();
+  if (!data?.orgs || data.orgs.length === 0) return <span className="text-muted-foreground">—</span>;
+  const primary = data.orgs[0];
+  const remaining = data.orgs.length - 1;
   return (
-    <HoverCard openDelay={150} closeDelay={100}>
-      <HoverCardTrigger asChild>
-        <div className="flex items-center gap-1 py-1 overflow-hidden w-full cursor-help">
-          <span className="text-xs text-primary truncate block">{primary}</span>
-          {remaining > 0 && (
-            <span className="text-[10px] text-muted-foreground shrink-0">+{remaining}</span>
-          )}
-        </div>
-      </HoverCardTrigger>
-      <HoverCardContent side="bottom" align="start" className="w-80 p-3">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
-          Institutions ({data.institutions.length})
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {data.institutions.map((inst, idx) => (
-            <a
-              key={idx}
-              href={institutionUrl(inst)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-            >
-              <ExternalLink className="h-3 w-3 shrink-0" />
-              {inst}
-            </a>
-          ))}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+    <div className="flex items-center gap-1 py-1 overflow-hidden w-full">
+      <button
+        onClick={() => open({ type: "organization", id: primary.id, resourceId: primary.resourceId, label: primary.name })}
+        className="text-xs text-primary hover:underline truncate block text-left cursor-pointer"
+      >
+        {primary.name}
+      </button>
+      {remaining > 0 && (
+        <HoverCard openDelay={150} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <span className="text-[10px] text-muted-foreground shrink-0 cursor-help">+{remaining}</span>
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom" align="start" className="w-80 p-3">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+              All Institutions ({data.orgs.length})
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {data.orgs.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => open({ type: "organization", id: org.id, resourceId: org.resourceId, label: org.name })}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline text-left"
+                >
+                  {org.name}
+                </button>
+              ))}
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </div>
   );
 };
 
@@ -767,9 +780,9 @@ export default function PrincipalInvestigators() {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">People</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across NIH grants. Click a name to view their NIH Reporter profile. BBQS-affiliated grants are highlighted in green.
+            Browse all people across NIH grants in the BBQS consortium. Click a name to view their profile. BBQS-affiliated grants are highlighted in green.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
