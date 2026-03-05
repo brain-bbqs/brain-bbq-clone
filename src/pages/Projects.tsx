@@ -152,7 +152,7 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
   const normalizedNames = piNames.map(normalizePiName);
 
   return (
-    <span className="truncate block max-w-full">
+    <span className="block max-w-full whitespace-normal break-words leading-[1.4]">
       {normalizedNames.map((name, i) => (
         <span key={i}>
           <span
