@@ -51,7 +51,6 @@ const assistantsItems: NavItem[] = [
 
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
-  { title: "Knowledge Graph", url: "/computational-models", icon: BrainCircuit },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
