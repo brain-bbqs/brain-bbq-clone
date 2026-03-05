@@ -348,12 +348,45 @@ export default function Publications() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : isMobile ? (
+          <MobileCardList
+            items={displayedPubs
+              .filter((p) => !quickFilterText || p.title.toLowerCase().includes(quickFilterText.toLowerCase()) || p.authors.toLowerCase().includes(quickFilterText.toLowerCase()))
+              .map((p) => ({
+                id: p.pmid || p.title,
+                title: p.title,
+                titleHref: p.pubmedLink,
+                fields: [
+                  { label: "Year", value: String(p.year || "—") },
+                  { label: "Journal", value: p.journal || "—" },
+                  { label: "Citations", value: String(p.citations) },
+                  { label: "RCR", value: p.rcr ? p.rcr.toFixed(2) : "—" },
+                ],
+              }))}
+            emptyMessage="No publications found"
+          />
         ) : (
-          <div className="ag-grid-mobile-wrapper">
           <div className="ag-theme-alpine relative" style={{ width: "100%" }}>
             <AgGridReact
               ref={gridRef}
               rowData={displayedPubs}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              onGridReady={onGridReady}
+              quickFilterText={quickFilterText}
+              rowHeight={44}
+              headerHeight={40}
+              animateRows
+              pagination
+              paginationPageSize={25}
+              paginationPageSizeSelector={[10, 25, 50]}
+              domLayout="autoHeight"
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
+              onCellMouseOver={onCellMouseOver}
+              onCellMouseOut={onCellMouseOut}
+            />
+          </div>
               columnDefs={columnDefs}
               defaultColDef={defaultColDef}
               onGridReady={onGridReady}
