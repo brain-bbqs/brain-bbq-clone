@@ -161,7 +161,7 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
     </div>
   );
 }
-export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation }: AssistantChatProps) {
+export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation, fieldsUpdated = [] }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
