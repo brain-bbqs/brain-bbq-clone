@@ -193,7 +193,7 @@ const InstitutionCell = ({ value }: { value: string }) => {
         <TooltipTrigger asChild>
           <button
             onClick={openOrg}
-            className="truncate block max-w-full text-primary hover:underline cursor-pointer text-left"
+            className="block max-w-full whitespace-normal break-words leading-[1.4] text-primary hover:underline cursor-pointer text-left"
           >
             {value}
           </button>
