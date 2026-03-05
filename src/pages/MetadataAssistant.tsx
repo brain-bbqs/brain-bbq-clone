@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ProjectGrid } from "@/components/metadata-assistant/ProjectGrid";
+import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
@@ -70,9 +70,10 @@ export default function MetadataAssistant() {
       )}
 
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Project completeness grid */}
-        <div className="border-b border-border shrink-0 overflow-auto max-h-[50vh]">
-          <ProjectGrid selectedGrant={grantNumber} onSelectGrant={setGrantNumber} />
+        {/* Project selector */}
+        <div className="border-b border-border shrink-0 px-5 py-3 bg-card">
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
+          <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
         </div>
 
         {/* Permission banner */}
