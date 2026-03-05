@@ -75,8 +75,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center justify-between px-2 py-2">
-          <Link to="/" className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 px-2 py-2">
+          <Link to="/" className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-sidebar-accent/30">
               <img
                 src={bbqsLogoIcon}
@@ -84,16 +84,11 @@ export function AppSidebar() {
                 className="w-full h-full object-cover scale-[1.35]"
               />
             </div>
-            {!collapsed && (
-              <span className="font-semibold text-sidebar-foreground text-xs leading-tight truncate">
-                Brain Behavior Quantification & Synchronization
-              </span>
-            )}
           </Link>
           {!collapsed && (
             <button
               onClick={() => isMobile ? setOpenMobile(false) : toggleSidebar()}
-              className="flex items-center justify-center w-8 h-8 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0"
+              className="flex items-center justify-center w-9 h-9 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0 border border-sidebar-accent"
               title="Close sidebar"
             >
               <PanelLeftClose className="h-5 w-5" />
