@@ -677,18 +677,8 @@ export default function PrincipalInvestigators() {
 
   const rowData = useMemo(() => {
     if (roleFilter === "all") return rawRowData;
-    return rawRowData.filter((pi) => {
-      switch (roleFilter) {
-        case "pi":
-          return pi.grants.some((g) => g.role === "contact_pi");
-        case "co_pi":
-          return pi.grants.some((g) => g.role !== "contact_pi");
-        case "wg_chair":
-          return isWorkingGroupChair(pi.displayName);
-        default:
-          return true;
-      }
-    });
+    if (roleFilter === "pi") return rawRowData.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
+    return rawRowData;
   }, [rawRowData, roleFilter]);
 
   const totalFundingAll = useMemo(() => {
