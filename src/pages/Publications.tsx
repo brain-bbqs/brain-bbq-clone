@@ -345,6 +345,95 @@ export default function Publications() {
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
+          </div>
+        ) : isMobile ? (
+          <MobileCardList
+            items={displayedPubs
+              .filter((p) => !quickFilterText || p.title.toLowerCase().includes(quickFilterText.toLowerCase()) || p.authors.toLowerCase().includes(quickFilterText.toLowerCase()))
+              .map((p) => ({
+                id: p.pmid || p.title,
+                title: p.title,
+                titleHref: p.pubmedLink,
+                fields: [
+                  { label: "Year", value: String(p.year || "—") },
+                  { label: "Journal", value: p.journal || "—" },
+                  { label: "Citations", value: String(p.citations) },
+                  { label: "RCR", value: p.rcr ? p.rcr.toFixed(2) : "—" },
+                ],
+              }))}
+            emptyMessage="No publications found"
+          />
+        ) : (
+          <div className="ag-theme-alpine relative" style={{ width: "100%" }}>
+            <AgGridReact
+              ref={gridRef}
+              rowData={displayedPubs}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              onGridReady={onGridReady}
+              quickFilterText={quickFilterText}
+              rowHeight={44}
+              headerHeight={40}
+              animateRows
+              pagination
+              paginationPageSize={25}
+              paginationPageSizeSelector={[10, 25, 50]}
+              domLayout="autoHeight"
+              suppressCellFocus={true}
+              enableCellTextSelection={true}
+              onCellMouseOver={onCellMouseOver}
+              onCellMouseOut={onCellMouseOut}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Publications</h1>
+          <p className="text-muted-foreground">Papers from NIH-funded research grants</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-lg border border-border p-4">
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Quick filter..."
+            value={quickFilterText}
+            onChange={(e) => setQuickFilterText(e.target.value)}
+            className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md text-sm"
+          />
+          <span className="text-sm text-muted-foreground">{displayedPubs.length} publications</span>
+          {grantFilter && (
+            <span className="flex items-center gap-2">
+              <span className="bg-primary/10 text-primary border border-primary/30 rounded-full px-3 py-0.5 text-xs font-medium">
+                Grant: {grantFilter}
+              </span>
+              <button onClick={clearFilter} className="text-xs text-muted-foreground hover:text-foreground underline">
+                Show all
+              </button>
+            </span>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
