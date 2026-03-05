@@ -191,7 +191,9 @@ export default function Species() {
           )}
         </div>
 
-        {isMobile ? (
+        {view === "heatmap" ? (
+          <SpeciesHeatmap />
+        ) : isMobile ? (
           <MobileCardList
             items={rows
               .filter((r) => !quickFilterText || r.species.toLowerCase().includes(quickFilterText.toLowerCase()))
