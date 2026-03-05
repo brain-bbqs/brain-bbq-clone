@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogIn, LogOut, PanelLeftClose, X, Lock } from "lucide-react";
+import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { sidebarGroups } from "@/data/sidebar-config";
 
@@ -41,10 +42,10 @@ export function AppSidebar() {
         const locked = item.authRequired && !user;
 
         if (item.disabled || locked) {
-          return (
+          const btn = (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                tooltip={locked ? "Please sign in to view this page" : `${item.title} (coming soon)`}
+                tooltip={collapsed ? (locked ? "Please sign in to view this page" : `${item.title} (coming soon)`) : undefined}
                 className="py-3 text-base opacity-40 cursor-pointer"
                 onClick={locked ? () => {
                   handleNavClick();
@@ -56,6 +57,17 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           );
+
+          if (!collapsed && locked) {
+            return (
+              <Tooltip key={item.title}>
+                <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                <TooltipContent side="right">Please sign in to view this page</TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return btn;
         }
 
         return (
@@ -144,11 +156,11 @@ export function AppSidebar() {
               {!collapsed && <span>Sign Out</span>}
             </Button>
           ) : (
-            <Link to="/auth">
+            <Link to="/auth" onClick={handleNavClick}>
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
-                className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                className="w-full justify-start gap-2"
               >
                 <LogIn className="h-4 w-4" />
                 {!collapsed && <span>Sign In</span>}
