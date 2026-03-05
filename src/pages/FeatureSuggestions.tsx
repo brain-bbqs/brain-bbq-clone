@@ -280,6 +280,7 @@ export default function FeatureSuggestions() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
+            <div className="ag-grid-mobile-wrapper">
             <div className="ag-theme-custom">
               <AgGridReact
                 rowData={suggestions}
@@ -290,6 +291,7 @@ export default function FeatureSuggestions() {
                 paginationPageSize={25}
                 defaultColDef={{ resizable: true }}
               />
+            </div>
             </div>
           )}
         </CardContent>

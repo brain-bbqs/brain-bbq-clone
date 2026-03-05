@@ -284,6 +284,7 @@ export default function DataProvenance() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
+          <div className="ag-grid-mobile-wrapper">
           <div className="ag-theme-alpine h-full w-full">
             <AgGridReact
               ref={gridRef}
@@ -300,6 +301,7 @@ export default function DataProvenance() {
               rowHeight={40}
               headerHeight={36}
             />
+          </div>
           </div>
         )}
       </div>

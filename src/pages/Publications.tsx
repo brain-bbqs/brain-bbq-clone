@@ -346,6 +346,7 @@ export default function Publications() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
+          <div className="ag-grid-mobile-wrapper">
           <div className="ag-theme-alpine relative" style={{ width: "100%" }}>
             <AgGridReact
               ref={gridRef}
@@ -428,6 +429,7 @@ export default function Publications() {
                 )}
               </div>
             )}
+          </div>
           </div>
         )}
       </div>
