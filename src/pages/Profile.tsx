@@ -8,15 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Building2, FolderOpen, MessageSquare, History, LogOut, Pencil, Check, X } from "lucide-react";
+import { User, Building2, FolderOpen, MessageSquare, History, LogOut, LogIn, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 export default function Profile() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, refetch } = useProfile();
   const navigate = useNavigate();
+  const { open } = useEntitySummary();
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,6 @@ export default function Profile() {
     queryKey: ["editable-projects", profile?.organization_id],
     enabled: !!profile?.organization_id,
     queryFn: async () => {
-      // Get investigators at user's org
       const { data: invOrgs } = await supabase
         .from("investigator_organizations")
         .select("investigator_id")
@@ -115,10 +116,62 @@ export default function Profile() {
     },
   });
 
-  if (!user) {
-    navigate("/auth");
-    return null;
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
+
+  // Signed-out state
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-12 flex flex-col items-center text-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+              <User className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Sign in to view your profile</h2>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Log in with your university email to access your projects, chat history, and metadata edits.
+              </p>
+            </div>
+            <Button onClick={() => navigate("/auth")} className="mt-2">
+              <LogIn className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const openInvestigatorCard = async () => {
+    if (!profile?.full_name) return;
+    const lastName = profile.full_name.split(" ").pop() || "";
+    const { data: inv } = await supabase
+      .from("investigators")
+      .select("id, resource_id")
+      .ilike("name", `%${lastName}%`)
+      .maybeSingle();
+    if (inv) {
+      open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: profile.full_name });
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -127,9 +180,13 @@ export default function Profile() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <button
+                onClick={openInvestigatorCard}
+                className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors cursor-pointer"
+                title="View your investigator entity card"
+              >
                 <User className="h-7 w-7 text-primary" />
-              </div>
+              </button>
               <div>
                 {profileLoading ? (
                   <Skeleton className="h-6 w-48" />
@@ -153,9 +210,12 @@ export default function Profile() {
                 ) : (
                   <>
                     <div className="flex items-center gap-2">
-                      <h1 className="text-xl font-semibold text-foreground">
+                      <button
+                        onClick={openInvestigatorCard}
+                        className="text-xl font-semibold text-primary hover:underline cursor-pointer"
+                      >
                         {profile?.full_name || "No name set"}
-                      </h1>
+                      </button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startEditing}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -173,10 +233,23 @@ export default function Profile() {
         </CardHeader>
         {orgName && (
           <CardContent className="pt-0">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-foreground">{orgName}</span>
-            </div>
+            <button
+              onClick={async () => {
+                if (!profile?.organization_id) return;
+                const { data: org } = await supabase
+                  .from("organizations")
+                  .select("id, resource_id")
+                  .eq("id", profile.organization_id)
+                  .maybeSingle();
+                if (org) {
+                  open({ type: "organization", id: org.id, resourceId: org.resource_id || undefined, label: orgName });
+                }
+              }}
+              className="flex items-center gap-2 text-primary hover:underline cursor-pointer"
+            >
+              <Building2 className="h-4 w-4" />
+              <span className="text-sm">{orgName}</span>
+            </button>
           </CardContent>
         )}
       </Card>
@@ -195,13 +268,26 @@ export default function Profile() {
           ) : (
             <div className="space-y-2">
               {editableProjects.map((p: any) => (
-                <div key={p.grant_number} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <button
+                  key={p.grant_number}
+                  onClick={async () => {
+                    const { data: grant } = await supabase
+                      .from("grants")
+                      .select("id, resource_id")
+                      .eq("grant_number", p.grant_number)
+                      .maybeSingle();
+                    if (grant) {
+                      open({ type: "grant", id: grant.id, resourceId: grant.resource_id || undefined, label: p.title || p.grant_number });
+                    }
+                  }}
+                  className="w-full flex items-center justify-between py-2 border-b border-border last:border-0 text-left hover:bg-accent/50 rounded px-2 transition-colors"
+                >
                   <div>
-                    <p className="text-sm font-medium text-foreground">{p.title}</p>
+                    <p className="text-sm font-medium text-primary hover:underline">{p.title}</p>
                     <p className="text-xs text-muted-foreground">{p.grant_number}</p>
                   </div>
                   <Badge variant="secondary" className="text-xs">Can Edit</Badge>
-                </div>
+                </button>
               ))}
             </div>
           )}
