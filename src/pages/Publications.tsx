@@ -427,9 +427,9 @@ export default function Publications() {
                     <span className="text-xs">{hoveredRow.keywords.join(", ")}</span>
                   </div>
                 )}
-          </div>
-          </div>
+              </div>
             )}
+          </div>
           </div>
         )}
       </div>
