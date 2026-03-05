@@ -220,6 +220,15 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         )}
       </div>
 
+      {/* Workflow stepper */}
+      {projectTitle && (
+        <WorkflowStepper
+          messageCount={messages.length}
+          hasValidation={!!lastValidation}
+          completeness={completeness}
+        />
+      )}
+
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
         {messages.length === 0 && (
