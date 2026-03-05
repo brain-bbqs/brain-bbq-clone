@@ -61,11 +61,21 @@ const WORKING_GROUPS: Record<string, WorkingGroupData> = {
     name: "WG-Ethics, Legal, and Social Issues (WG-ELSI)",
     shortName: "ELSI",
     purpose:
-      "Addressing ethical, legal, and social implications of brain research, ensuring responsible innovation and data governance.",
-    deliverables: [],
+      "The Working Group on Ethical, Legal, and Societal Implications (ELSI) aims to identify and address ELSI issues that emerge from the work in the consortium projects, as well as to help establish and promote the adoption of the data sharing governance framework for the BBQS community. This effort is essential to facilitate FAIR (Findable, Accessible, Interoperable, Reusable) sharing and reuse of brain behavior data and metadata, ensuring consistency, interoperability, and integration of data and metadata to support scientific research and collaboration in an ethical and responsible manner.",
+    deliverables: [
+      "Meet with the ELSI Scientific Advisory Board to identify areas to prioritize",
+      "Conduct workshops on key ELSI topics to discuss with the larger BBQS community",
+      "Conduct research on ethical issues to identify and create recommendations for the consortium and the broader community",
+      "Share these resources with BBQS consortium members",
+    ],
+    charterUrl:
+      "https://docs.google.com/document/d/1GnGAAeUUrkO5dvk_P3zXjjF0HiiIBGyy/edit?usp=sharing&ouid=117099683135763927535&rtpof=true&sd=true",
+    resourcesUrl: "/resources?search=WG-ELSI",
     chairs: [
       { name: "Laura Cabrera", url: "https://rockethics.psu.edu/people/laura-cabrera/" },
     ],
+    contactChairs: "wg-chairs@brain-bbqs.org",
+    mailingList: "wg-elsi@brain-bbqs.org",
   },
   "wg-standards": {
     name: "WG-Standards",
