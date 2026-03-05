@@ -793,7 +793,7 @@ export default function PrincipalInvestigators() {
                     <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Investigators</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">People</p>
                     <p className="text-xl font-bold text-foreground">{rowData.length}</p>
                   </div>
                 </div>
@@ -847,7 +847,7 @@ export default function PrincipalInvestigators() {
                 </div>
               </PopoverContent>
             </Popover>
-            <span className="text-sm text-muted-foreground">{rowData.length} investigators</span>
+            <span className="text-sm text-muted-foreground">{rowData.length} people</span>
           </div>
         </div>
 
