@@ -39,7 +39,7 @@ export function ProjectPicker({ value, onChange }: ProjectPickerProps) {
       <SelectTrigger className="w-full bg-card border-border">
         <SelectValue placeholder="Select a project to begin..." />
       </SelectTrigger>
-      <SelectContent className="max-h-80 [&_[data-radix-collection-item]]:focus:bg-primary/8 [&_[data-radix-collection-item]]:focus:text-foreground">
+      <SelectContent className="max-h-80">
         {(grants || []).map(g => (
           <SelectItem key={g.grant_number} value={g.grant_number}>
             <div className="flex items-center gap-2">
