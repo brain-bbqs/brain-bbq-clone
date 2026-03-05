@@ -651,13 +651,11 @@ const ALL_COLUMNS = [
 
 type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
-type RoleFilter = "all" | "pi" | "co_pi" | "wg_chair";
+type RoleFilter = "all" | "pi";
 
 const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "pi", label: "PIs" },
-  { id: "co_pi", label: "Co-PIs" },
-  { id: "wg_chair", label: "WG Chairs" },
 ];
 
 // wgChairNames removed — using isWorkingGroupChair() instead
