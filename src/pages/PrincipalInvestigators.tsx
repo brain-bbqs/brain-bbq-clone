@@ -777,9 +777,9 @@ export default function PrincipalInvestigators() {
     <div className="min-h-screen bg-background">
       <div className="px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Principal Investigators</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">People</h1>
           <p className="text-muted-foreground mb-6">
-            Browse all Principal Investigators and Co-PIs across NIH grants. Click a name to view their NIH Reporter profile. BBQS-affiliated grants are highlighted in green.
+            Browse all people across NIH grants in the BBQS consortium. Click a name to view their profile. BBQS-affiliated grants are highlighted in green.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
