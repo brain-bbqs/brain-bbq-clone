@@ -87,15 +87,15 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
     return piProfileUrl(author);
   };
   return (
-    <span className="truncate block">
+    <span className="flex flex-wrap gap-x-1 gap-y-0.5 py-1" style={{ whiteSpace: 'normal', lineHeight: '1.5' }}>
       {authors.map((author, i) => {
         const url = getAuthorUrl(author);
         const isOrcid = url.includes("orcid.org");
         return (
-          <span key={i}>
+          <span key={i} className="whitespace-nowrap">
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"
               title={isOrcid ? `View ${author} on ORCID` : `Search ${author} on Google Scholar`}>{author}</a>
-            {i < authors.length - 1 ? ", " : ""}
+            {i < authors.length - 1 ? "," : ""}
           </span>
         );
       })}
