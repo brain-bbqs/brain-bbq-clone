@@ -42,7 +42,7 @@ const navCards: NavCard[] = [
     links: [
       { label: "EMBER Assistant", to: "/dandi-assistant" },
       { label: "Metadata Assistant (Beta)", to: "/metadata-assistant" },
-      { label: "Paper Extractor (Beta)", to: "/paper-extractor" },
+      
     ],
   },
   {

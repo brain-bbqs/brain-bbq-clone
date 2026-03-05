@@ -76,7 +76,7 @@ const App = () => (
               {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               
-              <Route path="/paper-extractor" element={<PaperExtractor />} />
+              
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/calendar" element={<Calendar />} />
               {/* Redirects from old separate pages */}
