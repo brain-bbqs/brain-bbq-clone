@@ -114,3 +114,37 @@
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
 }
+
+/* ── Mobile-friendly AG Grid ── */
+@media (max-width: 768px) {
+  .ag-theme-alpine {
+    --ag-font-size: 12px;
+    --ag-row-height: 40px;
+    --ag-header-height: 36px;
+    --ag-cell-horizontal-padding: 8px;
+  }
+
+  /* Allow horizontal scrolling in a wrapper */
+  .ag-grid-mobile-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .ag-grid-mobile-wrapper > div {
+    min-width: 600px;
+  }
+
+  .ag-theme-alpine .ag-header-cell {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  .ag-theme-alpine .ag-paging-panel {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    padding: 6px 8px;
+  }
+}
