@@ -214,21 +214,38 @@ const Resources = () => {
             <span className="text-sm text-muted-foreground">{filteredResources.length} resources</span>
           </div>
         </div>
-        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 300px)" }}>
-          <AgGridReact<Resource>
-            key={activeCategory}
-            rowData={filteredResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
-            quickFilterText={quickFilterText} onCellMouseOver={onCellMouseOver} onCellMouseOut={onCellMouseOut}
-            animateRows={true} pagination={true} paginationPageSize={25} paginationPageSizeSelector={[10, 25, 50, 100]}
-            suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
-            loading={isLoading}
-            loadingOverlayComponent={() => (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" /> Loading resources...
-              </div>
-            )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" /> Loading resources...
+          </div>
+        ) : isMobile ? (
+          <MobileCardList
+            items={filteredResources
+              .filter((r) => !quickFilterText || r.name.toLowerCase().includes(quickFilterText.toLowerCase()) || r.algorithm?.toLowerCase().includes(quickFilterText.toLowerCase()))
+              .map((r) => ({
+                id: r.name,
+                title: r.name,
+                titleHref: r.url,
+                fields: [
+                  { label: "Language", value: r.implementation || "—" },
+                  { label: "Version", value: r.version || "—" },
+                  ...(r.species ? [{ label: "Species", value: r.species }] : []),
+                  ...(r.algorithm ? [{ label: "Description", value: <span className="line-clamp-2">{r.algorithm}</span> }] : []),
+                ],
+              }))}
+            emptyMessage="No resources found"
           />
-        </div>
+        ) : (
+          <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 300px)" }}>
+            <AgGridReact<Resource>
+              key={activeCategory}
+              rowData={filteredResources} columnDefs={columnDefs} defaultColDef={defaultColDef}
+              quickFilterText={quickFilterText} onCellMouseOver={onCellMouseOver} onCellMouseOut={onCellMouseOut}
+              animateRows={true} pagination={true} paginationPageSize={25} paginationPageSizeSelector={[10, 25, 50, 100]}
+              suppressCellFocus={true} enableCellTextSelection={true} rowHeight={36} headerHeight={40}
+            />
+          </div>
+        )}
         {hoveredRow && (
           <div className="fixed z-[9999] bg-card border border-border rounded-lg shadow-xl p-4 max-w-md pointer-events-none"
             style={{ left: Math.min(hoverPosition.x + 15, window.innerWidth - 420), top: Math.min(hoverPosition.y + 10, window.innerHeight - 300) }}>
