@@ -39,7 +39,7 @@ const navCards: NavCard[] = [
     icon: Bot,
     color: "hsl(280 50% 60%)",
     links: [
-      { label: "DANDI Assistant", to: "/dandi-assistant" },
+      { label: "EMBER Assistant", to: "/dandi-assistant" },
       { label: "BBQS Assistant (Beta)", to: "/metadata-assistant" },
       { label: "Paper Extractor (Beta)", to: "/paper-extractor" },
     ],
