@@ -519,6 +519,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       totalProjects: piGrantLinks.length,
       totalFunding,
       institutions: Array.from(institutions),
+      orgs: orgInfos,
       grants: piGrants,
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
