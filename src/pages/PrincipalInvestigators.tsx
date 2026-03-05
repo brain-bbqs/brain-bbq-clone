@@ -331,63 +331,30 @@ const ResearchAreasCell = ({ data }: { data: PIRow }) => {
   const shown = data.researchAreas.slice(0, 3);
   const remaining = data.researchAreas.length - shown.length;
 
-  const getRelatedProjects = (area: string) => {
-    const piKey = nameKey(data.displayName);
-    const piGrantNumbers = new Set(data.grants.map(g => g.grantNumber));
-    return MARR_PROJECTS.filter(p => {
-      const matchesPi = nameKey(p.pi) === piKey || piGrantNumbers.has(p.id);
-      return matchesPi && p.computational.includes(area);
-    });
-  };
-
-  const renderBadge = (area: string, i: number) => {
-    const related = getRelatedProjects(area);
-    return (
-      <HoverCard key={i} openDelay={200} closeDelay={100}>
-        <HoverCardTrigger asChild>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal cursor-help bg-primary/10 text-primary border-primary/30">
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="flex flex-wrap gap-1 py-1">
+        {shown.map((area, i) => (
+          <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-primary/10 text-primary border-primary/30">
             {area}
           </Badge>
-        </HoverCardTrigger>
-        <HoverCardContent side="bottom" align="start" className="w-72 p-4">
-          <p className="font-semibold text-sm mb-1">{area}</p>
-          {related.length > 0 ? (
-            <>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">Research Area · {related.length} project{related.length !== 1 ? "s" : ""}</p>
-              <div className="flex flex-col gap-1.5">
-                {related.map((proj, j) => (
-                  <div key={j} className="flex items-start gap-2 text-xs">
-                    <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ backgroundColor: proj.color }} />
-                    <div>
-                      <p className="font-medium text-foreground">{proj.shortName}</p>
-                      <p className="text-muted-foreground">{proj.species}</p>
-                    </div>
-                  </div>
+        ))}
+        {remaining > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-pointer">+{remaining}</Badge>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <div className="flex flex-wrap gap-1">
+                {data.researchAreas.slice(3).map((a, i) => (
+                  <span key={i} className="text-xs">{a}{i < data.researchAreas.length - 4 ? "," : ""}</span>
                 ))}
               </div>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">Research area for {data.displayName}</p>
-          )}
-        </HoverCardContent>
-      </HoverCard>
-    );
-  };
-
-  return (
-    <div className="flex flex-wrap gap-1 py-1">
-      {shown.map((a, i) => renderBadge(a, i))}
-      {remaining > 0 && (
-        <HoverCard openDelay={200} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground cursor-help">+{remaining}</Badge>
-          </HoverCardTrigger>
-          <HoverCardContent side="bottom" align="start" className="w-72 p-3">
-            <div className="flex flex-wrap gap-1">{data.researchAreas.map((a, i) => renderBadge(a, i))}</div>
-          </HoverCardContent>
-        </HoverCard>
-      )}
-    </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
 
