@@ -12,7 +12,8 @@ export type EntityType =
   | "dataset"
   | "benchmark"
   | "ml_model"
-  | "protocol";
+  | "protocol"
+  | "working_group";
 
 export interface EntityRef {
   type: EntityType;
