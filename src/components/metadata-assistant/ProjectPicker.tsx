@@ -15,7 +15,7 @@ export function ProjectPicker({ value, onChange }: ProjectPickerProps) {
       const { data } = await supabase
         .from("grants")
         .select("grant_number, title")
-        .order("grant_number");
+        .order("title");
       return data || [];
     },
   });
@@ -39,11 +39,11 @@ export function ProjectPicker({ value, onChange }: ProjectPickerProps) {
       <SelectTrigger className="w-full bg-card border-border">
         <SelectValue placeholder="Select a project to begin..." />
       </SelectTrigger>
-      <SelectContent className="max-h-80">
+      <SelectContent className="max-h-80 [&_[data-radix-collection-item]]:focus:bg-primary/8 [&_[data-radix-collection-item]]:focus:text-foreground">
         {(grants || []).map(g => (
           <SelectItem key={g.grant_number} value={g.grant_number}>
             <div className="flex items-center gap-2">
-              <span className="truncate max-w-[280px]">{g.title}</span>
+              <span className="whitespace-normal text-left leading-snug">{g.title}</span>
               <Badge variant="outline" className="text-[10px] shrink-0">
                 {completenessMap.get(g.grant_number) || 0}%
               </Badge>
