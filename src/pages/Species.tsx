@@ -157,6 +157,7 @@ export default function Species() {
           </div>
         </div>
 
+        <div className="ag-grid-mobile-wrapper">
         <div
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
           style={{ width: "100%" }}

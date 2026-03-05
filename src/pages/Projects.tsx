@@ -529,6 +529,7 @@ const Projects = () => {
           </div>
         </div>
 
+        <div className="ag-grid-mobile-wrapper">
         <div
           id="grants-grid"
           className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
