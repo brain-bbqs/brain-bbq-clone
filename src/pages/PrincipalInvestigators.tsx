@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
-import { isWorkingGroupChair } from "@/data/working-group-chairs";
+
 import "@/styles/ag-grid-theme.css";
 
 interface CoPiInfo {
@@ -651,13 +651,11 @@ const ALL_COLUMNS = [
 
 type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
-type RoleFilter = "all" | "pi" | "co_pi" | "wg_chair";
+type RoleFilter = "all" | "pi";
 
 const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "pi", label: "PIs" },
-  { id: "co_pi", label: "Co-PIs" },
-  { id: "wg_chair", label: "WG Chairs" },
 ];
 
 // wgChairNames removed — using isWorkingGroupChair() instead
@@ -679,18 +677,8 @@ export default function PrincipalInvestigators() {
 
   const rowData = useMemo(() => {
     if (roleFilter === "all") return rawRowData;
-    return rawRowData.filter((pi) => {
-      switch (roleFilter) {
-        case "pi":
-          return pi.grants.some((g) => g.role === "contact_pi");
-        case "co_pi":
-          return pi.grants.some((g) => g.role !== "contact_pi");
-        case "wg_chair":
-          return isWorkingGroupChair(pi.displayName);
-        default:
-          return true;
-      }
-    });
+    if (roleFilter === "pi") return rawRowData.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
+    return rawRowData;
   }, [rawRowData, roleFilter]);
 
   const totalFundingAll = useMemo(() => {
