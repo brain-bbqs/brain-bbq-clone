@@ -87,15 +87,15 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
     return piProfileUrl(author);
   };
   return (
-    <span className="truncate block">
+    <span className="flex flex-wrap gap-x-1 gap-y-0.5 py-1" style={{ whiteSpace: 'normal', lineHeight: '1.5' }}>
       {authors.map((author, i) => {
         const url = getAuthorUrl(author);
         const isOrcid = url.includes("orcid.org");
         return (
-          <span key={i}>
+          <span key={i} className="whitespace-nowrap">
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"
               title={isOrcid ? `View ${author} on ORCID` : `Search ${author} on Google Scholar`}>{author}</a>
-            {i < authors.length - 1 ? ", " : ""}
+            {i < authors.length - 1 ? "," : ""}
           </span>
         );
       })}
@@ -154,7 +154,7 @@ export default function Publications() {
 
   const columnDefs: ColDef<Publication>[] = useMemo(() => [
     { field: "title", headerName: "Title", flex: 2, minWidth: 300, cellRenderer: TitleCell, cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-    { field: "authors", headerName: "Authors", flex: 1, minWidth: 200, cellRenderer: AuthorsCell, cellStyle: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+    { field: "authors", headerName: "Authors", flex: 1, minWidth: 200, wrapText: true, autoHeight: true, cellRenderer: AuthorsCell, cellStyle: { whiteSpace: 'normal', lineHeight: '1.5', paddingTop: '6px', paddingBottom: '6px' } },
     { field: "keywords", headerName: "Keywords", flex: 1, minWidth: 220, cellRenderer: KeywordsCell, autoHeight: true, cellStyle: { overflow: 'visible', lineHeight: '1.4' }, filter: "agTextColumnFilter", filterValueGetter: (params) => params.data?.keywords?.join(", ") || "" },
     { field: "citations", headerName: "Citations", width: 100, flex: 0, sort: "desc" },
   ], []);
