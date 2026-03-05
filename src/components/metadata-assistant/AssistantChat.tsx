@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
+import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage, ValidationResult } from "@/hooks/useMetadataChat";
 import { cn } from "@/lib/utils";
