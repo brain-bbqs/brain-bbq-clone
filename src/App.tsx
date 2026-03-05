@@ -62,7 +62,7 @@ const App = () => (
               <Route path="/consortia-history" element={<ConsortiaHistory />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
-              <Route path="/knowledge-graph" element={<KnowledgeGraph />} />
+              
               <Route path="/data-sharing-policy" element={<DataSharingPolicy />} />
               <Route path="/mcp-docs" element={<McpDocs />} />
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
