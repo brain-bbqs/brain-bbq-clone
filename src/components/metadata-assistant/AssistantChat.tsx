@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
+import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage, ValidationResult } from "@/hooks/useMetadataChat";
 import { cn } from "@/lib/utils";
@@ -19,10 +20,11 @@ interface AssistantChatProps {
 }
 
 const STARTERS = [
-  "We study mice using calcium imaging with two-photon microscopes",
-  "Our lab develops open-source Python tools for spike sorting",
-  "We record from zebrafish using light-sheet microscopy",
-  "What metadata fields are still missing?",
+  "What metadata fields are missing for this project?",
+  "Validate my metadata against BIDS, NWB, and HED standards",
+  "Who else in the consortium uses similar metadata?",
+  "What do I need to change to make this project compliant?",
+  "Help me describe my experiments to fill in the gaps",
 ];
 
 function ValidationChecklist({ validation }: { validation: ValidationResult }) {
@@ -217,6 +219,15 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
           </Button>
         )}
       </div>
+
+      {/* Workflow stepper */}
+      {projectTitle && (
+        <WorkflowStepper
+          messageCount={messages.length}
+          hasValidation={!!lastValidation}
+          completeness={completeness}
+        />
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
