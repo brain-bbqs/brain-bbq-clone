@@ -58,18 +58,30 @@ interface ProjectRow {
 }
 
 const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
+  const { open } = useEntitySummary();
+  
+  const handleClick = async () => {
+    // Look up grant ID by grant number
+    const { data: grant } = await supabase
+      .from("grants")
+      .select("id, resource_id")
+      .eq("grant_number", data.grantNumber)
+      .maybeSingle();
+    if (grant) {
+      open({ type: "grant", id: grant.id, resourceId: grant.resource_id || undefined, label: data.grantNumber });
+    }
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <a
-            href={data.nihLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-foreground hover:text-primary hover:underline truncate block max-w-full"
+          <button
+            onClick={handleClick}
+            className="font-medium text-foreground hover:text-primary hover:underline truncate block max-w-full text-left"
           >
             {value}
-          </a>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-md">
           <p className="font-medium">{value}</p>
