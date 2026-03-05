@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 import { useSearchParams } from "react-router-dom";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, GridReadyEvent, CellMouseOverEvent } from "ag-grid-community";
