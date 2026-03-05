@@ -43,6 +43,7 @@ interface GrantInfo {
 }
 
 interface PIRow {
+  id: string;
   name: string;
   displayName: string;
   firstName: string;
@@ -56,6 +57,7 @@ interface PIRow {
   grants: GrantInfo[];
   skills: string[];
   researchAreas: string[];
+  resourceId?: string;
 }
 
 const nameKey = (name: string): string =>
