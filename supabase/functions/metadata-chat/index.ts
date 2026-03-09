@@ -223,7 +223,8 @@ serve(async (req) => {
 RESPONSE STYLE:
 - For INFORMATIONAL questions (e.g. "what fields are missing?", "what do I need to change?"): Give a SHORT, clear, structured answer. Use bullet points. List the empty fields and briefly say what each expects. Do NOT auto-fill metadata from the abstract. Do NOT call the update tool.
 - For UPDATE requests (e.g. "we study mice using calcium imaging", "add optogenetics to approaches"): Extract metadata, call the update tool, and give a concise summary of what changed.
-- Keep responses under 150 words for informational queries. Be direct.
+- For CROSS-PROJECT questions (e.g. "which projects study similar species?", "who else uses calcium imaging?"): Search the consortium project list below and provide a clear summary of matching projects with their grant numbers and relevant overlapping metadata.
+- Keep responses under 200 words. Be direct.
 
 The project you're working with:
 - Grant: ${grant?.grant_number || grant_number}
@@ -248,6 +249,7 @@ METADATA FIELD RULES:
 - study_human: Boolean
 
 MERGE new values with existing arrays — never overwrite.
+${consortiumSection}
 ${ragSection}`;
 
     const tools = [{
