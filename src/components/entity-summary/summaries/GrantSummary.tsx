@@ -31,7 +31,7 @@ export function GrantSummary({ id }: { id: string }) {
       // Get project metadata
       const { data: project } = await supabase
         .from("projects")
-        .select("id, keywords, study_species, use_approaches, produce_data_type, website, metadata")
+        .select("*")
         .eq("grant_number", grant.grant_number)
         .maybeSingle();
 
