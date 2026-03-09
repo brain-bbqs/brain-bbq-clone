@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown } from "lucide-react";
 import { normalizePiName } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -440,6 +440,63 @@ const Projects = () => {
     });
   }, [rowData, toast]);
 
+  const exportToYAML = useCallback(() => {
+    if (rowData.length === 0) return;
+
+    const escapeYaml = (val: string | number | null | undefined): string => {
+      if (val === null || val === undefined) return '""';
+      const s = String(val);
+      if (s === '') return '""';
+      if (/[:#\[\]{}&*!|>'"%@`,?]/.test(s) || s.includes('\n') || s.startsWith(' ') || s.endsWith(' ')) {
+        return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+      }
+      return s;
+    };
+
+    const lines: string[] = ['# BBQS Consortium Projects Export', `# Generated: ${new Date().toISOString()}`, '', 'projects:'];
+
+    for (const row of rowData) {
+      lines.push(`  - grant_number: ${escapeYaml(row.grantNumber)}`);
+      lines.push(`    title: ${escapeYaml(row.title)}`);
+      lines.push(`    contact_pi: ${escapeYaml(row.contactPi)}`);
+      lines.push(`    all_pis: ${escapeYaml(row.allPis)}`);
+      lines.push(`    institution: ${escapeYaml(row.institution)}`);
+      lines.push(`    fiscal_year: ${row.fiscalYear || ''}`);
+      lines.push(`    award_amount: ${row.awardAmount || 0}`);
+      lines.push(`    nih_link: ${escapeYaml(row.nihLink)}`);
+      lines.push(`    publication_count: ${row.publicationCount || 0}`);
+      if (row.publications && row.publications.length > 0) {
+        lines.push(`    publications:`);
+        for (const pub of row.publications) {
+          lines.push(`      - pmid: ${escapeYaml(pub.pmid)}`);
+          lines.push(`        title: ${escapeYaml(pub.title)}`);
+          lines.push(`        authors: ${escapeYaml(formatAuthors(pub.authors))}`);
+          lines.push(`        year: ${pub.year || ''}`);
+          lines.push(`        journal: ${escapeYaml(pub.journal)}`);
+          lines.push(`        citations: ${pub.citations || 0}`);
+          lines.push(`        rcr: ${pub.rcr || 0}`);
+          lines.push(`        pubmed_link: ${escapeYaml(pub.pubmedLink)}`);
+        }
+      } else {
+        lines.push(`    publications: []`);
+      }
+    }
+
+    const yaml = lines.join('\n');
+    const blob = new Blob([yaml], { type: 'text/yaml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bbqs_projects.yaml';
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: 'YAML exported',
+      description: `Exported ${rowData.length} projects with publications.`,
+    });
+  }, [rowData, toast]);
+
   return (
     <div className="min-h-screen bg-background">
       <PageMeta title="Projects" description="Browse all BBQS consortium research projects — NIH grants, principal investigators, species, and Marr-level computational features." />
@@ -553,7 +610,17 @@ const Projects = () => {
               disabled={rowData.length === 0}
             >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              CSV
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToYAML}
+              disabled={rowData.length === 0}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              YAML
             </Button>
           </div>
         </div>
