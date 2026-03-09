@@ -1,0 +1,1221 @@
+# BBQS MARR-ALIGNED KNOWLEDGE GRAPH (YAML SCHEMA)
+# Author: Nader Nikbakht
+# Purpose: To enable agentic AI and PI collaboration for cross-species synchronization across all 26 BBQS projects.
+# Note: This version has been strictly audited against internal NotebookLM sources. External data has been removed.
+
+projects:
+  # ==========================================
+  # R34 (NIH Planning Grant Program) Projects
+  # ==========================================
+  - grant_number: "R34DA059510"
+    project_title: "A modeling framework and arena for measuring contextual influences of behavior"
+    project_leads: ["Dyer, Eva", "McGrath, Patrick T."]
+    institution: "Georgia Institute of Technology"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059510-02"
+    fiscal_year: 2025
+    award_amount: 321976
+    publication_count: 1
+    publications:
+      - pmid: 39703614
+        title: "SARTAB, a scalable system for automated real-time behavior detection based on animal tracking and Region Of Interest analysis: validation on fish courtship behavior."
+        authors: "Lancaster, Tucker J, Leatherbury, Kathryn N, Shilova, Kseniia, Streelman, Jeffrey T, McGrath, Patrick T"
+        year: 2024
+        journal: Front Behav Neurosci
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39703614/"
+    target_species_domain: "Social species with male displays [Requires Verification of exact species -
+     Text mentions conspecifics & hierarchical status]"
+    marr_l1_ethological_goal: "Social reproductive behaviors, navigation of hierarchical status, and collective conspecific interactions within an evolutionary context."
+    marr_l2_algorithmic_function: "High-dimensional contextual influence modeling; tracking state changes triggered by environmental cues."
+    marr_l3_implementational_hardware: "Custom behavioral arena capable of mimicking natural environments with multiple conspecifics."
+    data_analysis_approach: "Creating computer vision and tracking tools to monitor large numbers of conspecifics simultaneously. Building models to isolate and quantify how environmental contexts causally influence state changes."
+    cross_project_synergy: "Evolutionary modeling of social states can serve as a baseline for the primate 'AI Forest' (R34DA061925)."
+    agentic_action_required: "Identify the exact species model being used in the Georgia Tech arena."
+    species: "Social species with male displays [Requires Verification]"
+    experimental_approaches: ["Multi-animal observation", "Environmental context manipulation"]
+    data_modalities: ["Video / Optical", "Behavioral tracking"]
+    data_type: ["Video frames", "Continuous kinematic time-series"]
+    analysis_types: ["State estimation", "Contextual influence modeling"]
+    analysis_methods: ["Computer vision tracking", "High-dimensional state modeling"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Cameras [Requires Verification of type]"]
+      data_acquisition_modalities: ["Multi-animal video recording"]
+      behavioral_rigs: ["Custom behavioral arena mimicking natural environments"]
+      electrophysiology_setup: ["[Requires Verification - Not mentioned in sources]"]
+    keywords: ["Social reproduction", "Hierarchical status", "Computer vision", "Conspecifics"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059509"
+    project_title: "Behavioral quantification through active learning and multidimensional physiological monitoring"
+    project_leads: ["Grover, Pulkit", "Kuang, Zheng", "Rubin, Jonathan E", "Yttri, Eric"]
+    institution: "Carnegie-Mellon University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059509-02"
+    fiscal_year: 2025
+    award_amount: 331928
+    publication_count: 13
+    publications:
+      - pmid: 38776923
+        title: "Chemical interplay between gut microbiota and epigenetics: Implications in circadian biology."
+        authors: "Sharma, Samskrathi Aravinda, Oladejo, Sarah Olanrewaju, Kuang, Zheng"
+        year: 2025
+        journal: Cell Chem Biol
+        citations: 11
+        rcr: 5.462179338519115
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38776923/"
+      - pmid: 38826315
+        title: How cortico-basal ganglia-thalamic subnetworks can shift decision policies to maximize reward rate.
+        authors: "Bahuguna, Jyotika, Verstynen, Timothy, Rubin, Jonathan E"
+        year: 2025
+        journal: bioRxiv
+        citations: 2
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38826315/"
+      - pmid: 40747296
+        title: A microbiota-epigenetic circuit controls systematic circadian programs in the gut epithelium.
+        authors: "Ma, Junjie, Zhang, Jianglin, Kuang, Zheng"
+        year: 2023
+        journal: Front Syst Biol
+        citations: 4
+        rcr: 0.45292578071214606
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40747296/"
+      - pmid: 40166196
+        title: How the dynamic interplay of cortico-basal ganglia-thalamic pathways shapes the time course of deliberation and commitment.
+        authors: "Yu, Zhuojun, Verstynen, Timothy, Rubin, Jonathan E"
+        year: 2025
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40166196/"
+      - pmid: 38979377
+        title: Distinct dopaminergic spike-timing-dependent plasticity rules are suited to different functional roles.
+        authors: "Sosis, Baram, Rubin, Jonathan E"
+        year: 2025
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38979377/"
+      - pmid: 38746090
+        title: Mimicking opioid analgesia in cortical pain circuits.
+        authors: "Oswell, Corinna S, Rogers, Sophie A, James, Justin G, McCall, Nora M, Hsu, Alex I, Salimando, Gregory J, Mahmood, Malaika, Wooldridge, Lisa M, Wachira, Meghan, Jo, Adrienne, Ortega, Raquel Adaia Sandoval, Wojick, Jessica A, Beattie, Katherine, Farinas, Sofia A, Chehimi, Samar N, Rodrigues, Amrith, Wu, Jacqueline K, Ejoh, Lindsay L, Kimmey, Blake A, Lo, Emily, Azouz, Ghalia, Vasquez, Jose J, Banghart, Matthew R, Beier, Kevin T, Creasy, Kate Townsend, Crist, Richard C, Ramakrishnan, Charu, Reiner, Benjamin C, Deisseroth, Karl, Yttri, Eric A, Corder, Gregory"
+        year: 2025
+        journal: bioRxiv
+        citations: 7
+        rcr: 3.479355250604673
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38746090/"
+      - pmid: 38486714
+        title: Introducing the STReaC (Spike Train Response Classification) toolbox.
+        authors: "Parker, John E, Aristieta, Asier, Gittis, Aryn, Rubin, Jonathan E"
+        year: 2024
+        journal: J Neurosci Methods
+        citations: 1
+        rcr: 0.20311462251920717
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38486714/"
+      - pmid: 38196745
+        title: Rethinking the external globus pallidus and information flow in cortico-basal ganglia-thalamic circuits.
+        authors: "Giossi, Cristina, Rubin, Jonathan E, Gittis, Aryn, Verstynen, Timothy, Vich, Catalina"
+        year: 2023
+        journal: ArXiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38196745/"
+      - pmid: 38670278
+        title: Dopamine depletion weakens direct pathway modulation of SNr neurons.
+        authors: "Aristieta, Asier, Parker, John E, Gao, Ya Emma, Rubin, Jonathan E, Gittis, Aryn H"
+        year: 2024
+        journal: Neurobiol Dis
+        citations: 8
+        rcr: 1.9355241064832
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38670278/"
+      - pmid: 39634021
+        title: Evaluating diurnal rhythms of host responses to enteric norovirus infection in mouse models.
+        authors: "Zhang, Jianglin, Orchard, Robert C, Kuang, Zheng"
+        year: 2024
+        journal: Immunometabolism (Cobham)
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39634021/"
+      - pmid: 39536079
+        title: Arkypallidal neurons in the external globus pallidus can mediate inhibitory control by altering competition in the striatum.
+        authors: "Giossi, Cristina, Bahuguna, Jyotika, Rubin, Jonathan E, Verstynen, Timothy, Vich, Catalina"
+        year: 2024
+        journal: Proc Natl Acad Sci U S A
+        citations: 2
+        rcr: 0.45953402501176754
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39536079/"
+      - pmid: 39602254
+        title: BCL2 regulates antibacterial autophagy in the intestinal epithelium.
+        authors: "Li, Yun, Bel, Shai, Benjamin, Jamaal L, Ruhn, Kelly A, Hassell, Brian, Behrendt, Cassie L, Kuang, Zheng, Hooper, Lora V"
+        year: 2024
+        journal: Proc Natl Acad Sci U S A
+        citations: 2
+        rcr: 0.3647395109733438
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39602254/"
+      - pmid: 40761288
+        title: HDAC3 regulates the diurnal rhythms of claudin expression and intestinal permeability.
+        authors: "Christopher, Hunter, Zhang, Jianglin, Oladejo, Sarah Olanrewaju, Sharma, Samskrathi Aravinda, Kuang, Zheng"
+        year: 2024
+        journal: Front Epigenet Epigenom
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40761288/"
+    target_species_domain: "[Requires Verification]"
+    marr_l1_ethological_goal: "Adaptive behavior and state-dependent physiological responses."
+    marr_l2_algorithmic_function: "Active learning algorithms for behavioral quantification; mapping physiological state to behavioral output."
+    marr_l3_implementational_hardware: "Multidimensional physiological sensors synchronized with behavioral tracking."
+    data_analysis_approach: "Using active learning frameworks to dynamically sample and quantify behavior based on real-time physiological and neural monitoring."
+    cross_project_synergy: "Active learning loops can optimize the continuous monitoring models required in R61MH135405 (CAMERA platform)."
+    agentic_action_required: "Extract specific physiological parameters (L3) being monitored."
+    species: "[Requires Verification]"
+    experimental_approaches: ["Active learning behavioral quantification", "Physiological state mapping"]
+    data_modalities: ["Behavioral tracking", "Physiological", "Neural"]
+    data_type: ["Continuous multidimensional time-series"]
+    analysis_types: ["Active learning", "State-dependent modeling"]
+    analysis_methods: ["Dynamic sampling algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Multidimensional physiological sensors"]
+      data_acquisition_modalities: ["Synchronized behavioral and physiological monitoring"]
+      behavioral_rigs: ["[Requires Verification]"]
+      electrophysiology_setup: ["[Requires Verification]"]
+    keywords: ["Active learning", "Physiological monitoring", "Adaptive behavior", "State-dependent"]
+    website: "[Requires Verification]"
+    studies_humans: "[Requires Verification]"
+
+  - grant_number: "R34DA059513"
+    project_title: "Computational attribution and fusion of vocalizations, social behavior, and neural recordings in a naturalistic environment"
+    project_leads: ["Sanes, Dan Harvey", "Schneider, David Michael", "Williams, Alexander Henry"]
+    institution: "New York University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059513-02"
+    fiscal_year: 2025
+    award_amount: 361120
+    publication_count: 4
+    publications:
+      - pmid: 39282260
+        title: Unsupervised discovery of family specific vocal usage in the Mongolian gerbil.
+        authors: "Peterson, Ralph E, Choudhri, Aman, Mitelut, Catalin, Tanelus, Aramis, Capo-Battaglia, Athena, Williams, Alex H, Schneider, David M, Sanes, Dan H"
+        year: 2024
+        journal: bioRxiv
+        citations: 2
+        rcr: 0.5368027383852817
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39282260/"
+      - pmid: 39345431
+        title: Vocal Call Locator Benchmark (VCL) for localizing rodent vocalizations from multi-channel audio.
+        authors: "Peterson, Ralph E, Tanelus, Aramis, Ick, Christopher, Mimica, Bartul, Francis, Niegil, Ivan, Violet J, Choudhri, Aman, Falkner, Annegret L, Murthy, Mala, Schneider, David M, Sanes, Dan H, Williams, Alex H"
+        year: 2024
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39345431/"
+      - pmid: 38014127
+        title: A behavioral roadmap for the development of agency in the rodent.
+        authors: "Mitelut, Catalin, Diez Castro, Marielisa, Peterson, Ralph Emilio, Goncalves, Maria, Li, Jennifer, Gamer, Madeline Marie, Nilsson, Simon R O, Pereira, Talmo D, Sanes, Dan H"
+        year: 2024
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38014127/"
+      - pmid: 39680425
+        title: Unsupervised discovery of family specific vocal usage in the Mongolian gerbil.
+        authors: "Peterson, Ralph E, Choudhri, Aman, Mitelut, Catalin, Tanelus, Aramis, Capo-Battaglia, Athena, Williams, Alex H, Schneider, David M, Sanes, Dan H"
+        year: 2024
+        journal: Elife
+        citations: 9
+        rcr: 2.259361952893084
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39680425/"
+    target_species_domain: "[Requires Verification]"
+    marr_l1_ethological_goal: "Vocal communication and social signaling within naturalistic environments."
+    marr_l2_algorithmic_function: "Computational source separation (attribution) and multimodal data fusion."
+    marr_l3_implementational_hardware: "Microphone arrays, continuous neural recordings, and behavioral cameras in naturalistic arenas."
+    data_analysis_approach: "Fusing acoustic data with physical tracking to solve the 'cocktail party problem' of attributing specific vocalizations to individual interacting animals while simultaneously mapping neural responses."
+    cross_project_synergy: "The source attribution algorithms developed here are highly translatable to the gregarious songbird smart aviary (R34DA059507)."
+    agentic_action_required: "Verify target species and detail the dimensionality reduction techniques used."
+    species: "[Requires Verification]"
+    experimental_approaches: ["Naturalistic social observation", "Multimodal fusion", "Acoustic monitoring"]
+    data_modalities: ["Audio / Acoustic", "Video / Behavioral", "Neural"]
+    data_type: ["Acoustic waveforms", "Video frames", "Neural time-series"]
+    analysis_types: ["Source separation", "Multimodal alignment", "Dimensionality reduction"]
+    analysis_methods: ["Computational attribution (Cocktail party problem solving)"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Microphone arrays", "Behavioral cameras"]
+      data_acquisition_modalities: ["Acoustic recording", "Video tracking", "Continuous neural recording"]
+      behavioral_rigs: ["Naturalistic arenas"]
+      electrophysiology_setup: ["Continuous neural recording arrays [Requires Verification of specific probe]"]
+    keywords: ["Vocalizations", "Source separation", "Multimodal fusion", "Cocktail party problem"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059507"
+    project_title: "Development of a smart aviary to probe neural dynamics of complex social behaviors in a gregarious songbird"
+    project_leads: ["Aflatouni, Firooz", "Balasubramanian, Vijay", "Daniilidis, Kostas", "Schmidt, Marc F."]
+    institution: "University of Pennsylvania"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059507-02"
+    fiscal_year: 2025
+    award_amount: 342485
+    publication_count: 0
+    publications: []
+    target_species_domain: "Gregarious Songbirds"
+    marr_l1_ethological_goal: "Complex social interactions, flocking dynamics, and vocal communication in a 3D environment."
+    marr_l2_algorithmic_function: "3D multi-agent tracking algorithms and neural sequence modeling."
+    marr_l3_implementational_hardware: "Smart aviary equipped with distributed computer vision arrays and wireless neural loggers."
+    data_analysis_approach: "Deploying an instrumented aviary to seamlessly track 3D kinematics and vocalizations of multiple birds, linking these high-dimensional behaviors to underlying neural circuit dynamics."
+    cross_project_synergy: "3D kinematic tracking in the aviary translates directly to the 'AI Forest' for wild primates (R34DA061925)."
+    agentic_action_required: "Identify the specific brain regions recorded in L3 to map to the vocal-motor algorithms in L2."
+    species: "Gregarious Songbirds"
+    experimental_approaches: ["3D environment tracking", "Flocking dynamics observation"]
+    data_modalities: ["Video / Optical", "Audio", "Neural"]
+    data_type: ["3D Kinematics", "Acoustic sequences", "Neural spike trains"]
+    analysis_types: ["3D Multi-agent tracking", "Neural sequence modeling"]
+    analysis_methods: ["Computer vision spatial transformations", "Keypoint extraction"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Distributed computer vision arrays", "Microphones"]
+      data_acquisition_modalities: ["Wireless data logging", "Multi-camera 3D tracking"]
+      behavioral_rigs: ["Smart Aviary"]
+      electrophysiology_setup: ["Wireless neural loggers"]
+    keywords: ["Smart aviary", "3D tracking", "Songbirds", "Flocking dynamics", "Neural sequence"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059718"
+    project_title: "Harnessing biological rhythms for a resilient social motif generator"
+    project_leads: ["Padilla Coreano, Nancy", "Saxena, Shreya", "Wesson, Daniel W."]
+    institution: "University of Florida"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059718-02"
+    fiscal_year: 2025
+    award_amount: 337875
+    publication_count: 4
+    publications:
+      - pmid: 39500574
+        title: A Multiparadigm Approach to Characterize Dominance Behaviors in CD1 and C57BL6 Male Mice.
+        authors: "Cum, Meghan, Santiago Pérez, Jocelyn A, Iwata, Ryo L, Lopez, Naeliz, Higgs, Aidan, Li, Albert, Ye, Charles, Wangia, Erika, Wright, Elizabeth S, García Restrepo, Catalina, Padilla-Coreano, Nancy"
+        year: 2024
+        journal: eNeuro
+        citations: 5
+        rcr: 1.4471528532073035
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39500574/"
+      - pmid: 39747223
+        title: Dopaminergic signaling to ventral striatum neurons initiates sniffing behavior.
+        authors: "Johnson, Natalie L, Cotelo-Larrea, Anamaria, Stetzik, Lucas A, Akkaya, Umit M, Zhang, Zihao, Gadziola, Marie A, Varga, Adrienn G, Ma, Minghong, Wesson, Daniel W"
+        year: 2025
+        journal: Nat Commun
+        citations: 3
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39747223/"
+      - pmid: 40514388
+        title: Directing negative emotional states through parallel genetically-distinct basolateral amygdala pathways to ventral striatum subregions.
+        authors: "Sniffen, Sarah E, Ryu, Sang Eun, Kokoska, Milayna M, Bhattarai, Janardhan, Wang, Yingqi, Thomas, Ellyse R, Skates, Graylin M, Johnson, Natalie L, Chavez, Andy A, Iaconis, Sophia R, Janke, Emma, Zhang, Yun-Feng, Ma, Minghong, Wesson, Daniel W"
+        year: 2025
+        journal: Mol Psychiatry
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40514388/"
+      - pmid: 41093749
+        title: Prefrontal and Subcortical c-Fos Mapping of Reward Responses across Competitive and Social Contexts.
+        authors: "De Paula Cunha Almeida, Caroline, Cum, Meghan, Illescas-Huerta, Elizabeth, Chambers, Amelia, Ye, Charles, Shah, Aarna, Jain, Ayush, Li, Albert, Padilla-Coreano, Nancy"
+        year: 2025
+        journal: eNeuro
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41093749/"
+    target_species_domain: "[Requires Verification]"
+    marr_l1_ethological_goal: "Generation and regulation of resilient social behaviors and rhythmic interaction motifs."
+    marr_l2_algorithmic_function: "Time-series behavioral segmentation; topological mapping of biological rhythms."
+    marr_l3_implementational_hardware: "Neural and physiological recording devices combined with high-resolution behavioral tracking."
+    data_analysis_approach: "Quantifying how intrinsic biological rhythms (e.g., autonomic, neural oscillations) dictate the onset, duration, and resilience of specific social behavioral motifs."
+    cross_project_synergy: "Pairs elegantly with the human autonomic rhythm tracking in R61MH135106 for cross-species modeling of 'internal states'."
+    agentic_action_required: "Confirm the biological rhythms being tracked (e.g., cardiac, respiratory, theta oscillations) and the algorithm used."
+    species: "[Requires Verification]"
+    experimental_approaches: ["Biological rhythm monitoring", "Social interaction observation"]
+    data_modalities: ["Physiological (Autonomic)", "Neural (Oscillations)", "Video / Behavioral"]
+    data_type: ["Continuous physiological time-series", "Behavioral motifs"]
+    analysis_types: ["Behavioral segmentation", "Topological mapping"]
+    analysis_methods: ["Time-series dimensionality reduction"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["High-resolution cameras", "Physiological sensors"]
+      data_acquisition_modalities: ["Physiological rhythm recording", "Video tracking"]
+      behavioral_rigs: ["[Requires Verification]"]
+      electrophysiology_setup: ["Neural recording devices [Requires Verification of specific type]"]
+    keywords: ["Biological rhythms", "Social motifs", "Autonomic", "Behavioral segmentation"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059506"
+    project_title: "High-resolution 3D tracking of social behaviors for deep phenotypic analysis"
+    project_leads: ["Dunn, Timothy William", "Olveczky, Bence P."]
+    institution: "Duke University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059506-02"
+    fiscal_year: 2025
+    award_amount: 362680
+    publication_count: 1
+    publications:
+      - pmid: 40043703
+        title: Mapping the landscape of social behavior.
+        authors: "Klibaite, Ugne, Li, Tianqing, Aldarondo, Diego, Akoad, Jumana F, Ölveczky, Bence P, Dunn, Timothy W"
+        year: 2025
+        journal: Cell
+        citations: 13
+        rcr: 6.436206914013057
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40043703/"
+    target_species_domain: "[Requires Verification]"
+    marr_l1_ethological_goal: "Precise physical execution of social behaviors and deep phenotyping."
+    marr_l2_algorithmic_function: "3D keypoint extraction and non-linear spatial transformations."
+    marr_l3_implementational_hardware: "Multi-camera 3D arrays."
+    data_analysis_approach: "Utilizing advanced computer vision to extract deep 3D phenotypic markers during social interactions, transforming raw pixel data into continuous kinematic latents."
+    cross_project_synergy: "Can serve as a foundational validation dataset for EMBER's (R24MH136632) behavioral ontologies (NBO)."
+    agentic_action_required: "Agent Action: Locate grant details to extract Institution, and Target Species."
+    species: "[Requires Verification]"
+    experimental_approaches: ["Deep phenotyping", "Social interaction tracking"]
+    data_modalities: ["Video / Optical"]
+    data_type: ["Raw pixels", "Continuous 3D kinematic latents"]
+    analysis_types: ["3D tracking", "Phenotypic analysis"]
+    analysis_methods: ["Non-linear spatial transformations", "Computer vision", "3D keypoint extraction"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Multi-camera arrays"]
+      data_acquisition_modalities: ["High-resolution 3D video capture"]
+      behavioral_rigs: ["[Requires Verification]"]
+      electrophysiology_setup: ["N/A [Requires Verification]"]
+    keywords: ["3D tracking", "Deep phenotyping", "Computer vision", "Keypoint extraction"]
+    website: "[Requires Verification]"
+    studies_humans: "[Requires Verification]"
+
+  - grant_number: "R34DA059512"
+    project_title: "High-throughput, high-resolution 3D measurement of ethologically relevant rodent behavior in a dynamic environment"
+    project_leads: ["Dunn, Timothy William", "Field, Gregory Darin", "Tadross, Michael R."]
+    institution: "Duke University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059512-02"
+    fiscal_year: 2025
+    award_amount: 350440
+    publication_count: 2
+    publications:
+      - pmid: 41536438
+        title: Delivery of Angiogenic Therapy from Flowable Hyaluronic Acid Porous Scaffolds Results in Functional Improvement without Anti-Inflammatory Agents.
+        authors: "Erning, Kevin, Wilson, Katrina L, Smith, Cara S, Nguyen, Long, Joesph, Neica I, Irengo, Rachel, Cao, Lauren Y, Cumaran, Mohanapriya, Shi, Yi, Lyu, Sihan, Riley, Lindsay, Dunn, Timothy W, Carmichael, S Thomas, Segura, Tatiana"
+        year: 2025
+        journal: Adv Funct Mater
+        citations: 1
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41536438/"
+      - pmid: 40043703
+        title: Mapping the landscape of social behavior.
+        authors: "Klibaite, Ugne, Li, Tianqing, Aldarondo, Diego, Akoad, Jumana F, Ölveczky, Bence P, Dunn, Timothy W"
+        year: 2025
+        journal: Cell
+        citations: 13
+        rcr: 6.436206914013057
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40043703/"
+    target_species_domain: "Rodents"
+    marr_l1_ethological_goal: "Navigation and survival in physically dynamic, changing environments."
+    marr_l2_algorithmic_function: "High-throughput 3D kinematics and dynamic state estimation."
+    marr_l3_implementational_hardware: "Dynamic behavioral arenas with 3D tracking capabilities."
+    data_analysis_approach: "Scaling up ethological observation to high-throughput levels while maintaining 3D spatial resolution, allowing for robust statistical modeling of rodent behavior against shifting environmental variables."
+    cross_project_synergy: "Algorithmic approaches for managing 'dynamic environments' can directly aid the human real-world spatial navigation models (R61MH135106)."
+    agentic_action_required: "Identify the exact ML models used to segment behavior in dynamic (non-static) environments."
+    species: "Rodents"
+    experimental_approaches: ["High-throughput screening", "Dynamic environment navigation"]
+    data_modalities: ["Video / Optical"]
+    data_type: ["3D kinematic trajectories"]
+    analysis_types: ["Dynamic state estimation", "Statistical behavioral modeling"]
+    analysis_methods: ["Computer vision", "High-throughput 3D measurement algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["3D cameras"]
+      data_acquisition_modalities: ["High-throughput video arrays"]
+      behavioral_rigs: ["Dynamic behavioral arenas"]
+      electrophysiology_setup: ["N/A [Requires Verification]"]
+    keywords: ["High-throughput", "3D measurement", "Rodent", "Dynamic environment", "Kinematics"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059716"
+    project_title: "Interpersonal behavioral synchrony in virtual and in-person dyadic conversation"
+    project_leads: ["Corcoran, Cheryl Mary", "Grinband, Jack", "Parvaz, Muhammad Adeel"]
+    institution: "Icahn School of Medicine at Mount Sinai"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059716-02"
+    fiscal_year: 2025
+    award_amount: 342678
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Social communication, dyadic interpersonal synchronization, and turn-taking."
+    marr_l2_algorithmic_function: "Temporal pattern analysis and multimodal alignment."
+    marr_l3_implementational_hardware: "Pilot EEG hyperscanning, multimodal communication trackers (facial expression, gestures, speech rates)."
+    data_analysis_approach: "Quantifying and analyzing temporal patterns of multimodal communication (e.g., facial expression, turn-taking, gestures, speech rates) during face-to-face and remote dyadic interactions and synchronizing with pilot EEG hyperscanning data."
+    cross_project_synergy: "Compare EEG hyperscanning pipelines with Marmoset multi-agent RNN models (1U01DA063534) to isolate conserved algorithms of 'turn-taking'."
+    agentic_action_required: "Define the specific time-series dimensionality reduction technique used to align EEG with visual/audio inputs."
+    species: "Humans"
+    experimental_approaches: ["Dyadic conversation (virtual and in-person)", "Hyperscanning"]
+    data_modalities: ["Neural (EEG)", "Video (Facial expressions, gestures)", "Audio (Speech rates)"]
+    data_type: ["EEG time-series", "Video frames", "Acoustic sequences"]
+    analysis_types: ["Temporal pattern analysis", "Interpersonal synchrony measurement"]
+    analysis_methods: ["Multimodal alignment algorithms", "Time-series reduction"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["EEG caps", "Cameras", "Microphones"]
+      data_acquisition_modalities: ["Hyperscanning", "Audio-visual recording"]
+      behavioral_rigs: ["Virtual interaction setup", "Face-to-face seating"]
+      electrophysiology_setup: ["Pilot EEG hyperscanning"]
+    keywords: ["Dyadic conversation", "Hyperscanning", "Turn-taking", "EEG", "Multimodal synchronization"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R34DA059723"
+    project_title: "Multimodal behavioral analysis of oromanual food-handling in freely moving animals"
+    project_leads: ["Shepherd, Gordon M."]
+    institution: "Northwestern University at Chicago"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059723-02"
+    fiscal_year: 2025
+    award_amount: 360000
+    publication_count: 0
+    publications: []
+    target_species_domain: "Freely moving animals"
+    marr_l1_ethological_goal: "Foraging, food acquisition, and fine motor manipulation."
+    marr_l2_algorithmic_function: "Fine-grained kinematic tracking and sensorimotor integration modeling."
+    marr_l3_implementational_hardware: "High-speed macro cameras; continuous neural recordings."
+    data_analysis_approach: "Isolating the rapid, complex kinematics of oromanual food handling and syncing these micro-behaviors with neural streams to understand precise motor control and reward processing."
+    cross_project_synergy: "Oromanual kinematics can provide an isolated, high-resolution test case for the Embodied Musculoskeletal Frameworks being built in 1U01DA063534."
+    agentic_action_required: "Verify exact species model utilized."
+    species: "Freely moving animals [Requires Verification]"
+    experimental_approaches: ["Foraging observation", "Fine motor manipulation analysis"]
+    data_modalities: ["Video / Optical (High-speed)", "Neural"]
+    data_type: ["High-speed video frames", "Neural time-series"]
+    analysis_types: ["Fine-grained kinematic tracking", "Sensorimotor integration analysis"]
+    analysis_methods: ["Micro-behavioral synchronization", "Computer vision tracking"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["High-speed macro cameras"]
+      data_acquisition_modalities: ["High frame-rate video", "Continuous electrophysiology"]
+      behavioral_rigs: ["Freely moving enclosures"]
+      electrophysiology_setup: ["Continuous neural recording arrays [Requires Verification]"]
+    keywords: ["Oromanual", "Food-handling", "Foraging", "Kinematics", "Sensorimotor"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059514"
+    project_title: "Towards High-Resolution Neuro-Behavioral Quantification of Sheep in the Field"
+    project_leads: ["Kemere, Caleb"]
+    institution: "Rice University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059514-02"
+    fiscal_year: 2025
+    award_amount: 320892
+    publication_count: 0
+    publications: []
+    target_species_domain: "Sheep (Large-brained social animals / Agricultural sheep herds)"
+    marr_l1_ethological_goal: "Complex collective behavior and herd navigation in naturalistic field environments."
+    marr_l2_algorithmic_function: "Non-linear spatial transformations and 3D kinematics in a herd context."
+    marr_l3_implementational_hardware: "Head-mounted visual sensors, robust freely-moving neural recordings."
+    data_analysis_approach: "Leveraging existing agricultural sheep herds to acquire high-resolution spatiotemporal measurements of individual sheep using head-mounted visual sensors. This will be combined with robust neural recordings to study the neural circuits underlying complex collective behaviors."
+    cross_project_synergy: "Hardware constraints (L3) and spatial transformation algorithms (L2) can inform primate or human real-world navigation studies (R61MH135106)."
+    agentic_action_required: "Identify the specific brain circuits being targeted (e.g., Hippocampus/Entorhinal cortex)."
+    species: "Sheep"
+    experimental_approaches: ["Field observation", "Agricultural herd tracking"]
+    data_modalities: ["Video / Optical (Egocentric)", "Neural"]
+    data_type: ["High-resolution spatiotemporal matrices", "Neural spike data"]
+    analysis_types: ["Collective behavior modeling", "3D herd kinematics"]
+    analysis_methods: ["Non-linear spatial transformations", "Egocentric computer vision analysis"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Head-mounted visual sensors (Cameras)"]
+      data_acquisition_modalities: ["Mobile egocentric video logging", "Wireless electrophysiology"]
+      behavioral_rigs: ["Naturalistic field environments / Pastures"]
+      electrophysiology_setup: ["Robust freely-moving neural recording implants"]
+    keywords: ["Sheep", "Collective behavior", "Herd navigation", "Head-mounted sensors"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA059500"
+    project_title: "Transformative Optical Imaging of Brain & Behavior in Navigating Genetic Species"
+    project_leads: ["Nagel, Katherine", "Schoppik, David", "Shaner, Nathan Christopher", "Wang, Jane"]
+    institution: "New York University School of Medicine"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA059500-02"
+    fiscal_year: 2025
+    award_amount: 349975
+    publication_count: 2
+    publications:
+      - pmid: 37425712
+        title: "CaBLAM! A high-contrast bioluminescent Ca[2+] indicator derived from an engineered Oplophorus gracilirostris luciferase."
+        authors: "Lambert, Gerard G, Crespo, Emmanuel L, Murphy, Jeremy, Turner, Kevin, Gershowitz, Emily, Cunningham, Michaela, Boassa, Daniela, Luong, Selena, Celinskis, Dmitrijs, Allen, Justine J, Venn, Stephanie, Zhu, Yunlu, Karadas, Mürsel, Chen, Jiakun, Marisca, Roberta, Gelnaw, Hannah, Nguyen, Daniel K, Hu, Junru, Sprecher, Brittany N, Tree, Maya O, Orcutt, Richard, Heydari, Daniel, Bell, Aidan B, Torreblanca-Zanca, Albertina, Hakimi, Ali, Czopka, Tim, Shoham, Shy, Nagel, Katherine I, Schoppik, David, Andrade, Arturo, Lipscombe, Diane, Moore, Christopher I, Hochgeschwender, Ute, Shaner, Nathan C"
+        year: 2025
+        journal: bioRxiv
+        citations: 5
+        rcr: 2.4877397425942385
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/37425712/"
+      - pmid: 41331138
+        title: "CaBLAM: a high-contrast bioluminescent Ca<sup>2+</sup> indicator derived from an engineered Oplophorus gracilirostris luciferase."
+        authors: "Lambert, Gerard G, Crespo, Emmanuel L, Murphy, Jeremy, Turner, Kevin L, Gershowitz, Emily, Cunningham, Michaela, Boassa, Daniela, Luong, Selena, Celinskis, Dmitrijs, Allen, Justine J, Venn, Stephanie, Zhu, Yunlu, Karadas, Mürsel, Chen, Jiakun, Marisca, Roberta, Gelnaw, Hannah, Nguyen, Daniel K, Hu, Junru, Sprecher, Brittany N, Tree, Maya O, Orcutt, Richard, Heydari, Daniel, Bell, Aidan B, Torreblanca-Zanca, Albertina, Hakimi, Ali, Czopka, Tim, Shoham, Shy, Nagel, Katherine I, Schoppik, David, Andrade, Arturo, Lipscombe, Diane, Moore, Christopher I, Hochgeschwender, Ute, Shaner, Nathan C"
+        year: 2026
+        journal: Nat Methods
+        citations: 2
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41331138/"
+    target_species_domain: "Genetic Species"
+    marr_l1_ethological_goal: "Spatial navigation and integration of environmental cues into behavioral outputs."
+    marr_l2_algorithmic_function: "State-space modeling linking whole-brain optical dynamics to locomotor intent."
+    marr_l3_implementational_hardware: "Advanced optical imaging in freely behaving or virtual reality setups."
+    data_analysis_approach: "Utilizing transformative optical imaging to capture large-scale neural population dynamics simultaneously with precise behavioral tracking to map the transformation of sensory input to motor output during navigation."
+    cross_project_synergy: "Provides the highest-resolution Level 3 (Implementational) data to validate the broader navigation algorithms used in larger mammals."
+    agentic_action_required: "Locate the specific genetic species model (e.g., Drosophila vs Transgenic Mice)."
+    species: "Genetic Species [Requires Verification]"
+    experimental_approaches: ["Spatial navigation tasks", "Virtual reality or freely behaving optical imaging"]
+    data_modalities: ["Optical Neural Imaging", "Behavioral tracking"]
+    data_type: ["Large-scale population fluorescence signals", "Locomotor trajectories"]
+    analysis_types: ["Sensory-to-motor transformation mapping", "Population dynamics"]
+    analysis_methods: ["State-space modeling"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Microscopes (Multi-photon or miniaturized)"]
+      data_acquisition_modalities: ["Optical imaging", "Locomotor tracking"]
+      behavioral_rigs: ["Freely behaving arenas", "Virtual Reality (VR) setups"]
+      electrophysiology_setup: ["Optical neural imaging (e.g., calcium imaging)"]
+    keywords: ["Optical imaging", "Genetic species", "Spatial navigation", "State-space modeling"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA061984"
+    project_title: "Quantifying organism-environment interactions in a new model system for neuroscience"
+    project_leads: ["Srivastava, Mansi"]
+    institution: "Harvard University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA061984-02"
+    fiscal_year: 2026
+    award_amount: 370423
+    publication_count: 1
+    publications:
+      - pmid: 41256607
+        title: Distributed neural computation and the evolution of the first brains.
+        authors: "Chandra, Vikram, Nejad, Mehrana R, Kann, Allison P, Salem, Ananya, Hill, Karl A P, Mahadevan, L, Srivastava, Mansi"
+        year: 2025
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41256607/"
+    target_species_domain: "New Model System [Requires Verification of specific organism]"
+    marr_l1_ethological_goal: "Organism-environment interactions; sensory ecology."
+    marr_l2_algorithmic_function: "Ecological modeling and sensory processing algorithms."
+    marr_l3_implementational_hardware: "Novel environmental sensing arrays and neural interfacing adapted for the specific model system."
+    data_analysis_approach: "Establishing baseline behavioral and neural quantification pipelines for an entirely new model organism, requiring highly adaptable, generalized tracking and recording algorithms."
+    cross_project_synergy: "Testing BARD.CC and EMBER’s ability to handle completely novel metadata schemas and ontologies."
+    agentic_action_required: "Agent Action: Identify the 'new model system' to properly place it in the phylogenetic synchronization map."
+    species: "New Model System [Requires Verification]"
+    experimental_approaches: ["Sensory ecology observation", "Pipeline establishment"]
+    data_modalities: ["Environmental sensing", "Neural", "Behavioral"]
+    data_type: ["Multimodal environmental variables", "Neural signals"]
+    analysis_types: ["Ecological modeling", "Sensory processing"]
+    analysis_methods: ["Generalized tracking algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Novel environmental sensing arrays"]
+      data_acquisition_modalities: ["Customized interaction tracking"]
+      behavioral_rigs: ["Species-specific custom rigs"]
+      electrophysiology_setup: ["Adapted neural interfaces"]
+    keywords: ["Organism-environment", "New model system", "Sensory ecology"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA061924"
+    project_title: "Mapping dynamic transitions across neural, behavioral, and social scales in interacting animals"
+    project_leads: ["Frohlich, Flavio", "Zhang, Mengsen"]
+    institution: "Michigan State University"
+    nih_link: "https://reporter.nih.gov/project-details/5R34DA061924-02"
+    fiscal_year: 2026
+    award_amount: 336353
+    publication_count: 0
+    publications: []
+    target_species_domain: "Interacting Animals"
+    marr_l1_ethological_goal: "Social phase transitions, group cohesion, and hierarchical dynamics."
+    marr_l2_algorithmic_function: "Multi-scale dynamic systems modeling; Phase transition analysis."
+    marr_l3_implementational_hardware: "Scalable neural and behavioral arrays for multi-animal cohorts."
+    data_analysis_approach: "Applying complex systems theory to map how micro-scale neural events trigger macro-scale behavioral and social state transitions in interacting groups."
+    cross_project_synergy: "Strong theoretical overlap with the Multi-Agent Dynamics of 1U01DA063534; algorithms can be directly compared."
+    agentic_action_required: "Determine the specific mathematical framework used to define 'dynamic transitions'."
+    species: "Interacting Animals [Requires Verification]"
+    experimental_approaches: ["Multi-scale social tracking", "Phase transition induction"]
+    data_modalities: ["Neural", "Behavioral", "Social metadata"]
+    data_type: ["Micro-scale neural spikes", "Macro-scale social network graphs"]
+    analysis_types: ["Phase transition analysis", "Complex systems mapping"]
+    analysis_methods: ["Multi-scale dynamic systems modeling", "Time-series dimensionality reduction"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Multi-animal cameras", "Scalable arrays"]
+      data_acquisition_modalities: ["Synchronized multi-animal telemetry"]
+      behavioral_rigs: ["Cohort arenas"]
+      electrophysiology_setup: ["Scalable neural arrays"]
+    keywords: ["Dynamic transitions", "Social scales", "Complex systems", "Phase transitions"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA061925"
+    project_title: "Building an “AI Forest” to identify the social and environmental factors underlying complex behavioral traits in wild primates"
+    project_leads: ["Flagel, Shelly Beth", "Beehner, Jacinta", "Benitez, Marcela Eugenia"]
+    institution: "University of Michigan at Ann Arbor"
+    nih_link: "https://reporter.nih.gov/project-details/1R34DA061925-01"
+    fiscal_year: 2025
+    award_amount: 283968
+    publication_count: 1
+    publications:
+      - pmid: 41292955
+        title: "CapuchinAI 1.0: Development of a machine learning-based touchscreen paradigm to test cognition in wild capuchins."
+        authors: "Vargas, Federico Sánchez, Potluri, Sai Rakshith, Abernethy, Jacob, Benítez, Marcela E"
+        year: 2025
+        journal: bioRxiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41292955/"
+    target_species_domain: "Wild Primates"
+    marr_l1_ethological_goal: "Survival, foraging, and social navigation in unstructured, wild ecological environments."
+    marr_l2_algorithmic_function: "Wild-environment computer vision; robust behavioral feature extraction from noisy backgrounds."
+    marr_l3_implementational_hardware: "Unobtrusive environmental camera networks ('AI Forest'), edge-computing nodes."
+    data_analysis_approach: "Deploying AI at the edge in wild environments to track complex behavioral traits, isolating social and environmental factors without the constraints of a laboratory setting."
+    cross_project_synergy: "The ultimate test of 'Behavior-First' observation. Data pipelines here will stress-test the laboratory-derived algorithms of 1U01DA063534 for real-world robustness."
+    agentic_action_required: "Map the edge-computing hardware architecture used to process computer vision data locally in the wild."
+    species: "Wild Primates"
+    experimental_approaches: ["Wild ecological observation", "Unobtrusive monitoring"]
+    data_modalities: ["Video / Optical", "Environmental / Meteorological"]
+    data_type: ["Wild-environment video frames"]
+    analysis_types: ["Robust feature extraction", "Complex behavioral trait identification"]
+    analysis_methods: ["Computer vision spatial transformations", "Edge-deployed ML models"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Environmental camera networks"]
+      data_acquisition_modalities: ["Remote video tracking", "Edge processing"]
+      behavioral_rigs: ["Natural unstructured wild environments ('AI Forest')"]
+      electrophysiology_setup: ["N/A"]
+    keywords: ["AI Forest", "Wild primates", "Computer vision", "Edge computing", "Ecological factors"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "R34DA062119"
+    project_title: "The International Development Project (IDP): An international collaboration for the standardized study of experience-dependent brain and behavioral development"
+    project_leads: ["Wilbrecht, Linda E."]
+    institution: "University of California Berkeley"
+    nih_link: "https://reporter.nih.gov/project-details/1R34DA062119-01"
+    fiscal_year: 2025
+    award_amount: 707108
+    publication_count: 0
+    publications: []
+    target_species_domain: "Developmental Models [Requires Verification]"
+    marr_l1_ethological_goal: "Ontogeny; experience-dependent adaptation and neurodevelopment across the lifespan."
+    marr_l2_algorithmic_function: "Longitudinal data modeling; standardized cross-site harmonization algorithms."
+    marr_l3_implementational_hardware: "Standardized multi-site recording equipment."
+    data_analysis_approach: "Creating standardized protocols and computational pipelines to ensure data recorded across international sites can be seamlessly merged to track experience-dependent development."
+    cross_project_synergy: "This project is fundamentally aligned with BARD.CC (U24MH136628) and EMBER (R24MH136632) regarding data standardization across the consortium."
+    agentic_action_required: "Verify target species (human vs. animal model)."
+    species: "Developmental Models [Requires Verification]"
+    experimental_approaches: ["Longitudinal tracking", "Multi-site standardized protocol implementation"]
+    data_modalities: ["Behavioral", "Neural"]
+    data_type: ["Longitudinal multi-site datasets"]
+    analysis_types: ["Ontogeny analysis", "Experience-dependent adaptation modeling"]
+    analysis_methods: ["Cross-site harmonization algorithms", "Longitudinal data modeling"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Standardized equipment [Requires Verification]"]
+      data_acquisition_modalities: ["Multi-site standardized recording"]
+      behavioral_rigs: ["Standardized across international sites"]
+      electrophysiology_setup: ["Standardized recording equipment [Requires Verification]"]
+    keywords: ["International Development Project", "Ontogeny", "Harmonization", "Longitudinal"]
+    website: "[Requires Verification]"
+    studies_humans: "[Requires Verification]"
+
+  # ==========================================
+  # R61/R33 (Translational Neural Devices)
+  # ==========================================
+  - grant_number: "R61MH135106"
+    project_title: "Synchronized neuronal and peripheral biomarker recordings in freely moving humans"
+    project_leads: ["Suthana, Nanthia A."]
+    institution: "University of California Los Angeles"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH135106-02"
+    fiscal_year: 2025
+    award_amount: 979547
+    publication_count: 2
+    publications:
+      - pmid: 40582587
+        title: "GMFOLD: Subgraph matching for high-throughput DNA-aptamer secondary structure classification and machine learning interpretability."
+        authors: "Climaco, Paolo, Mitchell, Noelle M, Tyler, Matthew J, Yang, Kyungae, Andrews, Anne M, Bertozzi, Andrea L"
+        year: 2025
+        journal: Math Biosci
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40582587/"
+      - pmid: 40063703
+        title: "Interfacing with the Brain: How Nanotechnology Can Contribute."
+        authors: "Ahmed, Abdullah A A, Alegret, Nuria, Almeida, Bethany, Alvarez-Puebla, Ramón, Andrews, Anne M, Ballerini, Laura, Barrios-Capuchino, Juan J, Becker, Charline, Blick, Robert H, Bonakdar, Shahin, Chakraborty, Indranath, Chen, Xiaodong, Cheon, Jinwoo, Chilla, Gerwin, Coelho Conceicao, Andre Luiz, Delehanty, James, Dulle, Martin, Efros, Alexander L, Epple, Matthias, Fedyk, Mark, Feliu, Neus, Feng, Miao, Fernández-Chacón, Rafael, Fernandez-Cuesta, Irene, Fertig, Niels, Förster, Stephan, Garrido, Jose A, George, Michael, Guse, Andreas H, Hampp, Norbert, Harberts, Jann, Han, Jili, Heekeren, Hauke R, Hofmann, Ulrich G, Holzapfel, Malte, Hosseinkazemi, Hessam, Huang, Yalan, Huber, Patrick, Hyeon, Taeghwan, Ingebrandt, Sven, Ienca, Marcello, Iske, Armin, Kang, Yanan, Kasieczka, Gregor, Kim, Dae-Hyeong, Kostarelos, Kostas, Lee, Jae-Hyun, Lin, Kai-Wei, Liu, Sijin, Liu, Xin, Liu, Yang, Lohr, Christian, Mailänder, Volker, Maffongelli, Laura, Megahed, Saad, Mews, Alf, Mutas, Marina, Nack, Leroy, Nakatsuka, Nako, Oertner, Thomas G, Offenhäusser, Andreas, Oheim, Martin, Otange, Ben, Otto, Ferdinand, Patrono, Enrico, Peng, Bo, Picchiotti, Alessandra, Pierini, Filippo, Pötter-Nerger, Monika, Pozzi, Maria, Pralle, Arnd, Prato, Maurizio, Qi, Bing, Ramos-Cabrer, Pedro, Genger, Ute Resch, Ritter, Norbert, Rittner, Marten, Roy, Sathi, Santoro, Francesca, Schuck, Nicolas W, Schulz, Florian, Şeker, Erkin, Skiba, Marvin, Sosniok, Martin, Stephan, Holger, Wang, Ruixia, Wang, Ting, Wegner, K David, Weiss, Paul S, Xu, Ming, Yang, Chenxi, Zargarian, Seyed Shahrooz, Zeng, Yuan, Zhou, Yaofeng, Zhu, Dingcheng, Zierold, Robert, Parak, Wolfgang J"
+        year: 2025
+        journal: ACS Nano
+        citations: 18
+        rcr: 8.972959397378318
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40063703/"
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Approach-avoidance behavior during real-world spatial navigation."
+    marr_l2_algorithmic_function: "State estimation and evidence accumulation integrating autonomic and central neural signals."
+    marr_l3_implementational_hardware: "Deep brain recordings (single-neuron or iEEG), wearable sensors for biochemical markers (cortisol, epinephrine) and biophysical signals (heart rate, movement)."
+    data_analysis_approach: "Fusing deep brain recordings with wearable sensors to investigate the neural and peripheral mechanisms of approach-avoidance behaviors during spatial navigation in humans."
+    cross_project_synergy: "Provides human L3 validation for 'Behavioral Segmentation' models utilizing autonomic rhythms (e.g., R34DA059718)."
+    agentic_action_required: "Map the specific ML models used to fuse biochemical timeseries with millisecond neural spiking."
+    species: "Humans"
+    experimental_approaches: ["Freely moving spatial navigation", "Biomarker synchronization"]
+    data_modalities: ["Neural (iEEG/single-neuron)", "Biochemical (Cortisol, Epinephrine)", "Biophysical (Heart rate, Movement)"]
+    data_type: ["Neural time-series", "Continuous peripheral biomarkers"]
+    analysis_types: ["Approach-avoidance modeling", "Peripheral-central signal integration"]
+    analysis_methods: ["State estimation", "Evidence accumulation algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Wearable biochemical sensors", "Wearable biophysical trackers"]
+      data_acquisition_modalities: ["Mobile biomarker monitoring", "Ambulatory neural recording"]
+      behavioral_rigs: ["Real-world freely moving environments"]
+      electrophysiology_setup: ["Deep brain recordings (single-neuron or iEEG)"]
+    keywords: ["Approach-avoidance", "Spatial navigation", "iEEG", "Biomarkers", "Freely moving"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH135109"
+    project_title: "Capturing Autobiographical memory formation in People moving Through real-world spaces Using synchronized wearables and intracranial Recordings of EEG"
+    project_leads: ["Inman, Cory Shields"]
+    institution: "Utah State Higher Education System--University of Utah"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH135109-02"
+    fiscal_year: 2025
+    award_amount: 897419
+    publication_count: 1
+    publications:
+      - pmid: 38428520
+        title: "FMRI correlates of autobiographical memory: Comparing silent retrieval with narrated retrieval."
+        authors: "Ferris, Charles S, Inman, Cory S, Hamann, Stephan"
+        year: 2024
+        journal: Neuropsychologia
+        citations: 3
+        rcr: 1.0561202305982904
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38428520/"
+    target_species_domain: "Humans (Epilepsy Patients)"
+    marr_l1_ethological_goal: "Autobiographical memory formation in naturalistic daily environments."
+    marr_l2_algorithmic_function: "Contextual encoding and episodic chunking logic."
+    marr_l3_implementational_hardware: "CAPTURE custom smartphone application, wearable audio-visual, physiological, and GPS sensors alongside invasive intracranial neural recordings."
+    data_analysis_approach: "Uses a custom smartphone application synchronized with wearable sensors and invasive intracranial neural recordings in epilepsy patients to understand how memories are encoded in daily life."
+    cross_project_synergy: "Unstructured GPS/AV data ingestion pipeline could serve as a stress test for BARD.CC federation capabilities."
+    agentic_action_required: "Identify specific algorithmic approaches (L2) used to map continuous GPS/AV data to discrete neural encoding states."
+    species: "Humans (Epilepsy Patients)"
+    experimental_approaches: ["Naturalistic daily life monitoring", "Autobiographical memory assessment"]
+    data_modalities: ["Neural (Intracranial EEG)", "Audio-Visual", "Physiological", "Spatial (GPS)"]
+    data_type: ["Continuous multimodal sensor streams", "iEEG time-series"]
+    analysis_types: ["Episodic chunking", "Memory encoding analysis"]
+    analysis_methods: ["Contextual alignment of unstructured data with neural spikes"]
+    software_tools_used: ["CAPTURE custom smartphone application"]
+    devices:
+      sensor: ["Wearable AV cameras", "GPS trackers", "Physiological sensors", "Smartphones"]
+      data_acquisition_modalities: ["Smartphone-app synchronization", "Ambulatory iEEG telemetry"]
+      behavioral_rigs: ["Real-world spaces (out-of-lab)"]
+      electrophysiology_setup: ["Invasive intracranial EEG (iEEG)"]
+    keywords: ["Autobiographical memory", "CAPTURE app", "iEEG", "Wearables", "Real-world spaces"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH135114"
+    project_title: "Integrated movement tracking for pediatric OPM-MEG studies of intellectual disability"
+    project_leads: ["Welsh, John P", "Roberts, Timothy P."]
+    institution: "Seattle Children's Hospital"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH135114-02"
+    fiscal_year: 2025
+    award_amount: 2248476
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans (Pediatric / Clinical)"
+    marr_l1_ethological_goal: "Motor control and cognitive function in neurodevelopmental contexts."
+    marr_l2_algorithmic_function: "Motion artifact removal algorithms; robust source localization in moving subjects."
+    marr_l3_implementational_hardware: "Optically Pumped Magnetometers (OPM-MEG) integrated with precise movement tracking."
+    data_analysis_approach: "Utilizing advanced tracking to dynamically correct for head and body movements during OPM-MEG recordings, allowing for high-fidelity neural imaging in pediatric populations who cannot remain still."
+    cross_project_synergy: "Motion-correction algorithms from OPM-MEG can inform artifact rejection pipelines for mobile EEG/iEEG projects (R61MH135106, R61MH135109)."
+    agentic_action_required: "Detail the specific physical tracking modality used (e.g., optical tracking vs. IMUs) to pair with the OPM-MEG."
+    species: "Humans (Pediatric)"
+    experimental_approaches: ["Neurodevelopmental screening", "High-movement tolerance scanning"]
+    data_modalities: ["Neural (OPM-MEG)", "Kinematic (Movement tracking)"]
+    data_type: ["Magnetoencephalography waveforms", "Body tracking coordinates"]
+    analysis_types: ["Source localization", "Motion artifact correction"]
+    analysis_methods: ["Dynamic movement compensation algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Optically Pumped Magnetometers", "Movement trackers"]
+      data_acquisition_modalities: ["Integrated MEG-kinematic recording"]
+      behavioral_rigs: ["Pediatric-friendly scanning environments"]
+      electrophysiology_setup: ["OPM-MEG helmet/arrays"]
+    keywords: ["OPM-MEG", "Pediatric", "Intellectual disability", "Motion tracking", "Artifact removal"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH135405"
+    project_title: "Developing the Context-Aware Multimodal Ecological Research and Assessment (CAMERA) Platform for Continuous Measurement and Prediction of Anxiety and Memory State"
+    project_leads: ["Jacobs, Joshua", "Ortiz, Jorge", "Widge, Alik S", "Youngerman, Brett E."]
+    institution: "Columbia University Health Sciences"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH135405-02"
+    fiscal_year: 2025
+    award_amount: 890772
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Navigation of ecological stressors; regulation of anxiety and episodic memory."
+    marr_l2_algorithmic_function: "Continuous state prediction models; context-aware machine learning."
+    marr_l3_implementational_hardware: "The CAMERA Platform (integrated wearables, contextual sensors, ecological momentary assessment)."
+    data_analysis_approach: "Fusing continuous multimodal data from the CAMERA platform to predict shifts in anxiety and memory states based on environmental contexts in real-world settings."
+    cross_project_synergy: "CAMERA platform algorithms can be cross-pollinated with the CAPTURE app used in R61MH135109."
+    agentic_action_required: "Define the machine learning architecture (e.g., LSTMs, Transformers) used for 'Continuous Prediction'."
+    species: "Humans"
+    experimental_approaches: ["Ecological momentary assessment (EMA)", "Real-world continuous measurement"]
+    data_modalities: ["Physiological (Wearables)", "Contextual / Environmental", "Self-report (EMA)"]
+    data_type: ["Continuous multimodal streams", "Survey metrics"]
+    analysis_types: ["Predictive state modeling", "Anxiety/Memory correlation"]
+    analysis_methods: ["Context-aware machine learning"]
+    software_tools_used: ["CAMERA Platform"]
+    devices:
+      sensor: ["Integrated wearables", "Contextual sensors"]
+      data_acquisition_modalities: ["Continuous ambulatory recording", "Smartphone EMA"]
+      behavioral_rigs: ["Ecological / Natural environments"]
+      electrophysiology_setup: ["[Requires Verification - likely mobile EEG if brain states included]"]
+    keywords: ["CAMERA Platform", "Anxiety", "Memory State", "Ecological Assessment", "Continuous Measurement"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH135407"
+    project_title: "Novel multimodal neural, physiological, and behavioral sensing and machine learning for mental states"
+    project_leads: ["Shanechi, Maryam"]
+    institution: "University of Southern California"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH135407-03"
+    fiscal_year: 2026
+    award_amount: 908700
+    publication_count: 12
+    publications:
+      - pmid: 41040807
+        title: "BRAID: Input-driven nonlinear dynamical modeling of neural-behavioral data."
+        authors: "Vahidi, Parsa, Sani, Omid G, Shanechi, Maryam M"
+        year: 2025
+        journal: ArXiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41040807/"
+      - pmid: 41048822
+        title: Fully-Printed Sensor Based Extended Gate Field Effect Transistors for Wireless Monitoring of Potassium and Ammonium Ions.
+        authors: "Ferdoushi, Munia, Islam, Mohammad Shafiqul, Cai, Wenxin, Galindo, Sandra Lara, Hassan, Md Farhad, Khan, Yasser"
+        year: 2024
+        journal: Proc IEEE Sens
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41048822/"
+      - pmid: 41393219
+        title: Wearable organic-electrochemical-transistor-based lithium sensor for precision mental health.
+        authors: "Islam, Mohammad Shafiqul, Kunnel, Brince Paul, Ferdoushi, Munia, Hassan, Md Farhad, Cha, Sangwon, Cai, Wenxin, Frank, Adam, Khan, Yasser"
+        year: 2025
+        journal: Device
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41393219/"
+      - pmid: 39730913
+        title: Challenges and opportunities of acquiring cortical recordings for chronic adaptive deep brain stimulation.
+        authors: "Herron, Jeffrey, Kullmann, Aura, Denison, Timothy, Goodman, Wayne K, Gunduz, Aysegul, Neumann, Wolf-Julian, Provenza, Nicole R, Shanechi, Maryam M, Sheth, Sameer A, Starr, Philip A, Widge, Alik S"
+        year: 2025
+        journal: Nat Biomed Eng
+        citations: 5
+        rcr: 2.4871277970792853
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39730913/"
+      - pmid: 41040797
+        title: Dynamical Modeling of Behaviorally Relevant Spatiotemporal Patterns in Neural Imaging Data.
+        authors: "Hosseini, Mohammad, Shanechi, Maryam M"
+        year: 2025
+        journal: ArXiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41040797/"
+      - pmid: 41306626
+        title: Spectral Learning of Shared Dynamics Between Generalized-Linear Processes.
+        authors: "Oganesian, Lucine L, Sani, Omid G, Shanechi, Maryam M"
+        year: 2024
+        journal: Adv Neural Inf Process Syst
+        citations: 1
+        rcr: 0.13562101729303092
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41306626/"
+      - pmid: 41104294
+        title: A Wearable Sweat Rate Sensor with Adaptive Sweat Ion Concentration Calibration.
+        authors: "Islam, Mohammad Shafiqul, Cha, Sangwon, Cai, Wenxin, Ferdoushi, Munia, Khan, Yasser"
+        year: 2025
+        journal: IEEE Sens Lett
+        citations: 1
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41104294/"
+      - pmid: 41321375
+        title: Dynamical Modeling of Behaviorally Relevant Spatiotemporal Patterns in Neural Imaging Data.
+        authors: "Hosseini, Mohammad, Shanechi, Maryam M"
+        year: 2025
+        journal: Proc Mach Learn Res
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41321375/"
+      - pmid: 39242944
+        title: Dissociative and prioritized modeling of behaviorally relevant neural dynamics using recurrent neural networks.
+        authors: "Sani, Omid G, Pesaran, Bijan, Shanechi, Maryam M"
+        year: 2024
+        journal: Nat Neurosci
+        citations: 27
+        rcr: 5.38413291674975
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39242944/"
+      - pmid: 40527329
+        title: Prioritized learning of cross-population neural dynamics.
+        authors: "Jha, Trisha, Sani, Omid G, Pesaran, Bijan, Shanechi, Maryam M"
+        year: 2025
+        journal: J Neural Eng
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40527329/"
+      - pmid: 40988938
+        title: Brain-computer interfaces for neuropsychiatric disorders.
+        authors: "Oganesian, Lucine L, Shanechi, Maryam M"
+        year: 2024
+        journal: Nat Rev Bioeng
+        citations: 3
+        rcr: 0.8710700702047223
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40988938/"
+      - pmid: 41122417
+        title: "Printed Wearable Sweat Rate Sensor for Continuous <i>in-situ</i> Perspiration Measurement."
+        authors: "Islam, Mohammad Shafiqul, Cha, Sangwon, Hassan, Md Farhad, Cai, Wenxin, Saniat, Tahsin Sejat, Leach, Cedar Rose, Khan, Yasser"
+        year: 2025
+        journal: Adv Intell Syst
+        citations: 3
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41122417/"
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Internal state regulation and behavioral adaptation."
+    marr_l2_algorithmic_function: "Dynamical modeling of nonlinear latent factors; advanced ML for mental state decoding."
+    marr_l3_implementational_hardware: "Novel multimodal neural and physiological sensing suites."
+    data_analysis_approach: "Employing advanced dynamical modeling to extract nonlinear latent factors from a fusion of neural, physiological, and behavioral streams to decode hidden mental states."
+    cross_project_synergy: "The extraction of nonlinear latents maps directly to the continuous latent extraction algorithms used in Marmoset models (1U01DA063534)."
+    agentic_action_required: "Agent Action: Identify the precise sensing modalities (L3) used to feed the nonlinear latent models."
+    species: "Humans"
+    experimental_approaches: ["Mental state decoding", "Multimodal sensing integration"]
+    data_modalities: ["Neural", "Physiological", "Behavioral"]
+    data_type: ["Continuous fused multivariate time-series"]
+    analysis_types: ["Mental state decoding", "Latent factor extraction"]
+    analysis_methods: ["Dynamical modeling of nonlinear latents", "Advanced ML"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Novel sensing suites"]
+      data_acquisition_modalities: ["Multimodal synchronized logging"]
+      behavioral_rigs: ["[Requires Verification]"]
+      electrophysiology_setup: ["Neural sensing suites [Requires Verification of specifics]"]
+    keywords: ["Mental states", "Nonlinear latent factors", "Multimodal sensing", "Machine learning"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH138966"
+    project_title: "A naturalistic multimodal platform for capturing brain-body interactions in people during physical effort-based decision making"
+    project_leads: ["Rozell, Christopher John"]
+    institution: "Georgia Institute of Technology"
+    nih_link: "https://reporter.nih.gov/project-details/5R61MH138966-02"
+    fiscal_year: 2026
+    award_amount: 999986
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Effort-based decision making; resource allocation and cost-benefit analysis."
+    marr_l2_algorithmic_function: "Neuroeconomic modeling; computational algorithms of effort and reward."
+    marr_l3_implementational_hardware: "Multimodal platform capturing simultaneous brain and body signals during physical exertion."
+    data_analysis_approach: "Quantifying physical kinematics and physiological strain and correlating these variables with real-time neural data to model how the brain computes physical effort during decision-making."
+    cross_project_synergy: "Directly relates to the basic science of foraging and resource allocation seen in animal models (e.g., Oromanual food-handling in R34DA059723)."
+    agentic_action_required: "Extract the exact neuroimaging hardware utilized (e.g., mobile EEG vs. fNIRS)."
+    species: "Humans"
+    experimental_approaches: ["Physical exertion paradigms", "Effort-based decision tasks"]
+    data_modalities: ["Neural", "Kinematic (Body signals)", "Physiological"]
+    data_type: ["Biomechanics", "Neural time-series"]
+    analysis_types: ["Neuroeconomic correlation", "Brain-body interaction modeling"]
+    analysis_methods: ["Computational algorithms of effort and reward"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Kinematic trackers", "Physiological monitors"]
+      data_acquisition_modalities: ["Simultaneous brain-body platform"]
+      behavioral_rigs: ["Physical exertion stations"]
+      electrophysiology_setup: ["Neuroimaging hardware [Requires Verification]"]
+    keywords: ["Effort-based decision making", "Brain-body interactions", "Physical exertion", "Neuroeconomics"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH138713"
+    project_title: "Combining neural oscillations, physiology and privacy-preserving LiDAR/millimeter wave sensing technology to track attention states in natural contexts"
+    project_leads: ["Ertin, Emre", "Grammer, Jennie K.", "Lenartowicz, Agatha"]
+    institution: "University of California Los Angeles"
+    nih_link: "https://reporter.nih.gov/project-details/1R61MH138713-01"
+    fiscal_year: 2025
+    award_amount: 689467
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Vigilance, attention allocation, and environmental monitoring."
+    marr_l2_algorithmic_function: "Sensor fusion algorithms bridging oscillatory dynamics with spatial tracking."
+    marr_l3_implementational_hardware: "Privacy-preserving LiDAR, millimeter wave (mmWave) sensing, neural oscillation recorders (EEG)."
+    data_analysis_approach: "Fusing highly spatial, privacy-preserving environmental sensing (LiDAR/mmWave) with internal state monitors (neural oscillations, physiology) to track how attention states fluctuate in naturalistic settings."
+    cross_project_synergy: "The use of mmWave and LiDAR represents a novel L3 hardware approach that could be adapted for tracking behavior in visually occluded animal environments."
+    agentic_action_required: "Determine the specific neural frequency bands (e.g., Alpha/Theta) correlated with the LiDAR attention tracking."
+    species: "Humans"
+    experimental_approaches: ["Privacy-preserving naturalistic tracking", "Attention state monitoring"]
+    data_modalities: ["Neural (EEG)", "Physiological", "Spatial (LiDAR/mmWave)"]
+    data_type: ["Point clouds", "Oscillatory EEG time-series"]
+    analysis_types: ["Attention state decoding", "Environmental monitoring correlation"]
+    analysis_methods: ["Sensor fusion algorithms"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["LiDAR", "Millimeter wave (mmWave) sensors", "Physiological sensors"]
+      data_acquisition_modalities: ["Environmental scanning", "Ambulatory EEG"]
+      behavioral_rigs: ["Natural contexts"]
+      electrophysiology_setup: ["Neural oscillation recorders (EEG)"]
+    keywords: ["LiDAR", "Millimeter wave", "Attention states", "Neural oscillations", "Privacy-preserving"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  - grant_number: "R61MH138705"
+    project_title: "Neural and Behavioral Correlates of Live Face-to-Face Interactions"
+    project_leads: ["Hirsch, Joy"]
+    institution: "Yale University"
+    nih_link: "https://reporter.nih.gov/project-details/1R61MH138705-01"
+    fiscal_year: 2025
+    award_amount: 665494
+    publication_count: 0
+    publications: []
+    target_species_domain: "Humans"
+    marr_l1_ethological_goal: "Live social interaction, facial communication, and empathy."
+    marr_l2_algorithmic_function: "Real-time facial keypoint extraction and neural synchronization analysis."
+    marr_l3_implementational_hardware: "High-resolution facial tracking arrays synchronized with neural monitoring."
+    data_analysis_approach: "Quantifying the micro-dynamics of live face-to-face behavior and mapping these kinematics to real-time neural correlates to uncover the mechanisms of human social coupling."
+    cross_project_synergy: "Strong methodological overlap with the Interpersonal dyadic conversation project (R34DA059716) and the marmoset social dynamics project (1U01DA063534)."
+    agentic_action_required: "Agent Action: Query to define the specific neural recording hardware (L3) utilized during the face-to-face interactions."
+    species: "Humans"
+    experimental_approaches: ["Live face-to-face dyadic interaction", "Micro-dynamic quantification"]
+    data_modalities: ["Video (Facial)", "Neural"]
+    data_type: ["Facial kinematics", "Neural time-series"]
+    analysis_types: ["Neural synchronization analysis", "Social coupling mapping"]
+    analysis_methods: ["Real-time facial keypoint extraction", "Non-linear spatial transformations"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["High-resolution facial tracking arrays (Cameras)"]
+      data_acquisition_modalities: ["Synchronous face-brain capture"]
+      behavioral_rigs: ["Face-to-face interaction environments"]
+      electrophysiology_setup: ["Neural monitoring [Requires Verification]"]
+    keywords: ["Face-to-face interactions", "Facial keypoint extraction", "Social coupling", "Micro-dynamics"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes"
+
+  # ==========================================
+  # U01 (Cooperative Agreements) Projects
+  # ==========================================
+  - grant_number: "1U01DA063534"
+    project_title: "Toward comprehensive models of naturalistic cooperation and competition in primates"
+    project_leads: ["Chang, Steve W. C.", "Jadi, Monika P.", "Nandy, Anirvan S.", "Saxena, Shreya"]
+    institution: "Yale University"
+    nih_link: "https://reporter.nih.gov/project-details/1U01DA063534-01"
+    fiscal_year: 2025
+    award_amount: 4888497
+    publication_count: 0
+    publications: []
+    target_species_domain: "Marmosets"
+    marr_l1_ethological_goal: "Multi-agent social dynamics, cooperative foraging, and navigation of physical constraints."
+    marr_l2_algorithmic_function: "Multi-Agent Recurrent Neural Networks (RNNs) for extracting continuous latents; Dynamic Bayesian Networks for probabilistic reasoning; Embodied Agent-Based Models."
+    marr_l3_implementational_hardware: "Neural arrays synchronized with musculoskeletal physical tracking."
+    data_analysis_approach: "Extracting continuous low-dimensional latents from neural and behavioral data to predict social interactions. Utilizing RNNs to drive musculoskeletal models, constraining behavior by physical laws."
+    cross_project_synergy: "Algorithmic extraction of social latents can be directly translated to human dyadic interaction models (R34DA059716, R61MH138705)."
+    agentic_action_required: "Identify the exact institution and the specific brain regions recorded in L3."
+    species: "Marmosets"
+    experimental_approaches: ["Naturalistic cooperation and competition tasks", "Multi-agent interaction"]
+    data_modalities: ["Behavioral (Musculoskeletal tracking)", "Neural"]
+    data_type: ["Continuous latents", "Physical interaction kinematics"]
+    analysis_types: ["Latent factor extraction", "Probabilistic reasoning", "Agent-based simulation"]
+    analysis_methods: ["Multi-Agent Recurrent Neural Networks (RNNs)", "Dynamic Bayesian Networks"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Motion capture/Cameras"]
+      data_acquisition_modalities: ["Synchronous neural and musculoskeletal logging"]
+      behavioral_rigs: ["Naturalistic primate arenas"]
+      electrophysiology_setup: ["Neural recording arrays [Requires Verification of specifics]"]
+    keywords: ["Marmosets", "Cooperation", "Competition", "Recurrent Neural Networks", "Embodied framework"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  # ==========================================
+  # U24 Data Coordination and AI Center (DCAIC)
+  # ==========================================
+  - grant_number: "U24MH136628"
+    project_title: "BBQS AI Resource and Data Coordinating Center (BARD.CC)"
+    project_leads: ["Ghosh, Satrajit", "Cabrera, Laura", "Kennedy, David N."]
+    institution: "Massachusetts Institute of Technology"
+    nih_link: "https://reporter.nih.gov/project-details/1U24MH136628-01"
+    fiscal_year: 2024
+    award_amount: 1993419
+    publication_count: 2
+    publications:
+      - pmid: 41571550
+        title: "The FDA's plan to phase out animal testing."
+        authors: "Gerke, Sara, Balamut, Jacob, Wagner, Jennifer K"
+        year: 2026
+        journal: Trends Biotechnol
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41571550/"
+      - pmid: 40832056
+        title: An Intelligent Infrastructure as a Foundation for Modern Science.
+        authors: "Ghosh, Satrajit"
+        year: 2025
+        journal: ArXiv
+        citations: 0
+        rcr: 0
+        pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40832056/"
+    target_species_domain: "All Species (Infrastructure)"
+    marr_l1_ethological_goal: "Consortium scalability and cross-species translation."
+    marr_l2_algorithmic_function: "Federated ML/AI infrastructure, knowledge graphs (BrainKB), and metadata harmonization pipelines."
+    marr_l3_implementational_hardware: "Cloud-based ecosystems, distributed compute clusters."
+    data_analysis_approach: "Developing cloud-based data ecosystems and federated machine learning pipelines that allow algorithms to operate over disparate, multimodal data sources without breaking data governance."
+    cross_project_synergy: "Serves as the foundational computational hardware (L3) and architectural logic (L2) for the entire BBQS network."
+    agentic_action_required: "Maintain continuous schema updates as U01/R34/R61 data APIs come online."
+    species: "All Species"
+    experimental_approaches: ["Data coordination", "Infrastructure development", "Ontology building"]
+    data_modalities: ["Multi-modal (Aggregated across consortium)"]
+    data_type: ["JSON metadata", "Knowledge Graphs", "Federated structured data"]
+    analysis_types: ["Data harmonization", "Cross-species isomorphism mapping"]
+    analysis_methods: ["Federated machine learning pipelines", "StructSense 2.0 extraction"]
+    software_tools_used: ["BrainKB", "StructSense 2.0", "Neuro Model Context Protocols"]
+    devices:
+      sensor: ["N/A"]
+      data_acquisition_modalities: ["Cloud ingestion", "Federated APIs"]
+      behavioral_rigs: ["N/A"]
+      electrophysiology_setup: ["N/A"]
+    keywords: ["BARD.CC", "Federated ML", "Data Coordinating Center", "BrainKB", "Infrastructure"]
+    website: "[Requires Verification]"
+    studies_humans: "Yes (Infrastructure covers human projects)"
+
+  # ==========================================
+  # R24 Data Repository
+  # ==========================================
+  - grant_number: "R24MH136632"
+    project_title: "Ecosystem for Multi-modal Brain-behavior Experimentation and Research (EMBER)"
+    project_leads: ["Wester, Brock A."]
+    institution: "Johns Hopkins University"
+    nih_link: "https://reporter.nih.gov/project-details/1R24MH136632-01"
+    fiscal_year: 2024
+    award_amount: 1164394
+    publication_count: 0
+    publications: []
+    target_species_domain: "All Species (Infrastructure)"
+    marr_l1_ethological_goal: "Scientific reproducibility and unified mechanism discovery."
+    marr_l2_algorithmic_function: "Unified ontologies (NBO, HED, NWB) and data schema mapping."
+    marr_l3_implementational_hardware: "Hybrid data archive, secure cloud-based sandboxes."
+    data_analysis_approach: "Ingesting, curating, and harmonizing highly technical neural and behavioral data using rigorous JSON schemas. Providing cloud-based sandboxes integrated with DCAIC resources."
+    cross_project_synergy: "Directly partners with BARD.CC. EMBER structures the data; BARD computes on it."
+    agentic_action_required: "Map specific alignment protocols between EMBER's JSON schemas and the StructSense 2.0 Knowledge Graph."
+    species: "All Species"
+    experimental_approaches: ["Data archiving", "Ontology standardization"]
+    data_modalities: ["Multi-modal (Aggregated across consortium)"]
+    data_type: ["Standardized schema files (e.g., NWB, BIDS)"]
+    analysis_types: ["Schema harmonization", "Ontology mapping"]
+    analysis_methods: ["Data curation protocols", "JSON validation"]
+    software_tools_used: ["NWB", "BIDS", "NBO", "HED"]
+    devices:
+      sensor: ["N/A"]
+      data_acquisition_modalities: ["Data archive uploads"]
+      behavioral_rigs: ["N/A"]
+      electrophysiology_setup: ["N/A"]
+    keywords: ["EMBER", "Data Archive", "NWB", "Ontologies", "Reproducibility"]
+    website: "Visit EMBER via the Brain-Behavior Data Archive portal"
+    studies_humans: "Yes (Infrastructure covers human projects)"
