@@ -6,7 +6,8 @@ import { EntityComments } from "../EntityComments";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileText, MessageSquare, FolderOpen } from "lucide-react";
+import { ExternalLink, FileText, MessageSquare, FolderOpen, Microscope } from "lucide-react";
+import { GrantMarrSection } from "./GrantMarrSection";
 
 export function GrantSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
