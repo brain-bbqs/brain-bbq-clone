@@ -610,7 +610,17 @@ const Projects = () => {
               disabled={rowData.length === 0}
             >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              CSV
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToYAML}
+              disabled={rowData.length === 0}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              YAML
             </Button>
           </div>
         </div>
