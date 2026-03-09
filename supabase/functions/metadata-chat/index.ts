@@ -165,10 +165,12 @@ serve(async (req) => {
       });
     }
 
-    // Fetch current project state + grant info
-    const [projectRes, grantRes] = await Promise.all([
+    // Fetch current project state + grant info + all consortium projects
+    const [projectRes, grantRes, allGrantsRes, allProjectsRes] = await Promise.all([
       sb.from("projects").select("*").eq("grant_number", grant_number).maybeSingle(),
       sb.from("grants").select("title, abstract, grant_number").eq("grant_number", grant_number).maybeSingle(),
+      sb.from("grants").select("grant_number, title"),
+      sb.from("projects").select("grant_number, keywords, study_species, use_approaches, use_sensors, produce_data_modality, produce_data_type, use_analysis_types, use_analysis_method, develope_software_type, develope_hardware_type, metadata"),
     ]);
 
     const project = projectRes.data || {};
@@ -180,6 +182,34 @@ serve(async (req) => {
         currentMetadata[f] = (project as any)[f];
       }
     }
+
+    // Build consortium summary for cross-project queries
+    const allGrants = allGrantsRes.data || [];
+    const allProjects = allProjectsRes.data || [];
+    const projectsByGrant = new Map(allProjects.map((p: any) => [p.grant_number, p]));
+
+    const consortiumSummaries = allGrants
+      .filter((g: any) => g.grant_number !== grant_number)
+      .map((g: any) => {
+        const p = projectsByGrant.get(g.grant_number);
+        const fields: string[] = [];
+        if (p?.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
+        if (p?.use_approaches?.length) fields.push(`Approaches: ${p.use_approaches.join(", ")}`);
+        if (p?.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
+        if (p?.produce_data_modality?.length) fields.push(`Data: ${p.produce_data_modality.join(", ")}`);
+        if (p?.use_analysis_method?.length) fields.push(`Analysis: ${p.use_analysis_method.join(", ")}`);
+        if (p?.develope_software_type?.length) fields.push(`Software: ${p.develope_software_type.join(", ")}`);
+        if (p?.use_sensors?.length) fields.push(`Sensors: ${p.use_sensors.join(", ")}`);
+        const marr = p?.metadata || {};
+        if (marr.marr_l1_ethological_goal) fields.push(`L1: ${String(marr.marr_l1_ethological_goal).slice(0, 120)}`);
+        if (marr.cross_project_synergy) fields.push(`Synergy: ${String(marr.cross_project_synergy).slice(0, 120)}`);
+        return fields.length > 0 ? `- ${g.grant_number} "${g.title}": ${fields.join(" | ")}` : null;
+      })
+      .filter(Boolean);
+
+    const consortiumSection = consortiumSummaries.length > 0
+      ? `\n\n## Other Consortium Projects (${consortiumSummaries.length} projects):\n${consortiumSummaries.join("\n")}`
+      : "";
 
     // RAG: search shared knowledge base
     const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content || "";
