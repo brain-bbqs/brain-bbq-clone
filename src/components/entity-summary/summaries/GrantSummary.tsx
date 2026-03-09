@@ -139,6 +139,41 @@ export function GrantSummary({ id }: { id: string }) {
     </div>
   );
 
+  const publicationsContent = (
+    <div className="space-y-3">
+      {data.publications.length === 0 ? (
+        <p className="text-sm text-muted-foreground italic">No publications linked to this grant yet.</p>
+      ) : (
+        data.publications.map((pub: any) => (
+          <div key={pub.id} className="p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+            <button
+              className="text-left w-full"
+              onClick={() => open({ type: "publication", id: pub.id, resourceId: pub.resource_id || undefined, label: pub.title })}
+            >
+              <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">{pub.title}</p>
+            </button>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
+              {pub.journal && <span>{pub.journal}</span>}
+              {pub.year && <span>{pub.year}</span>}
+              {pub.citations > 0 && <span>{pub.citations} citations</span>}
+              {pub.doi && (
+                <a href={`https://doi.org/${pub.doi}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                  DOI <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              )}
+              {pub.pubmed_link && (
+                <a href={pub.pubmed_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                  PubMed <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              )}
+            </div>
+            {pub.authors && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{pub.authors}</p>}
+          </div>
+        ))
+      )}
+    </div>
+  );
+
   return (
     <div>
       <div className="px-6 pt-6 pb-4">
