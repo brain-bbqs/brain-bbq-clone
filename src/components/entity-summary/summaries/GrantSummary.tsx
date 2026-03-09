@@ -64,7 +64,7 @@ export function GrantSummary({ id }: { id: string }) {
           publications = cachedPubs.map((p: any) => ({
             id: p.pmid || p.id,
             title: p.title || "Unknown",
-            authors: p.authors || "",
+            authors: Array.isArray(p.authors) ? p.authors.map((a: any) => typeof a === "string" ? a : a.fullName || `${a.firstName || ""} ${a.lastName || ""}`.trim()).join(", ") : (p.authors || ""),
             year: p.year || null,
             journal: p.journal || "",
             doi: p.doi || null,
