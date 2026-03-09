@@ -6,7 +6,8 @@ import { EntityComments } from "../EntityComments";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileText, MessageSquare, FolderOpen } from "lucide-react";
+import { ExternalLink, FileText, MessageSquare, FolderOpen, Microscope } from "lucide-react";
+import { GrantMarrSection } from "./GrantMarrSection";
 
 export function GrantSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
@@ -30,7 +31,7 @@ export function GrantSummary({ id }: { id: string }) {
       // Get project metadata
       const { data: project } = await supabase
         .from("projects")
-        .select("id, keywords, study_species, use_approaches, produce_data_type, website, metadata")
+        .select("*")
         .eq("grant_number", grant.grant_number)
         .maybeSingle();
 
@@ -214,6 +215,13 @@ export function GrantSummary({ id }: { id: string }) {
       </div>
       <SummaryTabs tabs={[
         { id: "summary", label: "Summary", icon: <FileText className="h-3.5 w-3.5" />, content: summaryContent },
+        { id: "details", label: "Details", icon: <Microscope className="h-3.5 w-3.5" />, content: (
+          data.project ? (
+            <GrantMarrSection metadata={(data.project as any).metadata || {}} project={data.project} />
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No project metadata available.</p>
+          )
+        )},
         { id: "publications", label: `Publications (${data.publications.length})`, icon: <FileText className="h-3.5 w-3.5" />, content: publicationsContent },
         { id: "comments", label: "Comments", icon: <MessageSquare className="h-3.5 w-3.5" />, content: data.resource_id ? <EntityComments resourceId={data.resource_id} /> : <p className="text-sm text-muted-foreground italic">Comments not available.</p> },
       ]} />
