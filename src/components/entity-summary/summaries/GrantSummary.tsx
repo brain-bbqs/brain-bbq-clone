@@ -189,6 +189,7 @@ export function GrantSummary({ id }: { id: string }) {
       </div>
       <SummaryTabs tabs={[
         { id: "summary", label: "Summary", icon: <FileText className="h-3.5 w-3.5" />, content: summaryContent },
+        { id: "publications", label: `Publications (${data.publications.length})`, icon: <FileText className="h-3.5 w-3.5" />, content: publicationsContent },
         { id: "comments", label: "Comments", icon: <MessageSquare className="h-3.5 w-3.5" />, content: data.resource_id ? <EntityComments resourceId={data.resource_id} /> : <p className="text-sm text-muted-foreground italic">Comments not available.</p> },
       ]} />
     </div>
