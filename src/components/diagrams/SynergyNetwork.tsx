@@ -108,14 +108,18 @@ export function SynergyNetwork() {
 
   const mouseCallbacks: MouseEventCallbacks = useMemo(
     () => ({
-      onHover: (element, hitTargets, evt) => {
+      onHover: (element: unknown, hitTargets: { nodes: Array<{ getProperty: (key: string) => string }>; relationships: Array<{ getProperty: (key: string) => string }> }, evt: globalThis.MouseEvent) => {
         if (hitTargets.nodes.length > 0) {
-          const nodeId = hitTargets.nodes[0].id;
-          setHoveredNodeId(nodeId);
-          setTooltip({ x: evt.clientX, y: evt.clientY, nodeId });
+          const nodeId = (hitTargets.nodes[0] as any).id ?? hitTargets.nodes[0].getProperty?.("id");
+          if (nodeId) {
+            setHoveredNodeId(nodeId);
+            setTooltip({ x: evt.clientX, y: evt.clientY, nodeId });
+          }
         } else if (hitTargets.relationships.length > 0) {
-          const relId = hitTargets.relationships[0].id;
-          setTooltip({ x: evt.clientX, y: evt.clientY, relId });
+          const relId = (hitTargets.relationships[0] as any).id ?? hitTargets.relationships[0].getProperty?.("id");
+          if (relId) {
+            setTooltip({ x: evt.clientX, y: evt.clientY, relId });
+          }
           setHoveredNodeId(null);
         } else {
           setHoveredNodeId(null);
