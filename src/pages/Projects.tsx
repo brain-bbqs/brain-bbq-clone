@@ -630,65 +630,92 @@ const Projects = () => {
           </div>
         </div>
 
-        {isMobile ? (
-          <MobileCardList
-            items={filteredData
-              .filter((r) => !quickFilterText || r.title.toLowerCase().includes(quickFilterText.toLowerCase()) || r.contactPi.toLowerCase().includes(quickFilterText.toLowerCase()))
-              .map((r) => ({
-                id: r.grantNumber,
-                title: r.title,
-                titleHref: r.nihLink,
-                fields: [
-                  { label: "Grant", value: r.grantNumber },
-                  { label: "PI", value: r.contactPi },
-                  { label: "Institution", value: r.institution },
-                  { label: "Year", value: String(r.fiscalYear) },
-                  { label: "Award", value: r.awardAmount ? `$${(r.awardAmount / 1000).toFixed(0)}K` : "—" },
-                  { label: "Pubs", value: String(r.publicationCount) },
-                ],
-              }))}
-            emptyMessage="No projects found"
-          />
-        ) : (
-          <div className="ag-grid-mobile-wrapper">
-          <div
-            id="grants-grid"
-            className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
-          >
-            <AgGridReact<ProjectRow>
-              rowData={filteredData}
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              quickFilterText={quickFilterText}
-              onCellMouseOver={onCellMouseOver}
-              onCellMouseOut={onCellMouseOut}
-              animateRows={true}
-              pagination={true}
-              paginationPageSize={100}
-              paginationPageSizeSelector={[25, 50, 100, 200]}
-              suppressCellFocus={true}
-              enableCellTextSelection={true}
-              domLayout="autoHeight"
-              
-              headerHeight={40}
-              loading={loading}
-              loadingOverlayComponent={() => (
-                <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span>Loading...</span>
-                </div>
-              )}
-              noRowsOverlayComponent={() => (
-                <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span>Fetching projects...</span>
-                </div>
-              )}
-            />
-          </div>
-          </div>
-        )}
-        <FundingCharts data={rowData} />
+        <Tabs defaultValue="table" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="table" className="gap-1.5">
+              <FolderOpen className="h-4 w-4" />
+              Table
+            </TabsTrigger>
+            <TabsTrigger value="synergy" className="gap-1.5">
+              <Network className="h-4 w-4" />
+              Cross-Project Synergy
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="table">
+            {isMobile ? (
+              <MobileCardList
+                items={filteredData
+                  .filter((r) => !quickFilterText || r.title.toLowerCase().includes(quickFilterText.toLowerCase()) || r.contactPi.toLowerCase().includes(quickFilterText.toLowerCase()))
+                  .map((r) => ({
+                    id: r.grantNumber,
+                    title: r.title,
+                    titleHref: r.nihLink,
+                    fields: [
+                      { label: "Grant", value: r.grantNumber },
+                      { label: "PI", value: r.contactPi },
+                      { label: "Institution", value: r.institution },
+                      { label: "Year", value: String(r.fiscalYear) },
+                      { label: "Award", value: r.awardAmount ? `$${(r.awardAmount / 1000).toFixed(0)}K` : "—" },
+                      { label: "Pubs", value: String(r.publicationCount) },
+                    ],
+                  }))}
+                emptyMessage="No projects found"
+              />
+            ) : (
+              <div className="ag-grid-mobile-wrapper">
+              <div
+                id="grants-grid"
+                className="ag-theme-alpine rounded-lg border border-border overflow-hidden"
+              >
+                <AgGridReact<ProjectRow>
+                  rowData={filteredData}
+                  columnDefs={columnDefs}
+                  defaultColDef={defaultColDef}
+                  quickFilterText={quickFilterText}
+                  onCellMouseOver={onCellMouseOver}
+                  onCellMouseOut={onCellMouseOut}
+                  animateRows={true}
+                  pagination={true}
+                  paginationPageSize={100}
+                  paginationPageSizeSelector={[25, 50, 100, 200]}
+                  suppressCellFocus={true}
+                  enableCellTextSelection={true}
+                  domLayout="autoHeight"
+                  
+                  headerHeight={40}
+                  loading={loading}
+                  loadingOverlayComponent={() => (
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span>Loading...</span>
+                    </div>
+                  )}
+                  noRowsOverlayComponent={() => (
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span>Fetching projects...</span>
+                    </div>
+                  )}
+                />
+              </div>
+              </div>
+            )}
+            <FundingCharts data={rowData} />
+          </TabsContent>
+
+          <TabsContent value="synergy">
+            <Card className="border-border">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-1">Cross-Project Synergy Network</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Interactive network showing how the 26 BBQS projects relate through shared algorithmic approaches, hardware, data pipelines, and theoretical frameworks. Hover over links for details. Drag nodes to rearrange. Scroll to zoom.
+                </p>
+                <SynergyNetwork />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Hover Detail Card */}
         {hoveredRow && (
