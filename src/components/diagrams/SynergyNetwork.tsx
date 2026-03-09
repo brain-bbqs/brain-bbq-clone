@@ -106,17 +106,20 @@ export function SynergyNetwork() {
     return filteredLinks[idx];
   };
 
-  const mouseCallbacks: MouseEventCallbacks = useMemo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mouseCallbacks: any = useMemo(
     () => ({
-      onHover: (element: unknown, hitTargets: { nodes: Array<{ getProperty: (key: string) => string }>; relationships: Array<{ getProperty: (key: string) => string }> }, evt: globalThis.MouseEvent) => {
-        if (hitTargets.nodes.length > 0) {
-          const nodeId = (hitTargets.nodes[0] as any).id ?? hitTargets.nodes[0].getProperty?.("id");
+      onHover: (element: any, hitTargets: any, evt: globalThis.MouseEvent) => {
+        if (hitTargets?.nodes?.length > 0) {
+          const node = hitTargets.nodes[0];
+          const nodeId = node.id ?? node.getId?.();
           if (nodeId) {
             setHoveredNodeId(nodeId);
             setTooltip({ x: evt.clientX, y: evt.clientY, nodeId });
           }
-        } else if (hitTargets.relationships.length > 0) {
-          const relId = (hitTargets.relationships[0] as any).id ?? hitTargets.relationships[0].getProperty?.("id");
+        } else if (hitTargets?.relationships?.length > 0) {
+          const rel = hitTargets.relationships[0];
+          const relId = rel.id ?? rel.getId?.();
           if (relId) {
             setTooltip({ x: evt.clientX, y: evt.clientY, relId });
           }
