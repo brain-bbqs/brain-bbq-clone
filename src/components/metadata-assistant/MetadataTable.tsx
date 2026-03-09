@@ -19,6 +19,15 @@ const DISPLAY_FIELDS = [
   { key: "study_human", label: "Studies Humans", color: "" },
 ];
 
+const MARR_FIELDS = [
+  { key: "marr_l1_ethological_goal", label: "L1 · Ethological Goal", icon: "🎯" },
+  { key: "marr_l2_algorithmic_function", label: "L2 · Algorithmic Function", icon: "⚙️" },
+  { key: "marr_l3_implementational_hardware", label: "L3 · Hardware", icon: "🔧" },
+  { key: "cross_project_synergy", label: "Cross-Project Synergy", icon: "🔗" },
+  { key: "data_analysis_approach", label: "Data Analysis Approach", icon: "📊" },
+  { key: "target_species_domain", label: "Target Species Domain", icon: "🧬" },
+];
+
 interface MetadataTableProps {
   grantNumber: string;
   highlightFields?: string[];
@@ -50,8 +59,10 @@ export function MetadataTable({ grantNumber, highlightFields = [] }: MetadataTab
     return <p className="text-sm text-muted-foreground px-4 py-6">No metadata yet. Start chatting to populate fields.</p>;
   }
 
+  const metadata = (project as any)?.metadata || {};
+
   return (
-    <div className="overflow-auto max-h-[60vh]">
+    <div className="overflow-auto max-h-[60vh] space-y-4">
       <Table>
         <TableHeader>
           <TableRow>
@@ -74,6 +85,34 @@ export function MetadataTable({ grantNumber, highlightFields = [] }: MetadataTab
           })}
         </TableBody>
       </Table>
+
+      {/* MARR Framework Section */}
+      {Object.keys(metadata).length > 0 && (
+        <div className="border-t border-border pt-3">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
+            Marr Framework
+          </h4>
+          <Table>
+            <TableBody>
+              {MARR_FIELDS.map(({ key, label, icon }) => {
+                const val = metadata[key];
+                if (!val || val === 'Requires Verification') return null;
+                return (
+                  <TableRow key={key}>
+                    <TableCell className="font-medium text-xs text-muted-foreground w-40 align-top">
+                      <span className="mr-1">{icon}</span>{label}
+                    </TableCell>
+                    <TableCell className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+                      {String(val)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
