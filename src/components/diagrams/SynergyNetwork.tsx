@@ -235,7 +235,7 @@ export function SynergyNetwork() {
       });
     }
 
-    return () => simulation.stop();
+    return () => { simulation.stop(); };
   }, [filter, hoveredId, dimensions]);
 
   useEffect(() => {
