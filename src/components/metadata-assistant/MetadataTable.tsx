@@ -19,6 +19,15 @@ const DISPLAY_FIELDS = [
   { key: "study_human", label: "Studies Humans", color: "" },
 ];
 
+const MARR_FIELDS = [
+  { key: "marr_l1_ethological_goal", label: "L1 · Ethological Goal", icon: "🎯" },
+  { key: "marr_l2_algorithmic_function", label: "L2 · Algorithmic Function", icon: "⚙️" },
+  { key: "marr_l3_implementational_hardware", label: "L3 · Hardware", icon: "🔧" },
+  { key: "cross_project_synergy", label: "Cross-Project Synergy", icon: "🔗" },
+  { key: "data_analysis_approach", label: "Data Analysis Approach", icon: "📊" },
+  { key: "target_species_domain", label: "Target Species Domain", icon: "🧬" },
+];
+
 interface MetadataTableProps {
   grantNumber: string;
   highlightFields?: string[];
