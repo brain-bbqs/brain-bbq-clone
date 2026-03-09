@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { InteractiveNvlWrapper } from "@neo4j-nvl/react";
 import type { Node, Relationship } from "@neo4j-nvl/base";
-import type { MouseEventCallbacks } from "@neo4j-nvl/react";
 import {
   SYNERGY_NODES,
   SYNERGY_LINKS,
