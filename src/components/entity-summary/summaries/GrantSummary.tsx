@@ -34,7 +34,7 @@ export function GrantSummary({ id }: { id: string }) {
         .eq("grant_number", grant.grant_number)
         .maybeSingle();
 
-      // Get publications via project_publications join
+      // Get publications - try project_publications join first, then fall back to nih_grants_cache
       let publications: any[] = [];
       if (project?.id) {
         const { data: pubLinks } = await supabase
@@ -49,6 +49,31 @@ export function GrantSummary({ id }: { id: string }) {
             .in("id", pubIds)
             .order("year", { ascending: false });
           publications = pubs || [];
+        }
+      }
+
+      // If no linked publications, try nih_grants_cache
+      if (publications.length === 0) {
+        const { data: cache } = await supabase
+          .from("nih_grants_cache")
+          .select("data")
+          .eq("grant_number", grant.grant_number)
+          .maybeSingle();
+        if (cache?.data && typeof cache.data === "object") {
+          const cachedPubs = (cache.data as any).publications || [];
+          publications = cachedPubs.map((p: any) => ({
+            id: p.pmid || p.id,
+            title: p.title || "Unknown",
+            authors: p.authors || "",
+            year: p.year || null,
+            journal: p.journal || "",
+            doi: p.doi || null,
+            citations: p.citations || 0,
+            rcr: p.rcr || 0,
+            pubmed_link: p.pubmedLink || p.pubmed_link || (p.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/` : null),
+            resource_id: null,
+            _fromCache: true,
+          }));
         }
       }
 
