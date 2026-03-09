@@ -30,15 +30,34 @@ export function GrantSummary({ id }: { id: string }) {
       // Get project metadata
       const { data: project } = await supabase
         .from("projects")
-        .select("id, keywords, study_species, use_approaches, produce_data_type, website")
+        .select("id, keywords, study_species, use_approaches, produce_data_type, website, metadata")
         .eq("grant_number", grant.grant_number)
         .maybeSingle();
+
+      // Get publications via project_publications join
+      let publications: any[] = [];
+      if (project?.id) {
+        const { data: pubLinks } = await supabase
+          .from("project_publications")
+          .select("publication_id")
+          .eq("project_id", project.id);
+        const pubIds = pubLinks?.map((p) => p.publication_id) || [];
+        if (pubIds.length) {
+          const { data: pubs } = await supabase
+            .from("publications")
+            .select("id, title, authors, year, journal, doi, citations, rcr, resource_id, pubmed_link")
+            .in("id", pubIds)
+            .order("year", { ascending: false });
+          publications = pubs || [];
+        }
+      }
 
       return {
         ...grant,
         invLinks: invLinks || [],
         investigators: investigators || [],
         project,
+        publications,
       };
     },
   });
