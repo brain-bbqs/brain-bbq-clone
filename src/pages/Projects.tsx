@@ -61,12 +61,14 @@ const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
   const { open } = useEntitySummary();
   
   const handleClick = async () => {
-    // Try exact match first, then stripped version (API returns "1U01DA063534-01", DB may store "U01DA063534")
-    const stripped = data.grantNumber.replace(/^\d+/, "").replace(/-\d+$/, "");
+    // API returns "1U01DA063534-01", DB may store "1U01DA063534" or "U01DA063534"
+    const noSuffix = data.grantNumber.replace(/-\d+$/, "");
+    const noPrefix = noSuffix.replace(/^\d+/, "");
+    const candidates = [...new Set([data.grantNumber, noSuffix, noPrefix])];
     const { data: grant } = await supabase
       .from("grants")
       .select("id, resource_id")
-      .or(`grant_number.eq.${data.grantNumber},grant_number.eq.${stripped}`)
+      .in("grant_number", candidates)
       .maybeSingle();
     if (grant) {
       open({ type: "grant", id: grant.id, resourceId: grant.resource_id || undefined, label: data.grantNumber });
