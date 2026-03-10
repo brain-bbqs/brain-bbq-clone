@@ -119,11 +119,13 @@ export function SynergyNetwork() {
       .forceSimulation(simNodes)
       .force(
         "link",
-        d3.forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(120)
+        d3.forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(70)
       )
-      .force("charge", d3.forceManyBody().strength(-300))
+      .force("charge", d3.forceManyBody().strength(-150))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(30));
+      .force("collision", d3.forceCollide().radius(22))
+      .force("x", d3.forceX(width / 2).strength(0.08))
+      .force("y", d3.forceY(height / 2).strength(0.08));
 
     // Draw links
     const link = g
