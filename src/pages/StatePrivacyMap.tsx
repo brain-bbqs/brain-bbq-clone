@@ -385,7 +385,7 @@ export default function StatePrivacyMap() {
             </div>
             <div
               className="ag-theme-alpine rounded-lg overflow-hidden"
-              style={{ height: Math.min(600, gridRows.length * 42 + 48) }}
+              style={{ height: 600 }}
             >
               <AgGridReact<GridRow>
                 rowData={gridRows}
@@ -395,8 +395,8 @@ export default function StatePrivacyMap() {
                 suppressCellFocus
                 enableCellTextSelection
                 paginationPageSize={100}
-                pagination={gridRows.length > 100}
-                domLayout={gridRows.length <= 10 ? "autoHeight" : "normal"}
+                pagination
+                paginationPageSizeSelector={[25, 50, 100, 200]}
               />
             </div>
           </CardContent>
