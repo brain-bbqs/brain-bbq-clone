@@ -476,6 +476,75 @@ export type Database = {
           },
         ]
       }
+      funding_opportunities: {
+        Row: {
+          activity_code: string | null
+          announcement_type: string | null
+          budget_ceiling: number | null
+          budget_floor: number | null
+          created_at: string
+          due_dates: Json | null
+          eligible_activity_codes: string[] | null
+          expiration_date: string | null
+          fon: string
+          id: string
+          notes: string | null
+          open_date: string | null
+          participating_orgs: string[] | null
+          posted_date: string | null
+          purpose: string | null
+          relevance_tags: string[] | null
+          status: string
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          activity_code?: string | null
+          announcement_type?: string | null
+          budget_ceiling?: number | null
+          budget_floor?: number | null
+          created_at?: string
+          due_dates?: Json | null
+          eligible_activity_codes?: string[] | null
+          expiration_date?: string | null
+          fon: string
+          id?: string
+          notes?: string | null
+          open_date?: string | null
+          participating_orgs?: string[] | null
+          posted_date?: string | null
+          purpose?: string | null
+          relevance_tags?: string[] | null
+          status?: string
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          activity_code?: string | null
+          announcement_type?: string | null
+          budget_ceiling?: number | null
+          budget_floor?: number | null
+          created_at?: string
+          due_dates?: Json | null
+          eligible_activity_codes?: string[] | null
+          expiration_date?: string | null
+          fon?: string
+          id?: string
+          notes?: string | null
+          open_date?: string | null
+          participating_orgs?: string[] | null
+          posted_date?: string | null
+          purpose?: string | null
+          relevance_tags?: string[] | null
+          status?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       grant_investigators: {
         Row: {
           grant_number: string
