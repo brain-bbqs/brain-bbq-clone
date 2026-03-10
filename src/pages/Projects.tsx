@@ -709,6 +709,18 @@ const Projects = () => {
             <FundingCharts data={rowData} />
           </TabsContent>
 
+          <TabsContent value="explorer">
+            <Card className="border-border">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-1">Species × Marr Level Explorer</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Heatmap showing shared computational goals, algorithmic methods, and implementation resources across species studied by BBQS projects.
+                </p>
+                <SpeciesHeatmap />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="synergy">
             <Card className="border-border">
               <CardContent className="p-6">
