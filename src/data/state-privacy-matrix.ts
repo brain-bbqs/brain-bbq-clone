@@ -5,6 +5,8 @@ export type RiskLabel = "NO_EXTRA" | "LIMITED_EXPORT" | "FEDERATED_ONLY" | "BLOC
 export interface CategoryRule {
   label: RiskLabel;
   note: string;
+  statute?: string; // e.g. "Cal. Civ. Code §1798.140(ae)"
+  conflict?: string; // What specifically conflicts with BBQS sharing
 }
 
 export type BBQSCategory =
@@ -39,11 +41,11 @@ export const RISK_LABEL_META: Record<RiskLabel, { color: string; text: string; s
 };
 
 const DEFAULT_ROW: StateRiskRow["categories"] = {
-  brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+  brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
 };
 
 // Seed data — states with notable stricter-than-HIPAA rules
@@ -51,75 +53,74 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
   {
     state: "CA", stateName: "California", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "LIMITED_EXPORT", note: "CCPA/CPRA treat inferences derived from biometric/behavioral data as sensitive PI; opt-out and data minimization required. Cal. Civ. Code §1798.140(ae)." },
-      consumer_health: { label: "LIMITED_EXPORT", note: "CMIA (Cal. Civ. Code §56 et seq.) imposes stricter consent for medical information disclosure than HIPAA." },
-      reproductive: { label: "FEDERATED_ONLY", note: "AB 352 (2024) prohibits disclosure of reproductive/sexual health info to out-of-state entities without explicit consent." },
-      minors: { label: "LIMITED_EXPORT", note: "COPPA plus CA Age-Appropriate Design Code (AB 2273) impose data minimization for minors' data." },
-      biometric_neuro: { label: "LIMITED_EXPORT", note: "CCPA classifies biometric information and neural data as sensitive PI; SB 1223 (2024) adds neurorights protections." },
+      brain_behavior: { label: "LIMITED_EXPORT", statute: "Cal. Civ. Code §1798.140(ae)", conflict: "Inferences from biometric/behavioral data classified as sensitive PI; opt-out rights conflict with pooled analysis pipelines.", note: "CCPA/CPRA treat inferences derived from biometric/behavioral data as sensitive PI; opt-out and data minimization required." },
+      consumer_health: { label: "LIMITED_EXPORT", statute: "Cal. Civ. Code §56 et seq. (CMIA)", conflict: "CMIA requires written authorization for disclosure of medical information; BBQS automated sharing would need per-subject consent.", note: "CMIA imposes stricter consent for medical information disclosure than HIPAA." },
+      reproductive: { label: "FEDERATED_ONLY", statute: "AB 352 (2024), Health & Safety Code §123462", conflict: "Prohibits disclosure of reproductive/sexual health info to out-of-state entities without explicit consent; raw data cannot leave CA.", note: "AB 352 prohibits disclosure of reproductive/sexual health info to out-of-state entities without explicit consent." },
+      minors: { label: "LIMITED_EXPORT", statute: "AB 2273 (Age-Appropriate Design Code)", conflict: "Data minimization requirements for minors conflict with BBQS comprehensive data collection; DPIA required.", note: "COPPA plus CA Age-Appropriate Design Code impose data minimization for minors' data." },
+      biometric_neuro: { label: "LIMITED_EXPORT", statute: "SB 1223 (2024), Cal. Civ. Code §1798.140(c)", conflict: "Neural data added to sensitive PI definition; collection requires opt-in consent incompatible with batch processing.", note: "CCPA classifies biometric information and neural data as sensitive PI; SB 1223 adds neurorights protections." },
     },
   },
   {
     state: "IL", stateName: "Illinois", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      reproductive: { label: "NO_EXTRA", note: "Reproductive Health Act protects access but doesn't restrict research data sharing beyond HIPAA." },
-      minors: { label: "LIMITED_EXPORT", note: "Student Online Personal Protection Act (SOPPA) restricts commercial use of K-12 student data." },
-      biometric_neuro: { label: "FEDERATED_ONLY", note: "BIPA (740 ILCS 14) requires informed consent before collection of biometric identifiers; private right of action. Raw biometric data should not leave state." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      consumer_health: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      reproductive: { label: "NO_EXTRA", statute: "", conflict: "", note: "Reproductive Health Act protects access but doesn't restrict research data sharing beyond HIPAA." },
+      minors: { label: "LIMITED_EXPORT", statute: "105 ILCS 85 (SOPPA)", conflict: "Restricts commercial use of K-12 student data; BBQS must ensure no commingling of student records in shared datasets.", note: "Student Online Personal Protection Act restricts commercial use of K-12 student data." },
+      biometric_neuro: { label: "FEDERATED_ONLY", statute: "740 ILCS 14/15(b) (BIPA)", conflict: "Requires informed written consent before collection of biometric identifiers; private right of action means raw biometric data must not leave state.", note: "BIPA requires informed consent before collection of biometric identifiers; private right of action." },
     },
   },
   {
     state: "TX", stateName: "Texas", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      consumer_health: { label: "NO_EXTRA", note: "Texas Data Privacy and Security Act (TDPSA) applies but aligns with HIPAA for health data." },
-      reproductive: { label: "BLOCKED", note: "SB 8 and related laws restrict sharing of info that could facilitate prohibited procedures; data flagging reproductive health should not be shared." },
-      minors: { label: "LIMITED_EXPORT", note: "TDPSA classifies minors' data as sensitive; consent required for processing." },
-      biometric_neuro: { label: "LIMITED_EXPORT", note: "Texas Capture or Use of Biometric Identifier Act (Bus. & Com. Code §503.001) requires consent before capture." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      consumer_health: { label: "NO_EXTRA", statute: "Tex. Bus. & Com. Code Ch. 541 (TDPSA)", conflict: "", note: "TDPSA applies but aligns with HIPAA for health data." },
+      reproductive: { label: "BLOCKED", statute: "SB 8, Tex. Health & Safety Code §171", conflict: "Laws restrict sharing info that could facilitate prohibited procedures; any data flagging reproductive health must not enter BBQS.", note: "SB 8 and related laws restrict sharing of info that could facilitate prohibited procedures." },
+      minors: { label: "LIMITED_EXPORT", statute: "TDPSA §541.101(32)", conflict: "Minors' data classified as sensitive; requires consent for processing that BBQS batch pipelines may not obtain.", note: "TDPSA classifies minors' data as sensitive; consent required for processing." },
+      biometric_neuro: { label: "LIMITED_EXPORT", statute: "Tex. Bus. & Com. Code §503.001 (CUBI Act)", conflict: "Requires consent before capture of biometric identifiers; BBQS must verify consent chain before ingestion.", note: "Texas CUBI Act requires consent before capture of biometric identifiers." },
     },
   },
   {
     state: "NY", stateName: "New York", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      consumer_health: { label: "LIMITED_EXPORT", note: "NY Mental Hygiene Law §33.13 imposes strict confidentiality on mental health records beyond HIPAA." },
-      reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health information protected under Public Health Law; out-of-state subpoenas limited." },
-      minors: { label: "LIMITED_EXPORT", note: "Education Law §2-d restricts use and disclosure of student PII." },
-      biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law yet (proposed bills pending)." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      consumer_health: { label: "LIMITED_EXPORT", statute: "NY Mental Hygiene Law §33.13", conflict: "Strict confidentiality on mental health records beyond HIPAA; BBQS sharing requires redaction of mental health indicators.", note: "NY Mental Hygiene Law §33.13 imposes strict confidentiality on mental health records beyond HIPAA." },
+      reproductive: { label: "LIMITED_EXPORT", statute: "NY Public Health Law §18", conflict: "Out-of-state subpoenas for reproductive health info limited; BBQS must ensure no cross-state legal discovery exposure.", note: "Reproductive health information protected under Public Health Law; out-of-state subpoenas limited." },
+      minors: { label: "LIMITED_EXPORT", statute: "NY Education Law §2-d", conflict: "Restricts use and disclosure of student PII; BBQS pipelines processing student-derived data need DPA agreements.", note: "Education Law §2-d restricts use and disclosure of student PII." },
+      biometric_neuro: { label: "NO_EXTRA", statute: "", conflict: "", note: "No comprehensive biometric privacy law yet (proposed bills pending)." },
     },
   },
   {
     state: "WA", stateName: "Washington", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      consumer_health: { label: "LIMITED_EXPORT", note: "My Health My Data Act (MHMDA) requires consent for collection/sharing of consumer health data, broader than HIPAA." },
-      reproductive: { label: "LIMITED_EXPORT", note: "MHMDA explicitly covers reproductive/sexual health data with geofencing protections." },
-      minors: { label: "LIMITED_EXPORT", note: "MHMDA applies to minors' health data with heightened consent." },
-      biometric_neuro: { label: "LIMITED_EXPORT", note: "WA biometric identifier provision in RCW 19.375 requires consent/notice before collection." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      consumer_health: { label: "LIMITED_EXPORT", statute: "RCW 19.373 (MHMDA)", conflict: "Requires affirmative consent for collection/sharing of consumer health data broader than HIPAA; BBQS must obtain separate consent.", note: "My Health My Data Act requires consent for collection/sharing of consumer health data, broader than HIPAA." },
+      reproductive: { label: "LIMITED_EXPORT", statute: "RCW 19.373.010(8) (MHMDA)", conflict: "Explicitly covers reproductive/sexual health data with geofencing protections; BBQS cannot geo-locate subjects near health facilities.", note: "MHMDA explicitly covers reproductive/sexual health data with geofencing protections." },
+      minors: { label: "LIMITED_EXPORT", statute: "RCW 19.373 (MHMDA §3)", conflict: "Heightened consent for minors' health data; BBQS must implement age-gating before data ingestion.", note: "MHMDA applies to minors' health data with heightened consent." },
+      biometric_neuro: { label: "LIMITED_EXPORT", statute: "RCW 19.375", conflict: "Requires consent/notice before collection of biometric identifiers; BBQS must verify upstream consent.", note: "WA biometric identifier provision requires consent/notice before collection." },
     },
   },
   {
     state: "CO", stateName: "Colorado", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Colorado Privacy Act doesn't single out brain/behavioral research data beyond sensitive data rules." },
-      consumer_health: { label: "LIMITED_EXPORT", note: "CPA classifies health data as sensitive; opt-in consent required." },
-      reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health data is protected under COAA Act; limits out-of-state disclosure." },
-      minors: { label: "LIMITED_EXPORT", note: "CPA treats minors' data as sensitive; Student Data Transparency and Security Act adds protections." },
-      biometric_neuro: { label: "LIMITED_EXPORT", note: "CPA classifies biometric data as sensitive PI; opt-in consent required for processing." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Colorado Privacy Act doesn't single out brain/behavioral research data beyond sensitive data rules." },
+      consumer_health: { label: "LIMITED_EXPORT", statute: "CRS §6-1-1303 (CPA)", conflict: "Health data classified as sensitive; opt-in consent required that BBQS batch processing may not satisfy.", note: "CPA classifies health data as sensitive; opt-in consent required." },
+      reproductive: { label: "LIMITED_EXPORT", statute: "COAA Act, CRS §25-6-402", conflict: "Limits out-of-state disclosure of reproductive health data; BBQS cross-state sharing needs explicit authorization.", note: "Reproductive health data protected under COAA Act; limits out-of-state disclosure." },
+      minors: { label: "LIMITED_EXPORT", statute: "CRS §22-16.5-103 (Student Data Act)", conflict: "Student data transparency requirements conflict with BBQS automated metadata collection.", note: "CPA treats minors' data as sensitive; Student Data Transparency and Security Act adds protections." },
+      biometric_neuro: { label: "LIMITED_EXPORT", statute: "CRS §6-1-1303(24) (CPA)", conflict: "Biometric data classified as sensitive PI; opt-in consent required before processing.", note: "CPA classifies biometric data as sensitive PI; opt-in consent required for processing." },
     },
   },
   {
     state: "MA", stateName: "Massachusetts", last_reviewed: "2025-06-01",
     categories: {
-      brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-      consumer_health: { label: "LIMITED_EXPORT", note: "MA Data Privacy Law (201 CMR 17.00) and AG regulations impose strict data security requirements." },
-      reproductive: { label: "LIMITED_EXPORT", note: "Shield Act protects reproductive health data from out-of-state legal process." },
-      minors: { label: "LIMITED_EXPORT", note: "Student privacy protected under MA Student Records Regulations (603 CMR 23.00)." },
-      biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law (bills proposed but not enacted)." },
+      brain_behavior: { label: "NO_EXTRA", statute: "", conflict: "", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+      consumer_health: { label: "LIMITED_EXPORT", statute: "201 CMR 17.00", conflict: "Strict data security requirements; BBQS must meet MA-specific encryption and access control standards.", note: "MA Data Privacy Law and AG regulations impose strict data security requirements." },
+      reproductive: { label: "LIMITED_EXPORT", statute: "MA Shield Act, MGL c.111 §70F", conflict: "Protects reproductive health data from out-of-state legal process; BBQS must firewall reproductive indicators.", note: "Shield Act protects reproductive health data from out-of-state legal process." },
+      minors: { label: "LIMITED_EXPORT", statute: "603 CMR 23.00", conflict: "Student records regulations restrict disclosure; BBQS must exclude student-linked records without DPA.", note: "Student privacy protected under MA Student Records Regulations." },
+      biometric_neuro: { label: "NO_EXTRA", statute: "", conflict: "", note: "No comprehensive biometric privacy law (bills proposed but not enacted)." },
     },
   },
 ];
-
 // US states list for generating default rows
 const US_STATES: { abbr: string; name: string }[] = [
   { abbr: "AL", name: "Alabama" }, { abbr: "AK", name: "Alaska" }, { abbr: "AZ", name: "Arizona" },

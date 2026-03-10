@@ -36,14 +36,16 @@ Task:
 Identify which of the above BBQS data-type categories are subject to stricter-than-HIPAA or special rules in this state.
 
 For each affected category, give:
-- A one-sentence summary of the rule with a specific statute citation,
-- A simple label BBQS can use in its matrix, chosen from:
+- "statute": The specific statute/section citation (e.g. "740 ILCS 14/15(b)", "Cal. Civ. Code §1798.140(ae)"). Be as precise as possible with section numbers.
+- "conflict": A concise description of what specifically conflicts with BBQS data sharing (e.g. "Prohibits transfer of biometric identifiers without written consent; BBQS pooled analysis would require per-subject release", "Requires opt-in before collecting neural data as sensitive PI").
+- "note": A one-sentence summary of the rule.
+- "label": A simple label BBQS can use in its matrix, chosen from:
   NO_EXTRA (no stricter rules than HIPAA/general),
   LIMITED_EXPORT (only de-identified/aggregated data or federated analysis should leave the state),
   FEDERATED_ONLY (raw data must stay in-state; only model updates/aggregates may move),
   BLOCKED (category should not be shared via BBQS).
 
-You MUST use the suggest_risk_matrix tool to return your analysis. Do not guess; if the law is unclear, use label NO_EXTRA and say "not clearly addressed beyond HIPAA/general privacy law" in the note.`;
+You MUST use the suggest_risk_matrix tool to return your analysis. For each category, always include the statute, conflict, note, and label fields. If the law is unclear, use label NO_EXTRA, statute "" and say "not clearly addressed beyond HIPAA/general privacy law" in the note.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -170,45 +172,55 @@ Analyze the above content and classify ${stateName}'s privacy rules for each BBQ
                     type: "object",
                     properties: {
                       label: { type: "string", enum: ["NO_EXTRA", "LIMITED_EXPORT", "FEDERATED_ONLY", "BLOCKED"] },
+                      statute: { type: "string", description: "Specific statute/section citation" },
+                      conflict: { type: "string", description: "What specifically conflicts with BBQS sharing" },
                       note: { type: "string" },
                     },
-                    required: ["label", "note"],
+                    required: ["label", "statute", "conflict", "note"],
                     additionalProperties: false,
                   },
                   consumer_health: {
                     type: "object",
                     properties: {
                       label: { type: "string", enum: ["NO_EXTRA", "LIMITED_EXPORT", "FEDERATED_ONLY", "BLOCKED"] },
+                      statute: { type: "string", description: "Specific statute/section citation" },
+                      conflict: { type: "string", description: "What specifically conflicts with BBQS sharing" },
                       note: { type: "string" },
                     },
-                    required: ["label", "note"],
+                    required: ["label", "statute", "conflict", "note"],
                     additionalProperties: false,
                   },
                   reproductive: {
                     type: "object",
                     properties: {
                       label: { type: "string", enum: ["NO_EXTRA", "LIMITED_EXPORT", "FEDERATED_ONLY", "BLOCKED"] },
+                      statute: { type: "string", description: "Specific statute/section citation" },
+                      conflict: { type: "string", description: "What specifically conflicts with BBQS sharing" },
                       note: { type: "string" },
                     },
-                    required: ["label", "note"],
+                    required: ["label", "statute", "conflict", "note"],
                     additionalProperties: false,
                   },
                   minors: {
                     type: "object",
                     properties: {
                       label: { type: "string", enum: ["NO_EXTRA", "LIMITED_EXPORT", "FEDERATED_ONLY", "BLOCKED"] },
+                      statute: { type: "string", description: "Specific statute/section citation" },
+                      conflict: { type: "string", description: "What specifically conflicts with BBQS sharing" },
                       note: { type: "string" },
                     },
-                    required: ["label", "note"],
+                    required: ["label", "statute", "conflict", "note"],
                     additionalProperties: false,
                   },
                   biometric_neuro: {
                     type: "object",
                     properties: {
                       label: { type: "string", enum: ["NO_EXTRA", "LIMITED_EXPORT", "FEDERATED_ONLY", "BLOCKED"] },
+                      statute: { type: "string", description: "Specific statute/section citation" },
+                      conflict: { type: "string", description: "What specifically conflicts with BBQS sharing" },
                       note: { type: "string" },
                     },
-                    required: ["label", "note"],
+                    required: ["label", "statute", "conflict", "note"],
                     additionalProperties: false,
                   },
                 },
