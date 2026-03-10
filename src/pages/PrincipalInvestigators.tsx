@@ -22,6 +22,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
 import { MARR_PROJECTS } from "@/data/marr-projects";
+// Note: PrincipalInvestigators still uses static MARR_PROJECTS as fallback
+// since the data is used inside a non-hook async function.
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 
 import "@/styles/ag-grid-theme.css";
