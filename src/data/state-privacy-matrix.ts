@@ -11,7 +11,6 @@ export type BBQSCategory =
   | "brain_behavior"
   | "consumer_health"
   | "reproductive"
-  | "cannabis"
   | "minors"
   | "biometric_neuro";
 
