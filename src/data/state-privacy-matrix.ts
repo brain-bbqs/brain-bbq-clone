@@ -84,7 +84,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "NY Mental Hygiene Law §33.13 imposes strict confidentiality on mental health records beyond HIPAA." },
       reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health information protected under Public Health Law; out-of-state subpoenas limited." },
-      cannabis: { label: "LIMITED_EXPORT", note: "MRTA §222-b protects cannabis registry data from disclosure." },
       minors: { label: "LIMITED_EXPORT", note: "Education Law §2-d restricts use and disclosure of student PII." },
       biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law yet (proposed bills pending)." },
     },
