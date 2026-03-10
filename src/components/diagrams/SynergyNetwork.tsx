@@ -159,7 +159,7 @@ export function SynergyNetwork() {
       .data(simNodes)
       .join("text")
       .text((d) => d.data.shortName)
-      .attr("font-size", 9)
+      .attr("font-size", 8)
       .attr("fill", "#cbd5e1")
       .attr("text-anchor", "middle")
       .attr("dy", (d) => {
