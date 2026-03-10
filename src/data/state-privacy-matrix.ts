@@ -64,7 +64,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       reproductive: { label: "NO_EXTRA", note: "Reproductive Health Act protects access but doesn't restrict research data sharing beyond HIPAA." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Cannabis Regulation and Tax Act §10-35(c) limits disclosure of medical cannabis patient records." },
       minors: { label: "LIMITED_EXPORT", note: "Student Online Personal Protection Act (SOPPA) restricts commercial use of K-12 student data." },
       biometric_neuro: { label: "FEDERATED_ONLY", note: "BIPA (740 ILCS 14) requires informed consent before collection of biometric identifiers; private right of action. Raw biometric data should not leave state." },
     },
