@@ -637,6 +637,10 @@ const Projects = () => {
               <FolderOpen className="h-4 w-4" />
               Table
             </TabsTrigger>
+            <TabsTrigger value="explorer" className="gap-1.5">
+              <Grid3X3 className="h-4 w-4" />
+              Explorer
+            </TabsTrigger>
             <TabsTrigger value="synergy" className="gap-1.5">
               <Network className="h-4 w-4" />
               Cross-Project Synergy
