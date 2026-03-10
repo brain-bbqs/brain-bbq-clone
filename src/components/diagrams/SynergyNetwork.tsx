@@ -135,7 +135,7 @@ export function SynergyNetwork() {
       .join("line")
       .attr("stroke", (d) => SYNERGY_TYPE_COLORS[d.data.synergyType])
       .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 2);
+      .attr("stroke-width", 3);
 
     // Draw nodes
     const node = g
