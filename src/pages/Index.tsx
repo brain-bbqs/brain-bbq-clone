@@ -136,30 +136,52 @@ const Index = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {card.links.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg border transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.03] cursor-pointer"
-                    style={{
-                      borderColor: `${card.color}40`,
-                      color: card.color,
-                      backgroundColor: `${card.color}08`,
-                    }}
-                    onMouseEnter={(e) => {
+                {card.links.map((link) => {
+                  const isExternal = link.to.startsWith("http");
+                  const sharedClassName = "inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg border transition-all duration-150 hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.03] cursor-pointer";
+                  const sharedStyle = {
+                    borderColor: `${card.color}40`,
+                    color: card.color,
+                    backgroundColor: `${card.color}08`,
+                  };
+                  const handlers = {
+                    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
                       e.currentTarget.style.backgroundColor = `${card.color}22`;
                       e.currentTarget.style.borderColor = card.color;
                       e.currentTarget.style.color = card.color;
-                    }}
-                    onMouseLeave={(e) => {
+                    },
+                    onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
                       e.currentTarget.style.backgroundColor = `${card.color}08`;
                       e.currentTarget.style.borderColor = `${card.color}40`;
-                    }}
-                  >
-                    {link.label}
-                    <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-                  </Link>
-                ))}
+                    },
+                  };
+
+                  return isExternal ? (
+                    <a
+                      key={link.to}
+                      href={link.to}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={sharedClassName}
+                      style={sharedStyle}
+                      {...handlers}
+                    >
+                      {link.label}
+                      <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={sharedClassName}
+                      style={sharedStyle}
+                      {...handlers}
+                    >
+                      {link.label}
+                      <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
