@@ -94,7 +94,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "My Health My Data Act (MHMDA) requires consent for collection/sharing of consumer health data, broader than HIPAA." },
       reproductive: { label: "LIMITED_EXPORT", note: "MHMDA explicitly covers reproductive/sexual health data with geofencing protections." },
-      cannabis: { label: "NO_EXTRA", note: "Legal recreational; no special research data restrictions beyond HIPAA." },
       minors: { label: "LIMITED_EXPORT", note: "MHMDA applies to minors' health data with heightened consent." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "WA biometric identifier provision in RCW 19.375 requires consent/notice before collection." },
     },
