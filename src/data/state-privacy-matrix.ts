@@ -42,7 +42,6 @@ const DEFAULT_ROW: StateRiskRow["categories"] = {
   brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  cannabis: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
 };
