@@ -41,11 +41,11 @@ export const RISK_LABEL_META: Record<RiskLabel, { color: string; text: string; s
 };
 
 const DEFAULT_ROW: StateRiskRow["categories"] = {
-  brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
+  brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
+  biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law.", statute: "", conflict: "" },
 };
 
 // Seed data — states with notable stricter-than-HIPAA rules
