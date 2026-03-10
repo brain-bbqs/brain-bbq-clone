@@ -1406,6 +1406,42 @@ export type Database = {
           },
         ]
       }
+      state_privacy_rules: {
+        Row: {
+          categories: Json
+          created_at: string
+          id: string
+          last_reviewed: string
+          scan_status: string
+          sources: Json | null
+          state: string
+          state_name: string
+          updated_at: string
+        }
+        Insert: {
+          categories?: Json
+          created_at?: string
+          id?: string
+          last_reviewed?: string
+          scan_status?: string
+          sources?: Json | null
+          state: string
+          state_name: string
+          updated_at?: string
+        }
+        Update: {
+          categories?: Json
+          created_at?: string
+          id?: string
+          last_reviewed?: string
+          scan_status?: string
+          sources?: Json | null
+          state?: string
+          state_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       taxonomies: {
         Row: {
           category: string

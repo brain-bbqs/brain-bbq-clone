@@ -67,3 +67,5 @@ verify_jwt = false
 [functions.elevenlabs-conversation-token]
 verify_jwt = false
 
+[functions.state-privacy-scan]
+verify_jwt = false
