@@ -7,7 +7,7 @@ import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { MARR_PROJECTS } from "@/data/marr-projects";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
@@ -28,6 +28,20 @@ const LATIN_NAMES: Record<string, string> = {
   "Ferret": "Mustela putorius furo",
   "Capuchin Monkey": "Cebus capucinus",
   "Marmoset": "Callithrix jacchus",
+  "Fish (Cichlids)": "Cichlidae",
+  "Mice": "Mus musculus",
+  "Rodents (Gerbils/Mice)": "Meriones / Mus",
+  "Gregarious Songbirds": "Molothrus ater",
+  "Rats": "Rattus norvegicus",
+  "Rodents": "Rattus / Mus",
+  "Humans": "Homo sapiens",
+  "Humans (Pediatric)": "Homo sapiens",
+  "Drosophila / Zebrafish": "Drosophila / Danio rerio",
+  "Hofstenia miamia (Panther worm)": "Hofstenia miamia",
+  "Ferrets / Rodents": "Mustela / Rattus",
+  "Wild Primates": "Cebus / Sapajus",
+  "Marmosets": "Callithrix jacchus",
+  "All Species (Infrastructure)": "—",
 };
 
 interface ProjectInfo {
@@ -48,35 +62,6 @@ const getProjectTitle = (shortName: string) => {
   const parts = shortName.split(" – ");
   return parts.length > 1 ? parts.slice(1).join(" – ").trim() : shortName;
 };
-
-// Group projects by species
-const rows: SpeciesRow[] = (() => {
-  const grouped = new Map<string, { projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
-
-  for (const p of MARR_PROJECTS) {
-    const existing = grouped.get(p.species);
-    const project: ProjectInfo = { name: getProjectTitle(p.shortName), grantId: p.id };
-    if (existing) {
-      existing.projects.push(project);
-      p.computational.forEach((b) => existing.behaviors.add(b));
-    } else {
-      grouped.set(p.species, {
-        projects: [project],
-        behaviors: new Set(p.computational),
-        color: p.color,
-      });
-    }
-  }
-
-  return Array.from(grouped.entries()).map(([species, data]) => ({
-    species,
-    latinName: LATIN_NAMES[species] || "",
-    projects: data.projects,
-    behaviors: Array.from(data.behaviors),
-    color: data.color,
-    projectCount: data.projects.length,
-  }));
-})();
 
 const SpeciesBadge = ({ value, data }: { value: string; data: SpeciesRow }) => {
   const { open } = useEntitySummary();
@@ -148,8 +133,37 @@ const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
 };
 
 export default function Species() {
+  const { projects, loading } = useMarrYaml();
   const [quickFilterText, setQuickFilterText] = useState("");
   const [view, setView] = useState<"table" | "heatmap">("table");
+
+  const rows: SpeciesRow[] = useMemo(() => {
+    const grouped = new Map<string, { projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
+
+    for (const p of projects) {
+      const existing = grouped.get(p.species);
+      const project: ProjectInfo = { name: getProjectTitle(p.shortName), grantId: p.id };
+      if (existing) {
+        existing.projects.push(project);
+        p.computational.forEach((b) => existing.behaviors.add(b));
+      } else {
+        grouped.set(p.species, {
+          projects: [project],
+          behaviors: new Set(p.computational),
+          color: p.color,
+        });
+      }
+    }
+
+    return Array.from(grouped.entries()).map(([species, data]) => ({
+      species,
+      latinName: LATIN_NAMES[species] || "",
+      projects: data.projects,
+      behaviors: Array.from(data.behaviors),
+      color: data.color,
+      projectCount: data.projects.length,
+    }));
+  }, [projects]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, unSortIcon: true, wrapText: true, autoHeight: true }),
@@ -168,6 +182,14 @@ export default function Species() {
     []
   );
   const isMobile = useIsMobile();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading species data from YAML...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,7 +225,7 @@ export default function Species() {
               className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
             />
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {rows.length} species · {MARR_PROJECTS.length} projects
+              {rows.length} species · {projects.length} projects
             </span>
           </div>
           )}

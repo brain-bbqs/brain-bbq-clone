@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { sankey, sankeyLinkHorizontal, SankeyNode, SankeyLink } from "d3-sankey";
-import { MARR_PROJECTS } from "@/data/marr-projects";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
+import type { MarrProject } from "@/data/marr-projects";
 
 interface SNode {
   name: string;
@@ -21,13 +22,10 @@ const LEVEL_COLORS: Record<string, string> = {
   Implementation: "#ffb74d",
 };
 
-const SPECIES_COLORS: Record<string, string> = {};
-
-function buildSankeyData() {
+function buildSankeyData(projects: MarrProject[]) {
   const nodes: SNode[] = [];
   const links: SLink[] = [];
 
-  // Left: Species (unique)
   const speciesSet = new Map<string, number>();
   const speciesColors = [
     "#4fc3f7", "#f06292", "#ce93d8", "#ffb74d", "#81c784",
@@ -35,7 +33,7 @@ function buildSankeyData() {
     "#b39ddb", "#ef9a9a", "#e57373", "#ffe082", "#80cbc4",
   ];
 
-  MARR_PROJECTS.forEach((p) => {
+  projects.forEach((p) => {
     if (!speciesSet.has(p.species)) {
       const idx = nodes.length;
       const colorIdx = speciesSet.size % speciesColors.length;
@@ -44,25 +42,21 @@ function buildSankeyData() {
     }
   });
 
-  // Middle: Projects
   const projectStartIdx = nodes.length;
-  MARR_PROJECTS.forEach((p) =>
+  projects.forEach((p) =>
     nodes.push({ name: p.shortName, category: "project", color: p.color })
   );
 
-  // Right: Marr levels
   const levelStartIdx = nodes.length;
   const levels = ["Computational", "Algorithmic", "Implementation"];
   levels.forEach((l) => nodes.push({ name: l, category: "level", color: LEVEL_COLORS[l] }));
 
-  // Links: Species → Project
-  MARR_PROJECTS.forEach((p, pi) => {
+  projects.forEach((p, pi) => {
     const projIdx = projectStartIdx + pi;
     const speciesIdx = speciesSet.get(p.species)!;
     const totalFeatures = p.computational.length + p.algorithmic.length + p.implementation.length;
     links.push({ source: speciesIdx, target: projIdx, value: totalFeatures });
 
-    // Links: Project → Level
     const levelKeys = ["computational", "algorithmic", "implementation"] as const;
     levelKeys.forEach((lk, li) => {
       const count = p[lk].length;
@@ -76,13 +70,14 @@ function buildSankeyData() {
 }
 
 export function MarrSankeyDiagram() {
+  const { projects, loading } = useMarrYaml();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
   const [dimensions, setDimensions] = useState({ width: 900, height: 700 });
 
-  const data = useMemo(() => buildSankeyData(), []);
+  const data = useMemo(() => buildSankeyData(projects), [projects]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -97,7 +92,7 @@ export function MarrSankeyDiagram() {
   }, []);
 
   useEffect(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current || projects.length === 0) return;
 
     const { width, height } = dimensions;
     const margin = { top: 10, right: 160, bottom: 10, left: 130 };
@@ -107,7 +102,6 @@ export function MarrSankeyDiagram() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    // Deep clone data for d3-sankey (it mutates)
     const sankeyData = {
       nodes: data.nodes.map((n) => ({ ...n })),
       links: data.links.map((l) => ({ ...l })),
@@ -125,7 +119,6 @@ export function MarrSankeyDiagram() {
 
     const { nodes, links } = sankeyGen(sankeyData as any) as any;
 
-    // Links
     svg
       .append("g")
       .attr("fill", "none")
@@ -154,7 +147,6 @@ export function MarrSankeyDiagram() {
         setTooltip(null);
       });
 
-    // Nodes
     svg
       .append("g")
       .selectAll("rect")
@@ -171,7 +163,6 @@ export function MarrSankeyDiagram() {
       .attr("opacity", (d: any) => {
         if (!hoveredNode) return 0.9;
         if (d.name === hoveredNode) return 1;
-        // Check if connected
         const connected = links.some(
           (l: any) =>
             (l.source.name === hoveredNode && l.target.name === d.name) ||
@@ -188,7 +179,6 @@ export function MarrSankeyDiagram() {
         setTooltip(null);
       });
 
-    // Labels
     svg
       .append("g")
       .selectAll("text")
@@ -212,7 +202,11 @@ export function MarrSankeyDiagram() {
         return connected ? 0.9 : 0.15;
       })
       .text((d: any) => d.name);
-  }, [data, dimensions, hoveredNode]);
+  }, [data, dimensions, hoveredNode, projects]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading...</div>;
+  }
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -238,7 +232,6 @@ export function MarrSankeyDiagram() {
         )}
       </div>
 
-      {/* Legend */}
       <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: LEVEL_COLORS.Computational }} />
