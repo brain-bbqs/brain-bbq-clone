@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
 import { FundingCharts } from "@/components/projects/FundingCharts";
 import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
+import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 
