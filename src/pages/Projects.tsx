@@ -16,13 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown, Network } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown, Network, Grid3X3 } from "lucide-react";
 import { normalizePiName } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
 import { FundingCharts } from "@/components/projects/FundingCharts";
 import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
+import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 
@@ -636,6 +637,10 @@ const Projects = () => {
               <FolderOpen className="h-4 w-4" />
               Table
             </TabsTrigger>
+            <TabsTrigger value="explorer" className="gap-1.5">
+              <Grid3X3 className="h-4 w-4" />
+              Explorer
+            </TabsTrigger>
             <TabsTrigger value="synergy" className="gap-1.5">
               <Network className="h-4 w-4" />
               Cross-Project Synergy
@@ -702,6 +707,18 @@ const Projects = () => {
               </div>
             )}
             <FundingCharts data={rowData} />
+          </TabsContent>
+
+          <TabsContent value="explorer">
+            <Card className="border-border">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-1">Species × Marr Level Explorer</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Heatmap showing shared computational goals, algorithmic methods, and implementation resources across species studied by BBQS projects.
+                </p>
+                <SpeciesHeatmap />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="synergy">
