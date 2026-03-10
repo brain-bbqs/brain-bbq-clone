@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import { PageMeta } from "@/components/PageMeta";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -382,8 +384,8 @@ export default function StatePrivacyMap() {
               )}
             </div>
             <div
-              className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden"
-              style={{ height: Math.min(600, gridRows.length * 56 + 56) }}
+              className="ag-theme-alpine rounded-lg overflow-hidden"
+              style={{ height: Math.min(600, gridRows.length * 42 + 48) }}
             >
               <AgGridReact<GridRow>
                 rowData={gridRows}
