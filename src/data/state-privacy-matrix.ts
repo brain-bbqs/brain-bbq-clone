@@ -104,7 +104,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Colorado Privacy Act doesn't single out brain/behavioral research data beyond sensitive data rules." },
       consumer_health: { label: "LIMITED_EXPORT", note: "CPA classifies health data as sensitive; opt-in consent required." },
       reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health data is protected under COAA Act; limits out-of-state disclosure." },
-      cannabis: { label: "NO_EXTRA", note: "Legal recreational; no special research data restrictions." },
       minors: { label: "LIMITED_EXPORT", note: "CPA treats minors' data as sensitive; Student Data Transparency and Security Act adds protections." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "CPA classifies biometric data as sensitive PI; opt-in consent required for processing." },
     },
