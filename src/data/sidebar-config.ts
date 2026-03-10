@@ -11,6 +11,7 @@ import {
   Info,
   FileText,
   Scale,
+  Shield,
   Package,
   Globe,
   Database,
