@@ -8,8 +8,10 @@ import {
   type SynergyLink,
 } from "@/data/marr-synergies";
 import { cn } from "@/lib/utils";
-
-type FilterType = "all" | SynergyLink["synergyType"];
+import { SynergyTooltip } from "./synergy/SynergyTooltip";
+import { SynergyLegend } from "./synergy/SynergyLegend";
+import { SynergyFilters, type FilterType } from "./synergy/SynergyFilters";
+import { SynergyStats } from "./synergy/SynergyStats";
 
 interface TooltipData {
   x: number;
@@ -38,7 +40,6 @@ export function SynergyNetwork() {
     return ids;
   }, [filteredLinks]);
 
-  // Build neighbor set for hover highlighting
   const neighborsOf = useCallback(
     (nodeId: string) => {
       const s = new Set<string>();
@@ -67,14 +68,14 @@ export function SynergyNetwork() {
           (highlightSet && !highlightSet.has(n.id));
 
         const size =
-          n.grantType === "U01" ? 28 : n.grantType === "U24" || n.grantType === "R24" ? 24 : 20;
+          n.grantType === "U01" ? 30 : n.grantType === "U24" || n.grantType === "R24" ? 26 : 22;
 
         return {
           id: n.id,
           size,
-          color: dimmed ? `${n.color}33` : n.color,
+          color: dimmed ? `${n.color}22` : n.color,
           caption: n.shortName.split(" – ").pop() || n.shortName,
-          captionSize: 3,
+          captionSize: 3.5,
         };
       }),
     [filter, connectedIds, highlightSet]
@@ -89,16 +90,15 @@ export function SynergyNetwork() {
           id: `rel-${i}`,
           from: l.source,
           to: l.target,
-          color: dimmed ? `${color}22` : color,
-          width: dimmed ? 1 : 2,
-          caption: l.synergyType,
-          captionSize: 2.5,
+          color: dimmed ? `${color}15` : color,
+          width: dimmed ? 0.5 : 2.5,
+          caption: "",
+          captionSize: 0,
         };
       }),
     [filteredLinks, highlightSet]
   );
 
-  // Tooltip helpers
   const findNode = (id: string) => SYNERGY_NODES.find((n) => n.id === id);
   const findLink = (relId: string) => {
     const idx = parseInt(relId.replace("rel-", ""), 10);
@@ -138,43 +138,34 @@ export function SynergyNetwork() {
   const tooltipNode = tooltip?.nodeId ? findNode(tooltip.nodeId) : null;
   const tooltipLink = tooltip?.relId ? findLink(tooltip.relId) : null;
 
-  const filters: { key: FilterType; label: string; color?: string }[] = [
-    { key: "all", label: "All Synergies" },
-    { key: "algorithmic", label: "Algorithmic", color: SYNERGY_TYPE_COLORS.algorithmic },
-    { key: "hardware", label: "Hardware", color: SYNERGY_TYPE_COLORS.hardware },
-    { key: "data", label: "Data", color: SYNERGY_TYPE_COLORS.data },
-    { key: "theoretical", label: "Theoretical", color: SYNERGY_TYPE_COLORS.theoretical },
-    { key: "infrastructure", label: "Infrastructure", color: SYNERGY_TYPE_COLORS.infrastructure },
-  ];
-
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="relative w-full space-y-4">
+      {/* Stats bar */}
+      <SynergyStats
+        totalNodes={SYNERGY_NODES.length}
+        totalEdges={SYNERGY_LINKS.length}
+        filteredEdges={filteredLinks.length}
+        connectedNodes={connectedIds.size}
+        filter={filter}
+      />
+
       {/* Filters */}
-      <div className="flex flex-wrap justify-center gap-2 mb-4">
-        {filters.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5",
-              filter === f.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            )}
-          >
-            {f.color && (
-              <span
-                className="inline-block w-2.5 h-2.5 rounded-full"
-                style={{ background: f.color }}
-              />
-            )}
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <SynergyFilters filter={filter} onFilterChange={setFilter} />
 
       {/* Network */}
-      <div className="relative border border-border rounded-lg overflow-hidden bg-card" style={{ height: 600 }}>
+      <div
+        className="relative rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 shadow-lg"
+        style={{ height: 620 }}
+      >
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`,
+            backgroundSize: "24px 24px",
+          }}
+        />
+
         <InteractiveNvlWrapper
           nodes={nvlNodes}
           rels={nvlRels}
@@ -191,78 +182,16 @@ export function SynergyNetwork() {
         />
 
         {/* Tooltip */}
-        {tooltip && (tooltipNode || tooltipLink) && (
-          <div
-            className="fixed z-[9999] pointer-events-none bg-popover border border-border rounded-lg shadow-lg p-3 max-w-sm text-xs"
-            style={{
-              left: tooltip.x + 14,
-              top: tooltip.y - 20,
-            }}
-          >
-            {tooltipNode && (
-              <>
-                <div className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ background: tooltipNode.color }}
-                  />
-                  {tooltipNode.shortName}
-                </div>
-                <p className="text-muted-foreground">{tooltipNode.l1Goal}</p>
-                <div className="flex gap-2 mt-1.5 text-[10px]">
-                  <span className="px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium">
-                    {tooltipNode.grantType}
-                  </span>
-                  <span className="text-muted-foreground">{tooltipNode.species}</span>
-                </div>
-              </>
-            )}
-            {tooltipLink && (
-              <>
-                <div className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{
-                      background: SYNERGY_TYPE_COLORS[tooltipLink.synergyType],
-                    }}
-                  />
-                  {findNode(tooltipLink.source)?.shortName} → {findNode(tooltipLink.target)?.shortName}
-                </div>
-                <p className="text-muted-foreground leading-relaxed">{tooltipLink.description}</p>
-                <span
-                  className="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider"
-                  style={{
-                    background: SYNERGY_TYPE_COLORS[tooltipLink.synergyType] + "22",
-                    color: SYNERGY_TYPE_COLORS[tooltipLink.synergyType],
-                  }}
-                >
-                  {tooltipLink.synergyType}
-                </span>
-              </>
-            )}
-          </div>
-        )}
+        <SynergyTooltip
+          tooltip={tooltip}
+          tooltipNode={tooltipNode}
+          tooltipLink={tooltipLink}
+          findNode={findNode}
+        />
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-col sm:flex-row justify-center gap-4 text-xs text-muted-foreground flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-muted border border-border" />
-          <span><strong>R34</strong> Planning</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-muted border border-border border-dashed" />
-          <span><strong>R61</strong> Translational</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-muted border border-border" />
-          <span><strong>U01</strong> Cooperative</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-muted border border-border" />
-          <span><strong>U24/R24</strong> Infrastructure</span>
-        </div>
-      </div>
+      <SynergyLegend />
     </div>
   );
 }
