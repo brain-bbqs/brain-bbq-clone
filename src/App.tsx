@@ -33,7 +33,7 @@ import DataProvenanceDocs from "./pages/DataProvenanceDocs";
 import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
-
+import StatePrivacyMap from "./pages/StatePrivacyMap";
 
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
@@ -79,6 +79,7 @@ const App = () => (
               
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/calendar" element={<Calendar />} />
+              <Route path="/state-privacy" element={<StatePrivacyMap />} />
               {/* Redirects from old separate pages */}
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />

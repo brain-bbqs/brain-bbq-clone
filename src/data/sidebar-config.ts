@@ -11,6 +11,7 @@ import {
   Info,
   FileText,
   Scale,
+  Shield,
   Package,
   Globe,
   Database,
@@ -50,6 +51,7 @@ const assistantsItems: NavItem[] = [
 
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
+  { title: "State Privacy Map", url: "/state-privacy", icon: Shield },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
