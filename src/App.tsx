@@ -34,6 +34,7 @@ import SelfAutonomyDocs from "./pages/SelfAutonomyDocs";
 import FeatureSuggestions from "./pages/FeatureSuggestions";
 import DandiAssistant from "./pages/DandiAssistant";
 import StatePrivacyMap from "./pages/StatePrivacyMap";
+import FundingOpportunities from "./pages/FundingOpportunities";
 
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
