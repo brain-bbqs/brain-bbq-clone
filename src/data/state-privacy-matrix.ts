@@ -114,7 +114,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "MA Data Privacy Law (201 CMR 17.00) and AG regulations impose strict data security requirements." },
       reproductive: { label: "LIMITED_EXPORT", note: "Shield Act protects reproductive health data from out-of-state legal process." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Medical cannabis patient data protected under 935 CMR 501.130; registry data confidential." },
       minors: { label: "LIMITED_EXPORT", note: "Student privacy protected under MA Student Records Regulations (603 CMR 23.00)." },
       biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law (bills proposed but not enacted)." },
     },

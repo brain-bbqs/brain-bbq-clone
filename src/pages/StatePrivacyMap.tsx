@@ -85,7 +85,6 @@ export default function StatePrivacyMap() {
     brain_behavior: true,
     consumer_health: true,
     reproductive: false,
-    cannabis: false,
     minors: false,
     biometric_neuro: true,
   });
