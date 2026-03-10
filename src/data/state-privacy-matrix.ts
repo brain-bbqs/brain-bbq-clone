@@ -74,7 +74,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "NO_EXTRA", note: "Texas Data Privacy and Security Act (TDPSA) applies but aligns with HIPAA for health data." },
       reproductive: { label: "BLOCKED", note: "SB 8 and related laws restrict sharing of info that could facilitate prohibited procedures; data flagging reproductive health should not be shared." },
-      cannabis: { label: "NO_EXTRA", note: "Medical cannabis program is very limited; no special data rules beyond HIPAA." },
       minors: { label: "LIMITED_EXPORT", note: "TDPSA classifies minors' data as sensitive; consent required for processing." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "Texas Capture or Use of Biometric Identifier Act (Bus. & Com. Code §503.001) requires consent before capture." },
     },
