@@ -1,12 +1,11 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import {
-  SYNERGY_NODES,
-  SYNERGY_LINKS,
   SYNERGY_TYPE_COLORS,
   type SynergyNode,
   type SynergyLink,
 } from "@/data/marr-synergies";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { SynergyTooltip } from "./synergy/SynergyTooltip";
 import { SynergyLegend } from "./synergy/SynergyLegend";
 import { SynergyFilters, type FilterType } from "./synergy/SynergyFilters";
@@ -30,6 +29,7 @@ interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 }
 
 export function SynergyNetwork() {
+  const { synergyNodes, synergyLinks, loading } = useMarrYaml();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -37,8 +37,8 @@ export function SynergyNetwork() {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   const filteredLinks = useMemo(
-    () => SYNERGY_LINKS.filter((l) => filter === "all" || l.synergyType === filter),
-    [filter]
+    () => synergyLinks.filter((l) => filter === "all" || l.synergyType === filter),
+    [filter, synergyLinks]
   );
 
   const connectedIds = useMemo(() => {
@@ -70,7 +70,7 @@ export function SynergyNetwork() {
     [hoveredNodeId, neighborsOf]
   );
 
-  const findNode = (id: string) => SYNERGY_NODES.find((n) => n.id === id);
+  const findNode = (id: string) => synergyNodes.find((n) => n.id === id);
   const findLink = (relId: string) => {
     const idx = parseInt(relId.replace("rel-", ""), 10);
     return filteredLinks[idx];
@@ -81,7 +81,7 @@ export function SynergyNetwork() {
 
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg) return;
+    if (!svg || synergyNodes.length === 0) return;
 
     const width = 900;
     const height = 620;
@@ -89,7 +89,6 @@ export function SynergyNetwork() {
     const d3svg = d3.select(svg);
     d3svg.selectAll("*").remove();
 
-    // Create zoom container
     const g = d3svg.append("g");
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
@@ -100,8 +99,7 @@ export function SynergyNetwork() {
 
     d3svg.call(zoom);
 
-    // Build simulation data
-    const simNodes: SimNode[] = SYNERGY_NODES.map((n) => ({
+    const simNodes: SimNode[] = synergyNodes.map((n) => ({
       id: n.id,
       data: n,
     }));
@@ -112,9 +110,8 @@ export function SynergyNetwork() {
       source: nodeMap.get(l.source)!,
       target: nodeMap.get(l.target)!,
       data: l,
-    }));
+    })).filter(l => l.source && l.target);
 
-    // Force simulation
     const simulation = d3
       .forceSimulation(simNodes)
       .force(
@@ -127,7 +124,6 @@ export function SynergyNetwork() {
       .force("x", d3.forceX(width / 2).strength(0.08))
       .force("y", d3.forceY(height / 2).strength(0.08));
 
-    // Draw links
     const link = g
       .append("g")
       .selectAll("line")
@@ -137,7 +133,6 @@ export function SynergyNetwork() {
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", 3);
 
-    // Draw nodes
     const node = g
       .append("g")
       .selectAll<SVGCircleElement, SimNode>("circle")
@@ -152,7 +147,6 @@ export function SynergyNetwork() {
       .attr("cursor", "grab")
       .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.3))");
 
-    // Labels
     const label = g
       .append("g")
       .selectAll("text")
@@ -168,7 +162,6 @@ export function SynergyNetwork() {
       })
       .attr("pointer-events", "none");
 
-    // Drag behavior
     const drag = d3.drag<SVGCircleElement, SimNode>()
       .on("start", (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -187,7 +180,6 @@ export function SynergyNetwork() {
 
     node.call(drag);
 
-    // Hover events
     node
       .on("mouseenter", (event, d) => {
         setHoveredNodeId(d.id);
@@ -214,7 +206,6 @@ export function SynergyNetwork() {
         setTooltip(null);
       });
 
-    // Tick
     simulation.on("tick", () => {
       link
         .attr("x1", (d) => (d.source as SimNode).x!)
@@ -230,9 +221,8 @@ export function SynergyNetwork() {
     return () => {
       simulation.stop();
     };
-  }, [filteredLinks]);
+  }, [filteredLinks, synergyNodes]);
 
-  // Update visual opacity on hover without re-running simulation
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -261,21 +251,22 @@ export function SynergyNetwork() {
     });
   }, [highlightSet, filter, connectedIds]);
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading synergy data...</div>;
+  }
+
   return (
     <div ref={containerRef} className="relative w-full space-y-4">
-      {/* Stats bar */}
       <SynergyStats
-        totalNodes={SYNERGY_NODES.length}
-        totalEdges={SYNERGY_LINKS.length}
+        totalNodes={synergyNodes.length}
+        totalEdges={synergyLinks.length}
         filteredEdges={filteredLinks.length}
         connectedNodes={connectedIds.size}
         filter={filter}
       />
 
-      {/* Filters */}
       <SynergyFilters filter={filter} onFilterChange={setFilter} />
 
-      {/* Network */}
       <div
         className="rounded-xl overflow-hidden border border-border shadow-lg bg-[#0f172a]"
         style={{ height: 620, width: "100%", position: "relative" }}
@@ -288,7 +279,6 @@ export function SynergyNetwork() {
           style={{ display: "block" }}
         />
 
-        {/* Tooltip */}
         <SynergyTooltip
           tooltip={tooltip}
           tooltipNode={tooltipNode}
@@ -297,7 +287,6 @@ export function SynergyNetwork() {
         />
       </div>
 
-      {/* Legend */}
       <SynergyLegend />
     </div>
   );

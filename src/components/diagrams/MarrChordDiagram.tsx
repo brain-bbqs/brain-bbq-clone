@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
-import { MARR_PROJECTS, buildConnectionMatrix, type MarrProject } from "@/data/marr-projects";
+import { buildConnectionMatrix, type MarrProject } from "@/data/marr-projects";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { cn } from "@/lib/utils";
 
 type MarrLevel = "computational" | "algorithmic" | "implementation" | "all";
@@ -14,6 +15,7 @@ interface TooltipData {
 }
 
 export function MarrChordDiagram() {
+  const { projects, loading } = useMarrYaml();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [level, setLevel] = useState<MarrLevel>("all");
@@ -35,7 +37,7 @@ export function MarrChordDiagram() {
   }, []);
 
   const drawChord = useCallback(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current || projects.length === 0) return;
 
     const { width, height } = dimensions;
     const padding = 120;
@@ -47,12 +49,10 @@ export function MarrChordDiagram() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const matrix = buildConnectionMatrix(MARR_PROJECTS, level);
+    const matrix = buildConnectionMatrix(projects, level);
 
-    // d3 chord needs non-zero diagonal or at least some values
-    // Add small self-connections so all arcs appear
     const augmented = matrix.map((row, i) =>
-      row.map((val, j) => (i === j ? MARR_PROJECTS[i][level === "all" ? "algorithmic" : level].length * 0.5 : val))
+      row.map((val, j) => (i === j ? projects[i][level === "all" ? "algorithmic" : level].length * 0.5 : val))
     );
 
     const chord = d3.chord().padAngle(0.06).sortSubgroups(d3.descending);
@@ -70,7 +70,6 @@ export function MarrChordDiagram() {
       .append("g")
       .attr("transform", `translate(${svgWidth / 2},${svgHeight / 2})`);
 
-    // Draw arcs (project segments)
     const group = g
       .append("g")
       .selectAll("g")
@@ -80,7 +79,7 @@ export function MarrChordDiagram() {
     group
       .append("path")
       .attr("d", arc as any)
-      .attr("fill", (d) => MARR_PROJECTS[d.index].color)
+      .attr("fill", (d) => projects[d.index].color)
       .attr("stroke", "hsl(var(--border))")
       .attr("stroke-width", 0.5)
       .style("cursor", "pointer")
@@ -90,7 +89,6 @@ export function MarrChordDiagram() {
       .on("mouseenter", (_, d) => setHoveredIndex(d.index))
       .on("mouseleave", () => setHoveredIndex(null));
 
-    // Labels
     group
       .append("text")
       .each((d: any) => {
@@ -109,16 +107,15 @@ export function MarrChordDiagram() {
       .style("opacity", (d) =>
         hoveredIndex === null ? 1 : d.index === hoveredIndex ? 1 : 0.15
       )
-      .text((d) => MARR_PROJECTS[d.index].shortName);
+      .text((d) => projects[d.index].shortName);
 
-    // Draw ribbons (connections)
     g.append("g")
       .attr("fill-opacity", 0.4)
       .selectAll("path")
       .data(chords.filter(d => d.source.index !== d.target.index))
       .join("path")
       .attr("d", ribbon as any)
-      .attr("fill", (d) => MARR_PROJECTS[d.source.index].color)
+      .attr("fill", (d) => projects[d.source.index].color)
       .attr("stroke", "none")
       .style("cursor", "pointer")
       .style("mix-blend-mode", "normal")
@@ -127,8 +124,8 @@ export function MarrChordDiagram() {
         return d.source.index === hoveredIndex || d.target.index === hoveredIndex ? 0.85 : 0.03;
       })
       .on("mouseenter", function (event, d) {
-        const src = MARR_PROJECTS[d.source.index];
-        const tgt = MARR_PROJECTS[d.target.index];
+        const src = projects[d.source.index];
+        const tgt = projects[d.target.index];
         const shared = getSharedFeatures(src, tgt);
         const rect = svgRef.current!.getBoundingClientRect();
         setTooltip({
@@ -144,15 +141,18 @@ export function MarrChordDiagram() {
         setTooltip(null);
         d3.select(this).style("opacity", hoveredIndex === null ? 0.25 : 0.03).attr("stroke", "none");
       });
-  }, [level, hoveredIndex, dimensions]);
+  }, [projects, level, hoveredIndex, dimensions]);
 
   useEffect(() => {
     drawChord();
   }, [drawChord]);
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading...</div>;
+  }
+
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Level selector */}
       <div className="flex flex-wrap justify-center gap-2 mb-4">
         {(["all", "computational", "algorithmic", "implementation"] as MarrLevel[]).map((l) => (
           <button
@@ -170,11 +170,9 @@ export function MarrChordDiagram() {
         ))}
       </div>
 
-      {/* Chord diagram */}
       <div className="relative">
         <svg ref={svgRef} className="w-full" style={{ maxHeight: "800px" }} />
 
-        {/* Tooltip */}
         {tooltip && (
           <div
             className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-lg p-3 max-w-xs text-xs"
@@ -207,7 +205,6 @@ export function MarrChordDiagram() {
         )}
       </div>
 
-      {/* Legend for Marr levels */}
       <div className="mt-4 flex flex-col sm:flex-row justify-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-blue-400" />

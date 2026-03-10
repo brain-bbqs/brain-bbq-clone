@@ -4,7 +4,8 @@ import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
-import { MARR_PROJECTS, type MarrProject } from "@/data/marr-projects";
+import { type MarrProject } from "@/data/marr-projects";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { Badge } from "@/components/ui/badge";
 import { Code, List, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ const FeatureBadges = ({ value }: { value: string[] }) => {
 const SpeciesBadge = ({ value, data }: { value: string; data: MarrProject }) => (
   <div className="flex items-center gap-2">
     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
-    <span>{value}</span>
+    <span className="text-sm">{value}</span>
   </div>
 );
 
@@ -39,94 +40,77 @@ function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; 
   const [view, setView] = useState<"list" | "json">("list");
   const [copied, setCopied] = useState(false);
 
-  const jsonData = useMemo(() => JSON.stringify({
-    id: project.id,
-    shortName: project.shortName,
-    pi: project.pi,
-    species: project.species,
-    computational: project.computational,
-    algorithmic: project.algorithmic,
-    implementation: project.implementation,
-  }, null, 2), [project]);
+  const jsonData = useMemo(() => JSON.stringify(project, null, 2), [project]);
 
-  const handleCopy = () => {
+  const copyJson = useCallback(() => {
     navigator.clipboard.writeText(jsonData);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [jsonData]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between pr-6">
-            <span>{project.shortName}</span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setView("list")}
-                className={cn(
-                  "p-1.5 rounded text-xs transition-colors",
-                  view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                )}
-                title="List view"
-              >
-                <List className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setView("json")}
-                className={cn(
-                  "p-1.5 rounded text-xs transition-colors",
-                  view === "json" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                )}
-                title="JSON view"
-              >
-                <Code className="h-3.5 w-3.5" />
-              </button>
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full" style={{ background: project.color }} />
+            {project.shortName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="text-xs text-muted-foreground mb-3">
-          Grant: <span className="font-mono text-foreground/70">{project.id}</span> · PI: {project.pi} · Species: {project.species}
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors",
+              view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+            )}
+          >
+            <List className="h-3.5 w-3.5" /> Fields
+          </button>
+          <button
+            onClick={() => setView("json")}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors",
+              view === "json" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+            )}
+          >
+            <Code className="h-3.5 w-3.5" /> JSON
+          </button>
         </div>
 
         {view === "list" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#64b5f6" }}>Goals</div>
-              <ul className="space-y-1">
-                {project.computational.map((f) => (
-                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#81c784" }}>Methods</div>
-              <ul className="space-y-1">
-                {project.algorithmic.map((f) => (
-                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-wider font-medium mb-1.5" style={{ color: "#a78bfa" }}>Resources</div>
-              <ul className="space-y-1">
-                {project.implementation.map((f) => (
-                  <li key={f} className="text-foreground/80 text-sm">• {f}</li>
-                ))}
-              </ul>
-            </div>
+          <div className="space-y-3 text-sm">
+            {Object.entries(project).map(([key, val]) => (
+              <div key={key} className="border-b border-border pb-2">
+                <span className="text-xs font-mono text-muted-foreground">{key}</span>
+                <div className="mt-0.5 text-foreground">
+                  {Array.isArray(val) ? (
+                    <div className="flex flex-wrap gap-1">
+                      {val.map((v, i) => (
+                        <Badge key={i} variant="outline" className="text-[10px]">
+                          {String(v)}
+                        </Badge>
+                      ))}
+                      {val.length === 0 && <span className="text-muted-foreground">—</span>}
+                    </div>
+                  ) : (
+                    <span>{String(val)}</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="relative">
             <button
-              onClick={handleCopy}
-              className="absolute top-2 right-2 p-1.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
-              title="Copy JSON"
+              onClick={copyJson}
+              className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded bg-secondary text-secondary-foreground text-xs"
             >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? "Copied" : "Copy"}
             </button>
-            <pre className="bg-muted border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre">
+            <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto font-mono text-foreground">
               {jsonData}
             </pre>
           </div>
@@ -137,6 +121,7 @@ function ProjectDetailModal({ project, open, onClose }: { project: MarrProject; 
 }
 
 export function ProjectIndexGrid() {
+  const { projects, loading } = useMarrYaml();
   const [selectedProject, setSelectedProject] = useState<MarrProject | null>(null);
 
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -197,6 +182,10 @@ export function ProjectIndexGrid() {
     },
   ], []);
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading projects from YAML...</div>;
+  }
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <div className="p-4 border-b border-border flex items-center justify-between">
@@ -205,10 +194,10 @@ export function ProjectIndexGrid() {
       </div>
       <div
         className="ag-theme-alpine"
-        style={{ height: Math.min(700, MARR_PROJECTS.length * 48 + 56) }}
+        style={{ height: Math.min(700, projects.length * 48 + 56) }}
       >
         <AgGridReact
-          rowData={MARR_PROJECTS}
+          rowData={projects}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           animateRows={true}
