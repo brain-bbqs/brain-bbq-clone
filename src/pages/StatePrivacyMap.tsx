@@ -384,8 +384,8 @@ export default function StatePrivacyMap() {
               )}
             </div>
             <div
-              className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden"
-              style={{ height: Math.min(600, gridRows.length * 56 + 56) }}
+              className="ag-theme-alpine rounded-lg overflow-hidden"
+              style={{ height: Math.min(600, gridRows.length * 42 + 48) }}
             >
               <AgGridReact<GridRow>
                 rowData={gridRows}
