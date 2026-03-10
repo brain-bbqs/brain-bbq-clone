@@ -8,7 +8,7 @@ import { Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
-import PageMeta from "@/components/PageMeta";
+import { PageMeta } from "@/components/PageMeta";
 
 interface FundingOpportunity {
   id: string;
