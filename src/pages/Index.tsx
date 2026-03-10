@@ -62,6 +62,7 @@ const navCards: NavCard[] = [
     color: "hsl(140 60% 45%)",
     links: [
       { label: "Projects", to: "/projects" },
+      { label: "Grants", to: "/grants" },
       { label: "Species", to: "/species" },
       { label: "Publications", to: "/publications" },
       { label: "Data Provenance", to: "/data-provenance" },
