@@ -1,13 +1,12 @@
-import { useState, useMemo, useCallback, useRef } from "react";
-import { InteractiveNvlWrapper } from "@neo4j-nvl/react";
-import type { Node, Relationship } from "@neo4j-nvl/base";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import * as d3 from "d3";
 import {
   SYNERGY_NODES,
   SYNERGY_LINKS,
   SYNERGY_TYPE_COLORS,
+  type SynergyNode,
   type SynergyLink,
 } from "@/data/marr-synergies";
-import { cn } from "@/lib/utils";
 import { SynergyTooltip } from "./synergy/SynergyTooltip";
 import { SynergyLegend } from "./synergy/SynergyLegend";
 import { SynergyFilters, type FilterType } from "./synergy/SynergyFilters";
@@ -20,7 +19,18 @@ interface TooltipData {
   relId?: string;
 }
 
+interface SimNode extends d3.SimulationNodeDatum {
+  id: string;
+  data: SynergyNode;
+}
+
+interface SimLink extends d3.SimulationLinkDatum<SimNode> {
+  data: SynergyLink;
+  index?: number;
+}
+
 export function SynergyNetwork() {
+  const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -60,83 +70,194 @@ export function SynergyNetwork() {
     [hoveredNodeId, neighborsOf]
   );
 
-  const nvlNodes: Node[] = useMemo(
-    () =>
-      SYNERGY_NODES.map((n) => {
-        const dimmed =
-          (filter !== "all" && !connectedIds.has(n.id)) ||
-          (highlightSet && !highlightSet.has(n.id));
-
-        const size =
-          n.grantType === "U01" ? 30 : n.grantType === "U24" || n.grantType === "R24" ? 26 : 22;
-
-        return {
-          id: n.id,
-          size,
-          color: dimmed ? `${n.color}22` : n.color,
-          caption: n.shortName.split(" – ").pop() || n.shortName,
-          captionSize: 3.5,
-        };
-      }),
-    [filter, connectedIds, highlightSet]
-  );
-
-  const nvlRels: Relationship[] = useMemo(
-    () =>
-      filteredLinks.map((l, i) => {
-        const dimmed = highlightSet && !(highlightSet.has(l.source) && highlightSet.has(l.target));
-        const color = SYNERGY_TYPE_COLORS[l.synergyType];
-        return {
-          id: `rel-${i}`,
-          from: l.source,
-          to: l.target,
-          color: dimmed ? `${color}15` : color,
-          width: dimmed ? 0.5 : 2.5,
-          caption: "",
-          captionSize: 0,
-        };
-      }),
-    [filteredLinks, highlightSet]
-  );
-
   const findNode = (id: string) => SYNERGY_NODES.find((n) => n.id === id);
   const findLink = (relId: string) => {
     const idx = parseInt(relId.replace("rel-", ""), 10);
     return filteredLinks[idx];
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mouseCallbacks: any = useMemo(
-    () => ({
-      onHover: (element: any, hitTargets: any, evt: globalThis.MouseEvent) => {
-        if (hitTargets?.nodes?.length > 0) {
-          const node = hitTargets.nodes[0];
-          const nodeId = node.id ?? node.getId?.();
-          if (nodeId) {
-            setHoveredNodeId(nodeId);
-            setTooltip({ x: evt.clientX, y: evt.clientY, nodeId });
-          }
-        } else if (hitTargets?.relationships?.length > 0) {
-          const rel = hitTargets.relationships[0];
-          const relId = rel.id ?? rel.getId?.();
-          if (relId) {
-            setTooltip({ x: evt.clientX, y: evt.clientY, relId });
-          }
-          setHoveredNodeId(null);
-        } else {
-          setHoveredNodeId(null);
-          setTooltip(null);
-        }
-      },
-      onZoom: true,
-      onPan: true,
-      onDrag: true,
-    }),
-    []
-  );
-
   const tooltipNode = tooltip?.nodeId ? findNode(tooltip.nodeId) : null;
   const tooltipLink = tooltip?.relId ? findLink(tooltip.relId) : null;
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const width = 900;
+    const height = 620;
+
+    const d3svg = d3.select(svg);
+    d3svg.selectAll("*").remove();
+
+    // Create zoom container
+    const g = d3svg.append("g");
+
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.3, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+
+    d3svg.call(zoom);
+
+    // Build simulation data
+    const simNodes: SimNode[] = SYNERGY_NODES.map((n) => ({
+      id: n.id,
+      data: n,
+    }));
+
+    const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
+
+    const simLinks: SimLink[] = filteredLinks.map((l) => ({
+      source: nodeMap.get(l.source)!,
+      target: nodeMap.get(l.target)!,
+      data: l,
+    }));
+
+    // Force simulation
+    const simulation = d3
+      .forceSimulation(simNodes)
+      .force(
+        "link",
+        d3.forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(120)
+      )
+      .force("charge", d3.forceManyBody().strength(-300))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(30));
+
+    // Draw links
+    const link = g
+      .append("g")
+      .selectAll("line")
+      .data(simLinks)
+      .join("line")
+      .attr("stroke", (d) => SYNERGY_TYPE_COLORS[d.data.synergyType])
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", 2);
+
+    // Draw nodes
+    const node = g
+      .append("g")
+      .selectAll<SVGCircleElement, SimNode>("circle")
+      .data(simNodes)
+      .join("circle")
+      .attr("r", (d) =>
+        d.data.grantType === "U01" ? 16 : d.data.grantType === "U24" || d.data.grantType === "R24" ? 14 : 10
+      )
+      .attr("fill", (d) => d.data.color)
+      .attr("stroke", "#1e293b")
+      .attr("stroke-width", 1.5)
+      .attr("cursor", "grab")
+      .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.3))");
+
+    // Labels
+    const label = g
+      .append("g")
+      .selectAll("text")
+      .data(simNodes)
+      .join("text")
+      .text((d) => d.data.shortName.split(" – ").pop() || d.data.shortName)
+      .attr("font-size", 9)
+      .attr("fill", "#cbd5e1")
+      .attr("text-anchor", "middle")
+      .attr("dy", (d) => {
+        const r = d.data.grantType === "U01" ? 16 : d.data.grantType === "U24" || d.data.grantType === "R24" ? 14 : 10;
+        return r + 14;
+      })
+      .attr("pointer-events", "none");
+
+    // Drag behavior
+    const drag = d3.drag<SVGCircleElement, SimNode>()
+      .on("start", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      });
+
+    node.call(drag);
+
+    // Hover events
+    node
+      .on("mouseenter", (event, d) => {
+        setHoveredNodeId(d.id);
+        setTooltip({ x: event.clientX, y: event.clientY, nodeId: d.id });
+      })
+      .on("mousemove", (event, d) => {
+        setTooltip({ x: event.clientX, y: event.clientY, nodeId: d.id });
+      })
+      .on("mouseleave", () => {
+        setHoveredNodeId(null);
+        setTooltip(null);
+      });
+
+    link
+      .on("mouseenter", (event, d) => {
+        const idx = simLinks.indexOf(d);
+        setTooltip({ x: event.clientX, y: event.clientY, relId: `rel-${idx}` });
+      })
+      .on("mousemove", (event, d) => {
+        const idx = simLinks.indexOf(d);
+        setTooltip({ x: event.clientX, y: event.clientY, relId: `rel-${idx}` });
+      })
+      .on("mouseleave", () => {
+        setTooltip(null);
+      });
+
+    // Tick
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d) => (d.source as SimNode).x!)
+        .attr("y1", (d) => (d.source as SimNode).y!)
+        .attr("x2", (d) => (d.target as SimNode).x!)
+        .attr("y2", (d) => (d.target as SimNode).y!);
+
+      node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
+
+      label.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
+    });
+
+    return () => {
+      simulation.stop();
+    };
+  }, [filteredLinks]);
+
+  // Update visual opacity on hover without re-running simulation
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const d3svg = d3.select(svg);
+
+    d3svg.selectAll<SVGCircleElement, SimNode>("circle").attr("opacity", (d) => {
+      if (filter !== "all" && !connectedIds.has(d.id)) return 0.15;
+      if (highlightSet && !highlightSet.has(d.id)) return 0.15;
+      return 1;
+    });
+
+    d3svg.selectAll<SVGLineElement, SimLink>("line").attr("stroke-opacity", (d) => {
+      if (highlightSet) {
+        const src = typeof d.source === "object" ? (d.source as SimNode).id : d.source;
+        const tgt = typeof d.target === "object" ? (d.target as SimNode).id : d.target;
+        if (!(highlightSet.has(src as string) && highlightSet.has(tgt as string))) return 0.05;
+      }
+      return 0.6;
+    });
+
+    d3svg.selectAll<SVGTextElement, SimNode>("text").attr("opacity", (d) => {
+      if (filter !== "all" && !connectedIds.has(d.id)) return 0.15;
+      if (highlightSet && !highlightSet.has(d.id)) return 0.15;
+      return 1;
+    });
+  }, [highlightSet, filter, connectedIds]);
 
   return (
     <div ref={containerRef} className="relative w-full space-y-4">
@@ -154,25 +275,16 @@ export function SynergyNetwork() {
 
       {/* Network */}
       <div
-        className="rounded-xl overflow-hidden border border-border shadow-lg"
+        className="rounded-xl overflow-hidden border border-border shadow-lg bg-[#0f172a]"
         style={{ height: 620, width: "100%", position: "relative" }}
       >
-        <div style={{ width: "100%", height: "100%" }}>
-          <InteractiveNvlWrapper
-            nodes={nvlNodes}
-            rels={nvlRels}
-            mouseEventCallbacks={mouseCallbacks}
-            nvlOptions={{
-              initialZoom: 1,
-              layout: "forceDirected",
-              renderer: "canvas",
-              styling: {
-                defaultNodeColor: "#94a3b8",
-                defaultRelationshipColor: "#475569",
-              },
-            }}
-          />
-        </div>
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          viewBox="0 0 900 620"
+          style={{ display: "block" }}
+        />
 
         {/* Tooltip */}
         <SynergyTooltip
