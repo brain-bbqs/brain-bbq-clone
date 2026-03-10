@@ -54,7 +54,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "LIMITED_EXPORT", note: "CCPA/CPRA treat inferences derived from biometric/behavioral data as sensitive PI; opt-out and data minimization required. Cal. Civ. Code §1798.140(ae)." },
       consumer_health: { label: "LIMITED_EXPORT", note: "CMIA (Cal. Civ. Code §56 et seq.) imposes stricter consent for medical information disclosure than HIPAA." },
       reproductive: { label: "FEDERATED_ONLY", note: "AB 352 (2024) prohibits disclosure of reproductive/sexual health info to out-of-state entities without explicit consent." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Medical cannabis patient data protected under Health & Safety Code §11362.795; disclosure requires court order." },
       minors: { label: "LIMITED_EXPORT", note: "COPPA plus CA Age-Appropriate Design Code (AB 2273) impose data minimization for minors' data." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "CCPA classifies biometric information and neural data as sensitive PI; SB 1223 (2024) adds neurorights protections." },
     },
