@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
 import { PageMeta } from "@/components/PageMeta";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +21,7 @@ import {
   type RiskLabel,
   type StateRiskRow,
 } from "@/data/state-privacy-matrix";
-import { Shield, MapPin, AlertTriangle, CheckCircle, Loader2, Sparkles, ExternalLink } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, Loader2, Sparkles, ExternalLink } from "lucide-react";
 
 function RuleBadge({ label }: { label: RiskLabel }) {
   const meta = RISK_LABEL_META[label];
@@ -33,103 +35,50 @@ function RuleBadge({ label }: { label: RiskLabel }) {
   );
 }
 
-interface DetailProps {
-  row: StateRiskRow;
-  flags: BBQSFlags;
-  sources?: { url: string; title: string }[];
-  isScanning: boolean;
-  onScan: () => void;
-  scanStatus?: string;
+// Flatten matrix rows into AG Grid rows
+interface GridRow {
+  state: string;
+  stateName: string;
+  last_reviewed: string;
+  category: string;
+  categoryKey: BBQSCategory;
+  label: RiskLabel;
+  note: string;
+  statute: string;
+  conflict: string;
+  effectiveLabel: RiskLabel;
+  sources: { url: string; title: string }[];
 }
 
-function StateDetailPanel({ row, flags, sources, isScanning, onScan, scanStatus }: DetailProps) {
-  const activeCategories = (Object.entries(flags) as [BBQSCategory, boolean][]).filter(([, v]) => v);
-  const labels = activeCategories.map(([k]) => row.categories[k].label);
-  const effective = mostRestrictive(labels);
-
+function RuleBadgeRenderer({ value }: { value: RiskLabel }) {
+  if (!value) return null;
+  const meta = RISK_LABEL_META[value];
+  if (!meta) return <span>{value}</span>;
   return (
-    <div className="space-y-5">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <MapPin className="h-4 w-4 text-primary" />
-          <h2 className="text-xl font-bold text-foreground">{row.stateName}</h2>
-          <span className="text-xs text-muted-foreground">({row.state})</span>
-        </div>
-        <p className="text-xs text-muted-foreground">Last reviewed: {row.last_reviewed}</p>
-      </div>
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
+      style={{ backgroundColor: meta.color, color: meta.score >= 2 ? "#fff" : "#1a1a1a" }}
+    >
+      {meta.text}
+    </span>
+  );
+}
 
-      {/* Analyze button */}
-      <Button
-        onClick={onScan}
-        disabled={isScanning}
-        variant="outline"
-        size="sm"
-        className="w-full gap-2"
+function EffectiveBadgeRenderer({ value, data }: { value: RiskLabel; data: GridRow }) {
+  if (!value) return null;
+  const meta = RISK_LABEL_META[value];
+  if (!meta) return <span>{value}</span>;
+  const Icon = value === "NO_EXTRA" ? CheckCircle : AlertTriangle;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
+        style={{ backgroundColor: meta.color, color: meta.score >= 2 ? "#fff" : "#1a1a1a" }}
       >
-        {isScanning ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Scanning law trackers…
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-3.5 w-3.5" />
-            {scanStatus === "completed" ? "Re-analyze" : "Analyze"} {row.stateName} Laws
-          </>
-        )}
-      </Button>
-
-      <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-        <div className="text-xs text-muted-foreground mb-1 font-medium">Effective sharing rule for your dataset</div>
-        <div className="flex items-center gap-2">
-          {effective === "NO_EXTRA" ? (
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          ) : (
-            <AlertTriangle className="h-4 w-4" style={{ color: RISK_LABEL_META[effective].color }} />
-          )}
-          <RuleBadge label={effective} />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Category Details</h3>
-        <div className="space-y-3">
-          {activeCategories.map(([key]) => {
-            const cat = row.categories[key];
-            return (
-              <div key={key} className="border border-border rounded-lg p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">{CATEGORY_LABELS[key]}</span>
-                  <RuleBadge label={cat.label} />
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{cat.note}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Sources */}
-      {sources && sources.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Sources</h3>
-          <div className="space-y-1">
-            {sources.map((s, i) => (
-              <a
-                key={i}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-              >
-                <ExternalLink className="h-3 w-3 shrink-0" />
-                <span className="truncate">{s.title}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+        {meta.text}
+      </span>
+    </span>
   );
 }
 
@@ -148,7 +97,6 @@ export default function StatePrivacyMap() {
     biometric_neuro: true,
   });
 
-  // Fetch DB rows
   const { data: dbRows } = useQuery({
     queryKey: ["state-privacy-rules"],
     queryFn: async () => {
@@ -160,14 +108,13 @@ export default function StatePrivacyMap() {
         state: string;
         state_name: string;
         last_reviewed: string;
-        categories: Record<string, { label: RiskLabel; note: string }>;
+        categories: Record<string, { label: RiskLabel; note: string; statute?: string; conflict?: string }>;
         sources: { url: string; title: string }[];
         scan_status: string;
       }[];
     },
   });
 
-  // Merge DB rows over fallback
   const matrix = useMemo(() => {
     if (!dbRows?.length) return fallbackMatrix;
     const dbMap = new Map(dbRows.map((r) => [r.state, r]));
@@ -184,34 +131,128 @@ export default function StatePrivacyMap() {
     });
   }, [fallbackMatrix, dbRows]);
 
-  const selectedRow = selectedState ? matrix.find((r) => r.state === selectedState) : null;
-  const selectedDbRow = selectedState ? dbRows?.find((r) => r.state === selectedState) : null;
+  // Build AG Grid rows from selected state or all states
+  const gridRows = useMemo(() => {
+    const stateRows = selectedState
+      ? matrix.filter((r) => r.state === selectedState)
+      : matrix;
+
+    const rows: GridRow[] = [];
+    const activeFlags = (Object.entries(flags) as [BBQSCategory, boolean][]).filter(([, v]) => v);
+
+    for (const row of stateRows) {
+      const dbRow = dbRows?.find((r) => r.state === row.state);
+      const labels = activeFlags.map(([k]) => row.categories[k].label);
+      const effective = mostRestrictive(labels);
+
+      for (const [key] of activeFlags) {
+        const cat = row.categories[key];
+        rows.push({
+          state: row.state,
+          stateName: row.stateName,
+          last_reviewed: row.last_reviewed,
+          category: CATEGORY_LABELS[key],
+          categoryKey: key,
+          label: cat.label,
+          note: cat.note,
+          statute: cat.statute || "",
+          conflict: cat.conflict || "",
+          effectiveLabel: effective,
+          sources: dbRow?.sources || [],
+        });
+      }
+    }
+    return rows;
+  }, [matrix, selectedState, flags, dbRows]);
+
+  const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
+    {
+      field: "stateName",
+      headerName: "State",
+      width: 140,
+      flex: 0,
+      pinned: "left",
+      sort: "asc",
+    },
+    {
+      field: "category",
+      headerName: "Data Category",
+      width: 200,
+      flex: 0,
+    },
+    {
+      field: "label",
+      headerName: "Risk Level",
+      width: 160,
+      flex: 0,
+      cellRenderer: RuleBadgeRenderer,
+      comparator: (a: RiskLabel, b: RiskLabel) =>
+        (RISK_LABEL_META[a]?.score ?? 0) - (RISK_LABEL_META[b]?.score ?? 0),
+    },
+    {
+      field: "statute",
+      headerName: "Statute / Section",
+      minWidth: 200,
+      flex: 1,
+      cellRenderer: ({ value }: { value: string }) => {
+        if (!value) return <span className="text-muted-foreground">—</span>;
+        return <span className="font-mono text-xs">{value}</span>;
+      },
+    },
+    {
+      field: "conflict",
+      headerName: "BBQS Conflict",
+      minWidth: 250,
+      flex: 1.5,
+      cellRenderer: ({ value }: { value: string }) => {
+        if (!value) return <span className="text-muted-foreground">—</span>;
+        return <span className="text-xs">{value}</span>;
+      },
+    },
+    {
+      field: "note",
+      headerName: "Legal Note",
+      minWidth: 300,
+      flex: 2,
+    },
+    {
+      field: "last_reviewed",
+      headerName: "Reviewed",
+      width: 110,
+      flex: 0,
+    },
+  ], []);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+    wrapText: true,
+    autoHeight: true,
+    cellStyle: { lineHeight: "1.5", padding: "6px" },
+    unSortIcon: true,
+  }), []);
 
   const toggleFlag = (key: BBQSCategory) => {
     setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleScan = useCallback(async () => {
-    if (!selectedRow) return;
+    const row = selectedState ? matrix.find((r) => r.state === selectedState) : null;
+    if (!row) return;
     setIsScanning(true);
 
     try {
       const { data, error } = await supabase.functions.invoke("state-privacy-scan", {
-        body: { state: selectedRow.state, stateName: selectedRow.stateName },
+        body: { state: row.state, stateName: row.stateName },
       });
-
       if (error) throw error;
-
       if (data?.error) {
-        toast({
-          title: "Scan failed",
-          description: data.error,
-          variant: "destructive",
-        });
+        toast({ title: "Scan failed", description: data.error, variant: "destructive" });
       } else {
         toast({
           title: "Scan complete",
-          description: `${selectedRow.stateName} privacy rules updated from IAPP/NCSL trackers.`,
+          description: `${row.stateName} privacy rules updated from IAPP/NCSL trackers.`,
         });
         queryClient.invalidateQueries({ queryKey: ["state-privacy-rules"] });
       }
@@ -225,7 +266,10 @@ export default function StatePrivacyMap() {
     } finally {
       setIsScanning(false);
     }
-  }, [selectedRow, toast, queryClient]);
+  }, [selectedState, matrix, toast, queryClient]);
+
+  const selectedRow = selectedState ? matrix.find((r) => r.state === selectedState) : null;
+  const selectedDbRow = selectedState ? dbRows?.find((r) => r.state === selectedState) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -239,7 +283,7 @@ export default function StatePrivacyMap() {
             <Shield className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">State Privacy Map</h1>
           </div>
-          <p className="text-muted-foreground max-w-2xl">
+          <p className="text-muted-foreground max-w-3xl">
             Jurisdictional risk matrix showing how state-level privacy laws affect BBQS neurodata sharing.
             Toggle your dataset's data types below, then click a state and hit <strong>Analyze</strong> to scan IAPP & NCSL law trackers.
           </p>
@@ -248,62 +292,113 @@ export default function StatePrivacyMap() {
         {/* Data type flag toggles */}
         <Card className="mb-6 border-border">
           <CardContent className="p-4">
-            <div className="text-sm font-semibold text-foreground mb-3">Dataset Data Types</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {(Object.entries(CATEGORY_LABELS) as [BBQSCategory, string][]).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <Switch
-                    id={`flag-${key}`}
-                    checked={flags[key]}
-                    onCheckedChange={() => toggleFlag(key)}
-                  />
-                  <Label htmlFor={`flag-${key}`} className="text-xs cursor-pointer">
-                    {label}
-                  </Label>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-foreground mb-3">Dataset Data Types</div>
+                <div className="flex flex-wrap gap-4">
+                  {(Object.entries(CATEGORY_LABELS) as [BBQSCategory, string][]).map(([key, label]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <Switch
+                        id={`flag-${key}`}
+                        checked={flags[key]}
+                        onCheckedChange={() => toggleFlag(key)}
+                      />
+                      <Label htmlFor={`flag-${key}`} className="text-xs cursor-pointer">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              {selectedState && selectedRow && (
+                <Button
+                  onClick={handleScan}
+                  disabled={isScanning}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 shrink-0"
+                >
+                  {isScanning ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Scanning…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {selectedDbRow?.scan_status === "completed" ? "Re-analyze" : "Analyze"} {selectedRow.stateName}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Map + Detail layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="border-border">
-              <CardContent className="p-4">
-                <USStateMap
-                  matrix={matrix}
-                  flags={flags}
-                  selectedState={selectedState}
-                  onSelectState={setSelectedState}
-                />
-              </CardContent>
-            </Card>
-          </div>
+        {/* Full-width map */}
+        <Card className="mb-6 border-border">
+          <CardContent className="p-4">
+            <USStateMap
+              matrix={matrix}
+              flags={flags}
+              selectedState={selectedState}
+              onSelectState={setSelectedState}
+            />
+          </CardContent>
+        </Card>
 
-          <div>
-            <Card className="border-border sticky top-20">
-              <CardContent className="p-5">
-                {selectedRow ? (
-                  <StateDetailPanel
-                    row={selectedRow}
-                    flags={flags}
-                    sources={selectedDbRow?.sources}
-                    isScanning={isScanning}
-                    onScan={handleScan}
-                    scanStatus={selectedDbRow?.scan_status}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <MapPin className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">Click a state on the map to see BBQS sharing rules.</p>
-                    <p className="text-xs mt-2 opacity-60">Then hit Analyze to scan live law trackers.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+        {/* Sources bar for selected state */}
+        {selectedDbRow?.sources && selectedDbRow.sources.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="font-semibold uppercase tracking-wider">Sources:</span>
+            {selectedDbRow.sources.map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[200px]">{s.title}</span>
+              </a>
+            ))}
           </div>
-        </div>
+        )}
+
+        {/* AG Grid table */}
+        <Card className="border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-foreground">
+                {selectedState && selectedRow
+                  ? `${selectedRow.stateName} — Legal Detail`
+                  : "All States — Legal Detail"}
+              </h2>
+              {selectedState && (
+                <Button variant="ghost" size="sm" onClick={() => setSelectedState(null)} className="text-xs">
+                  Show all states
+                </Button>
+              )}
+            </div>
+            <div
+              className="ag-theme-quartz-dark rounded-lg border border-border overflow-hidden"
+              style={{ height: Math.min(600, gridRows.length * 56 + 56) }}
+            >
+              <AgGridReact<GridRow>
+                rowData={gridRows}
+                columnDefs={columnDefs}
+                defaultColDef={defaultColDef}
+                animateRows
+                suppressCellFocus
+                enableCellTextSelection
+                paginationPageSize={100}
+                pagination={gridRows.length > 100}
+                domLayout={gridRows.length <= 10 ? "autoHeight" : "normal"}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

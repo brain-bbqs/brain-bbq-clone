@@ -5,6 +5,8 @@ export type RiskLabel = "NO_EXTRA" | "LIMITED_EXPORT" | "FEDERATED_ONLY" | "BLOC
 export interface CategoryRule {
   label: RiskLabel;
   note: string;
+  statute?: string; // e.g. "Cal. Civ. Code §1798.140(ae)"
+  conflict?: string; // What specifically conflicts with BBQS sharing
 }
 
 export type BBQSCategory =
