@@ -11,7 +11,6 @@ export type BBQSCategory =
   | "brain_behavior"
   | "consumer_health"
   | "reproductive"
-  | "cannabis"
   | "minors"
   | "biometric_neuro";
 
@@ -28,7 +27,6 @@ export const CATEGORY_LABELS: Record<BBQSCategory, string> = {
   brain_behavior: "Brain / Behavioral Research",
   consumer_health: "Consumer Health / Mental Health",
   reproductive: "Reproductive / Sexual Health",
-  cannabis: "Substance Use / Cannabis",
   minors: "Minors / Students",
   biometric_neuro: "Biometric / Neurological IDs",
 };
@@ -44,7 +42,6 @@ const DEFAULT_ROW: StateRiskRow["categories"] = {
   brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   reproductive: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
-  cannabis: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   minors: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
   biometric_neuro: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
 };
@@ -57,7 +54,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "LIMITED_EXPORT", note: "CCPA/CPRA treat inferences derived from biometric/behavioral data as sensitive PI; opt-out and data minimization required. Cal. Civ. Code §1798.140(ae)." },
       consumer_health: { label: "LIMITED_EXPORT", note: "CMIA (Cal. Civ. Code §56 et seq.) imposes stricter consent for medical information disclosure than HIPAA." },
       reproductive: { label: "FEDERATED_ONLY", note: "AB 352 (2024) prohibits disclosure of reproductive/sexual health info to out-of-state entities without explicit consent." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Medical cannabis patient data protected under Health & Safety Code §11362.795; disclosure requires court order." },
       minors: { label: "LIMITED_EXPORT", note: "COPPA plus CA Age-Appropriate Design Code (AB 2273) impose data minimization for minors' data." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "CCPA classifies biometric information and neural data as sensitive PI; SB 1223 (2024) adds neurorights protections." },
     },
@@ -68,7 +64,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       reproductive: { label: "NO_EXTRA", note: "Reproductive Health Act protects access but doesn't restrict research data sharing beyond HIPAA." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Cannabis Regulation and Tax Act §10-35(c) limits disclosure of medical cannabis patient records." },
       minors: { label: "LIMITED_EXPORT", note: "Student Online Personal Protection Act (SOPPA) restricts commercial use of K-12 student data." },
       biometric_neuro: { label: "FEDERATED_ONLY", note: "BIPA (740 ILCS 14) requires informed consent before collection of biometric identifiers; private right of action. Raw biometric data should not leave state." },
     },
@@ -79,7 +74,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "NO_EXTRA", note: "Texas Data Privacy and Security Act (TDPSA) applies but aligns with HIPAA for health data." },
       reproductive: { label: "BLOCKED", note: "SB 8 and related laws restrict sharing of info that could facilitate prohibited procedures; data flagging reproductive health should not be shared." },
-      cannabis: { label: "NO_EXTRA", note: "Medical cannabis program is very limited; no special data rules beyond HIPAA." },
       minors: { label: "LIMITED_EXPORT", note: "TDPSA classifies minors' data as sensitive; consent required for processing." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "Texas Capture or Use of Biometric Identifier Act (Bus. & Com. Code §503.001) requires consent before capture." },
     },
@@ -90,7 +84,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "NY Mental Hygiene Law §33.13 imposes strict confidentiality on mental health records beyond HIPAA." },
       reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health information protected under Public Health Law; out-of-state subpoenas limited." },
-      cannabis: { label: "LIMITED_EXPORT", note: "MRTA §222-b protects cannabis registry data from disclosure." },
       minors: { label: "LIMITED_EXPORT", note: "Education Law §2-d restricts use and disclosure of student PII." },
       biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law yet (proposed bills pending)." },
     },
@@ -101,7 +94,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "My Health My Data Act (MHMDA) requires consent for collection/sharing of consumer health data, broader than HIPAA." },
       reproductive: { label: "LIMITED_EXPORT", note: "MHMDA explicitly covers reproductive/sexual health data with geofencing protections." },
-      cannabis: { label: "NO_EXTRA", note: "Legal recreational; no special research data restrictions beyond HIPAA." },
       minors: { label: "LIMITED_EXPORT", note: "MHMDA applies to minors' health data with heightened consent." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "WA biometric identifier provision in RCW 19.375 requires consent/notice before collection." },
     },
@@ -112,7 +104,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Colorado Privacy Act doesn't single out brain/behavioral research data beyond sensitive data rules." },
       consumer_health: { label: "LIMITED_EXPORT", note: "CPA classifies health data as sensitive; opt-in consent required." },
       reproductive: { label: "LIMITED_EXPORT", note: "Reproductive health data is protected under COAA Act; limits out-of-state disclosure." },
-      cannabis: { label: "NO_EXTRA", note: "Legal recreational; no special research data restrictions." },
       minors: { label: "LIMITED_EXPORT", note: "CPA treats minors' data as sensitive; Student Data Transparency and Security Act adds protections." },
       biometric_neuro: { label: "LIMITED_EXPORT", note: "CPA classifies biometric data as sensitive PI; opt-in consent required for processing." },
     },
@@ -123,7 +114,6 @@ export const STATE_RISK_MATRIX: StateRiskRow[] = [
       brain_behavior: { label: "NO_EXTRA", note: "Not clearly addressed beyond HIPAA/general privacy law." },
       consumer_health: { label: "LIMITED_EXPORT", note: "MA Data Privacy Law (201 CMR 17.00) and AG regulations impose strict data security requirements." },
       reproductive: { label: "LIMITED_EXPORT", note: "Shield Act protects reproductive health data from out-of-state legal process." },
-      cannabis: { label: "LIMITED_EXPORT", note: "Medical cannabis patient data protected under 935 CMR 501.130; registry data confidential." },
       minors: { label: "LIMITED_EXPORT", note: "Student privacy protected under MA Student Records Regulations (603 CMR 23.00)." },
       biometric_neuro: { label: "NO_EXTRA", note: "No comprehensive biometric privacy law (bills proposed but not enacted)." },
     },
