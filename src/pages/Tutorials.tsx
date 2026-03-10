@@ -260,14 +260,26 @@ export default function Tutorials() {
           <h1 className="text-2xl font-bold text-foreground mb-3">
             Getting Started with BBQS
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-md mx-auto">
             Learn how to use the Metadata Assistant to describe your research, curate metadata, and discover connections across the consortium.
           </p>
 
-          <Button onClick={() => setCurrentStep(0)} size="lg" className="gap-2 px-8">
-            <Play className="h-4 w-4" />
-            Start Tutorial
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <Button onClick={() => setCurrentStep(0)} size="lg" className="gap-2 px-8">
+              <Play className="h-4 w-4" />
+              Start Tutorial
+            </Button>
+            <a
+              href="https://docs.google.com/forms/d/12gSNKdRwsNo1FnEr_SxdZLyu8kthko6GQlKZrF5jB4k/edit"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="lg" className="gap-2 px-8">
+                <ExternalLink className="h-4 w-4" />
+                Onboarding Form
+              </Button>
+            </a>
+          </div>
 
           <div className="mt-10 grid grid-cols-5 gap-3">
             {TOUR_STEPS.map((s, i) => {
