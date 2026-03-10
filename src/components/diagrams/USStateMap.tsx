@@ -21,10 +21,10 @@ const FIPS_TO_STATE: Record<string, string> = {
 };
 
 const RISK_COLORS = [
-  "hsl(142, 60%, 45%)", // 0 - green
-  "hsl(45, 90%, 50%)",  // 1 - yellow
-  "hsl(25, 85%, 55%)",  // 2 - orange
-  "hsl(0, 75%, 50%)",   // 3 - red
+  "hsl(152, 45%, 42%)", // 0 - compliant
+  "hsl(43, 75%, 48%)",  // 1 - consent required
+  "hsl(22, 70%, 52%)",  // 2 - restricted sharing
+  "hsl(0, 55%, 48%)",   // 3 - requires legal review
 ];
 
 interface Props {
