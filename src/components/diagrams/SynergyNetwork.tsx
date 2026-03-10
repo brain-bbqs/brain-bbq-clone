@@ -154,32 +154,25 @@ export function SynergyNetwork() {
 
       {/* Network */}
       <div
-        className="relative rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 shadow-lg"
-        style={{ height: 620 }}
+        className="rounded-xl overflow-hidden border border-border shadow-lg"
+        style={{ height: 620, width: "100%", position: "relative" }}
       >
-        {/* Subtle grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`,
-            backgroundSize: "24px 24px",
-          }}
-        />
-
-        <InteractiveNvlWrapper
-          nodes={nvlNodes}
-          rels={nvlRels}
-          mouseEventCallbacks={mouseCallbacks}
-          nvlOptions={{
-            initialZoom: 1,
-            layout: "forceDirected",
-            renderer: "canvas",
-            styling: {
-              defaultNodeColor: "#94a3b8",
-              defaultRelationshipColor: "#475569",
-            },
-          }}
-        />
+        <div style={{ width: "100%", height: "100%" }}>
+          <InteractiveNvlWrapper
+            nodes={nvlNodes}
+            rels={nvlRels}
+            mouseEventCallbacks={mouseCallbacks}
+            nvlOptions={{
+              initialZoom: 1,
+              layout: "forceDirected",
+              renderer: "canvas",
+              styling: {
+                defaultNodeColor: "#94a3b8",
+                defaultRelationshipColor: "#475569",
+              },
+            }}
+          />
+        </div>
 
         {/* Tooltip */}
         <SynergyTooltip
