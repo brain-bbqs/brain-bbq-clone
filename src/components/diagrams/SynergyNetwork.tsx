@@ -175,8 +175,8 @@ export function SynergyNetwork() {
             layout: "forceDirected",
             renderer: "canvas",
             styling: {
-              defaultNodeColor: "hsl(var(--muted))",
-              defaultRelationshipColor: "hsl(var(--border))",
+              defaultNodeColor: "#94a3b8",
+              defaultRelationshipColor: "#475569",
             },
           }}
         />
