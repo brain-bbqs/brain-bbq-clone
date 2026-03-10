@@ -394,9 +394,9 @@ export default function StatePrivacyMap() {
                 animateRows
                 suppressCellFocus
                 enableCellTextSelection
-                paginationPageSize={100}
+                paginationPageSize={10}
                 pagination
-                paginationPageSizeSelector={[25, 50, 100, 200]}
+                paginationPageSizeSelector={[10, 25, 50, 100]}
               />
             </div>
           </CardContent>
