@@ -63,6 +63,7 @@ const navCards: NavCard[] = [
     links: [
       { label: "Projects", to: "/projects" },
       { label: "Grants", to: "/grants" },
+      { label: "RFA-NS-25-016 (NOFO)", to: "https://grants.nih.gov/grants/guide/rfa-files/RFA-NS-25-016.html" },
       { label: "Species", to: "/species" },
       { label: "Publications", to: "/publications" },
       { label: "Data Provenance", to: "/data-provenance" },
