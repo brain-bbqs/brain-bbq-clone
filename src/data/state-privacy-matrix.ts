@@ -27,7 +27,6 @@ export const CATEGORY_LABELS: Record<BBQSCategory, string> = {
   brain_behavior: "Brain / Behavioral Research",
   consumer_health: "Consumer Health / Mental Health",
   reproductive: "Reproductive / Sexual Health",
-  cannabis: "Substance Use / Cannabis",
   minors: "Minors / Students",
   biometric_neuro: "Biometric / Neurological IDs",
 };
