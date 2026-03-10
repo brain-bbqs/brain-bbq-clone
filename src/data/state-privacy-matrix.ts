@@ -33,11 +33,11 @@ export const CATEGORY_LABELS: Record<BBQSCategory, string> = {
   biometric_neuro: "Biometric / Neurological IDs",
 };
 
-export const RISK_LABEL_META: Record<RiskLabel, { color: string; text: string; score: number }> = {
-  NO_EXTRA: { color: "hsl(142, 60%, 45%)", text: "No Extra Restrictions", score: 0 },
-  LIMITED_EXPORT: { color: "hsl(45, 90%, 50%)", text: "Limited Export", score: 1 },
-  FEDERATED_ONLY: { color: "hsl(25, 85%, 55%)", text: "Federated Only", score: 2 },
-  BLOCKED: { color: "hsl(0, 75%, 50%)", text: "Blocked", score: 3 },
+export const RISK_LABEL_META: Record<RiskLabel, { color: string; text: string; score: number; action: string }> = {
+  NO_EXTRA: { color: "hsl(152, 45%, 42%)", text: "Compliant", score: 0, action: "No additional action needed" },
+  LIMITED_EXPORT: { color: "hsl(43, 75%, 48%)", text: "Consent Required", score: 1, action: "Obtain explicit consent or IRB addendum" },
+  FEDERATED_ONLY: { color: "hsl(22, 70%, 52%)", text: "Restricted Sharing", score: 2, action: "Federated analysis only; no raw data export" },
+  BLOCKED: { color: "hsl(0, 55%, 48%)", text: "Requires Legal Review", score: 3, action: "Institutional counsel review before any data transfer" },
 };
 
 const DEFAULT_ROW: StateRiskRow["categories"] = {
