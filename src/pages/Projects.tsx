@@ -342,16 +342,6 @@ const Projects = () => {
       valueGetter: (params) => params.data?.allPis || params.data?.contactPi || '',
     },
     {
-      field: "institution",
-      headerName: "Institution",
-      width: 200,
-      minWidth: 180,
-      wrapText: true,
-      autoHeight: true,
-      cellRenderer: InstitutionCell,
-      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
-    },
-    {
       field: "species",
       headerName: "Species",
       width: 130,
@@ -360,6 +350,16 @@ const Projects = () => {
         if (!value) return <span className="text-muted-foreground">—</span>;
         return <span className="text-sm">{value}</span>;
       },
+    },
+    {
+      field: "institution",
+      headerName: "Institution",
+      width: 200,
+      minWidth: 180,
+      wrapText: true,
+      autoHeight: true,
+      cellRenderer: InstitutionCell,
+      cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
     },
     {
       field: "publicationCount",
