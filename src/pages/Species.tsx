@@ -15,35 +15,6 @@ import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import { Table, Grid3X3 } from "lucide-react";
 import "@/styles/ag-grid-theme.css";
 
-const LATIN_NAMES: Record<string, string> = {
-  "Cichlid": "Cichlidae",
-  "Mouse": "Mus musculus",
-  "Gerbil": "Meriones unguiculatus",
-  "Cowbird": "Molothrus ater",
-  "Rats/Mice": "Rattus / Mus",
-  "Human": "Homo sapiens",
-  "Sheep": "Ovis aries",
-  "Zebrafish/Fly": "Danio rerio / Drosophila",
-  "Acoel Worm": "Acoela",
-  "Ferret": "Mustela putorius furo",
-  "Capuchin Monkey": "Cebus capucinus",
-  "Marmoset": "Callithrix jacchus",
-  "Fish (Cichlids)": "Cichlidae",
-  "Mice": "Mus musculus",
-  "Rodents (Gerbils/Mice)": "Meriones / Mus",
-  "Gregarious Songbirds": "Molothrus ater",
-  "Rats": "Rattus norvegicus",
-  "Rodents": "Rattus / Mus",
-  "Humans": "Homo sapiens",
-  "Humans (Pediatric)": "Homo sapiens",
-  "Drosophila / Zebrafish": "Drosophila / Danio rerio",
-  "Hofstenia miamia (Panther worm)": "Hofstenia miamia",
-  "Ferrets / Rodents": "Mustela / Rattus",
-  "Wild Primates": "Cebus / Sapajus",
-  "Marmosets": "Callithrix jacchus",
-  "All Species (Infrastructure)": "—",
-};
-
 interface ProjectInfo {
   name: string;
   grantId: string;
