@@ -112,24 +112,29 @@ export default function Species() {
     const grouped = new Map<string, { commonName: string; projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
 
     for (const p of projects) {
-      // Species field from YAML is the Latin/scientific name
-      const speciesKey = p.species || "Unknown";
-      const existing = grouped.get(speciesKey);
+      // Each project may study multiple species — create a row per species
+      const speciesKeys = (p.speciesList && p.speciesList.length > 0) ? p.speciesList : [p.species || "Unknown"];
       const project: ProjectInfo = { name: p.title || p.shortName, grantId: p.id };
-      if (existing) {
-        existing.projects.push(project);
-        p.computational.forEach((b) => existing.behaviors.add(b));
-        // Keep first non-empty common name
-        if (!existing.commonName && p.speciesCommonName) {
-          existing.commonName = p.speciesCommonName;
+
+      for (const speciesKey of speciesKeys) {
+        const existing = grouped.get(speciesKey);
+        if (existing) {
+          // Avoid duplicate project entries
+          if (!existing.projects.some((ep) => ep.grantId === p.id)) {
+            existing.projects.push(project);
+          }
+          p.computational.forEach((b) => existing.behaviors.add(b));
+          if (!existing.commonName && p.speciesCommonName) {
+            existing.commonName = p.speciesCommonName;
+          }
+        } else {
+          grouped.set(speciesKey, {
+            commonName: "",
+            projects: [project],
+            behaviors: new Set(p.computational),
+            color: p.color,
+          });
         }
-      } else {
-        grouped.set(speciesKey, {
-          commonName: p.speciesCommonName || "",
-          projects: [project],
-          behaviors: new Set(p.computational),
-          color: p.color,
-        });
       }
     }
 

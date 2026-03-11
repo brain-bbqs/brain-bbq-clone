@@ -56,9 +56,12 @@ function parseProject(p: any, index: number): MarrProject {
   const commonMatch = tsd.match(/\(([^)]+)\)/);
   const commonName = commonMatch ? commonMatch[1] : "";
 
-  // species field may be a string or array in YAML
+  // species field may be a string or array in YAML; normalize to list
   const rawSpecies = p.species || p.target_species_domain || "";
-  const speciesStr = Array.isArray(rawSpecies) ? rawSpecies[0] || "" : rawSpecies;
+  const speciesList: string[] = Array.isArray(rawSpecies)
+    ? rawSpecies.flatMap((s: string) => s.split(/\s*\/\s*/).map((sp: string) => sp.trim())).filter(Boolean)
+    : rawSpecies.split(/\s*\/\s*/).map((s: string) => s.trim()).filter(Boolean);
+  const speciesStr = speciesList[0] || "";
 
   return {
     id: p.grant_number,
@@ -67,6 +70,7 @@ function parseProject(p: any, index: number): MarrProject {
     pi: piName,
     allPIs: leads,
     species: speciesStr,
+    speciesList,
     speciesCommonName: commonName,
     institution: p.institution || "",
     color: PROJECT_COLORS[index % PROJECT_COLORS.length],
