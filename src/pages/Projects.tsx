@@ -263,14 +263,31 @@ const Projects = () => {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { projects: marrProjects } = useMarrYaml();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
-  const { data: rowData = [], isLoading: loading, refetch } = useQuery({
+  const { data: rawRowData = [], isLoading: loading, refetch } = useQuery({
     queryKey: ["nih-grants"],
     queryFn: fetchGrants,
     staleTime: 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });
+
+  // Enrich with species from YAML
+  const speciesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of marrProjects) {
+      map.set(p.id, p.species);
+    }
+    return map;
+  }, [marrProjects]);
+
+  const rowData = useMemo(() => rawRowData.map(row => {
+    const noSuffix = row.grantNumber.replace(/-\d+$/, "");
+    const noPrefix = noSuffix.replace(/^\d+/, "");
+    const species = speciesMap.get(row.grantNumber) || speciesMap.get(noSuffix) || speciesMap.get(noPrefix) || "";
+    return { ...row, species };
+  }), [rawRowData, speciesMap]);
 
   const filteredData = rowData;
 
