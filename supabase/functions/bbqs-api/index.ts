@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { load as yamlLoad } from "https://esm.sh/js-yaml@4.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,20 +12,103 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY")!;
 
-// Static MARR project data (mirrored from frontend for API access)
-const MARR_PROJECTS = [
-  { id: "R34DA059510", shortName: "Dyer – Cichlid Arena", pi: "Eva Dyer", species: "Cichlid", computational: ["Multi-animal social behavior quantification", "Species differentiation", "Hierarchical social structure"], algorithmic: ["Pose estimation", "Behavior classification", "Social network analysis"], implementation: ["DeepLabCut", "SLEAP", "Custom arena tracking"] },
-  { id: "U19NS123714", shortName: "Bhatt – Zebrafish Navigation", pi: "Dhruv Bhatt", species: "Zebrafish", computational: ["Whole-brain neural dynamics during behavior", "Sensorimotor integration", "Navigation circuits"], algorithmic: ["Calcium imaging analysis", "Behavioral segmentation", "Neural decoding"], implementation: ["Suite2p", "DeepLabCut", "Custom VR systems"] },
-  { id: "U19NS104649", shortName: "Bhatt – Zebrafish Locomotion", pi: "Dhruv Bhatt", species: "Zebrafish", computational: ["Locomotor pattern generation", "Spinal cord circuits", "Motor control"], algorithmic: ["High-speed video analysis", "Kinematic modeling", "Electrophysiology analysis"], implementation: ["Custom tracking software", "MATLAB", "Python"] },
-  { id: "R01MH129046", shortName: "Datta – Mouse Behavior", pi: "Sandeep Robert Datta", species: "Mouse", computational: ["Behavioral syllable discovery", "Spontaneous behavior quantification", "Action sequence analysis"], algorithmic: ["Variational autoencoders", "Hidden Markov models", "Dimensionality reduction"], implementation: ["MoSeq", "keypoint-MoSeq", "Python"] },
-  { id: "U01NS121764", shortName: "Ölveczky – Motor Learning", pi: "Bence Ölveczky", species: "Mouse", computational: ["Skilled motor learning", "Basal ganglia function", "Motor sequence optimization"], algorithmic: ["3D pose estimation", "Reinforcement learning models", "Neural trajectory analysis"], implementation: ["DANNCE", "Custom rigs", "MATLAB"] },
-  { id: "RF1MH132649", shortName: "Murthy – Fly Courtship", pi: "Mala Murthy", species: "Drosophila", computational: ["Courtship behavior quantification", "Multi-modal sensory integration", "Song pattern analysis"], algorithmic: ["Audio segmentation", "Pose tracking", "Behavioral state classification"], implementation: ["SLEAP", "DeepEthogram", "FlySongSegmenter"] },
-  { id: "R01NS130789", shortName: "Pereira – Fly Social", pi: "Talmo Pereira", species: "Drosophila", computational: ["Multi-animal social behavior", "Aggression quantification", "Group dynamics"], algorithmic: ["Multi-animal pose estimation", "Identity tracking", "Action recognition"], implementation: ["SLEAP", "Social LEAP", "Python"] },
-  { id: "U19NS123716", shortName: "Bhatt – Lamprey Locomotion", pi: "Dhruv Bhatt", species: "Lamprey", computational: ["Locomotor rhythm generation", "Spinal cord pattern generators", "Undulatory locomotion"], algorithmic: ["Kinematic analysis", "Frequency decomposition", "Electrophysiology"], implementation: ["Custom tracking", "MATLAB", "Python"] },
-  { id: "R01DA055550", shortName: "Wiltschko – Pharmacology", pi: "Alex Wiltschko", species: "Mouse", computational: ["Drug effect quantification", "Behavioral phenotyping", "Dose-response modeling"], algorithmic: ["Behavioral syllables", "Clustering", "Statistical testing"], implementation: ["MoSeq", "Python", "Custom pipelines"] },
-  { id: "U19NS123715", shortName: "Engert – Zebrafish Vision", pi: "Florian Engert", species: "Zebrafish", computational: ["Visual processing", "Prey capture", "Optomotor response"], algorithmic: ["Calcium imaging", "Visual stimulus modeling", "Behavioral classification"], implementation: ["Suite2p", "Stytra", "Python"] },
-  { id: "R01NS130790", shortName: "Mathis – Primate Reaching", pi: "Mackenzie Mathis", species: "Primate", computational: ["Reaching and grasping", "Motor cortex dynamics", "Dexterous manipulation"], algorithmic: ["Markerless pose estimation", "Neural decoding", "Transfer learning"], implementation: ["DeepLabCut", "Anipose", "Python"] },
-];
+// ─── Dynamic YAML loading with cache ─────────────────────
+const YAML_URL = "https://bbqs.dev/bbqs_marr.yaml";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface ParsedProject {
+  id: string;
+  shortName: string;
+  pi: string;
+  species: string;
+  institution: string;
+  title: string;
+  computational: string[];
+  algorithmic: string[];
+  implementation: string[];
+  dataModalities: string[];
+  experimentalApproaches: string[];
+  keywords: string[];
+  crossProjectSynergy: string;
+}
+
+let cachedProjects: ParsedProject[] | null = null;
+let cacheTimestamp = 0;
+
+function splitField(value: string | undefined): string[] {
+  if (!value) return [];
+  return value.split(/[;.]/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+}
+
+function parseShortName(p: any): string {
+  const leads = p.project_leads || [];
+  const firstLead = leads[0] || "";
+  const lastName = firstLead.split(",")[0]?.trim() || "Unknown";
+  const title = p.project_title || "";
+  const species = p.target_species_domain || p.species || "";
+
+  if (title.toLowerCase().includes("bard") || title.toLowerCase().includes("bbqs ai")) return "BARD.CC";
+  if (title.toLowerCase().includes("ember") || title.toLowerCase().includes("ecosystem for multi-modal")) return "EMBER";
+
+  const keywords = [species, ...(p.keywords || []).slice(0, 1)].filter(Boolean);
+  const descriptor = keywords[0] || title.split(/\s+/).slice(0, 2).join(" ");
+  return `${lastName} – ${descriptor}`;
+}
+
+function parseProject(p: any): ParsedProject {
+  const leads = p.project_leads || [];
+  const firstLead = leads[0] || "";
+  const piName = firstLead.includes(",")
+    ? firstLead.split(",").map((s: string) => s.trim()).reverse().join(" ")
+    : firstLead;
+
+  const tsd = p.target_species_domain || "";
+  const rawSpecies = p.species || tsd;
+  const speciesList: string[] = Array.isArray(rawSpecies)
+    ? rawSpecies.flatMap((s: string) => s.split(/\s*\/\s*/)).filter(Boolean)
+    : (typeof rawSpecies === "string" ? rawSpecies.split(/\s*\/\s*/).filter(Boolean) : []);
+
+  return {
+    id: p.grant_number || "",
+    shortName: parseShortName(p),
+    pi: piName,
+    species: speciesList[0] || "",
+    institution: p.institution || "",
+    title: p.project_title || "",
+    computational: splitField(p.marr_l1_ethological_goal),
+    algorithmic: splitField(p.marr_l2_algorithmic_function),
+    implementation: splitField(p.marr_l3_implementational_hardware),
+    dataModalities: p.data_modalities || [],
+    experimentalApproaches: p.experimental_approaches || [],
+    keywords: p.keywords || [],
+    crossProjectSynergy: p.cross_project_synergy || "",
+  };
+}
+
+async function getProjects(): Promise<ParsedProject[]> {
+  const now = Date.now();
+  if (cachedProjects && now - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedProjects;
+  }
+
+  try {
+    const response = await fetch(YAML_URL);
+    if (!response.ok) {
+      console.error(`Failed to fetch YAML: ${response.status}`);
+      return cachedProjects || [];
+    }
+    const text = await response.text();
+    const parsed = yamlLoad(text) as { projects: any[] };
+    const rawProjects = parsed?.projects || [];
+    cachedProjects = rawProjects.map((p: any) => parseProject(p));
+    cacheTimestamp = now;
+    console.log(`Loaded ${cachedProjects.length} projects from YAML`);
+    return cachedProjects;
+  } catch (err) {
+    console.error("YAML fetch error:", err);
+    return cachedProjects || [];
+  }
+}
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -60,13 +144,15 @@ serve(async (req) => {
   const path = url.pathname.replace(/^\/bbqs-api\/?/, "").replace(/\/$/, "");
 
   try {
+    const projects = await getProjects();
+
     // ─── GET /projects ───────────────────────────────────────
     if (req.method === "GET" && (path === "projects" || path === "")) {
       const species = url.searchParams.get("species");
       const pi = url.searchParams.get("pi");
       const search = url.searchParams.get("q");
 
-      let results = [...MARR_PROJECTS];
+      let results = [...projects];
 
       if (species) {
         results = results.filter((p) => p.species.toLowerCase() === species.toLowerCase());
@@ -80,9 +166,11 @@ serve(async (req) => {
           p.shortName.toLowerCase().includes(q) ||
           p.pi.toLowerCase().includes(q) ||
           p.species.toLowerCase().includes(q) ||
+          p.title.toLowerCase().includes(q) ||
           p.computational.some((f) => f.toLowerCase().includes(q)) ||
           p.algorithmic.some((f) => f.toLowerCase().includes(q)) ||
-          p.implementation.some((f) => f.toLowerCase().includes(q))
+          p.implementation.some((f) => f.toLowerCase().includes(q)) ||
+          p.keywords.some((k) => k.toLowerCase().includes(q))
         );
       }
 
@@ -95,7 +183,7 @@ serve(async (req) => {
     // ─── GET /projects/:id ───────────────────────────────────
     if (req.method === "GET" && path.startsWith("projects/")) {
       const projectId = path.replace("projects/", "");
-      const project = MARR_PROJECTS.find((p) => p.id === projectId);
+      const project = projects.find((p) => p.id === projectId);
       if (!project) return jsonResponse({ error: "Project not found" }, 404);
       return jsonResponse(project);
     }
@@ -103,7 +191,8 @@ serve(async (req) => {
     // ─── GET /species ────────────────────────────────────────
     if (req.method === "GET" && path === "species") {
       const speciesMap: Record<string, { species: string; projectCount: number; projects: string[] }> = {};
-      for (const p of MARR_PROJECTS) {
+      for (const p of projects) {
+        if (!p.species) continue;
         if (!speciesMap[p.species]) {
           speciesMap[p.species] = { species: p.species, projectCount: 0, projects: [] };
         }
@@ -118,7 +207,7 @@ serve(async (req) => {
       const computational = new Set<string>();
       const algorithmic = new Set<string>();
       const implementation = new Set<string>();
-      for (const p of MARR_PROJECTS) {
+      for (const p of projects) {
         p.computational.forEach((f) => computational.add(f));
         p.algorithmic.forEach((f) => algorithmic.add(f));
         p.implementation.forEach((f) => implementation.add(f));
@@ -166,10 +255,18 @@ serve(async (req) => {
         match_count: 5,
       });
 
-      let systemPrompt = `You are a helpful assistant for the BBQS (Brain Behavior Quantification and Synchronization) consortium API. Answer questions using ONLY the provided context. Be concise and factual. If the context doesn't cover the question, say so.`;
+      // Build project context from live YAML data
+      const projectContext = projects.map((p) =>
+        `- ${p.shortName} (${p.id}): PI: ${p.pi}, Species: ${p.species}, Institution: ${p.institution}, Title: ${p.title}, Computational: ${p.computational.join("; ")}, Algorithmic: ${p.algorithmic.join("; ")}, Implementation: ${p.implementation.join("; ")}, Keywords: ${p.keywords.join(", ")}, Data Modalities: ${p.dataModalities.join(", ")}, Experimental Approaches: ${p.experimentalApproaches.join(", ")}`
+      ).join("\n");
+
+      let systemPrompt = `You are a helpful assistant for the BBQS (Brain Behavior Quantification and Synchronization) consortium. Answer questions using the provided project data and context. Be concise and factual. If the context doesn't cover the question, say so.
+
+## BBQS Consortium Projects (${projects.length} total)
+${projectContext}`;
 
       if (contexts && contexts.length > 0) {
-        systemPrompt += "\n\n## Context:\n";
+        systemPrompt += "\n\n## Additional Knowledge Base Context:\n";
         for (const ctx of contexts) {
           systemPrompt += `\n### [${ctx.source_type}] ${ctx.title}\n${ctx.content}\n`;
         }
