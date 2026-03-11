@@ -26,6 +26,7 @@ import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 
 interface Publication {
   pmid: string;
@@ -58,6 +59,7 @@ interface ProjectRow {
   nihLink: string;
   publications: Publication[];
   publicationCount: number;
+  species?: string;
 }
 
 const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
@@ -261,14 +263,31 @@ const Projects = () => {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { projects: marrProjects } = useMarrYaml();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
-  const { data: rowData = [], isLoading: loading, refetch } = useQuery({
+  const { data: rawRowData = [], isLoading: loading, refetch } = useQuery({
     queryKey: ["nih-grants"],
     queryFn: fetchGrants,
     staleTime: 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
   });
+
+  // Enrich with species from YAML
+  const speciesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of marrProjects) {
+      map.set(p.id, p.species);
+    }
+    return map;
+  }, [marrProjects]);
+
+  const rowData = useMemo(() => rawRowData.map(row => {
+    const noSuffix = row.grantNumber.replace(/-\d+$/, "");
+    const noPrefix = noSuffix.replace(/^\d+/, "");
+    const species = speciesMap.get(row.grantNumber) || speciesMap.get(noSuffix) || speciesMap.get(noPrefix) || "";
+    return { ...row, species };
+  }), [rawRowData, speciesMap]);
 
   const filteredData = rowData;
 
@@ -331,6 +350,16 @@ const Projects = () => {
       autoHeight: true,
       cellRenderer: InstitutionCell,
       cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
+    },
+    {
+      field: "species",
+      headerName: "Species",
+      width: 130,
+      minWidth: 110,
+      cellRenderer: ({ value }: { value: string }) => {
+        if (!value) return <span className="text-muted-foreground">—</span>;
+        return <span className="text-sm">{value}</span>;
+      },
     },
     {
       field: "publicationCount",
