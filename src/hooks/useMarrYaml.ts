@@ -51,12 +51,18 @@ function parseProject(p: any, index: number): MarrProject {
     ? firstLead.split(",").map((s: string) => s.trim()).reverse().join(" ")
     : firstLead;
 
+  // Parse common name from target_species_domain, e.g. "Mus musculus (house mouse)" → "house mouse"
+  const tsd = p.target_species_domain || "";
+  const commonMatch = tsd.match(/\(([^)]+)\)/);
+  const commonName = commonMatch ? commonMatch[1] : "";
+
   return {
     id: p.grant_number,
     shortName: parseShortName(p),
     pi: piName,
     allPIs: leads,
     species: p.species || p.target_species_domain || "",
+    speciesCommonName: commonName,
     institution: p.institution || "",
     color: PROJECT_COLORS[index % PROJECT_COLORS.length],
     computational: splitField(p.marr_l1_ethological_goal),

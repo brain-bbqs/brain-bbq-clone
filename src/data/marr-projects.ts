@@ -10,6 +10,7 @@ export interface MarrProject {
   pi: string;
   allPIs: string[];
   species: string;
+  speciesCommonName?: string;
   institution: string;
   color: string;
   computational: string[];   // What problem
