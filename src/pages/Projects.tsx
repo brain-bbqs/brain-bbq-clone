@@ -352,6 +352,16 @@ const Projects = () => {
       cellStyle: { whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', lineHeight: '1.4', paddingTop: '6px', paddingBottom: '6px' },
     },
     {
+      field: "species",
+      headerName: "Species",
+      width: 130,
+      minWidth: 110,
+      cellRenderer: ({ value }: { value: string }) => {
+        if (!value) return <span className="text-muted-foreground">—</span>;
+        return <span className="text-sm">{value}</span>;
+      },
+    },
+    {
       field: "publicationCount",
       headerName: "Pubs",
       width: 80,
