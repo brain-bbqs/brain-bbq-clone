@@ -109,16 +109,23 @@ export default function Species() {
   const [view, setView] = useState<"table" | "heatmap">("table");
 
   const rows: SpeciesRow[] = useMemo(() => {
-    const grouped = new Map<string, { projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
+    const grouped = new Map<string, { commonName: string; projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
 
     for (const p of projects) {
-      const existing = grouped.get(p.species);
+      // Species field from YAML is the Latin/scientific name
+      const speciesKey = p.species || "Unknown";
+      const existing = grouped.get(speciesKey);
       const project: ProjectInfo = { name: getProjectTitle(p.shortName), grantId: p.id };
       if (existing) {
         existing.projects.push(project);
         p.computational.forEach((b) => existing.behaviors.add(b));
+        // Keep first non-empty common name
+        if (!existing.commonName && p.speciesCommonName) {
+          existing.commonName = p.speciesCommonName;
+        }
       } else {
-        grouped.set(p.species, {
+        grouped.set(speciesKey, {
+          commonName: p.speciesCommonName || "",
           projects: [project],
           behaviors: new Set(p.computational),
           color: p.color,
@@ -126,9 +133,11 @@ export default function Species() {
       }
     }
 
-    return Array.from(grouped.entries()).map(([species, data]) => ({
-      species,
-      latinName: LATIN_NAMES[species] || "",
+    return Array.from(grouped.entries()).map(([latinName, data]) => ({
+      species: data.commonName
+        ? data.commonName.charAt(0).toUpperCase() + data.commonName.slice(1)
+        : latinName,
+      latinName,
       projects: data.projects,
       behaviors: Array.from(data.behaviors),
       color: data.color,
