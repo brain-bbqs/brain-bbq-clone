@@ -11,7 +11,7 @@ export interface MarrProject {
   pi: string;
   allPIs: string[];
   species: string;
-  speciesList: string[];
+  speciesList?: string[];
   speciesCommonName?: string;
   institution: string;
   color: string;
