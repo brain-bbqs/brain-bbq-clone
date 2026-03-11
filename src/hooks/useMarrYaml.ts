@@ -59,6 +59,7 @@ function parseProject(p: any, index: number): MarrProject {
   return {
     id: p.grant_number,
     shortName: parseShortName(p),
+    title: p.project_title || "",
     pi: piName,
     allPIs: leads,
     species: p.species || p.target_species_domain || "",
