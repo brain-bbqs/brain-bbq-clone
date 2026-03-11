@@ -26,6 +26,7 @@ import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 
 interface Publication {
   pmid: string;
