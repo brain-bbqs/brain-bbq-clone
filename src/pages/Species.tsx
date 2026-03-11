@@ -115,21 +115,22 @@ export default function Species() {
       // Each project may study multiple species — create a row per species
       const speciesKeys = (p.speciesList && p.speciesList.length > 0) ? p.speciesList : [p.species || "Unknown"];
       const project: ProjectInfo = { name: p.title || p.shortName, grantId: p.id };
+      const commonNameMap = p.speciesCommonNames || {};
 
       for (const speciesKey of speciesKeys) {
         const existing = grouped.get(speciesKey);
+        const commonForThis = commonNameMap[speciesKey] || "";
         if (existing) {
-          // Avoid duplicate project entries
           if (!existing.projects.some((ep) => ep.grantId === p.id)) {
             existing.projects.push(project);
           }
           p.computational.forEach((b) => existing.behaviors.add(b));
-          if (!existing.commonName && p.speciesCommonName) {
-            existing.commonName = p.speciesCommonName;
+          if (!existing.commonName && commonForThis) {
+            existing.commonName = commonForThis;
           }
         } else {
           grouped.set(speciesKey, {
-            commonName: "",
+            commonName: commonForThis,
             projects: [project],
             behaviors: new Set(p.computational),
             color: p.color,
@@ -138,16 +139,19 @@ export default function Species() {
       }
     }
 
-    return Array.from(grouped.entries()).map(([latinName, data]) => ({
-      species: data.commonName
+    return Array.from(grouped.entries()).map(([latinName, data]) => {
+      const displayName = data.commonName
         ? data.commonName.charAt(0).toUpperCase() + data.commonName.slice(1)
-        : latinName,
-      latinName,
-      projects: data.projects,
-      behaviors: Array.from(data.behaviors),
-      color: data.color,
-      projectCount: data.projects.length,
-    }));
+        : latinName;
+      return {
+        species: displayName,
+        latinName,
+        projects: data.projects,
+        behaviors: Array.from(data.behaviors),
+        color: data.color,
+        projectCount: data.projects.length,
+      };
+    });
   }, [projects]);
 
   const defaultColDef = useMemo<ColDef>(
