@@ -24,14 +24,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39703614/"
-    target_species_domain: "Fish (Cichlids)"
+    target_species_domain: "Cichlidae (cichlids)"
     marr_l1_ethological_goal: "Social reproductive behaviors, navigation of hierarchical status, and collective conspecific interactions within an evolutionary context."
     marr_l2_algorithmic_function: "High-dimensional contextual influence modeling; tracking state changes triggered by environmental cues."
     marr_l3_implementational_hardware: "Custom behavioral arena capable of mimicking natural environments with multiple conspecifics."
     data_analysis_approach: "Creating computer vision and tracking tools to monitor large numbers of conspecifics simultaneously. Building models to isolate and quantify how environmental contexts causally influence state changes."
     cross_project_synergy: "Evolutionary modeling of social states can serve as a baseline for the primate 'AI Forest' (R34DA061925)."
     agentic_action_required: "None. Species identified from publication data."
-    species: "Fish (Cichlids)"
+    species: "Cichlidae"
     experimental_approaches: ["Multi-animal observation", "Environmental context manipulation"]
     data_modalities: ["Video / Optical", "Behavioral tracking"]
     data_type: ["Video frames", "Continuous kinematic time-series"]
@@ -160,14 +160,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40761288/"
-    target_species_domain: "Mice"
+    target_species_domain: "Mus musculus (house mouse)"
     marr_l1_ethological_goal: "Adaptive behavior and state-dependent physiological responses."
     marr_l2_algorithmic_function: "Active learning algorithms for behavioral quantification; mapping physiological state to behavioral output."
     marr_l3_implementational_hardware: "Multidimensional physiological sensors synchronized with behavioral tracking."
     data_analysis_approach: "Using active learning frameworks to dynamically sample and quantify behavior based on real-time physiological and neural monitoring."
     cross_project_synergy: "Active learning loops can optimize the continuous monitoring models required in R61MH135405 (CAMERA platform)."
     agentic_action_required: "Extract specific physiological parameters (L3) being monitored."
-    species: "Mice"
+    species: "Mus musculus"
     experimental_approaches: ["Active learning behavioral quantification", "Physiological state mapping"]
     data_modalities: ["Behavioral tracking", "Physiological", "Neural"]
     data_type: ["Continuous multidimensional time-series"]
@@ -224,14 +224,14 @@ projects:
         citations: 9
         rcr: 2.259361952893084
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/39680425/"
-    target_species_domain: "Rodents (Gerbils/Mice)"
+    target_species_domain: "Meriones unguiculatus; Mus musculus (Mongolian gerbil; house mouse)"
     marr_l1_ethological_goal: "Vocal communication and social signaling within naturalistic environments."
     marr_l2_algorithmic_function: "Computational source separation (attribution) and multimodal data fusion."
     marr_l3_implementational_hardware: "Microphone arrays, continuous neural recordings, and behavioral cameras in naturalistic arenas."
     data_analysis_approach: "Fusing acoustic data with physical tracking to solve the 'cocktail party problem' of attributing specific vocalizations to individual interacting animals while simultaneously mapping neural responses."
-    cross_project_synergy: "The source attribution algorithms developed here are highly translatable to the gregarious songbird smart aviary (R34DA059507)."
+    cross_project_synergy: "The source attribution algorithms developed here are highly translatable to the Molothrus ater (brown-headed cowbird) smart aviary (R34DA059507)."
     agentic_action_required: "Detail the dimensionality reduction techniques used."
-    species: "Rodents (Gerbils/Mice)"
+    species: "Meriones unguiculatus; Mus musculus"
     experimental_approaches: ["Naturalistic social observation", "Multimodal fusion", "Acoustic monitoring"]
     data_modalities: ["Audio / Acoustic", "Video / Behavioral", "Neural"]
     data_type: ["Acoustic waveforms", "Video frames", "Neural time-series"]
@@ -256,14 +256,14 @@ projects:
     award_amount: 342485
     publication_count: 0
     publications: []
-    target_species_domain: "Gregarious Songbirds"
+    target_species_domain: "Molothrus ater (brown-headed cowbird)"
     marr_l1_ethological_goal: "Complex social interactions, flocking dynamics, and vocal communication in a 3D environment."
     marr_l2_algorithmic_function: "3D multi-agent tracking algorithms and neural sequence modeling."
     marr_l3_implementational_hardware: "Smart aviary equipped with distributed computer vision arrays and wireless neural loggers."
     data_analysis_approach: "Deploying an instrumented aviary to seamlessly track 3D kinematics and vocalizations of multiple birds, linking these high-dimensional behaviors to underlying neural circuit dynamics."
     cross_project_synergy: "3D kinematic tracking in the aviary translates directly to the 'AI Forest' for wild primates (R34DA061925)."
     agentic_action_required: "Identify the specific brain regions recorded in L3 to map to the vocal-motor algorithms in L2."
-    species: "Gregarious Songbirds"
+    species: "Molothrus ater"
     experimental_approaches: ["3D environment tracking", "Flocking dynamics observation"]
     data_modalities: ["Video / Optical", "Audio", "Neural"]
     data_type: ["3D Kinematics", "Acoustic sequences", "Neural spike trains"]
@@ -320,14 +320,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41093749/"
-    target_species_domain: "Mice"
+    target_species_domain: "Mus musculus (house mouse)"
     marr_l1_ethological_goal: "Generation and regulation of resilient social behaviors and rhythmic interaction motifs."
     marr_l2_algorithmic_function: "Time-series behavioral segmentation; topological mapping of biological rhythms."
     marr_l3_implementational_hardware: "Neural and physiological recording devices combined with high-resolution behavioral tracking."
     data_analysis_approach: "Quantifying how intrinsic biological rhythms (e.g., autonomic, neural oscillations) dictate the onset, duration, and resilience of specific social behavioral motifs."
     cross_project_synergy: "Pairs elegantly with the human autonomic rhythm tracking in R61MH135106 for cross-species modeling of 'internal states'."
     agentic_action_required: "Confirm the biological rhythms being tracked (e.g., cardiac, respiratory, theta oscillations) and the algorithm used."
-    species: "Mice"
+    species: "Mus musculus"
     experimental_approaches: ["Biological rhythm monitoring", "Social interaction observation"]
     data_modalities: ["Physiological (Autonomic)", "Neural (Oscillations)", "Video / Behavioral"]
     data_type: ["Continuous physiological time-series", "Behavioral motifs"]
@@ -360,14 +360,14 @@ projects:
         citations: 13
         rcr: 6.436206914013057
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40043703/"
-    target_species_domain: "Rats"
+    target_species_domain: "Rattus norvegicus (Norway rat)"
     marr_l1_ethological_goal: "Precise physical execution of social behaviors and deep phenotyping."
     marr_l2_algorithmic_function: "3D keypoint extraction and non-linear spatial transformations."
     marr_l3_implementational_hardware: "Multi-camera 3D arrays."
     data_analysis_approach: "Utilizing advanced computer vision to extract deep 3D phenotypic markers during social interactions, transforming raw pixel data into continuous kinematic latents."
     cross_project_synergy: "Can serve as a foundational validation dataset for EMBER's (R24MH136632) behavioral ontologies (NBO)."
     agentic_action_required: "None. Species and institution identified."
-    species: "Rats"
+    species: "Rattus norvegicus"
     experimental_approaches: ["Deep phenotyping", "Social interaction tracking"]
     data_modalities: ["Video / Optical"]
     data_type: ["Raw pixels", "Continuous 3D kinematic latents"]
@@ -408,14 +408,14 @@ projects:
         citations: 13
         rcr: 6.436206914013057
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40043703/"
-    target_species_domain: "Rodents"
+    target_species_domain: "Rodentia (rodents)"
     marr_l1_ethological_goal: "Navigation and survival in physically dynamic, changing environments."
     marr_l2_algorithmic_function: "High-throughput 3D kinematics and dynamic state estimation."
     marr_l3_implementational_hardware: "Dynamic behavioral arenas with 3D tracking capabilities."
     data_analysis_approach: "Scaling up ethological observation to high-throughput levels while maintaining 3D spatial resolution, allowing for robust statistical modeling of rodent behavior against shifting environmental variables."
     cross_project_synergy: "Algorithmic approaches for managing 'dynamic environments' can directly aid the human real-world spatial navigation models (R61MH135106)."
     agentic_action_required: "Identify the exact ML models used to segment behavior in dynamic (non-static) environments."
-    species: "Rodents"
+    species: "Rodentia"
     experimental_approaches: ["High-throughput screening", "Dynamic environment navigation"]
     data_modalities: ["Video / Optical"]
     data_type: ["3D kinematic trajectories"]
@@ -440,14 +440,14 @@ projects:
     award_amount: 342678
     publication_count: 0
     publications: []
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Social communication, dyadic interpersonal synchronization, and turn-taking."
     marr_l2_algorithmic_function: "Temporal pattern analysis and multimodal alignment."
     marr_l3_implementational_hardware: "Pilot EEG hyperscanning, multimodal communication trackers (facial expression, gestures, speech rates)."
     data_analysis_approach: "Quantifying and analyzing temporal patterns of multimodal communication (e.g., facial expression, turn-taking, gestures, speech rates) during face-to-face and remote dyadic interactions and synchronizing with pilot EEG hyperscanning data."
     cross_project_synergy: "Compare EEG hyperscanning pipelines with Marmoset multi-agent RNN models (1U01DA063534) to isolate conserved algorithms of 'turn-taking'."
     agentic_action_required: "Define the specific time-series dimensionality reduction technique used to align EEG with visual/audio inputs."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Dyadic conversation (virtual and in-person)", "Hyperscanning"]
     data_modalities: ["Neural (EEG)", "Video (Facial expressions, gestures)", "Audio (Speech rates)"]
     data_type: ["EEG time-series", "Video frames", "Acoustic sequences"]
@@ -472,14 +472,14 @@ projects:
     award_amount: 360000
     publication_count: 0
     publications: []
-    target_species_domain: "Mice"
+    target_species_domain: "Mus musculus (house mouse)"
     marr_l1_ethological_goal: "Foraging, food acquisition, and fine motor manipulation."
     marr_l2_algorithmic_function: "Fine-grained kinematic tracking and sensorimotor integration modeling."
     marr_l3_implementational_hardware: "High-speed macro cameras; continuous neural recordings."
     data_analysis_approach: "Isolating the rapid, complex kinematics of oromanual food handling and syncing these micro-behaviors with neural streams to understand precise motor control and reward processing."
     cross_project_synergy: "Oromanual kinematics can provide an isolated, high-resolution test case for the Embodied Musculoskeletal Frameworks being built in 1U01DA063534."
     agentic_action_required: "None. Species identified."
-    species: "Mice"
+    species: "Mus musculus"
     experimental_approaches: ["Foraging observation", "Fine motor manipulation analysis"]
     data_modalities: ["Video / Optical (High-speed)", "Neural"]
     data_type: ["High-speed video frames", "Neural time-series"]
@@ -504,14 +504,14 @@ projects:
     award_amount: 320892
     publication_count: 0
     publications: []
-    target_species_domain: "Sheep (Large-brained social animals / Agricultural sheep herds)"
+    target_species_domain: "Ovis aries (domestic sheep)"
     marr_l1_ethological_goal: "Complex collective behavior and herd navigation in naturalistic field environments."
     marr_l2_algorithmic_function: "Non-linear spatial transformations and 3D kinematics in a herd context."
     marr_l3_implementational_hardware: "Head-mounted visual sensors, robust freely-moving neural recordings."
     data_analysis_approach: "Leveraging existing agricultural sheep herds to acquire high-resolution spatiotemporal measurements of individual sheep using head-mounted visual sensors. This will be combined with robust neural recordings to study the neural circuits underlying complex collective behaviors."
     cross_project_synergy: "Hardware constraints (L3) and spatial transformation algorithms (L2) can inform primate or human real-world navigation studies (R61MH135106)."
     agentic_action_required: "Identify the specific brain circuits being targeted (e.g., Hippocampus/Entorhinal cortex)."
-    species: "Sheep"
+    species: "Ovis aries"
     experimental_approaches: ["Field observation", "Agricultural herd tracking"]
     data_modalities: ["Video / Optical (Egocentric)", "Neural"]
     data_type: ["High-resolution spatiotemporal matrices", "Neural spike data"]
@@ -559,7 +559,7 @@ projects:
     data_analysis_approach: "Utilizing transformative optical imaging to capture large-scale neural population dynamics simultaneously with precise behavioral tracking to map the transformation of sensory input to motor output during navigation."
     cross_project_synergy: "Provides the highest-resolution Level 3 (Implementational) data to validate the broader navigation algorithms used in larger mammals."
     agentic_action_required: "None. Genetic models identified."
-    species: "Drosophila / Zebrafish"
+    species: "Drosophila melanogaster; Danio rerio"
     experimental_approaches: ["Spatial navigation tasks", "Virtual reality or freely behaving optical imaging"]
     data_modalities: ["Optical Neural Imaging", "Behavioral tracking"]
     data_type: ["Large-scale population fluorescence signals", "Locomotor trajectories"]
@@ -592,14 +592,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41256607/"
-    target_species_domain: "Hofstenia miamia (Panther worm)"
+    target_species_domain: "Hofstenia miamia (panther worm)"
     marr_l1_ethological_goal: "Organism-environment interactions; sensory ecology."
     marr_l2_algorithmic_function: "Ecological modeling and sensory processing algorithms."
     marr_l3_implementational_hardware: "Novel environmental sensing arrays and neural interfacing adapted for the specific model system."
     data_analysis_approach: "Establishing baseline behavioral and neural quantification pipelines for an entirely new model organism, requiring highly adaptable, generalized tracking and recording algorithms."
     cross_project_synergy: "Testing BARD.CC and EMBER’s ability to handle completely novel metadata schemas and ontologies."
     agentic_action_required: "None. New model system identified."
-    species: "Hofstenia miamia (Panther worm)"
+    species: "Hofstenia miamia"
     experimental_approaches: ["Sensory ecology observation", "Pipeline establishment"]
     data_modalities: ["Environmental sensing", "Neural", "Behavioral"]
     data_type: ["Multimodal environmental variables", "Neural signals"]
@@ -624,14 +624,14 @@ projects:
     award_amount: 336353
     publication_count: 0
     publications: []
-    target_species_domain: "Ferrets / Rodents"
+    target_species_domain: "Mustela furo; Rodentia (ferret; rodents)"
     marr_l1_ethological_goal: "Social phase transitions, group cohesion, and hierarchical dynamics."
     marr_l2_algorithmic_function: "Multi-scale dynamic systems modeling; Phase transition analysis."
     marr_l3_implementational_hardware: "Scalable neural and behavioral arrays for multi-animal cohorts."
     data_analysis_approach: "Applying complex systems theory to map how micro-scale neural events trigger macro-scale behavioral and social state transitions in interacting groups."
     cross_project_synergy: "Strong theoretical overlap with the Multi-Agent Dynamics of 1U01DA063534; algorithms can be directly compared."
     agentic_action_required: "Determine the specific mathematical framework used to define 'dynamic transitions'."
-    species: "Ferrets / Rodents"
+    species: "Mustela furo; Rodentia"
     experimental_approaches: ["Multi-scale social tracking", "Phase transition induction"]
     data_modalities: ["Neural", "Behavioral", "Social metadata"]
     data_type: ["Micro-scale neural spikes", "Macro-scale social network graphs"]
@@ -664,14 +664,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41292955/"
-    target_species_domain: "Wild Primates"
+    target_species_domain: "Sapajus apella (brown capuchin)"
     marr_l1_ethological_goal: "Survival, foraging, and social navigation in unstructured, wild ecological environments."
     marr_l2_algorithmic_function: "Wild-environment computer vision; robust behavioral feature extraction from noisy backgrounds."
     marr_l3_implementational_hardware: "Unobtrusive environmental camera networks ('AI Forest'), edge-computing nodes."
     data_analysis_approach: "Deploying AI at the edge in wild environments to track complex behavioral traits, isolating social and environmental factors without the constraints of a laboratory setting."
     cross_project_synergy: "The ultimate test of 'Behavior-First' observation. Data pipelines here will stress-test the laboratory-derived algorithms of 1U01DA063534 for real-world robustness."
     agentic_action_required: "Map the edge-computing hardware architecture used to process computer vision data locally in the wild."
-    species: "Wild Primates"
+    species: "Sapajus apella"
     experimental_approaches: ["Wild ecological observation", "Unobtrusive monitoring"]
     data_modalities: ["Video / Optical", "Environmental / Meteorological"]
     data_type: ["Wild-environment video frames"]
@@ -696,14 +696,14 @@ projects:
     award_amount: 707108
     publication_count: 0
     publications: []
-    target_species_domain: "Mice"
+    target_species_domain: "Mus musculus (house mouse)"
     marr_l1_ethological_goal: "Ontogeny; experience-dependent adaptation and neurodevelopment across the lifespan."
     marr_l2_algorithmic_function: "Longitudinal data modeling; standardized cross-site harmonization algorithms."
     marr_l3_implementational_hardware: "Standardized multi-site recording equipment."
     data_analysis_approach: "Creating standardized protocols and computational pipelines to ensure data recorded across international sites can be seamlessly merged to track experience-dependent development."
     cross_project_synergy: "This project is fundamentally aligned with BARD.CC (U24MH136628) and EMBER (R24MH136632) regarding data standardization across the consortium."
     agentic_action_required: "None. Species identified."
-    species: "Mice"
+    species: "Mus musculus"
     experimental_approaches: ["Longitudinal tracking", "Multi-site standardized protocol implementation"]
     data_modalities: ["Behavioral", "Neural"]
     data_type: ["Longitudinal multi-site datasets"]
@@ -747,14 +747,14 @@ projects:
         citations: 18
         rcr: 8.972959397378318
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40063703/"
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Approach-avoidance behavior during real-world spatial navigation."
     marr_l2_algorithmic_function: "State estimation and evidence accumulation integrating autonomic and central neural signals."
     marr_l3_implementational_hardware: "Deep brain recordings (single-neuron or iEEG), wearable sensors for biochemical markers (cortisol, epinephrine) and biophysical signals (heart rate, movement)."
     data_analysis_approach: "Fusing deep brain recordings with wearable sensors to investigate the neural and peripheral mechanisms of approach-avoidance behaviors during spatial navigation in humans."
     cross_project_synergy: "Provides human L3 validation for 'Behavioral Segmentation' models utilizing autonomic rhythms (e.g., R34DA059718)."
     agentic_action_required: "Map the specific ML models used to fuse biochemical timeseries with millisecond neural spiking."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Freely moving spatial navigation", "Biomarker synchronization"]
     data_modalities: ["Neural (iEEG/single-neuron)", "Biochemical (Cortisol, Epinephrine)", "Biophysical (Heart rate, Movement)"]
     data_type: ["Neural time-series", "Continuous peripheral biomarkers"]
@@ -787,14 +787,14 @@ projects:
         citations: 3
         rcr: 1.0561202305982904
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/38428520/"
-    target_species_domain: "Humans (Epilepsy Patients)"
+    target_species_domain: "Homo sapiens (human, epilepsy patients)"
     marr_l1_ethological_goal: "Autobiographical memory formation in naturalistic daily environments."
     marr_l2_algorithmic_function: "Contextual encoding and episodic chunking logic."
     marr_l3_implementational_hardware: "CAPTURE custom smartphone application, wearable audio-visual, physiological, and GPS sensors alongside invasive intracranial neural recordings."
     data_analysis_approach: "Uses a custom smartphone application synchronized with wearable sensors and invasive intracranial neural recordings in epilepsy patients to understand how memories are encoded in daily life."
     cross_project_synergy: "Unstructured GPS/AV data ingestion pipeline could serve as a stress test for BARD.CC federation capabilities."
     agentic_action_required: "Identify specific algorithmic approaches (L2) used to map continuous GPS/AV data to discrete neural encoding states."
-    species: "Humans (Epilepsy Patients)"
+    species: "Homo sapiens"
     experimental_approaches: ["Naturalistic daily life monitoring", "Autobiographical memory assessment"]
     data_modalities: ["Neural (Intracranial EEG)", "Audio-Visual", "Physiological", "Spatial (GPS)"]
     data_type: ["Continuous multimodal sensor streams", "iEEG time-series"]
@@ -819,14 +819,14 @@ projects:
     award_amount: 2248476
     publication_count: 0
     publications: []
-    target_species_domain: "Humans (Pediatric / Clinical)"
+    target_species_domain: "Homo sapiens (human, pediatric)"
     marr_l1_ethological_goal: "Motor control and cognitive function in neurodevelopmental contexts."
     marr_l2_algorithmic_function: "Motion artifact removal algorithms; robust source localization in moving subjects."
     marr_l3_implementational_hardware: "Optically Pumped Magnetometers (OPM-MEG) integrated with precise movement tracking."
     data_analysis_approach: "Utilizing advanced tracking to dynamically correct for head and body movements during OPM-MEG recordings, allowing for high-fidelity neural imaging in pediatric populations who cannot remain still."
     cross_project_synergy: "Motion-correction algorithms from OPM-MEG can inform artifact rejection pipelines for mobile EEG/iEEG projects (R61MH135106, R61MH135109)."
     agentic_action_required: "Detail the specific physical tracking modality used (e.g., optical tracking vs. IMUs) to pair with the OPM-MEG."
-    species: "Humans (Pediatric)"
+    species: "Homo sapiens"
     experimental_approaches: ["Neurodevelopmental screening", "High-movement tolerance scanning"]
     data_modalities: ["Neural (OPM-MEG)", "Kinematic (Movement tracking)"]
     data_type: ["Magnetoencephalography waveforms", "Body tracking coordinates"]
@@ -851,14 +851,14 @@ projects:
     award_amount: 890772
     publication_count: 0
     publications: []
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Navigation of ecological stressors; regulation of anxiety and episodic memory."
     marr_l2_algorithmic_function: "Continuous state prediction models; context-aware machine learning."
     marr_l3_implementational_hardware: "The CAMERA Platform (integrated wearables, contextual sensors, ecological momentary assessment)."
     data_analysis_approach: "Fusing continuous multimodal data from the CAMERA platform to predict shifts in anxiety and memory states based on environmental contexts in real-world settings."
     cross_project_synergy: "CAMERA platform algorithms can be cross-pollinated with the CAPTURE app used in R61MH135109."
     agentic_action_required: "Define the machine learning architecture (e.g., LSTMs, Transformers) used for 'Continuous Prediction'."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Ecological momentary assessment (EMA)", "Real-world continuous measurement"]
     data_modalities: ["Physiological (Wearables)", "Contextual / Environmental", "Self-report (EMA)"]
     data_type: ["Continuous multimodal streams", "Survey metrics"]
@@ -979,14 +979,14 @@ projects:
         citations: 3
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41122417/"
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Internal state regulation and behavioral adaptation."
     marr_l2_algorithmic_function: "Dynamical modeling of nonlinear latent factors; advanced ML for mental state decoding."
     marr_l3_implementational_hardware: "Novel multimodal neural and physiological sensing suites."
     data_analysis_approach: "Employing advanced dynamical modeling to extract nonlinear latent factors from a fusion of neural, physiological, and behavioral streams to decode hidden mental states."
     cross_project_synergy: "The extraction of nonlinear latents maps directly to the continuous latent extraction algorithms used in Marmoset models (1U01DA063534)."
     agentic_action_required: "Agent Action: Identify the precise sensing modalities (L3) used to feed the nonlinear latent models."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Mental state decoding", "Multimodal sensing integration"]
     data_modalities: ["Neural", "Physiological", "Behavioral"]
     data_type: ["Continuous fused multivariate time-series"]
@@ -1011,14 +1011,14 @@ projects:
     award_amount: 999986
     publication_count: 0
     publications: []
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Effort-based decision making; resource allocation and cost-benefit analysis."
     marr_l2_algorithmic_function: "Neuroeconomic modeling; computational algorithms of effort and reward."
     marr_l3_implementational_hardware: "Multimodal platform capturing simultaneous brain and body signals during physical exertion."
     data_analysis_approach: "Quantifying physical kinematics and physiological strain and correlating these variables with real-time neural data to model how the brain computes physical effort during decision-making."
     cross_project_synergy: "Directly relates to the basic science of foraging and resource allocation seen in animal models (e.g., Oromanual food-handling in R34DA059723)."
     agentic_action_required: "Extract the exact neuroimaging hardware utilized (e.g., mobile EEG vs. fNIRS)."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Physical exertion paradigms", "Effort-based decision tasks"]
     data_modalities: ["Neural", "Kinematic (Body signals)", "Physiological"]
     data_type: ["Biomechanics", "Neural time-series"]
@@ -1043,14 +1043,14 @@ projects:
     award_amount: 689467
     publication_count: 0
     publications: []
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Vigilance, attention allocation, and environmental monitoring."
     marr_l2_algorithmic_function: "Sensor fusion algorithms bridging oscillatory dynamics with spatial tracking."
     marr_l3_implementational_hardware: "Privacy-preserving LiDAR, millimeter wave (mmWave) sensing, neural oscillation recorders (EEG)."
     data_analysis_approach: "Fusing highly spatial, privacy-preserving environmental sensing (LiDAR/mmWave) with internal state monitors (neural oscillations, physiology) to track how attention states fluctuate in naturalistic settings."
     cross_project_synergy: "The use of mmWave and LiDAR represents a novel L3 hardware approach that could be adapted for tracking behavior in visually occluded animal environments."
     agentic_action_required: "Determine the specific neural frequency bands (e.g., Alpha/Theta) correlated with the LiDAR attention tracking."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Privacy-preserving naturalistic tracking", "Attention state monitoring"]
     data_modalities: ["Neural (EEG)", "Physiological", "Spatial (LiDAR/mmWave)"]
     data_type: ["Point clouds", "Oscillatory EEG time-series"]
@@ -1075,14 +1075,14 @@ projects:
     award_amount: 665494
     publication_count: 0
     publications: []
-    target_species_domain: "Humans"
+    target_species_domain: "Homo sapiens (human)"
     marr_l1_ethological_goal: "Live social interaction, facial communication, and empathy."
     marr_l2_algorithmic_function: "Real-time facial keypoint extraction and neural synchronization analysis."
     marr_l3_implementational_hardware: "High-resolution facial tracking arrays synchronized with neural monitoring."
     data_analysis_approach: "Quantifying the micro-dynamics of live face-to-face behavior and mapping these kinematics to real-time neural correlates to uncover the mechanisms of human social coupling."
     cross_project_synergy: "Strong methodological overlap with the Interpersonal dyadic conversation project (R34DA059716) and the marmoset social dynamics project (1U01DA063534)."
     agentic_action_required: "Agent Action: Query to define the specific neural recording hardware (L3) utilized during the face-to-face interactions."
-    species: "Humans"
+    species: "Homo sapiens"
     experimental_approaches: ["Live face-to-face dyadic interaction", "Micro-dynamic quantification"]
     data_modalities: ["Video (Facial)", "Neural"]
     data_type: ["Facial kinematics", "Neural time-series"]
@@ -1110,14 +1110,14 @@ projects:
     award_amount: 4888497
     publication_count: 0
     publications: []
-    target_species_domain: "Marmosets"
+    target_species_domain: "Callithrix jacchus (common marmoset)"
     marr_l1_ethological_goal: "Multi-agent social dynamics, cooperative foraging, and navigation of physical constraints."
     marr_l2_algorithmic_function: "Multi-Agent Recurrent Neural Networks (RNNs) for extracting continuous latents; Dynamic Bayesian Networks for probabilistic reasoning; Embodied Agent-Based Models."
     marr_l3_implementational_hardware: "Neural arrays synchronized with musculoskeletal physical tracking."
     data_analysis_approach: "Extracting continuous low-dimensional latents from neural and behavioral data to predict social interactions. Utilizing RNNs to drive musculoskeletal models, constraining behavior by physical laws."
     cross_project_synergy: "Algorithmic extraction of social latents can be directly translated to human dyadic interaction models (R34DA059716, R61MH138705)."
     agentic_action_required: "Identify the exact institution and the specific brain regions recorded in L3."
-    species: "Marmosets"
+    species: "Callithrix jacchus"
     experimental_approaches: ["Naturalistic cooperation and competition tasks", "Multi-agent interaction"]
     data_modalities: ["Behavioral (Musculoskeletal tracking)", "Neural"]
     data_type: ["Continuous latents", "Physical interaction kinematics"]
