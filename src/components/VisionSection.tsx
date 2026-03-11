@@ -9,7 +9,7 @@ const VisionSection = () => {
       </p>
       
       <p className="text-foreground text-sm">
-        Visit <a href="https://ember.science" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">EMBER</a>, the Brain-Behavior Data Archive which hosts BBQS data and community tools
+        Visit <a href="https://emberarchive.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">EMBER</a>, the Brain-Behavior Data Archive which hosts BBQS data and community tools
       </p>
     </section>
   );
