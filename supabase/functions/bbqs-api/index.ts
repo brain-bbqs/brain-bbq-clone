@@ -134,6 +134,19 @@ serve(async (req) => {
 
     // ─── POST /ask ───────────────────────────────────────────
     if (req.method === "POST" && path === "ask") {
+      // Require authenticated consortium member
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return jsonResponse({ error: "Authentication required. Please sign in with Globus." }, 401);
+      }
+
+      const authClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
+      if (claimsError || !claimsData?.user) {
+        return jsonResponse({ error: "Invalid or expired session. Please sign in again." }, 401);
+      }
+
       const body = await req.json();
       const question = body.question || body.message;
       if (!question || typeof question !== "string") {
