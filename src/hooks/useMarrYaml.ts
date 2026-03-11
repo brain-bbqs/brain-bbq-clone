@@ -56,13 +56,17 @@ function parseProject(p: any, index: number): MarrProject {
   const commonMatch = tsd.match(/\(([^)]+)\)/);
   const commonName = commonMatch ? commonMatch[1] : "";
 
+  // species field may be a string or array in YAML
+  const rawSpecies = p.species || p.target_species_domain || "";
+  const speciesStr = Array.isArray(rawSpecies) ? rawSpecies[0] || "" : rawSpecies;
+
   return {
     id: p.grant_number,
     shortName: parseShortName(p),
     title: p.project_title || "",
     pi: piName,
     allPIs: leads,
-    species: p.species || p.target_species_domain || "",
+    species: speciesStr,
     speciesCommonName: commonName,
     institution: p.institution || "",
     color: PROJECT_COLORS[index % PROJECT_COLORS.length],

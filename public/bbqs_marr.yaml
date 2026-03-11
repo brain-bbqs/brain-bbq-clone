@@ -31,7 +31,7 @@ projects:
     data_analysis_approach: "Creating computer vision and tracking tools to monitor large numbers of conspecifics simultaneously. Building models to isolate and quantify how environmental contexts causally influence state changes."
     cross_project_synergy: "Evolutionary modeling of social states can serve as a baseline for the primate 'AI Forest' (R34DA061925)."
     agentic_action_required: "None. Species identified from publication data."
-    species: "Cichlidae"
+    species: ["Cichlidae"]
     experimental_approaches: ["Multi-animal observation", "Environmental context manipulation"]
     data_modalities: ["Video / Optical", "Behavioral tracking"]
     data_type: ["Video frames", "Continuous kinematic time-series"]
@@ -167,7 +167,7 @@ projects:
     data_analysis_approach: "Using active learning frameworks to dynamically sample and quantify behavior based on real-time physiological and neural monitoring."
     cross_project_synergy: "Active learning loops can optimize the continuous monitoring models required in R61MH135405 (CAMERA platform)."
     agentic_action_required: "Extract specific physiological parameters (L3) being monitored."
-    species: "Mus musculus"
+    species: ["Mus musculus"]
     experimental_approaches: ["Active learning behavioral quantification", "Physiological state mapping"]
     data_modalities: ["Behavioral tracking", "Physiological", "Neural"]
     data_type: ["Continuous multidimensional time-series"]
@@ -231,7 +231,7 @@ projects:
     data_analysis_approach: "Fusing acoustic data with physical tracking to solve the 'cocktail party problem' of attributing specific vocalizations to individual interacting animals while simultaneously mapping neural responses."
     cross_project_synergy: "The source attribution algorithms developed here are highly translatable to the Molothrus ater (brown-headed cowbird) smart aviary (R34DA059507)."
     agentic_action_required: "Detail the dimensionality reduction techniques used."
-    species: "Meriones unguiculatus; Mus musculus"
+    species: ["Meriones unguiculatus", "Mus musculus"]
     experimental_approaches: ["Naturalistic social observation", "Multimodal fusion", "Acoustic monitoring"]
     data_modalities: ["Audio / Acoustic", "Video / Behavioral", "Neural"]
     data_type: ["Acoustic waveforms", "Video frames", "Neural time-series"]
@@ -263,7 +263,7 @@ projects:
     data_analysis_approach: "Deploying an instrumented aviary to seamlessly track 3D kinematics and vocalizations of multiple birds, linking these high-dimensional behaviors to underlying neural circuit dynamics."
     cross_project_synergy: "3D kinematic tracking in the aviary translates directly to the 'AI Forest' for wild primates (R34DA061925)."
     agentic_action_required: "Identify the specific brain regions recorded in L3 to map to the vocal-motor algorithms in L2."
-    species: "Molothrus ater"
+    species: ["Molothrus ater"]
     experimental_approaches: ["3D environment tracking", "Flocking dynamics observation"]
     data_modalities: ["Video / Optical", "Audio", "Neural"]
     data_type: ["3D Kinematics", "Acoustic sequences", "Neural spike trains"]
@@ -327,7 +327,7 @@ projects:
     data_analysis_approach: "Quantifying how intrinsic biological rhythms (e.g., autonomic, neural oscillations) dictate the onset, duration, and resilience of specific social behavioral motifs."
     cross_project_synergy: "Pairs elegantly with the human autonomic rhythm tracking in R61MH135106 for cross-species modeling of 'internal states'."
     agentic_action_required: "Confirm the biological rhythms being tracked (e.g., cardiac, respiratory, theta oscillations) and the algorithm used."
-    species: "Mus musculus"
+    species: ["Mus musculus"]
     experimental_approaches: ["Biological rhythm monitoring", "Social interaction observation"]
     data_modalities: ["Physiological (Autonomic)", "Neural (Oscillations)", "Video / Behavioral"]
     data_type: ["Continuous physiological time-series", "Behavioral motifs"]
@@ -367,7 +367,7 @@ projects:
     data_analysis_approach: "Utilizing advanced computer vision to extract deep 3D phenotypic markers during social interactions, transforming raw pixel data into continuous kinematic latents."
     cross_project_synergy: "Can serve as a foundational validation dataset for EMBER's (R24MH136632) behavioral ontologies (NBO)."
     agentic_action_required: "None. Species and institution identified."
-    species: "Rattus norvegicus"
+    species: ["Rattus norvegicus"]
     experimental_approaches: ["Deep phenotyping", "Social interaction tracking"]
     data_modalities: ["Video / Optical"]
     data_type: ["Raw pixels", "Continuous 3D kinematic latents"]
@@ -415,7 +415,7 @@ projects:
     data_analysis_approach: "Scaling up ethological observation to high-throughput levels while maintaining 3D spatial resolution, allowing for robust statistical modeling of rodent behavior against shifting environmental variables."
     cross_project_synergy: "Algorithmic approaches for managing 'dynamic environments' can directly aid the human real-world spatial navigation models (R61MH135106)."
     agentic_action_required: "Identify the exact ML models used to segment behavior in dynamic (non-static) environments."
-    species: "Rodentia"
+    species: ["Rodentia"]
     experimental_approaches: ["High-throughput screening", "Dynamic environment navigation"]
     data_modalities: ["Video / Optical"]
     data_type: ["3D kinematic trajectories"]
@@ -447,7 +447,7 @@ projects:
     data_analysis_approach: "Quantifying and analyzing temporal patterns of multimodal communication (e.g., facial expression, turn-taking, gestures, speech rates) during face-to-face and remote dyadic interactions and synchronizing with pilot EEG hyperscanning data."
     cross_project_synergy: "Compare EEG hyperscanning pipelines with Marmoset multi-agent RNN models (1U01DA063534) to isolate conserved algorithms of 'turn-taking'."
     agentic_action_required: "Define the specific time-series dimensionality reduction technique used to align EEG with visual/audio inputs."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Dyadic conversation (virtual and in-person)", "Hyperscanning"]
     data_modalities: ["Neural (EEG)", "Video (Facial expressions, gestures)", "Audio (Speech rates)"]
     data_type: ["EEG time-series", "Video frames", "Acoustic sequences"]
@@ -479,7 +479,7 @@ projects:
     data_analysis_approach: "Isolating the rapid, complex kinematics of oromanual food handling and syncing these micro-behaviors with neural streams to understand precise motor control and reward processing."
     cross_project_synergy: "Oromanual kinematics can provide an isolated, high-resolution test case for the Embodied Musculoskeletal Frameworks being built in 1U01DA063534."
     agentic_action_required: "None. Species identified."
-    species: "Mus musculus"
+    species: ["Mus musculus"]
     experimental_approaches: ["Foraging observation", "Fine motor manipulation analysis"]
     data_modalities: ["Video / Optical (High-speed)", "Neural"]
     data_type: ["High-speed video frames", "Neural time-series"]
@@ -511,7 +511,7 @@ projects:
     data_analysis_approach: "Leveraging existing agricultural sheep herds to acquire high-resolution spatiotemporal measurements of individual sheep using head-mounted visual sensors. This will be combined with robust neural recordings to study the neural circuits underlying complex collective behaviors."
     cross_project_synergy: "Hardware constraints (L3) and spatial transformation algorithms (L2) can inform primate or human real-world navigation studies (R61MH135106)."
     agentic_action_required: "Identify the specific brain circuits being targeted (e.g., Hippocampus/Entorhinal cortex)."
-    species: "Ovis aries"
+    species: ["Ovis aries"]
     experimental_approaches: ["Field observation", "Agricultural herd tracking"]
     data_modalities: ["Video / Optical (Egocentric)", "Neural"]
     data_type: ["High-resolution spatiotemporal matrices", "Neural spike data"]
@@ -559,7 +559,7 @@ projects:
     data_analysis_approach: "Utilizing transformative optical imaging to capture large-scale neural population dynamics simultaneously with precise behavioral tracking to map the transformation of sensory input to motor output during navigation."
     cross_project_synergy: "Provides the highest-resolution Level 3 (Implementational) data to validate the broader navigation algorithms used in larger mammals."
     agentic_action_required: "None. Genetic models identified."
-    species: "Drosophila melanogaster; Danio rerio"
+    species: ["Drosophila melanogaster", "Danio rerio"]
     experimental_approaches: ["Spatial navigation tasks", "Virtual reality or freely behaving optical imaging"]
     data_modalities: ["Optical Neural Imaging", "Behavioral tracking"]
     data_type: ["Large-scale population fluorescence signals", "Locomotor trajectories"]
@@ -599,7 +599,7 @@ projects:
     data_analysis_approach: "Establishing baseline behavioral and neural quantification pipelines for an entirely new model organism, requiring highly adaptable, generalized tracking and recording algorithms."
     cross_project_synergy: "Testing BARD.CC and EMBER’s ability to handle completely novel metadata schemas and ontologies."
     agentic_action_required: "None. New model system identified."
-    species: "Hofstenia miamia"
+    species: ["Hofstenia miamia"]
     experimental_approaches: ["Sensory ecology observation", "Pipeline establishment"]
     data_modalities: ["Environmental sensing", "Neural", "Behavioral"]
     data_type: ["Multimodal environmental variables", "Neural signals"]
@@ -631,7 +631,7 @@ projects:
     data_analysis_approach: "Applying complex systems theory to map how micro-scale neural events trigger macro-scale behavioral and social state transitions in interacting groups."
     cross_project_synergy: "Strong theoretical overlap with the Multi-Agent Dynamics of 1U01DA063534; algorithms can be directly compared."
     agentic_action_required: "Determine the specific mathematical framework used to define 'dynamic transitions'."
-    species: "Mustela furo; Rodentia"
+    species: ["Mustela furo", "Rodentia"]
     experimental_approaches: ["Multi-scale social tracking", "Phase transition induction"]
     data_modalities: ["Neural", "Behavioral", "Social metadata"]
     data_type: ["Micro-scale neural spikes", "Macro-scale social network graphs"]
@@ -671,7 +671,7 @@ projects:
     data_analysis_approach: "Deploying AI at the edge in wild environments to track complex behavioral traits, isolating social and environmental factors without the constraints of a laboratory setting."
     cross_project_synergy: "The ultimate test of 'Behavior-First' observation. Data pipelines here will stress-test the laboratory-derived algorithms of 1U01DA063534 for real-world robustness."
     agentic_action_required: "Map the edge-computing hardware architecture used to process computer vision data locally in the wild."
-    species: "Sapajus apella"
+    species: ["Sapajus apella"]
     experimental_approaches: ["Wild ecological observation", "Unobtrusive monitoring"]
     data_modalities: ["Video / Optical", "Environmental / Meteorological"]
     data_type: ["Wild-environment video frames"]
@@ -703,7 +703,7 @@ projects:
     data_analysis_approach: "Creating standardized protocols and computational pipelines to ensure data recorded across international sites can be seamlessly merged to track experience-dependent development."
     cross_project_synergy: "This project is fundamentally aligned with BARD.CC (U24MH136628) and EMBER (R24MH136632) regarding data standardization across the consortium."
     agentic_action_required: "None. Species identified."
-    species: "Mus musculus"
+    species: ["Mus musculus"]
     experimental_approaches: ["Longitudinal tracking", "Multi-site standardized protocol implementation"]
     data_modalities: ["Behavioral", "Neural"]
     data_type: ["Longitudinal multi-site datasets"]
@@ -754,7 +754,7 @@ projects:
     data_analysis_approach: "Fusing deep brain recordings with wearable sensors to investigate the neural and peripheral mechanisms of approach-avoidance behaviors during spatial navigation in humans."
     cross_project_synergy: "Provides human L3 validation for 'Behavioral Segmentation' models utilizing autonomic rhythms (e.g., R34DA059718)."
     agentic_action_required: "Map the specific ML models used to fuse biochemical timeseries with millisecond neural spiking."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Freely moving spatial navigation", "Biomarker synchronization"]
     data_modalities: ["Neural (iEEG/single-neuron)", "Biochemical (Cortisol, Epinephrine)", "Biophysical (Heart rate, Movement)"]
     data_type: ["Neural time-series", "Continuous peripheral biomarkers"]
@@ -794,7 +794,7 @@ projects:
     data_analysis_approach: "Uses a custom smartphone application synchronized with wearable sensors and invasive intracranial neural recordings in epilepsy patients to understand how memories are encoded in daily life."
     cross_project_synergy: "Unstructured GPS/AV data ingestion pipeline could serve as a stress test for BARD.CC federation capabilities."
     agentic_action_required: "Identify specific algorithmic approaches (L2) used to map continuous GPS/AV data to discrete neural encoding states."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Naturalistic daily life monitoring", "Autobiographical memory assessment"]
     data_modalities: ["Neural (Intracranial EEG)", "Audio-Visual", "Physiological", "Spatial (GPS)"]
     data_type: ["Continuous multimodal sensor streams", "iEEG time-series"]
@@ -826,7 +826,7 @@ projects:
     data_analysis_approach: "Utilizing advanced tracking to dynamically correct for head and body movements during OPM-MEG recordings, allowing for high-fidelity neural imaging in pediatric populations who cannot remain still."
     cross_project_synergy: "Motion-correction algorithms from OPM-MEG can inform artifact rejection pipelines for mobile EEG/iEEG projects (R61MH135106, R61MH135109)."
     agentic_action_required: "Detail the specific physical tracking modality used (e.g., optical tracking vs. IMUs) to pair with the OPM-MEG."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Neurodevelopmental screening", "High-movement tolerance scanning"]
     data_modalities: ["Neural (OPM-MEG)", "Kinematic (Movement tracking)"]
     data_type: ["Magnetoencephalography waveforms", "Body tracking coordinates"]
@@ -858,7 +858,7 @@ projects:
     data_analysis_approach: "Fusing continuous multimodal data from the CAMERA platform to predict shifts in anxiety and memory states based on environmental contexts in real-world settings."
     cross_project_synergy: "CAMERA platform algorithms can be cross-pollinated with the CAPTURE app used in R61MH135109."
     agentic_action_required: "Define the machine learning architecture (e.g., LSTMs, Transformers) used for 'Continuous Prediction'."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Ecological momentary assessment (EMA)", "Real-world continuous measurement"]
     data_modalities: ["Physiological (Wearables)", "Contextual / Environmental", "Self-report (EMA)"]
     data_type: ["Continuous multimodal streams", "Survey metrics"]
@@ -986,7 +986,7 @@ projects:
     data_analysis_approach: "Employing advanced dynamical modeling to extract nonlinear latent factors from a fusion of neural, physiological, and behavioral streams to decode hidden mental states."
     cross_project_synergy: "The extraction of nonlinear latents maps directly to the continuous latent extraction algorithms used in Marmoset models (1U01DA063534)."
     agentic_action_required: "Agent Action: Identify the precise sensing modalities (L3) used to feed the nonlinear latent models."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Mental state decoding", "Multimodal sensing integration"]
     data_modalities: ["Neural", "Physiological", "Behavioral"]
     data_type: ["Continuous fused multivariate time-series"]
@@ -1018,7 +1018,7 @@ projects:
     data_analysis_approach: "Quantifying physical kinematics and physiological strain and correlating these variables with real-time neural data to model how the brain computes physical effort during decision-making."
     cross_project_synergy: "Directly relates to the basic science of foraging and resource allocation seen in animal models (e.g., Oromanual food-handling in R34DA059723)."
     agentic_action_required: "Extract the exact neuroimaging hardware utilized (e.g., mobile EEG vs. fNIRS)."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Physical exertion paradigms", "Effort-based decision tasks"]
     data_modalities: ["Neural", "Kinematic (Body signals)", "Physiological"]
     data_type: ["Biomechanics", "Neural time-series"]
@@ -1050,7 +1050,7 @@ projects:
     data_analysis_approach: "Fusing highly spatial, privacy-preserving environmental sensing (LiDAR/mmWave) with internal state monitors (neural oscillations, physiology) to track how attention states fluctuate in naturalistic settings."
     cross_project_synergy: "The use of mmWave and LiDAR represents a novel L3 hardware approach that could be adapted for tracking behavior in visually occluded animal environments."
     agentic_action_required: "Determine the specific neural frequency bands (e.g., Alpha/Theta) correlated with the LiDAR attention tracking."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Privacy-preserving naturalistic tracking", "Attention state monitoring"]
     data_modalities: ["Neural (EEG)", "Physiological", "Spatial (LiDAR/mmWave)"]
     data_type: ["Point clouds", "Oscillatory EEG time-series"]
@@ -1082,7 +1082,7 @@ projects:
     data_analysis_approach: "Quantifying the micro-dynamics of live face-to-face behavior and mapping these kinematics to real-time neural correlates to uncover the mechanisms of human social coupling."
     cross_project_synergy: "Strong methodological overlap with the Interpersonal dyadic conversation project (R34DA059716) and the marmoset social dynamics project (1U01DA063534)."
     agentic_action_required: "Agent Action: Query to define the specific neural recording hardware (L3) utilized during the face-to-face interactions."
-    species: "Homo sapiens"
+    species: ["Homo sapiens"]
     experimental_approaches: ["Live face-to-face dyadic interaction", "Micro-dynamic quantification"]
     data_modalities: ["Video (Facial)", "Neural"]
     data_type: ["Facial kinematics", "Neural time-series"]
@@ -1117,7 +1117,7 @@ projects:
     data_analysis_approach: "Extracting continuous low-dimensional latents from neural and behavioral data to predict social interactions. Utilizing RNNs to drive musculoskeletal models, constraining behavior by physical laws."
     cross_project_synergy: "Algorithmic extraction of social latents can be directly translated to human dyadic interaction models (R34DA059716, R61MH138705)."
     agentic_action_required: "Identify the exact institution and the specific brain regions recorded in L3."
-    species: "Callithrix jacchus"
+    species: ["Callithrix jacchus"]
     experimental_approaches: ["Naturalistic cooperation and competition tasks", "Multi-agent interaction"]
     data_modalities: ["Behavioral (Musculoskeletal tracking)", "Neural"]
     data_type: ["Continuous latents", "Physical interaction kinematics"]
@@ -1168,7 +1168,7 @@ projects:
     data_analysis_approach: "Developing cloud-based data ecosystems and federated machine learning pipelines that allow algorithms to operate over disparate, multimodal data sources without breaking data governance."
     cross_project_synergy: "Serves as the foundational computational hardware (L3) and architectural logic (L2) for the entire BBQS network."
     agentic_action_required: "Maintain continuous schema updates as U01/R34/R61 data APIs come online."
-    species: "All Species"
+    species: ["All Species"]
     experimental_approaches: ["Data coordination", "Infrastructure development", "Ontology building"]
     data_modalities: ["Multi-modal (Aggregated across consortium)"]
     data_type: ["JSON metadata", "Knowledge Graphs", "Federated structured data"]
@@ -1203,7 +1203,7 @@ projects:
     data_analysis_approach: "Ingesting, curating, and harmonizing highly technical neural and behavioral data using rigorous JSON schemas. Providing cloud-based sandboxes integrated with DCAIC resources."
     cross_project_synergy: "Directly partners with BARD.CC. EMBER structures the data; BARD computes on it."
     agentic_action_required: "Map specific alignment protocols between EMBER's JSON schemas and the StructSense 2.0 Knowledge Graph."
-    species: "All Species"
+    species: ["All Species"]
     experimental_approaches: ["Data archiving", "Ontology standardization"]
     data_modalities: ["Multi-modal (Aggregated across consortium)"]
     data_type: ["Standardized schema files (e.g., NWB, BIDS)"]
