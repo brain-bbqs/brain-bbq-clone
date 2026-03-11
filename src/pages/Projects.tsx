@@ -58,6 +58,7 @@ interface ProjectRow {
   nihLink: string;
   publications: Publication[];
   publicationCount: number;
+  species?: string;
 }
 
 const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
