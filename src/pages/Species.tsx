@@ -115,7 +115,7 @@ export default function Species() {
       // Species field from YAML is the Latin/scientific name
       const speciesKey = p.species || "Unknown";
       const existing = grouped.get(speciesKey);
-      const project: ProjectInfo = { name: getProjectTitle(p.shortName), grantId: p.id };
+      const project: ProjectInfo = { name: p.title || p.shortName, grantId: p.id };
       if (existing) {
         existing.projects.push(project);
         p.computational.forEach((b) => existing.behaviors.add(b));
