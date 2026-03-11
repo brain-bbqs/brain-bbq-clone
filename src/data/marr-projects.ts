@@ -7,6 +7,7 @@
 export interface MarrProject {
   id: string;
   shortName: string;
+  title?: string;
   pi: string;
   allPIs: string[];
   species: string;
