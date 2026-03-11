@@ -13,6 +13,7 @@ export interface MarrProject {
   species: string;
   speciesList?: string[];
   speciesCommonName?: string;
+  speciesCommonNames?: Record<string, string>;
   institution: string;
   color: string;
   computational: string[];   // What problem

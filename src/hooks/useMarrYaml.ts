@@ -51,7 +51,9 @@ function parseProject(p: any, index: number): MarrProject {
     ? firstLead.split(",").map((s: string) => s.trim()).reverse().join(" ")
     : firstLead;
 
-  // Parse common name from target_species_domain, e.g. "Mus musculus (house mouse)" → "house mouse"
+  // Parse common names from target_species_domain
+  // Formats: "Mus musculus (house mouse)", "Mustela furo; Rodentia (ferret; rodents)",
+  //          "Genetic Species (Drosophila / Zebrafish)"
   const tsd = p.target_species_domain || "";
   const commonMatch = tsd.match(/\(([^)]+)\)/);
   const commonName = commonMatch ? commonMatch[1] : "";
@@ -63,6 +65,18 @@ function parseProject(p: any, index: number): MarrProject {
     : rawSpecies.split(/\s*\/\s*/).map((s: string) => s.trim()).filter(Boolean);
   const speciesStr = speciesList[0] || "";
 
+  // Build a common name map: try to match each species in the list to a common name
+  // from the parenthetical in target_species_domain
+  const commonNames = commonName.split(/[;\/]/).map((s: string) => s.trim()).filter(Boolean);
+  const speciesCommonNames: Record<string, string> = {};
+  speciesList.forEach((sp, i) => {
+    if (commonNames[i]) {
+      speciesCommonNames[sp] = commonNames[i];
+    } else if (commonNames.length === 1) {
+      speciesCommonNames[sp] = commonNames[0];
+    }
+  });
+
   return {
     id: p.grant_number,
     shortName: parseShortName(p),
@@ -72,6 +86,7 @@ function parseProject(p: any, index: number): MarrProject {
     species: speciesStr,
     speciesList,
     speciesCommonName: commonName,
+    speciesCommonNames,
     institution: p.institution || "",
     color: PROJECT_COLORS[index % PROJECT_COLORS.length],
     computational: splitField(p.marr_l1_ethological_goal),
