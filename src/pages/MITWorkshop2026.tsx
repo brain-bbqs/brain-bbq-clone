@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users } from "lucide-react";
-import PageMeta from "@/components/PageMeta";
+import { PageMeta } from "@/components/PageMeta";
 
 const MITWorkshop2026 = () => {
   return (
