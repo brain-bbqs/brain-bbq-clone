@@ -73,6 +73,7 @@ const communityItems: NavItem[] = [
 
 const conferencesItems: NavItem[] = [
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
+  { title: "MIT Workshop 2026", url: "/mit-workshop-2026", icon: Calendar },
 ];
 
 const engineeringItems: NavItem[] = [
