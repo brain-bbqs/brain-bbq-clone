@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
+import bbqsLogo from "@/assets/bbqs-logo.png";
 
 const MITWorkshop2026 = () => {
   return (
@@ -15,6 +16,7 @@ const MITWorkshop2026 = () => {
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/5" />
           <div className="relative max-w-5xl mx-auto px-6 py-12">
+            <img src={bbqsLogo} alt="BBQS Logo" className="h-16 mb-6" />
             <div className="flex items-center gap-3 mb-4">
               <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                 Conference
@@ -24,7 +26,7 @@ const MITWorkshop2026 = () => {
               </Badge>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight max-w-3xl">
-              2nd Annual Brain Behavior Quantification and Synchronization Workshop at MIT
+              2<sup>nd</sup> Annual Brain Behavior Quantification and Synchronization Workshop at MIT
             </h1>
             <div className="flex flex-wrap items-center gap-4 mt-6 text-muted-foreground">
               <div className="flex items-center gap-2">
