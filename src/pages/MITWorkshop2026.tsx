@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import bbqsLogo from "@/assets/bbqs-logo.png";
+import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 
 const MITWorkshop2026 = () => {
   return (
