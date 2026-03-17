@@ -16,7 +16,7 @@ const MITWorkshop2026 = () => {
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/5" />
           <div className="relative max-w-5xl mx-auto px-6 py-12">
-            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-16 mb-6" />
+            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-32 mb-6 mx-auto" />
             <div className="flex items-center gap-3 mb-4">
               <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                 Conference
