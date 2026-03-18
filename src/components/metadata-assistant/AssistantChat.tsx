@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
-import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
+
 import { SuggestedActions, WORKFLOW_ACTIONS } from "@/components/metadata-assistant/SuggestedActions";
 import { VoiceAgentButton } from "@/components/metadata-assistant/VoiceAgentButton";
 import ReactMarkdown from "react-markdown";
@@ -216,14 +216,6 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         )}
       </div>
 
-      {/* Workflow stepper - only shows when metadata is being updated */}
-      {projectTitle && fieldsUpdated.length > 0 && (
-        <WorkflowStepper
-          messageCount={messages.length}
-          hasValidation={!!lastValidation}
-          completeness={completeness}
-        />
-      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
