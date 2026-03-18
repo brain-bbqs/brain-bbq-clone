@@ -288,6 +288,18 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 isLoading={isLoading}
               />
             )}
+            {/* Undo button after the last assistant message if fields were updated */}
+            {msg.role === "assistant" && i === messages.length - 1 && fieldsUpdated.length > 0 && !isLoading && (
+              <div className="flex justify-start mt-2 ml-1">
+                <button
+                  onClick={() => onSend("Undo my last change — revert the fields that were just modified and restore their previous values.")}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Undo last action
+                </button>
+              </div>
+            )}
           </div>
         ))}
 
