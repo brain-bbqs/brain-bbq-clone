@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Trash2, CheckCircle2, AlertTriangle, XCircle, Shield, ChevronDown } from "lucide-react";
+import { Send, Sparkles, Trash2, CheckCircle2, AlertTriangle, XCircle, Shield, ChevronDown, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
