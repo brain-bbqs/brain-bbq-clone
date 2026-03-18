@@ -205,7 +205,7 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
