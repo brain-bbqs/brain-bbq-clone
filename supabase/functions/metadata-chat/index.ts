@@ -248,7 +248,10 @@ METADATA FIELD RULES:
 - website: Project URL
 - study_human: Boolean
 
-MERGE new values with existing arrays — never overwrite.
+TOOLS:
+- Use "update_project_metadata" to ADD/MERGE new values into array fields.
+- Use "remove_project_metadata" to REMOVE specific values from array fields, clear a website, or reset study_human. Use this when the user says something is incorrect, wrong, shouldn't be there, or asks to delete/remove a value.
+- When the user asks to remove something, ALWAYS use remove_project_metadata — never try to overwrite with update_project_metadata.
 ${consortiumSection}
 ${ragSection}`;
 
@@ -256,22 +259,46 @@ ${ragSection}`;
       type: "function" as const,
       function: {
         name: "update_project_metadata",
-        description: "Update structured metadata fields for the current project. Merges new values with existing arrays.",
+        description: "Add/merge new values into metadata fields for the current project. Use this to ADD data. Merges new values with existing arrays.",
         parameters: {
           type: "object",
           properties: {
-            study_species: { type: "array", items: { type: "string" }, description: "Species studied (use scientific names)" },
-            use_approaches: { type: "array", items: { type: "string" }, description: "Experimental approaches used" },
-            use_sensors: { type: "array", items: { type: "string" }, description: "Sensors/recording devices used" },
-            produce_data_modality: { type: "array", items: { type: "string" }, description: "Types of data produced" },
-            produce_data_type: { type: "array", items: { type: "string" }, description: "Data file types produced" },
-            use_analysis_types: { type: "array", items: { type: "string" }, description: "Types of analysis performed" },
-            use_analysis_method: { type: "array", items: { type: "string" }, description: "Specific analysis methods" },
-            develope_software_type: { type: "array", items: { type: "string" }, description: "Software being developed" },
-            develope_hardware_type: { type: "array", items: { type: "string" }, description: "Hardware being developed" },
-            keywords: { type: "array", items: { type: "string" }, description: "General keywords for the project" },
+            study_species: { type: "array", items: { type: "string" }, description: "Species to add" },
+            use_approaches: { type: "array", items: { type: "string" }, description: "Approaches to add" },
+            use_sensors: { type: "array", items: { type: "string" }, description: "Sensors to add" },
+            produce_data_modality: { type: "array", items: { type: "string" }, description: "Data modalities to add" },
+            produce_data_type: { type: "array", items: { type: "string" }, description: "Data types to add" },
+            use_analysis_types: { type: "array", items: { type: "string" }, description: "Analysis types to add" },
+            use_analysis_method: { type: "array", items: { type: "string" }, description: "Analysis methods to add" },
+            develope_software_type: { type: "array", items: { type: "string" }, description: "Software types to add" },
+            develope_hardware_type: { type: "array", items: { type: "string" }, description: "Hardware types to add" },
+            keywords: { type: "array", items: { type: "string" }, description: "Keywords to add" },
             website: { type: "string", description: "Project website URL" },
             study_human: { type: "boolean", description: "Whether the project studies humans" },
+          },
+          additionalProperties: false,
+        },
+      },
+    }, {
+      type: "function" as const,
+      function: {
+        name: "remove_project_metadata",
+        description: "Remove specific values from metadata array fields, clear the website, or reset study_human. Use this when the user says something is incorrect, wrong, or asks to delete/remove a value.",
+        parameters: {
+          type: "object",
+          properties: {
+            study_species: { type: "array", items: { type: "string" }, description: "Species to remove" },
+            use_approaches: { type: "array", items: { type: "string" }, description: "Approaches to remove" },
+            use_sensors: { type: "array", items: { type: "string" }, description: "Sensors to remove" },
+            produce_data_modality: { type: "array", items: { type: "string" }, description: "Data modalities to remove" },
+            produce_data_type: { type: "array", items: { type: "string" }, description: "Data types to remove" },
+            use_analysis_types: { type: "array", items: { type: "string" }, description: "Analysis types to remove" },
+            use_analysis_method: { type: "array", items: { type: "string" }, description: "Analysis methods to remove" },
+            develope_software_type: { type: "array", items: { type: "string" }, description: "Software types to remove" },
+            develope_hardware_type: { type: "array", items: { type: "string" }, description: "Hardware types to remove" },
+            keywords: { type: "array", items: { type: "string" }, description: "Keywords to remove" },
+            clear_website: { type: "boolean", description: "Set to true to clear the website field" },
+            study_human: { type: "boolean", description: "New value for study_human (use false to reset)" },
           },
           additionalProperties: false,
         },
@@ -367,6 +394,31 @@ ${ragSection}`;
             delete dbUpdates[f];
             const idx = fieldsUpdated.indexOf(f);
             if (idx >= 0) fieldsUpdated.splice(idx, 1);
+          }
+        }
+      }
+
+      // Handle remove_project_metadata tool
+      if (tc.function?.name === "remove_project_metadata") {
+        const args = JSON.parse(tc.function.arguments);
+
+        for (const [key, val] of Object.entries(args)) {
+          if (key === "clear_website" && val === true) {
+            dbUpdates["website"] = "";
+            if (!fieldsUpdated.includes("website")) fieldsUpdated.push("website");
+          } else if (key === "study_human" && typeof val === "boolean") {
+            dbUpdates[key] = val;
+            if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
+          } else if (Array.isArray(val) && val.length > 0) {
+            const existing = Array.isArray((project as any)[key]) ? [...(project as any)[key]] : [];
+            // Also check dbUpdates in case update_project_metadata was called in the same turn
+            const current = Array.isArray(dbUpdates[key]) ? dbUpdates[key] : existing;
+            const lowercaseRemovals = (val as string[]).map((v: string) => v.toLowerCase());
+            const filtered = current.filter((v: string) =>
+              !lowercaseRemovals.includes(v.toLowerCase())
+            );
+            dbUpdates[key] = filtered;
+            if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
           }
         }
       }
