@@ -216,14 +216,6 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
         )}
       </div>
 
-      {/* Workflow stepper - only shows when metadata is being updated */}
-      {projectTitle && fieldsUpdated.length > 0 && (
-        <WorkflowStepper
-          messageCount={messages.length}
-          hasValidation={!!lastValidation}
-          completeness={completeness}
-        />
-      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
