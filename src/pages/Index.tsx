@@ -106,12 +106,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Revamp Announcement */}
-      <section className="px-4 sm:px-6 mt-8 max-w-3xl mx-auto text-center">
-        <p className="text-muted-foreground leading-relaxed text-base">
-          Welcome to the newly redesigned BBQS Consortium portal — built from the ground up to better serve our growing community of computational neuroscientists. This revamp introduces streamlined navigation, AI-powered assistants for metadata curation and data discovery, and a unified knowledge base connecting projects, publications, species, and grants. Every page has been rethought to surface the tools, people, and resources you need with fewer clicks. We're excited to keep iterating with your feedback — explore what's new and let us know how we can make it even better.
-        </p>
-      </section>
 
       {/* Navigation Cards */}
       <main className="px-4 sm:px-6 pb-16 mt-8">
