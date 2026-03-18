@@ -397,6 +397,31 @@ ${ragSection}`;
           }
         }
       }
+
+      // Handle remove_project_metadata tool
+      if (tc.function?.name === "remove_project_metadata") {
+        const args = JSON.parse(tc.function.arguments);
+
+        for (const [key, val] of Object.entries(args)) {
+          if (key === "clear_website" && val === true) {
+            dbUpdates["website"] = "";
+            if (!fieldsUpdated.includes("website")) fieldsUpdated.push("website");
+          } else if (key === "study_human" && typeof val === "boolean") {
+            dbUpdates[key] = val;
+            if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
+          } else if (Array.isArray(val) && val.length > 0) {
+            const existing = Array.isArray((project as any)[key]) ? [...(project as any)[key]] : [];
+            // Also check dbUpdates in case update_project_metadata was called in the same turn
+            const current = Array.isArray(dbUpdates[key]) ? dbUpdates[key] : existing;
+            const lowercaseRemovals = (val as string[]).map((v: string) => v.toLowerCase());
+            const filtered = current.filter((v: string) =>
+              !lowercaseRemovals.includes(v.toLowerCase())
+            );
+            dbUpdates[key] = filtered;
+            if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
+          }
+        }
+      }
     }
 
     // Apply DB updates if any remain
