@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -18,33 +18,27 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
 
-  // Step 1: /globus-auth?action=login → redirect to Globus
-  // Step 2: /globus-auth?action=callback&code=XXX → exchange code, create/sign-in user
-
   try {
-    const { action, code, redirect_uri } = await getParams(req, url);
+    // GET request = Globus callback (redirect from Globus after user auth)
+    if (req.method === "GET") {
+      const code = url.searchParams.get("code");
+      const stateParam = url.searchParams.get("state");
 
-    if (action === "login") {
-      // Build Globus authorization URL
-      const authUrl = new URL("https://auth.globus.org/v2/oauth2/authorize");
-      authUrl.searchParams.set("client_id", GLOBUS_CLIENT_ID);
-      authUrl.searchParams.set("response_type", "code");
-      authUrl.searchParams.set("redirect_uri", redirect_uri);
-      authUrl.searchParams.set("scope", "openid profile email");
-      authUrl.searchParams.set("access_type", "offline");
-
-      return new Response(JSON.stringify({ url: authUrl.toString() }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (action === "callback") {
-      if (!code) {
-        return new Response(JSON.stringify({ error: "Missing code" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (!code || !stateParam) {
+        return new Response("Missing code or state", { status: 400 });
       }
+
+      // Decode state to get the frontend redirect URI
+      let frontendRedirect: string;
+      try {
+        const stateData = JSON.parse(atob(stateParam));
+        frontendRedirect = stateData.redirect_uri;
+      } catch {
+        return new Response("Invalid state parameter", { status: 400 });
+      }
+
+      // The redirect_uri for token exchange must be THIS edge function URL
+      const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/globus-auth`;
 
       // Exchange code for tokens
       const tokenRes = await fetch("https://auth.globus.org/v2/oauth2/token", {
@@ -56,17 +50,16 @@ Deno.serve(async (req) => {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
-          redirect_uri,
+          redirect_uri: edgeFunctionUrl,
         }),
       });
 
       if (!tokenRes.ok) {
         const err = await tokenRes.text();
         console.error("Globus token error:", err);
-        return new Response(JSON.stringify({ error: "Token exchange failed", details: err }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", "token_exchange_failed");
+        return Response.redirect(errorRedirect.toString(), 302);
       }
 
       const tokens = await tokenRes.json();
@@ -77,10 +70,9 @@ Deno.serve(async (req) => {
       });
 
       if (!userinfoRes.ok) {
-        return new Response(JSON.stringify({ error: "Failed to get user info" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", "userinfo_failed");
+        return Response.redirect(errorRedirect.toString(), 302);
       }
 
       const userinfo = await userinfoRes.json();
@@ -88,13 +80,11 @@ Deno.serve(async (req) => {
       const name = userinfo.name || userinfo.preferred_username || "";
 
       if (!email) {
-        return new Response(JSON.stringify({ error: "No email returned from Globus" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", "no_email");
+        return Response.redirect(errorRedirect.toString(), 302);
       }
 
-      // Use Supabase admin to create or sign in user
       const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
         auth: { autoRefreshToken: false, persistSession: false },
       });
@@ -119,13 +109,11 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (!allowedDomain) {
-          return new Response(
-            JSON.stringify({ error: "Access restricted to consortium university emails" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          const errorRedirect = new URL(frontendRedirect);
+          errorRedirect.searchParams.set("globus_error", "domain_not_allowed");
+          return Response.redirect(errorRedirect.toString(), 302);
         }
 
-        // Create new user
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,
           email_confirm: true,
@@ -134,15 +122,14 @@ Deno.serve(async (req) => {
 
         if (createError) {
           console.error("Create user error:", createError);
-          return new Response(JSON.stringify({ error: "Failed to create user account" }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          const errorRedirect = new URL(frontendRedirect);
+          errorRedirect.searchParams.set("globus_error", "create_user_failed");
+          return Response.redirect(errorRedirect.toString(), 302);
         }
         userId = newUser.user.id;
       }
 
-      // Generate a magic link / session for the user
+      // Generate magic link
       const { data: linkData, error: linkError } =
         await supabaseAdmin.auth.admin.generateLink({
           type: "magiclink",
@@ -151,25 +138,41 @@ Deno.serve(async (req) => {
 
       if (linkError || !linkData) {
         console.error("Generate link error:", linkError);
-        return new Response(JSON.stringify({ error: "Failed to generate session" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", "session_failed");
+        return Response.redirect(errorRedirect.toString(), 302);
       }
 
-      // Extract the token hash from the link
-      const actionLink = new URL(linkData.properties.action_link);
-      const token_hash = actionLink.searchParams.get("token_hash") || actionLink.hash;
+      // Redirect back to frontend with token_hash
+      const successRedirect = new URL(frontendRedirect);
+      successRedirect.searchParams.set("token_hash", linkData.properties.hashed_token);
+      successRedirect.searchParams.set("globus_name", name);
+      successRedirect.searchParams.set("globus_email", email);
 
-      return new Response(
-        JSON.stringify({
-          token_hash: linkData.properties.hashed_token,
-          email,
-          name,
-          user_id: userId,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return Response.redirect(successRedirect.toString(), 302);
+    }
+
+    // POST request = login action (initiate Globus OAuth)
+    const { action, redirect_uri } = await req.json();
+
+    if (action === "login") {
+      // The redirect_uri for Globus must be THIS edge function (GET handler)
+      const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/globus-auth`;
+
+      // Encode the frontend redirect URI in the state parameter
+      const state = btoa(JSON.stringify({ redirect_uri }));
+
+      const authUrl = new URL("https://auth.globus.org/v2/oauth2/authorize");
+      authUrl.searchParams.set("client_id", GLOBUS_CLIENT_ID);
+      authUrl.searchParams.set("response_type", "code");
+      authUrl.searchParams.set("redirect_uri", edgeFunctionUrl);
+      authUrl.searchParams.set("scope", "openid profile email");
+      authUrl.searchParams.set("access_type", "offline");
+      authUrl.searchParams.set("state", state);
+
+      return new Response(JSON.stringify({ url: authUrl.toString() }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
@@ -184,19 +187,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-async function getParams(req: Request, url: URL) {
-  if (req.method === "POST") {
-    const body = await req.json();
-    return {
-      action: body.action || "",
-      code: body.code || "",
-      redirect_uri: body.redirect_uri || "",
-    };
-  }
-  return {
-    action: url.searchParams.get("action") || "",
-    code: url.searchParams.get("code") || "",
-    redirect_uri: url.searchParams.get("redirect_uri") || "",
-  };
-}
