@@ -248,7 +248,10 @@ METADATA FIELD RULES:
 - website: Project URL
 - study_human: Boolean
 
-MERGE new values with existing arrays — never overwrite.
+TOOLS:
+- Use "update_project_metadata" to ADD/MERGE new values into array fields.
+- Use "remove_project_metadata" to REMOVE specific values from array fields, clear a website, or reset study_human. Use this when the user says something is incorrect, wrong, shouldn't be there, or asks to delete/remove a value.
+- When the user asks to remove something, ALWAYS use remove_project_metadata — never try to overwrite with update_project_metadata.
 ${consortiumSection}
 ${ragSection}`;
 
