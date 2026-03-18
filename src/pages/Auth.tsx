@@ -18,29 +18,37 @@ export default function Auth() {
     if (user) navigate("/");
   }, [user, navigate]);
 
-  // Handle Globus callback
+  // Handle Globus callback — token_hash comes as a query param from the edge function redirect
   useEffect(() => {
-    const code = searchParams.get("code");
-    if (code) {
-      handleGlobusCallback(code);
+    const tokenHash = searchParams.get("token_hash");
+    const globusError = searchParams.get("globus_error");
+    const globusName = searchParams.get("globus_name");
+    const globusEmail = searchParams.get("globus_email");
+
+    if (globusError) {
+      const errorMessages: Record<string, string> = {
+        token_exchange_failed: "Failed to exchange Globus authorization code.",
+        userinfo_failed: "Failed to retrieve your Globus profile.",
+        no_email: "No email was returned from Globus.",
+        domain_not_allowed: "Access is restricted to BBQS consortium university emails.",
+        create_user_failed: "Failed to create your account.",
+        session_failed: "Failed to generate a session.",
+      };
+      toast.error(errorMessages[globusError] || "Globus sign-in failed.");
+      window.history.replaceState({}, "", "/auth");
+      return;
+    }
+
+    if (tokenHash) {
+      handleTokenHash(tokenHash, globusName, globusEmail);
     }
   }, [searchParams]);
 
-  const handleGlobusCallback = async (code: string) => {
+  const handleTokenHash = async (tokenHash: string, name?: string | null, email?: string | null) => {
     setGlobusLoading(true);
     try {
-      const redirectUri = `${window.location.origin}/auth`;
-      const { data, error } = await supabase.functions.invoke("globus-auth", {
-        body: { action: "callback", code, redirect_uri: redirectUri },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Globus authentication failed");
-      }
-
-      // Use the token_hash to verify OTP and get session
       const { error: otpError } = await supabase.auth.verifyOtp({
-        token_hash: data.token_hash,
+        token_hash: tokenHash,
         type: "magiclink",
       });
 
@@ -48,7 +56,7 @@ export default function Auth() {
         throw otpError;
       }
 
-      toast.success(`Welcome, ${data.name || data.email}!`);
+      toast.success(`Welcome, ${name || email || ""}!`);
       window.history.replaceState({}, "", "/auth");
       navigate("/");
     } catch (err: any) {
@@ -79,8 +87,8 @@ export default function Auth() {
     }
   };
 
-  // Show loading if processing Globus callback
-  if (globusLoading && searchParams.get("code")) {
+  // Show loading if processing callback
+  if (globusLoading && (searchParams.get("token_hash") || searchParams.get("code"))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md">
