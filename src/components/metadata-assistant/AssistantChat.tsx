@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TypingIndicator } from "@/components/neuromcp/TypingIndicator";
-import { WorkflowStepper } from "@/components/metadata-assistant/WorkflowStepper";
+
 import { SuggestedActions, WORKFLOW_ACTIONS } from "@/components/metadata-assistant/SuggestedActions";
 import { VoiceAgentButton } from "@/components/metadata-assistant/VoiceAgentButton";
 import ReactMarkdown from "react-markdown";
