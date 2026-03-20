@@ -222,17 +222,9 @@ export default function FeatureSuggestions() {
       {/* Submit form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Submit a New Suggestion</CardTitle>
+          <CardTitle className="text-base">Submit Feedback</CardTitle>
         </CardHeader>
         <CardContent>
-          {!user ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-2">You need to be signed in to submit a suggestion.</p>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/auth">Sign In</Link>
-              </Button>
-            </div>
-          ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="suggestion-title">Title</Label>
