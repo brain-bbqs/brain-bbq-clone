@@ -72,6 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    // In preview mode, return a fallback so components render even if
+    // AuthProvider hasn't mounted yet (e.g. during initial render tree)
+    if (typeof window !== "undefined" && (
+      window.location.hostname.endsWith(".lovable.app") ||
+      window.location.hostname.endsWith(".lovableproject.com") ||
+      window.location.hostname === "localhost"
+    )) {
+      return {
+        user: PREVIEW_USER,
+        session: null,
+        loading: false,
+        signOut: async () => {},
+      };
+    }
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
