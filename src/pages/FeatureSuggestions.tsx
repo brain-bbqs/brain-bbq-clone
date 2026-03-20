@@ -214,7 +214,7 @@ export default function FeatureSuggestions() {
           <Lightbulb className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Suggest a Feature</h1>
+          <h1 className="text-2xl font-bold text-foreground">Give Feedback</h1>
           <p className="text-sm text-muted-foreground">Help improve the BBQS platform — your suggestions become tracked GitHub issues</p>
         </div>
       </div>
