@@ -254,10 +254,9 @@ export default function FeatureSuggestions() {
                 ) : (
                   <Send className="h-4 w-4 mr-2" />
                 )}
-                Submit Suggestion
+                Submit Feedback
               </Button>
             </form>
-          )}
         </CardContent>
       </Card>
 
