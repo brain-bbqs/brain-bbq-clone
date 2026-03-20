@@ -207,9 +207,8 @@ export default function FundingOpportunities() {
     []
   );
 
-  if (!loading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Auth gate removed — preview mode auto-provides a user,
+  // and production users are gated via sidebar navigation
 
   return (
     <div className="min-h-screen">
