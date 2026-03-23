@@ -129,7 +129,7 @@ const Resources = () => {
             emptyMessage="No resources found"
           />
         ) : (
-          <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ height: "calc(100vh - 300px)" }}>
+          <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden">
             <AgGridReact<Resource>
               rowData={filteredResources}
               columnDefs={columnDefs}
@@ -141,8 +141,8 @@ const Resources = () => {
               paginationPageSizeSelector={[25, 50, 100, 200]}
               suppressCellFocus={true}
               enableCellTextSelection={true}
-              rowHeight={36}
               headerHeight={40}
+              domLayout="autoHeight"
             />
           </div>
         )}
