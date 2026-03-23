@@ -1,10 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Hotel, MapPin, Train, Plane, Info, ExternalLink, AlertTriangle, CheckCircle } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
+import HotelLocationMap from "@/components/mit-workshop/HotelLocationMap";
 
 const VENUE = {
   name: "McGovern Institute for Brain Research, MIT",
@@ -149,65 +150,6 @@ function getWorkshopRate(hotel: typeof hotels[0]) {
   return hotel.rates[0];
 }
 
-function HotelMap() {
-  // Build a Google Maps embed with all hotels as waypoints
-  const waypointsQuery = [
-    `${VENUE.name}`,
-    ...hotels.map((h) => h.name + " Cambridge MA"),
-  ].join("/");
-
-  const staticSrc = `https://maps.google.com/maps?q=${VENUE.lat},${VENUE.lng}&z=14&output=embed`;
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <MapPin className="h-5 w-5 text-primary" />
-          Hotels &amp; Venue Map
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="rounded-lg overflow-hidden border h-[400px]">
-          <iframe
-            title="MIT Workshop Hotels Map"
-            src={staticSrc}
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
-          <a
-            href={`https://www.google.com/maps/place/${VENUE.lat},${VENUE.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
-          >
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">Venue: MIT McGovern</span>
-          </a>
-          {hotels.map((h, i) => (
-            <a
-              key={h.name}
-              href={`https://www.google.com/maps/place/${h.lat},${h.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-colors"
-            >
-              <span className="shrink-0 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                {i + 1}
-              </span>
-              <span className="truncate">{h.name.replace("Cambridge", "").replace("Boston", "").trim()}</span>
-            </a>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 function HotelCard({ hotel }: { hotel: typeof hotels[0] }) {
   const workshopRate = getWorkshopRate(hotel);
