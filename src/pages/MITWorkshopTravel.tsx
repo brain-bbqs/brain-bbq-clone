@@ -287,19 +287,19 @@ export default function MITWorkshopTravel() {
 
         {/* Venue */}
         <Card className="border-primary/20">
-          <CardContent className="p-5 flex items-start gap-3">
+          <CardContent className="p-4 sm:p-5 flex items-start gap-3">
             <MapPin className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-1 min-w-0">
               <p className="font-semibold text-foreground">{VENUE.name}</p>
-              <p className="text-muted-foreground">{VENUE.address}</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">{VENUE.address}</p>
               <p className="text-muted-foreground text-xs">Exact room TBD — details will be emailed to registrants.</p>
               <a
-                href={`https://www.google.com/maps/place/${VENUE.lat},${VENUE.lng}`}
+                href={`https://www.openstreetmap.org/?mlat=${VENUE.lat}&mlon=${VENUE.lng}#map=15/${VENUE.lat}/${VENUE.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
               >
-                View on Google Maps <ExternalLink className="h-3 w-3" />
+                View on Map <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </CardContent>
