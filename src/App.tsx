@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import SFN2025 from "./pages/SFN2025";
 import MITWorkshop2026 from "./pages/MITWorkshop2026";
+import MITWorkshopTravel from "./pages/MITWorkshopTravel";
 import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
