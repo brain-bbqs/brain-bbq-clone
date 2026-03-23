@@ -141,8 +141,8 @@ const Resources = () => {
               paginationPageSizeSelector={[25, 50, 100, 200]}
               suppressCellFocus={true}
               enableCellTextSelection={true}
-              rowHeight={36}
               headerHeight={40}
+              domLayout="autoHeight"
             />
           </div>
         )}
