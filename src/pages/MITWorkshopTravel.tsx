@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Hotel, MapPin, Train, Plane, ExternalLink, DollarSign } from "lucide-react";
-import PageMeta from "@/components/PageMeta";
+import { PageMeta } from "@/components/PageMeta";
 
 const hotels = [
   {
