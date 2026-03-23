@@ -131,8 +131,21 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="overflow-hidden rounded-lg border">
+          <div className="h-[280px] sm:h-[420px]">
           <Map
-            height={420}
+            height={0}
+            center={mapCenter}
+            zoom={mapZoom}
+            onBoundsChanged={({ center: c, zoom: z }) => {
+              setMapCenter(c);
+              setMapZoom(z);
+            }}
+            minZoom={11}
+            maxZoom={17}
+            metaWheelZoom={false}
+            twoFingerDrag={false}
+            style={{ width: "100%", height: "100%" }}
+          >
             center={mapCenter}
             zoom={mapZoom}
             onBoundsChanged={({ center: c, zoom: z }) => {
