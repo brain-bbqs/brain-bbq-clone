@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
-import { Map, Overlay } from "pigeon-maps";
+import { Map, Marker, Overlay } from "pigeon-maps";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -33,15 +33,6 @@ type MapPlace = {
   primary?: boolean;
 };
 
-type MapMarkerProps = {
-  anchor: [number, number];
-  label: string;
-  markerText: string;
-  onSelect: () => void;
-  selected?: boolean;
-  primary?: boolean;
-};
-
 const getLocationLink = (lat: number, lng: number, zoom = 15) =>
   `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}`;
 
@@ -68,35 +59,10 @@ const getShortHotelLabel = (name: string) =>
     .replace("Marriott Cambridge", "Marriott")
     .replace("Residence Inn Cambridge", "Residence Inn")
     .replace("Royal Sonesta Cambridge", "Royal Sonesta")
+    .replace("Royal Sonesta Cambridge Boston", "Royal Sonesta")
     .replace("Lark Hotels ", "")
     .replace(" Boston", "")
     .replace(" Cambridge", "");
-
-function MapMarker({ anchor, label, markerText, onSelect, selected = false, primary = false }: MapMarkerProps) {
-  return (
-    <Overlay anchor={anchor} offset={[20, 20]}>
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-label={label}
-        title={label}
-        aria-pressed={selected}
-        className="group relative"
-      >
-        <span
-          className={primary
-            ? "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-primary text-xs font-bold text-primary-foreground shadow-sm transition-transform group-hover:scale-105"
-            : selected
-              ? "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-primary text-xs font-bold text-primary-foreground shadow-sm transition-transform group-hover:scale-105"
-              : "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-background text-xs font-bold text-primary shadow-sm transition-all group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground"
-          }
-        >
-          {markerText}
-        </span>
-      </button>
-    </Overlay>
-  );
-}
 
 export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProps) {
   const places = useMemo<MapPlace[]>(
@@ -135,8 +101,8 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
       (Math.min(...longitudes) + Math.max(...longitudes)) / 2,
     ];
   }, [places]);
-  const defaultZoom = useMemo(() => getInitialZoom(places), [places]);
 
+  const defaultZoom = useMemo(() => getInitialZoom(places), [places]);
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const [mapZoom, setMapZoom] = useState(defaultZoom);
 
@@ -179,15 +145,22 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
             twoFingerDrag={false}
           >
             {places.map((place) => (
-              <MapMarker
+              <Marker
                 key={place.id}
                 anchor={[place.lat, place.lng]}
-                label={place.name}
-                markerText={place.markerText}
-                onSelect={() => selectPlace(place.id)}
-                selected={selectedPlaceId === place.id}
-                primary={place.primary}
-              />
+                width={place.primary ? 52 : 42}
+                color={place.primary || selectedPlaceId === place.id ? "hsl(var(--primary))" : "hsl(var(--background))"}
+                onClick={() => selectPlace(place.id)}
+              >
+                <span
+                  className={place.primary || selectedPlaceId === place.id
+                    ? "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-primary text-xs font-bold text-primary-foreground shadow-sm"
+                    : "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-background text-xs font-bold text-primary shadow-sm"
+                  }
+                >
+                  {place.markerText}
+                </span>
+              </Marker>
             ))}
             <Overlay anchor={[selectedPlace.lat, selectedPlace.lng]} offset={[0, -46]}>
               <div className="pointer-events-none -translate-x-1/2 -translate-y-full rounded-full border border-border bg-background/95 px-3 py-1 text-xs font-semibold leading-none text-foreground shadow-sm backdrop-blur">
