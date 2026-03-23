@@ -20,6 +20,7 @@ import {
   Lightbulb,
   Bot,
   FlaskConical,
+  Hotel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
