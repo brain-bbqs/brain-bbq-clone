@@ -74,7 +74,7 @@ const getShortHotelLabel = (name: string) =>
 
 function MapMarker({ anchor, label, markerText, onSelect, selected = false, primary = false }: MapMarkerProps) {
   return (
-    <Overlay anchor={anchor} offset={[-20, -20]}>
+    <Overlay anchor={anchor} offset={[20, 20]}>
       <button
         type="button"
         onClick={onSelect}
