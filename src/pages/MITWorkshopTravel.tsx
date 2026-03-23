@@ -5,9 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Hotel, MapPin, Train, Plane, Info, ExternalLink, AlertTriangle, CheckCircle } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import * as L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 const VENUE = {
   name: "McGovern Institute for Brain Research, MIT",
