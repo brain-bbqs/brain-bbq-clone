@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 
@@ -82,11 +82,20 @@ const MITWorkshop2026 = () => {
           </Card>
 
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
               <p className="text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">Registration:</span>{" "}
-                There is no cost to attend. Additional registration details will be shared here as they become available.
+                There is no cost to attend. Please register below so we can plan accordingly.
               </p>
+              <a
+                href="https://forms.gle/REPLACE_WITH_YOUR_FORM_ID"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+              >
+                Register Now
+                <ExternalLink className="h-4 w-4" />
+              </a>
             </CardContent>
           </Card>
         </div>

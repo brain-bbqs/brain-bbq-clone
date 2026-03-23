@@ -214,7 +214,7 @@ export default function FeatureSuggestions() {
           <Lightbulb className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Suggest a Feature</h1>
+          <h1 className="text-2xl font-bold text-foreground">Give Feedback</h1>
           <p className="text-sm text-muted-foreground">Help improve the BBQS platform — your suggestions become tracked GitHub issues</p>
         </div>
       </div>
@@ -222,17 +222,9 @@ export default function FeatureSuggestions() {
       {/* Submit form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Submit a New Suggestion</CardTitle>
+          <CardTitle className="text-base">Submit Feedback</CardTitle>
         </CardHeader>
         <CardContent>
-          {!user ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-2">You need to be signed in to submit a suggestion.</p>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/auth">Sign In</Link>
-              </Button>
-            </div>
-          ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="suggestion-title">Title</Label>
@@ -262,10 +254,9 @@ export default function FeatureSuggestions() {
                 ) : (
                   <Send className="h-4 w-4 mr-2" />
                 )}
-                Submit Suggestion
+                Submit Feedback
               </Button>
             </form>
-          )}
         </CardContent>
       </Card>
 

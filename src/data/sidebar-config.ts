@@ -20,6 +20,7 @@ import {
   Lightbulb,
   Bot,
   FlaskConical,
+  Hotel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -72,13 +73,14 @@ const communityItems: NavItem[] = [
 ];
 
 const conferencesItems: NavItem[] = [
-  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
   { title: "MIT Workshop 2026", url: "/mit-workshop-2026", icon: Calendar },
+  { title: "  Travel & Hotels", url: "/mit-workshop-2026/travel", icon: Hotel, authRequired: true },
+  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
 ];
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
-  { title: "Suggest a Feature", url: "/suggest-feature", icon: Lightbulb, authRequired: true },
+  { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
 ];
 
 const legalItems: NavItem[] = [
