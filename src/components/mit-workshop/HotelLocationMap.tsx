@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
 import { Map, Overlay } from "pigeon-maps";
 
@@ -137,26 +137,23 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
   }, [places]);
   const defaultZoom = useMemo(() => getInitialZoom(places), [places]);
 
-  const [mapKey, setMapKey] = useState(0);
-  const [viewCenter, setViewCenter] = useState<[number, number]>(center);
-  const [viewZoom, setViewZoom] = useState(defaultZoom);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(center);
+  const [mapZoom, setMapZoom] = useState(defaultZoom);
 
-  const selectPlace = useCallback((id: string) => {
+  const selectPlace = (id: string) => {
     setSelectedPlaceId(id);
     const place = places.find((p) => p.id === id);
     if (place) {
-      setViewCenter([place.lat, place.lng]);
-      setViewZoom(15);
-      setMapKey((k) => k + 1);
+      setMapCenter([place.lat, place.lng]);
+      setMapZoom(15);
     }
-  }, [places]);
+  };
 
-  const resetView = useCallback(() => {
+  const resetView = () => {
     setSelectedPlaceId("venue");
-    setViewCenter(center);
-    setViewZoom(defaultZoom);
-    setMapKey((k) => k + 1);
-  }, [center, defaultZoom]);
+    setMapCenter(center);
+    setMapZoom(defaultZoom);
+  };
 
   return (
     <Card>
@@ -169,10 +166,13 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
       <CardContent className="space-y-3">
         <div className="overflow-hidden rounded-lg border">
           <Map
-            key={mapKey}
             height={420}
-            defaultCenter={viewCenter}
-            defaultZoom={viewZoom}
+            center={mapCenter}
+            zoom={mapZoom}
+            onBoundsChanged={({ center: c, zoom: z }) => {
+              setMapCenter(c);
+              setMapZoom(z);
+            }}
             minZoom={11}
             maxZoom={17}
             metaWheelZoom={false}
