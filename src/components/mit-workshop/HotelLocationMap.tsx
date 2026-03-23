@@ -124,7 +124,8 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string>("venue");
 
-  const selectedPlace = places.find((place) => place.id === selectedPlaceId) ?? places[0];
+  const selectedPlace = places.find((p) => p.id === selectedPlaceId) ?? places[0];
+
   const center = useMemo<[number, number]>(() => {
     const latitudes = places.map((place) => place.lat);
     const longitudes = places.map((place) => place.lng);
@@ -135,6 +136,24 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
     ];
   }, [places]);
   const defaultZoom = useMemo(() => getInitialZoom(places), [places]);
+
+  const [mapCenter, setMapCenter] = useState<[number, number]>(center);
+  const [mapZoom, setMapZoom] = useState(defaultZoom);
+
+  const selectPlace = (id: string) => {
+    setSelectedPlaceId(id);
+    const place = places.find((p) => p.id === id);
+    if (place) {
+      setMapCenter([place.lat, place.lng]);
+      setMapZoom(15);
+    }
+  };
+
+  const resetView = () => {
+    setSelectedPlaceId("venue");
+    setMapCenter(center);
+    setMapZoom(defaultZoom);
+  };
 
   return (
     <Card>
@@ -148,10 +167,14 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
         <div className="overflow-hidden rounded-lg border">
           <Map
             height={420}
-            defaultCenter={center}
-            defaultZoom={defaultZoom}
+            center={mapCenter}
+            zoom={mapZoom}
+            onBoundsChanged={({ center: c, zoom: z }) => {
+              setMapCenter(c);
+              setMapZoom(z);
+            }}
             minZoom={11}
-            maxZoom={16}
+            maxZoom={17}
             metaWheelZoom={false}
             twoFingerDrag={false}
           >
@@ -161,7 +184,7 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
                 anchor={[place.lat, place.lng]}
                 label={place.name}
                 markerText={place.markerText}
-                onSelect={() => setSelectedPlaceId(place.id)}
+                onSelect={() => selectPlace(place.id)}
                 selected={selectedPlaceId === place.id}
                 primary={place.primary}
               />
@@ -174,7 +197,7 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
           </Map>
         </div>
         <div className="rounded-lg border bg-muted/30 p-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{selectedPlace.name}</p>
               <p className="text-xs text-muted-foreground">{selectedPlace.address}</p>
@@ -188,6 +211,13 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
               Open in OpenStreetMap
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
+            <button
+              type="button"
+              onClick={resetView}
+              className="inline-flex items-center self-start rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Show all
+            </button>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -196,8 +226,8 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           <button
             type="button"
-            onClick={() => setSelectedPlaceId("venue")}
-            className="flex items-center gap-3 rounded-lg border bg-background px-3 py-2 text-left transition-colors hover:bg-muted/60"
+            onClick={() => selectPlace("venue")}
+            className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${selectedPlaceId === "venue" ? "border-primary bg-primary/5" : "bg-background hover:bg-muted/60"}`}
           >
             <span className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               MIT
@@ -211,8 +241,8 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
             <button
               type="button"
               key={hotel.name}
-              onClick={() => setSelectedPlaceId(hotel.name)}
-              className="flex items-center gap-3 rounded-lg border bg-background px-3 py-2 text-left transition-colors hover:bg-muted/60"
+              onClick={() => selectPlace(hotel.name)}
+              className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${selectedPlaceId === hotel.name ? "border-primary bg-primary/5" : "bg-background hover:bg-muted/60"}`}
             >
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary bg-background text-xs font-bold text-primary">
                 {index + 1}
