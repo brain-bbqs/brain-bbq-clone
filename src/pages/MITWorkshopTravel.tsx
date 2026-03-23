@@ -276,7 +276,15 @@ function HotelCard({ hotel }: { hotel: typeof hotels[0] }) {
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">How to Book</p>
-              <p className="text-muted-foreground">{hotel.instructions}</p>
+              <p className="text-muted-foreground mb-2">{hotel.instructions.replace(/Code:.*$/, '').trim()}</p>
+              {hotel.instructions.match(/Code:\s*(.+)/) && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 border border-primary/20">
+                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide font-medium">Code</span>
+                  <span className="font-mono font-bold text-primary text-sm">
+                    {hotel.instructions.match(/Code:\s*(.+)/)?.[1]}
+                  </span>
+                </div>
+              )}
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">Blackout Dates</p>
