@@ -73,9 +73,9 @@ const communityItems: NavItem[] = [
 ];
 
 const conferencesItems: NavItem[] = [
-  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
   { title: "MIT Workshop 2026", url: "/mit-workshop-2026", icon: Calendar },
-  { title: "Travel & Hotels", url: "/mit-workshop-2026/travel", icon: Hotel, authRequired: true },
+  { title: "  Travel & Hotels", url: "/mit-workshop-2026/travel", icon: Hotel, authRequired: true },
+  { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
 ];
 
 const engineeringItems: NavItem[] = [
