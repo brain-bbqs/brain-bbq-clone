@@ -150,14 +150,12 @@ function getWorkshopRate(hotel: typeof hotels[0]) {
 }
 
 function HotelMap() {
-  // Build a Google Maps embed URL with all hotel markers
-  const markers = hotels
-    .map((h) => `markers=color:blue%7Clabel:H%7C${h.lat},${h.lng}`)
-    .join("&");
-  const venueMarker = `markers=color:red%7Clabel:V%7C${VENUE.lat},${VENUE.lng}`;
-  const src = `https://www.google.com/maps/embed/v1/view?key=&center=${VENUE.lat},${VENUE.lng}&zoom=14`;
+  // Build a Google Maps embed with all hotels as waypoints
+  const waypointsQuery = [
+    `${VENUE.name}`,
+    ...hotels.map((h) => h.name + " Cambridge MA"),
+  ].join("/");
 
-  // Use a static map image approach that needs no API key
   const staticSrc = `https://maps.google.com/maps?q=${VENUE.lat},${VENUE.lng}&z=14&output=embed`;
 
   return (
@@ -168,7 +166,7 @@ function HotelMap() {
           Hotels &amp; Venue Map
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <div className="rounded-lg overflow-hidden border h-[400px]">
           <iframe
             title="MIT Workshop Hotels Map"
@@ -181,9 +179,31 @@ function HotelMap() {
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          🔴 Venue: {VENUE.name} · Click hotel cards below for individual directions
-        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+          <a
+            href={`https://www.google.com/maps/place/${VENUE.lat},${VENUE.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+          >
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">Venue: MIT McGovern</span>
+          </a>
+          {hotels.map((h, i) => (
+            <a
+              key={h.name}
+              href={`https://www.google.com/maps/place/${h.lat},${h.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-colors"
+            >
+              <span className="shrink-0 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                {i + 1}
+              </span>
+              <span className="truncate">{h.name.replace("Cambridge", "").replace("Boston", "").trim()}</span>
+            </a>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -256,7 +276,15 @@ function HotelCard({ hotel }: { hotel: typeof hotels[0] }) {
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">How to Book</p>
-              <p className="text-muted-foreground">{hotel.instructions}</p>
+              <p className="text-muted-foreground mb-2">{hotel.instructions.replace(/Code:.*$/, '').trim()}</p>
+              {hotel.instructions.match(/Code:\s*(.+)/) && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 border border-primary/20">
+                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide font-medium">Code</span>
+                  <span className="font-mono font-bold text-primary text-sm">
+                    {hotel.instructions.match(/Code:\s*(.+)/)?.[1]}
+                  </span>
+                </div>
+              )}
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">Blackout Dates</p>
