@@ -131,9 +131,8 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="overflow-hidden rounded-lg border">
-          <div className="h-[280px] sm:h-[420px]">
           <Map
-            height={0}
+            height={420}
             center={mapCenter}
             zoom={mapZoom}
             onBoundsChanged={({ center: c, zoom: z }) => {
@@ -144,7 +143,6 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
             maxZoom={17}
             metaWheelZoom={false}
             twoFingerDrag={false}
-            style={{ width: "100%", height: "100%" }}
           >
             {places.map((place) => (
               <Marker
