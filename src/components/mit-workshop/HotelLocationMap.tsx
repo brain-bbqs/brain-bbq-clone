@@ -161,14 +161,14 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
               <Marker
                 key={place.id}
                 anchor={[place.lat, place.lng]}
-                width={place.primary ? 52 : 42}
+                width={place.primary ? 44 : 34}
                 color={place.primary || selectedPlaceId === place.id ? "hsl(var(--primary))" : "hsl(var(--background))"}
                 onClick={() => selectPlace(place.id)}
               >
                 <span
                   className={place.primary || selectedPlaceId === place.id
-                    ? "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-primary text-xs font-bold text-primary-foreground shadow-sm"
-                    : "inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-background text-xs font-bold text-primary shadow-sm"
+                    ? "inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-primary bg-primary text-[10px] sm:text-xs font-bold text-primary-foreground shadow-sm"
+                    : "inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 border-primary bg-background text-[10px] sm:text-xs font-bold text-primary shadow-sm"
                   }
                 >
                   {place.markerText}
