@@ -5,9 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Hotel, MapPin, Train, Plane, Info, ExternalLink, AlertTriangle, CheckCircle } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import * as L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 const VENUE = {
   name: "McGovern Institute for Brain Research, MIT",
@@ -152,24 +149,17 @@ function getWorkshopRate(hotel: typeof hotels[0]) {
   return hotel.rates[0];
 }
 
-// Fix default Leaflet marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
-
-const venueIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 function HotelMap() {
+  // Build a Google Maps embed URL with all hotel markers
+  const markers = hotels
+    .map((h) => `markers=color:blue%7Clabel:H%7C${h.lat},${h.lng}`)
+    .join("&");
+  const venueMarker = `markers=color:red%7Clabel:V%7C${VENUE.lat},${VENUE.lng}`;
+  const src = `https://www.google.com/maps/embed/v1/view?key=&center=${VENUE.lat},${VENUE.lng}&zoom=14`;
+
+  // Use a static map image approach that needs no API key
+  const staticSrc = `https://maps.google.com/maps?q=${VENUE.lat},${VENUE.lng}&z=14&output=embed`;
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -180,41 +170,19 @@ function HotelMap() {
       </CardHeader>
       <CardContent>
         <div className="rounded-lg overflow-hidden border h-[400px]">
-          <MapContainer
-            center={[VENUE.lat, VENUE.lng]}
-            zoom={14}
-            style={{ height: "100%", width: "100%" }}
-            scrollWheelZoom={false}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={[VENUE.lat, VENUE.lng]} icon={venueIcon}>
-              <Popup>
-                <strong>📍 Workshop Venue</strong><br />
-                {VENUE.name}<br />
-                <a href={`https://www.google.com/maps/place/${VENUE.lat},${VENUE.lng}`} target="_blank" rel="noopener noreferrer">
-                  Get Directions →
-                </a>
-              </Popup>
-            </Marker>
-            {hotels.map((hotel) => (
-              <Marker key={hotel.name} position={[hotel.lat, hotel.lng]}>
-                <Popup>
-                  <strong>{hotel.name}</strong><br />
-                  <span className="text-xs">{hotel.address}</span><br />
-                  <span className="text-xs font-mono">{getWorkshopRate(hotel)}</span><br />
-                  <a href={`https://www.google.com/maps/dir/${VENUE.lat},${VENUE.lng}/${hotel.lat},${hotel.lng}`} target="_blank" rel="noopener noreferrer">
-                    Directions from MIT →
-                  </a>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+          <iframe
+            title="MIT Workshop Hotels Map"
+            src={staticSrc}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          🔴 Red marker = Workshop Venue · 🔵 Blue markers = Hotels · Click any marker for details &amp; directions
+          🔴 Venue: {VENUE.name} · Click hotel cards below for individual directions
         </p>
       </CardContent>
     </Card>
