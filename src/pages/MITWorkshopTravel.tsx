@@ -305,8 +305,7 @@ export default function MITWorkshopTravel() {
           </CardContent>
         </Card>
 
-        {/* Map */}
-        <HotelMap />
+        <HotelLocationMap venue={VENUE} hotels={hotels} />
 
         {/* Hotels */}
         <section className="space-y-4">
