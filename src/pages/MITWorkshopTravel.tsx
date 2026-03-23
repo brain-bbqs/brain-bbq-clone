@@ -274,7 +274,7 @@ export default function MITWorkshopTravel() {
         title="MIT Workshop 2026 – Travel & Hotels | BBQS"
         description="MIT negotiated hotel rates and travel information for the BBQS MIT Workshop, July 15-17, 2026."
       />
-      <div className="container max-w-6xl mx-auto py-10 px-4 space-y-8">
+      <div className="container max-w-6xl mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
