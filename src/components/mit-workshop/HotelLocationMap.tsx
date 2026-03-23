@@ -181,7 +181,7 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
               </div>
             </Overlay>
           </Map>
-        </div>
+          </div>
         <div className="rounded-lg border bg-muted/30 p-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">

@@ -192,7 +192,7 @@ function HotelCard({ hotel }: { hotel: typeof hotels[0] }) {
                   Book <ExternalLink className="h-2.5 w-2.5" />
                 </a>
                 <a
-                  href={`https://www.google.com/maps/dir/${VENUE.lat},${VENUE.lng}/${hotel.lat},${hotel.lng}`}
+                  href={`https://www.openstreetmap.org/directions?from=${VENUE.lat}%2C${VENUE.lng}&to=${hotel.lat}%2C${hotel.lng}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline"
