@@ -146,17 +146,6 @@ export default function HotelLocationMap({ venue, hotels }: HotelLocationMapProp
             twoFingerDrag={false}
             style={{ width: "100%", height: "100%" }}
           >
-            center={mapCenter}
-            zoom={mapZoom}
-            onBoundsChanged={({ center: c, zoom: z }) => {
-              setMapCenter(c);
-              setMapZoom(z);
-            }}
-            minZoom={11}
-            maxZoom={17}
-            metaWheelZoom={false}
-            twoFingerDrag={false}
-          >
             {places.map((place) => (
               <Marker
                 key={place.id}
