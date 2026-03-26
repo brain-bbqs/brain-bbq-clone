@@ -273,10 +273,10 @@ Deno.serve(async (req) => {
     }
 
     // DEFAULT: serve cached data from DB
-    const { data: cached, error: cacheError } = await supabase
-      .from("nih_grants_cache")
-      .select("data")
-      .order("grant_number");
+    const [{ data: cached, error: cacheError }, { data: localGrants }] = await Promise.all([
+      supabase.from("nih_grants_cache").select("data").order("grant_number"),
+      supabase.from("grants").select("grant_number, title"),
+    ]);
 
     if (cacheError) {
       throw new Error(`Cache read error: ${cacheError.message}`);
@@ -308,7 +308,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    const results = cached.map(row => row.data);
+    // Build a map of local title overrides from the grants table
+    const titleOverrides = new Map<string, string>();
+    for (const g of (localGrants || [])) {
+      titleOverrides.set(g.grant_number, g.title);
+    }
+
+    const results = cached.map(row => {
+      const d = row.data as any;
+      // Check for a local title override by matching grant number variants
+      const gn = d.grantNumber || "";
+      const noSuffix = gn.replace(/-\d+$/, "");
+      const noPrefix = noSuffix.replace(/^\d+/, "");
+      const override = titleOverrides.get(gn) || titleOverrides.get(noSuffix) || titleOverrides.get(noPrefix);
+      if (override) {
+        return { ...d, title: override };
+      }
+      return d;
+    });
 
     return new Response(
       JSON.stringify({ success: true, data: results, source: "cache" }),
