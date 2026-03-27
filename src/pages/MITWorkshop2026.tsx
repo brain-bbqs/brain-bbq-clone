@@ -1,10 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 
 const MITWorkshop2026 = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   return (
     <>
       <PageMeta
@@ -87,15 +92,27 @@ const MITWorkshop2026 = () => {
                 <span className="font-semibold text-foreground">Registration:</span>{" "}
                 There is no cost to attend. Please register below so we can plan accordingly.
               </p>
-              <a
-                href="https://docs.google.com/forms/d/1idTi5-X0zIYkZ8rkLoBDHad18ubfZc8B2ijkQlgTKJI/edit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
-              >
-                Register Now
-                <ExternalLink className="h-4 w-4" />
-              </a>
+              {user ? (
+                <a
+                  href="https://docs.google.com/forms/d/1idTi5-X0zIYkZ8rkLoBDHad18ubfZc8B2ijkQlgTKJI/edit"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+                >
+                  Register Now
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              ) : (
+                <div className="space-y-2">
+                  <Button onClick={() => navigate("/auth")} className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign in to Register
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Globus sign-in is required to access the registration form.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
