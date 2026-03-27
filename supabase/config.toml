@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.state-privacy-scan]
 verify_jwt = false
+
+[functions.verify-affiliations]
+verify_jwt = false
