@@ -256,6 +256,8 @@ export default function FundingOpportunities() {
             animateRows
             suppressCellFocus
             loading={dataLoading}
+            onRowClicked={onRowClicked}
+            rowClass="cursor-pointer"
             defaultColDef={{
               sortable: true,
               resizable: true,
@@ -264,6 +266,12 @@ export default function FundingOpportunities() {
           />
         </div>
       </div>
+
+      <FundingDetailPanel
+        opportunity={selectedOpp}
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+      />
     </div>
   );
 }
