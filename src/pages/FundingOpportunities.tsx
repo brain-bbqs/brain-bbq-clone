@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
+import { FundingDetailPanel } from "@/components/funding/FundingDetailPanel";
 
 interface FundingOpportunity {
   id: string;
@@ -109,6 +110,15 @@ const BudgetRenderer = ({ value }: { value: number | null }) => {
 export default function FundingOpportunities() {
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [selectedOpp, setSelectedOpp] = useState<FundingOpportunity | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const onRowClicked = useCallback((event: RowClickedEvent<FundingOpportunity>) => {
+    if (event.data) {
+      setSelectedOpp(event.data);
+      setPanelOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -246,6 +256,8 @@ export default function FundingOpportunities() {
             animateRows
             suppressCellFocus
             loading={dataLoading}
+            onRowClicked={onRowClicked}
+            rowClass="cursor-pointer"
             defaultColDef={{
               sortable: true,
               resizable: true,
@@ -254,6 +266,12 @@ export default function FundingOpportunities() {
           />
         </div>
       </div>
+
+      <FundingDetailPanel
+        opportunity={selectedOpp}
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+      />
     </div>
   );
 }
