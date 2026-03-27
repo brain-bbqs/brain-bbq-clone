@@ -3,8 +3,6 @@ import { AgGridReact } from "ag-grid-react";
 import { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -109,12 +107,10 @@ const BudgetRenderer = ({ value }: { value: number | null }) => {
 };
 
 export default function FundingOpportunities() {
-  const { user, loading } = useAuth();
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
     const fetchData = async () => {
       const { data, error } = await supabase
         .from("funding_opportunities")
@@ -126,7 +122,7 @@ export default function FundingOpportunities() {
       setDataLoading(false);
     };
     fetchData();
-  }, [user]);
+  }, []);
 
   const columnDefs = useMemo<ColDef[]>(
     () => [
