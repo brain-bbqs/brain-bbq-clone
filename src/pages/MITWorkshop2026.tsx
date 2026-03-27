@@ -88,7 +88,7 @@ const MITWorkshop2026 = () => {
                 There is no cost to attend. Please register below so we can plan accordingly.
               </p>
               <a
-                href="https://forms.gle/REPLACE_WITH_YOUR_FORM_ID"
+                href="https://docs.google.com/forms/d/1idTi5-X0zIYkZ8rkLoBDHad18ubfZc8B2ijkQlgTKJI/edit"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
