@@ -110,6 +110,15 @@ const BudgetRenderer = ({ value }: { value: number | null }) => {
 export default function FundingOpportunities() {
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [selectedOpp, setSelectedOpp] = useState<FundingOpportunity | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const onRowClicked = useCallback((event: RowClickedEvent<FundingOpportunity>) => {
+    if (event.data) {
+      setSelectedOpp(event.data);
+      setPanelOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
