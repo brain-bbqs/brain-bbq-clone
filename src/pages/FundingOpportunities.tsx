@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
+import { FundingDetailPanel } from "@/components/funding/FundingDetailPanel";
 
 interface FundingOpportunity {
   id: string;
