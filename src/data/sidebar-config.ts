@@ -56,7 +56,7 @@ const toolsItems: NavItem[] = [
 ];
 
 const knowledgeBaseItems: NavItem[] = [
-  
+  { title: "People", url: "/investigators", icon: Users },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Grants", url: "/grants", icon: Globe },
   { title: "Species", url: "/species", icon: Bug },
