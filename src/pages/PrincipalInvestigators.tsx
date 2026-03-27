@@ -894,6 +894,8 @@ export default function PrincipalInvestigators() {
               <ShieldAlert className="h-4 w-4" />
               {verifying ? "Verifying..." : "Verify Affiliations"}
             </Button>
+          </div>
+        </div>
 
         <div className="ag-grid-mobile-wrapper">
         <div
