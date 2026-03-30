@@ -29,7 +29,6 @@ interface EditRow {
   chat_context: any;
   project_title?: string;
   validation_status?: string | null;
-  validation_protocols?: string[] | null;
   validation_checks?: any | null;
 }
 
