@@ -381,7 +381,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   const invOrgLinks = ioResult.data || [];
   const orgs = orgResult.data || [];
 
-  const grantByNumber = new Map(grants.map(g => [g.grant_number, g]));
+  const grantById = new Map(grants.map(g => [g.id, g]));
   const orgById = new Map(orgs.map(o => [o.id, o]));
   const bbqsGrantNumbers = new Set(MARR_PROJECTS.map(p => p.id));
 
