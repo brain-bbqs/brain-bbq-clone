@@ -112,26 +112,43 @@ serve(async (req) => {
         let fieldsUpdated = 0;
 
         for (const [key, val] of Object.entries(suggestions)) {
-          if (Array.isArray(val) && val.length > 0 && (!project[key] || project[key].length === 0)) {
-            updates[key] = val;
-            fieldsUpdated++;
+          if (Array.isArray(val) && val.length > 0) {
+            const existing = getField(project, key);
+            if (!existing || existing.length === 0) {
+              updates[key] = val;
+              fieldsUpdated++;
+            }
           }
         }
 
         if (fieldsUpdated > 0) {
+          // Split updates into top-level and metadata
+          const topLevel: Record<string, any> = {};
+          const metaUpdates: Record<string, any> = {};
+          for (const [key, val] of Object.entries(updates)) {
+            if (TOP_LEVEL.has(key)) topLevel[key] = val;
+            else metaUpdates[key] = val;
+          }
+
           // Recalculate completeness
-          const merged = { ...project, ...updates };
           const checkFields = ["study_species", "use_approaches", "use_sensors", "produce_data_modality", "produce_data_type", "use_analysis_types", "use_analysis_method", "develope_software_type", "develope_hardware_type", "keywords", "website"];
           const filled = checkFields.filter(f => {
-            const v = merged[f];
+            const v = getField(project, f) ?? updates[f];
             if (Array.isArray(v)) return v.length > 0;
             if (typeof v === "string") return v.trim().length > 0;
             return false;
           });
-          updates.metadata_completeness = Math.round((filled.length / checkFields.length) * 100);
-          updates.last_edited_by = "ai-seed";
 
-          await sb.from("projects").update(updates).eq("grant_number", project.grant_number);
+          const row: Record<string, any> = {
+            ...topLevel,
+            metadata_completeness: Math.round((filled.length / checkFields.length) * 100),
+            last_edited_by: "ai-seed",
+          };
+          if (Object.keys(metaUpdates).length > 0) {
+            row.metadata = { ...(project.metadata || {}), ...metaUpdates };
+          }
+
+          await sb.from("projects").update(row).eq("grant_number", project.grant_number);
         }
 
         results.push({ grant_number: project.grant_number, status: "success", fields_updated: fieldsUpdated });
