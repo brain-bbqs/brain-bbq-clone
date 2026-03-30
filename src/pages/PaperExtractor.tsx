@@ -112,14 +112,15 @@ export default function PaperExtractor() {
     },
     {
       headerName: "Keywords",
-      field: "keywords",
+      field: "extracted_metadata",
       flex: 2,
       minWidth: 200,
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: "1.4", padding: "8px 12px", fontSize: "12px" },
       cellRenderer: (params: any) => {
-        const vals = params.value as string[] | null;
+        const meta = params.value as any;
+        const vals = meta?.keywords as string[] | null;
         if (!vals?.length) return "—";
         return vals.slice(0, 5).join(" · ");
       },
