@@ -40,20 +40,23 @@ export function ProjectGrid({ selectedGrant, onSelectGrant }: ProjectGridProps) 
     queryFn: async () => {
       const [grantsRes, projectsRes] = await Promise.all([
         supabase.from("grants").select("grant_number, title").order("grant_number"),
-        supabase.from("projects").select("grant_number, last_edited_by, study_species, use_approaches, use_sensors, produce_data_modality, produce_data_type, use_analysis_types, use_analysis_method, develope_software_type, develope_hardware_type, keywords, website, study_human"),
+        supabase.from("projects").select("grant_number, last_edited_by, study_species, keywords, website, study_human, metadata, metadata_completeness"),
       ]);
       const grants = grantsRes.data || [];
       const projects = projectsRes.data || [];
-      const projMap = new Map(projects.map(p => [p.grant_number, p]));
+      const projMap = new Map(projects.map((p: any) => [p.grant_number, p]));
 
+      // Fields that are top-level columns vs inside metadata JSONB
+      const TOP_LEVEL = new Set(["study_species", "study_human", "keywords", "website"]);
       const metaFields = ["study_species","use_approaches","use_sensors","produce_data_modality","produce_data_type","use_analysis_types","use_analysis_method","develope_software_type","develope_hardware_type","keywords","website","study_human"] as const;
 
       return grants.map(g => {
         const p = projMap.get(g.grant_number) as any;
         let filled = 0;
         if (p) {
+          const meta = p.metadata || {};
           for (const f of metaFields) {
-            const v = p[f];
+            const v = TOP_LEVEL.has(f) ? p[f] : meta[f];
             if (v === null || v === undefined) continue;
             if (Array.isArray(v) && v.length === 0) continue;
             if (typeof v === "string" && v.trim() === "") continue;

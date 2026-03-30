@@ -43,9 +43,10 @@ export function GrantMarrSection({ metadata, project }: MarrSectionProps) {
   const devices = metadata.devices || {};
   const hasDevices = DEVICE_FIELDS.some((f) => devices[f.key] && !isRequiresVerification(devices[f.key]));
 
-  // Merge array fields: prefer project-level columns, fall back to metadata
+  // Merge array fields: prefer project metadata JSONB, fall back to marr metadata
+  const projMeta = project?.metadata || {};
   const arrayData = ARRAY_FIELDS.map((f) => {
-    const projectVal = project?.[f.projectKey];
+    const projectVal = projMeta[f.projectKey] || project?.[f.projectKey];
     const metaVal = metadata[f.key];
     const val = (Array.isArray(projectVal) && projectVal.length > 0) ? projectVal : metaVal;
     if (!val || isRequiresVerification(val)) return null;
