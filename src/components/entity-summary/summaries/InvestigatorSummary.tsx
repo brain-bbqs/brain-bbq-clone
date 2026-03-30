@@ -314,7 +314,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Grants ({data.grants.length})</h3>
           <div className="space-y-2">
             {data.grants.map((g) => {
-              const link = data.grantLinks.find((gl: any) => gl.grant_number === g.grant_number);
+              const link = data.grantLinks.find((gl: any) => gl.grant_id === g.id);
               return (
                 <div
                   key={g.id}
