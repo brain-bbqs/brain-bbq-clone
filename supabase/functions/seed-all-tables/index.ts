@@ -230,8 +230,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // --- PUBLICATIONS ---
-      const pubs: any[] = g.publications || [];
+      // --- PUBLICATIONS (now handled separately via nih-grants sync) ---
+      const pubs: any[] = [];
       for (const pub of pubs) {
         const pmid = String(pub.pmid);
         if (!pmid || pubMap.has(pmid)) continue;
