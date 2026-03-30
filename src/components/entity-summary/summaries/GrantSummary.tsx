@@ -155,9 +155,9 @@ export function GrantSummary({ id }: { id: string }) {
               <div className="flex flex-wrap gap-1.5">{data.project.study_species.map((s: string) => <Badge key={s} variant="secondary">{s}</Badge>)}</div>
             </SummaryField>
           )}
-          {data.project.use_approaches?.length > 0 && (
+          {(data.project.metadata as any)?.use_approaches?.length > 0 && (
             <SummaryField label="Approaches">
-              <div className="flex flex-wrap gap-1.5">{data.project.use_approaches.map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}</div>
+              <div className="flex flex-wrap gap-1.5">{((data.project.metadata as any).use_approaches as string[]).map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}</div>
             </SummaryField>
           )}
         </div>

@@ -66,7 +66,7 @@ export default function PaperExtractor() {
     queryFn: async () => {
       const { data } = await supabase
         .from("paper_extractions")
-        .select("id, filename, title, keywords, created_at")
+        .select("id, filename, title, extracted_metadata, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       return data || [];
@@ -112,14 +112,15 @@ export default function PaperExtractor() {
     },
     {
       headerName: "Keywords",
-      field: "keywords",
+      field: "extracted_metadata",
       flex: 2,
       minWidth: 200,
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: "1.4", padding: "8px 12px", fontSize: "12px" },
       cellRenderer: (params: any) => {
-        const vals = params.value as string[] | null;
+        const meta = params.value as any;
+        const vals = meta?.keywords as string[] | null;
         if (!vals?.length) return "—";
         return vals.slice(0, 5).join(" · ");
       },
@@ -136,7 +137,8 @@ export default function PaperExtractor() {
 
   const entityCount = extraction
     ? ENTITY_FIELDS.reduce((acc, { key }) => {
-        const v = (extraction as any)[key] as string[] | undefined;
+        const meta = extraction.extracted_metadata || {};
+        const v = (meta as any)[key] as string[] | undefined;
         return acc + (v?.length || 0);
       }, 0)
     : 0;
@@ -365,7 +367,8 @@ export default function PaperExtractor() {
               ) : (
                 <div className="p-3 space-y-2">
                   {ENTITY_FIELDS.map(({ key, label }) => {
-                    const values = (extraction as any)[key] as string[] | undefined;
+                    const meta = extraction.extracted_metadata || {};
+                    const values = (meta as any)[key] as string[] | undefined;
                     if (!values || values.length === 0) return null;
                     return (
                       <div key={key} className="rounded-lg border border-border/60 p-2.5 bg-background">

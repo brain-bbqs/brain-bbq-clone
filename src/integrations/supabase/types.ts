@@ -284,7 +284,6 @@ export type Database = {
           old_value: Json | null
           project_id: string | null
           validation_checks: Json | null
-          validation_protocols: string[] | null
           validation_status: string | null
         }
         Insert: {
@@ -298,7 +297,6 @@ export type Database = {
           old_value?: Json | null
           project_id?: string | null
           validation_checks?: Json | null
-          validation_protocols?: string[] | null
           validation_status?: string | null
         }
         Update: {
@@ -312,7 +310,6 @@ export type Database = {
           old_value?: Json | null
           project_id?: string | null
           validation_checks?: Json | null
-          validation_protocols?: string[] | null
           validation_status?: string | null
         }
         Relationships: [
@@ -366,44 +363,6 @@ export type Database = {
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "resources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      extraction_corrections: {
-        Row: {
-          action: string
-          created_at: string
-          extraction_id: string
-          field_name: string
-          id: string
-          user_id: string | null
-          value: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          extraction_id: string
-          field_name: string
-          id?: string
-          user_id?: string | null
-          value: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          extraction_id?: string
-          field_name?: string
-          id?: string
-          user_id?: string | null
-          value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "extraction_corrections_extraction_id_fkey"
-            columns: ["extraction_id"]
-            isOneToOne: false
-            referencedRelation: "paper_extractions"
             referencedColumns: ["id"]
           },
         ]
@@ -851,33 +810,6 @@ export type Database = {
           },
         ]
       }
-      nih_grants_sync_log: {
-        Row: {
-          completed_at: string | null
-          error_message: string | null
-          grants_updated: number | null
-          id: string
-          started_at: string
-          status: string
-        }
-        Insert: {
-          completed_at?: string | null
-          error_message?: string | null
-          grants_updated?: number | null
-          id?: string
-          started_at?: string
-          status?: string
-        }
-        Update: {
-          completed_at?: string | null
-          error_message?: string | null
-          grants_updated?: number | null
-          id?: string
-          started_at?: string
-          status?: string
-        }
-        Relationships: []
-      }
       ontology_standards: {
         Row: {
           abbreviation: string | null
@@ -942,84 +874,39 @@ export type Database = {
       }
       paper_extractions: {
         Row: {
-          authors: string | null
-          chat_messages: Json | null
           created_at: string
-          develope_hardware_type: string[] | null
-          develope_software_type: string[] | null
           doi: string | null
           extracted_metadata: Json | null
           filename: string
-          grant_numbers: string[] | null
           id: string
-          keywords: string[] | null
-          orcids: string[] | null
-          produce_data_modality: string[] | null
-          produce_data_type: string[] | null
-          raw_text: string | null
           status: string
           storage_path: string | null
-          study_species: string[] | null
           title: string | null
           updated_at: string
-          use_analysis_method: string[] | null
-          use_analysis_types: string[] | null
-          use_approaches: string[] | null
-          use_sensors: string[] | null
           user_id: string | null
         }
         Insert: {
-          authors?: string | null
-          chat_messages?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           doi?: string | null
           extracted_metadata?: Json | null
           filename: string
-          grant_numbers?: string[] | null
           id?: string
-          keywords?: string[] | null
-          orcids?: string[] | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          raw_text?: string | null
           status?: string
           storage_path?: string | null
-          study_species?: string[] | null
           title?: string | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           user_id?: string | null
         }
         Update: {
-          authors?: string | null
-          chat_messages?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           doi?: string | null
           extracted_metadata?: Json | null
           filename?: string
-          grant_numbers?: string[] | null
           id?: string
-          keywords?: string[] | null
-          orcids?: string[] | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          raw_text?: string | null
           status?: string
           storage_path?: string | null
-          study_species?: string[] | null
           title?: string | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           user_id?: string | null
         }
         Relationships: []
@@ -1130,10 +1017,7 @@ export type Database = {
       }
       projects: {
         Row: {
-          collaborators: Json | null
           created_at: string
-          develope_hardware_type: string[] | null
-          develope_software_type: string[] | null
           grant_id: string | null
           grant_number: string
           id: string
@@ -1141,24 +1025,13 @@ export type Database = {
           last_edited_by: string | null
           metadata: Json | null
           metadata_completeness: number | null
-          presentations: Json | null
-          produce_data_modality: string[] | null
-          produce_data_type: string[] | null
-          related_project_ids: string[] | null
           study_human: boolean | null
           study_species: string[] | null
           updated_at: string
-          use_analysis_method: string[] | null
-          use_analysis_types: string[] | null
-          use_approaches: string[] | null
-          use_sensors: string[] | null
           website: string | null
         }
         Insert: {
-          collaborators?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           grant_id?: string | null
           grant_number: string
           id?: string
@@ -1166,24 +1039,13 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
-          presentations?: Json | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          related_project_ids?: string[] | null
           study_human?: boolean | null
           study_species?: string[] | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           website?: string | null
         }
         Update: {
-          collaborators?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           grant_id?: string | null
           grant_number?: string
           id?: string
@@ -1191,17 +1053,9 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
-          presentations?: Json | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          related_project_ids?: string[] | null
           study_human?: boolean | null
           study_species?: string[] | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           website?: string | null
         }
         Relationships: [
@@ -1543,15 +1397,7 @@ export type Database = {
       }
     }
     Views: {
-      correction_pattern_summary: {
-        Row: {
-          action: string | null
-          field_name: string | null
-          frequency: number | null
-          value: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       search_knowledge_embeddings: {

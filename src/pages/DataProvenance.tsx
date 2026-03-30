@@ -29,7 +29,6 @@ interface EditRow {
   chat_context: any;
   project_title?: string;
   validation_status?: string | null;
-  validation_protocols?: string[] | null;
   validation_checks?: any | null;
 }
 
@@ -121,7 +120,7 @@ const ValueCell = ({ value, data, colDef }: ICellRendererParams) => {
 
 const ValidationCell = ({ data }: ICellRendererParams) => {
   const status = data.validation_status;
-  const protocols: string[] = data.validation_protocols || [];
+  const protocols: string[] = [];
   const checks: any[] = data.validation_checks || [];
 
   if (!status) {
