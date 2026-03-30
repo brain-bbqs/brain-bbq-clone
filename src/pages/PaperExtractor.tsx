@@ -66,7 +66,7 @@ export default function PaperExtractor() {
     queryFn: async () => {
       const { data } = await supabase
         .from("paper_extractions")
-        .select("id, filename, title, keywords, created_at")
+        .select("id, filename, title, extracted_metadata, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       return data || [];
