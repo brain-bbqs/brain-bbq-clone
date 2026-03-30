@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
       // Grant already exists, skip insertion
       stats.grants.skipped++;
 
-      // --- INVESTIGATORS from piDetails ---
-      const piDetails: any[] = g.piDetails || [];
+      // --- INVESTIGATORS from MARR project data (piDetails no longer available from cache) ---
+      const piDetails: any[] = marr ? [{ fullName: marr.pi, isContactPi: true }] : [];
       for (const pi of piDetails) {
         const fullName = pi.fullName?.trim();
         if (!fullName) continue;
