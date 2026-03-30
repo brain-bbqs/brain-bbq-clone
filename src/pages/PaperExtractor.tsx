@@ -366,7 +366,8 @@ export default function PaperExtractor() {
               ) : (
                 <div className="p-3 space-y-2">
                   {ENTITY_FIELDS.map(({ key, label }) => {
-                    const values = (extraction as any)[key] as string[] | undefined;
+                    const meta = extraction.extracted_metadata || {};
+                    const values = (meta as any)[key] as string[] | undefined;
                     if (!values || values.length === 0) return null;
                     return (
                       <div key={key} className="rounded-lg border border-border/60 p-2.5 bg-background">
