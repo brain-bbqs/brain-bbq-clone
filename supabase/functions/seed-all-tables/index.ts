@@ -85,15 +85,15 @@ Deno.serve(async (req) => {
       investigator_organizations: { inserted: 0, skipped: 0 },
     };
 
-    // 1. Read all cached grant data
-    const { data: cachedGrants, error: cacheErr } = await supabase
-      .from("nih_grants_cache")
-      .select("grant_number, data");
+    // 1. Read all existing grant data from grants table
+    const { data: existingGrants, error: grantsErr } = await supabase
+      .from("grants")
+      .select("id, grant_number, title, abstract, award_amount, fiscal_year, nih_link");
     
-    if (cacheErr) throw new Error(`Cache read error: ${cacheErr.message}`);
-    if (!cachedGrants || cachedGrants.length === 0) {
+    if (grantsErr) throw new Error(`Grants read error: ${grantsErr.message}`);
+    if (!existingGrants || existingGrants.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No cached grant data found. Run nih-grants?action=refresh first." }),
+        JSON.stringify({ error: "No grants found. Run nih-grants?action=refresh first." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
