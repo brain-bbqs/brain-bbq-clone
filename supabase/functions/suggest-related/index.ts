@@ -34,7 +34,7 @@ serve(async (req) => {
     // Fetch all projects
     const { data: projects, error } = await sb
       .from("projects")
-      .select("id, grant_number, study_species, use_approaches, use_sensors, produce_data_modality, use_analysis_method, keywords, related_project_ids");
+      .select("id, grant_number, study_species, keywords, metadata");
     if (error) throw error;
     if (!projects?.length) {
       return new Response(JSON.stringify({ suggestions: [] }), {
