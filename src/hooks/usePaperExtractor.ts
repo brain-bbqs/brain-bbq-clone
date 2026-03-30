@@ -95,11 +95,28 @@ export function usePaperExtractor() {
       if (error) throw error;
 
       setExtractionStep("done");
+      const ext = data.extraction || {};
       setExtraction({
         id: record.id,
         filename: file.name,
         status: "completed",
-        ...data.extraction,
+        title: ext.title || null,
+        doi: ext.doi || null,
+        extracted_metadata: {
+          authors: ext.authors,
+          grant_numbers: ext.grant_numbers || [],
+          orcids: ext.orcids || [],
+          study_species: ext.study_species || [],
+          use_sensors: ext.use_sensors || [],
+          use_approaches: ext.use_approaches || [],
+          produce_data_modality: ext.produce_data_modality || [],
+          produce_data_type: ext.produce_data_type || [],
+          use_analysis_method: ext.use_analysis_method || [],
+          use_analysis_types: ext.use_analysis_types || [],
+          develope_software_type: ext.develope_software_type || [],
+          develope_hardware_type: ext.develope_hardware_type || [],
+          keywords: ext.keywords || [],
+        },
       });
 
       toast({ title: "Extraction complete", description: `Extracted metadata from ${file.name}` });
