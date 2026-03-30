@@ -136,7 +136,8 @@ export default function PaperExtractor() {
 
   const entityCount = extraction
     ? ENTITY_FIELDS.reduce((acc, { key }) => {
-        const v = (extraction as any)[key] as string[] | undefined;
+        const meta = extraction.extracted_metadata || {};
+        const v = (meta as any)[key] as string[] | undefined;
         return acc + (v?.length || 0);
       }, 0)
     : 0;
