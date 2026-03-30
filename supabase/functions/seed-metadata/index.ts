@@ -27,7 +27,14 @@ serve(async (req) => {
     const grantMap = new Map((grants || []).map(g => [g.grant_number, g]));
 
     // Get all projects for "similar projects" context
-    const { data: allProjects } = await sb.from("projects").select("grant_number, study_species, use_approaches, use_analysis_method, keywords").gte("metadata_completeness", 50);
+    const { data: allProjects } = await sb.from("projects").select("grant_number, study_species, keywords, metadata").gte("metadata_completeness", 50);
+
+    // Helper to read field from top-level or metadata JSONB
+    const TOP_LEVEL = new Set(["study_species", "keywords", "website", "study_human"]);
+    function getField(p: any, field: string): any {
+      if (TOP_LEVEL.has(field)) return p[field];
+      return (p.metadata || {})[field] ?? null;
+    }
 
     const results: { grant_number: string; status: string; fields_updated?: number }[] = [];
 
@@ -42,7 +49,8 @@ serve(async (req) => {
       const existingFields: Record<string, any> = {};
       const arrayFields = ["study_species", "use_approaches", "use_sensors", "produce_data_modality", "use_analysis_method", "keywords"];
       for (const f of arrayFields) {
-        if (project[f]?.length > 0) existingFields[f] = project[f];
+        const val = getField(project, f);
+        if (val?.length > 0) existingFields[f] = val;
       }
 
       try {
