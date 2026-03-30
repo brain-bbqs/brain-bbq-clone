@@ -19,7 +19,7 @@ export default function MetadataAssistant() {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
   const [grantNumber, setGrantNumber] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const { canEdit } = useCanEditProject(grantNumber);
 
   const { data: grantTitle } = useQuery({
