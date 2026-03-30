@@ -105,7 +105,8 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
 
       const { error } = await (supabase
         .from("projects" as any) as any)
-        .upsert(row, { onConflict: "grant_number" });
+        .update(row)
+        .eq("grant_number", grantNumber);
       if (error) throw error;
 
       // Log field-level diffs to edit_history
