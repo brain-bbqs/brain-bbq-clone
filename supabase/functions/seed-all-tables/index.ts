@@ -98,77 +98,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${cachedGrants.length} cached grants...`);
+    console.log(`Processing ${existingGrants.length} grants...`);
 
     // Track created entities to avoid duplicates
     const orgMap = new Map<string, string>(); // org name -> org id
     const investigatorMap = new Map<string, string>(); // name key -> investigator id
     const pubMap = new Map<string, string>(); // pmid -> publication id
 
-    // 2. Process each grant
-    for (const cached of cachedGrants) {
-      const g = cached.data as any;
-      const grantNumber = cached.grant_number;
+    // 2. Process each grant (data is already in the grants table)
+    for (const grantRow of existingGrants) {
+      const grantNumber = grantRow.grant_number;
+      const grantId = grantRow.id;
       const marr = findMarrProject(grantNumber);
 
-      // --- ORGANIZATION ---
-      const orgName = g.institution || "Unknown";
-      if (orgName !== "Unknown" && !orgMap.has(orgName.toLowerCase())) {
-        const { data: existingOrg } = await supabase
-          .from("organizations")
-          .select("id")
-          .ilike("name", orgName)
-          .maybeSingle();
-
-        if (existingOrg) {
-          orgMap.set(orgName.toLowerCase(), existingOrg.id);
-          stats.organizations.skipped++;
-        } else {
-          const { data: newOrg, error: orgErr } = await supabase
-            .from("organizations")
-            .insert({ name: orgName })
-            .select("id")
-            .single();
-          
-          if (!orgErr && newOrg) {
-            orgMap.set(orgName.toLowerCase(), newOrg.id);
-            stats.organizations.inserted++;
-          }
-        }
-      }
-
-      // --- GRANT ---
-      const { data: existingGrant } = await supabase
-        .from("grants")
-        .select("id")
-        .eq("grant_number", grantNumber)
-        .maybeSingle();
-
-      let grantId: string;
-      if (existingGrant) {
-        grantId = existingGrant.id;
-        stats.grants.skipped++;
-      } else {
-        const { data: newGrant, error: grantErr } = await supabase
-          .from("grants")
-          .insert({
-            grant_number: grantNumber,
-            title: g.title || "Unknown",
-            abstract: g.abstract || null,
-            award_amount: g.awardAmount || null,
-            fiscal_year: g.fiscalYear || null,
-            nih_link: g.nihLink || null,
-          })
-          .select("id")
-          .single();
-
-        if (grantErr || !newGrant) {
-          console.error(`Failed to insert grant ${grantNumber}:`, grantErr);
-          continue;
-        }
-        grantId = newGrant.id;
-        stats.grants.inserted++;
-      }
+      // Grant already exists, skip insertion
+      stats.grants.skipped++;
 
       // --- INVESTIGATORS from piDetails ---
       const piDetails: any[] = g.piDetails || [];
