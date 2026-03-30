@@ -53,23 +53,7 @@ export function GrantSummary({ id }: { id: string }) {
         }
       }
 
-      // Publications fallback removed (nih_grants_cache dropped)
-      if (false) {
-        const publications_placeholder: any[] = [{
-            id: "",
-            title: "Unknown",
-            authors: "",
-            year: null,
-            journal: "",
-            doi: null,
-            citations: 0,
-            rcr: 0,
-            pubmed_link: null,
-            resource_id: null,
-            _fromCache: true,
-          }));
-        }
-      }
+      // nih_grants_cache fallback removed (table dropped)
 
       return {
         ...grant,
