@@ -7,20 +7,23 @@ export interface PaperExtraction {
   filename: string;
   status: string;
   title: string | null;
-  authors: string | null;
   doi: string | null;
-  grant_numbers: string[];
-  orcids: string[];
-  study_species: string[];
-  use_sensors: string[];
-  use_approaches: string[];
-  produce_data_modality: string[];
-  produce_data_type: string[];
-  use_analysis_method: string[];
-  use_analysis_types: string[];
-  develope_software_type: string[];
-  develope_hardware_type: string[];
-  keywords: string[];
+  extracted_metadata: {
+    authors?: string;
+    grant_numbers?: string[];
+    orcids?: string[];
+    study_species?: string[];
+    use_sensors?: string[];
+    use_approaches?: string[];
+    produce_data_modality?: string[];
+    produce_data_type?: string[];
+    use_analysis_method?: string[];
+    use_analysis_types?: string[];
+    develope_software_type?: string[];
+    develope_hardware_type?: string[];
+    keywords?: string[];
+    [key: string]: any;
+  };
 }
 
 export interface ChatMsg {
