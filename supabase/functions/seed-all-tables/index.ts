@@ -250,14 +250,14 @@ Deno.serve(async (req) => {
           .from("grant_investigators")
           .select("investigator_id")
           .eq("investigator_id", invId)
-          .eq("grant_number", grantNumber)
+          .eq("grant_id", grantId)
           .maybeSingle();
 
         if (!existingGI) {
           const role = pi.isContactPi ? "contact_pi" : "co_pi";
           const { error: giErr } = await supabase
             .from("grant_investigators")
-            .insert({ investigator_id: invId, grant_number: grantNumber, role });
+            .insert({ investigator_id: invId, grant_id: grantId, role });
           
           if (!giErr) stats.grant_investigators.inserted++;
         } else {
