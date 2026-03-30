@@ -381,7 +381,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
   const invOrgLinks = ioResult.data || [];
   const orgs = orgResult.data || [];
 
-  const grantByNumber = new Map(grants.map(g => [g.grant_number, g]));
+  const grantById = new Map(grants.map(g => [g.id, g]));
   const orgById = new Map(orgs.map(o => [o.id, o]));
   const bbqsGrantNumbers = new Set(MARR_PROJECTS.map(p => p.id));
 
@@ -401,18 +401,18 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const orgInfos: OrgInfo[] = [];
 
     for (const link of piGrantLinks) {
-      const grant = grantByNumber.get(link.grant_number);
+      const grant = grantById.get(link.grant_id);
       if (!grant) continue;
 
       const isContact = link.role === "contact_pi";
       if (isContact) piAsPi++;
       else piAsCoPi++;
 
-      const coreNum = link.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
-      const isBbqs = bbqsGrantNumbers.has(link.grant_number) || bbqsGrantNumbers.has(coreNum) ||
-        [...bbqsGrantNumbers].some(bn => link.grant_number.includes(bn) || bn.includes(coreNum));
+      const coreNum = grant.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
+      const isBbqs = bbqsGrantNumbers.has(grant.grant_number) || bbqsGrantNumbers.has(coreNum) ||
+        [...bbqsGrantNumbers].some(bn => grant.grant_number.includes(bn) || bn.includes(coreNum));
 
-      const coPiLinks = grantInvLinks.filter(gi => gi.grant_number === link.grant_number && gi.investigator_id !== inv.id);
+      const coPiLinks = grantInvLinks.filter(gi => gi.grant_id === link.grant_id && gi.investigator_id !== inv.id);
       const coPis: CoPiInfo[] = coPiLinks.map(coLink => {
         const coInv = investigators.find(i => i.id === coLink.investigator_id);
         const coProfileId = coInv?.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(coInv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
@@ -424,9 +424,9 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       });
 
       piGrants.push({
-        grantNumber: link.grant_number,
+        grantNumber: grant.grant_number,
         title: grant.title,
-        nihLink: grant.nih_link || `https://reporter.nih.gov/project-details/${encodeURIComponent(link.grant_number)}`,
+        nihLink: grant.nih_link || `https://reporter.nih.gov/project-details/${encodeURIComponent(grant.grant_number)}`,
         role: link.role,
         awardAmount: Number(grant.award_amount) || 0,
         institution: "",

@@ -21,8 +21,8 @@ export function GrantSummary({ id }: { id: string }) {
       // Get investigators
       const { data: invLinks } = await supabase
         .from("grant_investigators")
-        .select("investigator_id, role")
-        .eq("grant_number", grant.grant_number);
+        .select("investigator_id, role, grant_id")
+        .eq("grant_id", id);
       const invIds = invLinks?.map((i) => i.investigator_id) || [];
       const { data: investigators } = invIds.length
         ? await supabase.from("investigators").select("id, name, resource_id").in("id", invIds)

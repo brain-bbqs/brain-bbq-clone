@@ -561,19 +561,16 @@ export type Database = {
       grant_investigators: {
         Row: {
           grant_id: string | null
-          grant_number: string
           investigator_id: string
           role: string
         }
         Insert: {
           grant_id?: string | null
-          grant_number: string
           investigator_id: string
           role?: string
         }
         Update: {
           grant_id?: string | null
-          grant_number?: string
           investigator_id?: string
           role?: string
         }
