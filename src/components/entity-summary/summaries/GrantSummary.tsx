@@ -53,30 +53,7 @@ export function GrantSummary({ id }: { id: string }) {
         }
       }
 
-      // If no linked publications, try nih_grants_cache
-      if (publications.length === 0) {
-        const { data: cache } = await supabase
-          .from("nih_grants_cache")
-          .select("data")
-          .eq("grant_number", grant.grant_number)
-          .maybeSingle();
-        if (cache?.data && typeof cache.data === "object") {
-          const cachedPubs = (cache.data as any).publications || [];
-          publications = cachedPubs.map((p: any) => ({
-            id: p.pmid || p.id,
-            title: p.title || "Unknown",
-            authors: Array.isArray(p.authors) ? p.authors.map((a: any) => typeof a === "string" ? a : a.fullName || `${a.firstName || ""} ${a.lastName || ""}`.trim()).join(", ") : (p.authors || ""),
-            year: p.year || null,
-            journal: p.journal || "",
-            doi: p.doi || null,
-            citations: p.citations || 0,
-            rcr: p.rcr || 0,
-            pubmed_link: p.pubmedLink || p.pubmed_link || (p.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/` : null),
-            resource_id: null,
-            _fromCache: true,
-          }));
-        }
-      }
+      // nih_grants_cache fallback removed (table dropped)
 
       return {
         ...grant,
