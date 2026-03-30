@@ -1022,6 +1022,7 @@ export type Database = {
           last_edited_by: string | null
           metadata: Json | null
           metadata_completeness: number | null
+          organization_id: string | null
           resource_id: string | null
           study_human: boolean | null
           study_species: string[] | null
@@ -1037,6 +1038,7 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
+          organization_id?: string | null
           resource_id?: string | null
           study_human?: boolean | null
           study_species?: string[] | null
@@ -1052,6 +1054,7 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
+          organization_id?: string | null
           resource_id?: string | null
           study_human?: boolean | null
           study_species?: string[] | null
@@ -1064,6 +1067,13 @@ export type Database = {
             columns: ["grant_id"]
             isOneToOne: false
             referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1185,6 +1195,7 @@ export type Database = {
           id: string
           metadata: Json | null
           name: string
+          organization_id: string | null
           resource_type: Database["public"]["Enums"]["resource_type"]
           updated_at: string
         }
@@ -1196,6 +1207,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name: string
+          organization_id?: string | null
           resource_type: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
         }
@@ -1207,10 +1219,19 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name?: string
+          organization_id?: string | null
           resource_type?: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_queries: {
         Row: {

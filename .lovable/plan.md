@@ -1,6 +1,6 @@
-# Database Schema — Resource-Centric Architecture
+# Database Schema — Resource-Centric Architecture (COMPLETE)
 
-## Relationship Graph (Post-Refactor)
+## Relationship Graph
 
 ### 1. Tenants & Users
 ```
@@ -12,7 +12,7 @@ allowed_domains.organization_id → organizations.id
 ### 2. Core Knowledge Graph
 Every domain table has an optional `resource_id → resources.id` FK:
 - `organizations.resource_id`
-- `projects.resource_id` ← NEW
+- `projects.resource_id`
 - `grants.resource_id`
 - `publications.resource_id`
 - `software_tools.resource_id`
@@ -30,49 +30,46 @@ grant_investigators  (grant_id → grants.id, investigator_id → investigators.
 investigator_organizations (investigator_id → investigators.id, organization_id → organizations.id)
 ```
 
-### 4. Application Features
-All scoped by `organization_id → organizations.id`:
-- `chat_conversations` (user_id, organization_id)
-- `chat_messages` (conversation_id → chat_conversations.id)
-- `announcements` (resource_id, posted_by, organization_id)
-- `jobs` (resource_id, posted_by, organization_id)
-- `feature_suggestions` (submitted_by, organization_id)
-- `feature_votes` (user_id, suggestion_id)
-- `entity_comments` (resource_id, user_id, parent_id)
-- `analytics_pageviews` (user_id, organization_id)
-- `analytics_clicks` (user_id, organization_id)
+### 4. Multi-Tenant Scoping
+`organization_id → organizations.id` on:
+- `projects`
+- `resources`
+- `chat_conversations`
+- `announcements`
+- `jobs`
+- `feature_suggestions`
+- `analytics_pageviews`
+- `analytics_clicks`
 
-### 5. Reference & Embeddings
-- `knowledge_embeddings` (resource_id, source_type, source_id)
-- `taxonomies` (category, value, parent_value)
-- `ontology_standards` (category, name)
-- `custom_field_usage` (field_name, field_value)
-- `edit_history` (project_id, grant_number, field_name)
-- `search_queries` (query, mode)
+### 5. Application Features
+- `entity_comments` (resource_id → resources, user_id, parent_id → self)
+- `chat_conversations` (user_id, organization_id) → `chat_messages` (conversation_id)
+- `feature_suggestions` (submitted_by, organization_id) → `feature_votes` (suggestion_id)
+- `announcements` / `jobs` (resource_id, posted_by, organization_id)
 
----
+### 6. Reference & Embeddings
+- `knowledge_embeddings` (resource_id → resources, source_type, source_id)
+- `taxonomies`, `ontology_standards`, `custom_field_usage`, `edit_history`, `search_queries`
 
 ## Tables Dropped
 | Table | Reason |
 |---|---|
-| `paper_extractions` | Feature removed; user confirmed drop |
-| `nih_grants_cache` | Redundant cache; grants table + NIH Reporter API serve this |
+| `paper_extractions` | Dropped; metadata lives in projects.metadata JSONB |
+| `nih_grants_cache` | Redundant; grants table + NIH Reporter API |
 | `nih_grants_sync_log` | Operational logging only |
-| `extraction_corrections` | Only used with paper_extractions |
+| `extraction_corrections` | Depended on paper_extractions |
 
 ## Migrations Completed
-1. Dropped unused tables (nih_grants_sync_log, extraction_corrections)
+1. Dropped unused tables
 2. Consolidated projects array columns → `metadata` JSONB
-3. Consolidated paper_extractions array columns → `extracted_metadata` JSONB
-4. Simplified edit_history (dropped validation_protocols)
-5. **Dropped paper_extractions and nih_grants_cache**
-6. **Added `resource_id` to projects**
-7. **Added `organization_id` to chat_conversations, announcements, jobs, feature_suggestions, analytics_pageviews, analytics_clicks**
-8. **Added `grant_id` to grant_investigators (backfilled from grants table)**
-9. **Relaxed `grant_number` uniqueness on projects**
+3. Simplified edit_history
+4. Added `resource_id` to projects
+5. Added `organization_id` to 8 feature/scoping tables (including projects, resources)
+6. Replaced `grant_investigators.grant_number` with `grant_id`
+7. Relaxed `grant_number` uniqueness on projects
+8. Ensured all FK constraints exist across all tables
 
 ## Remaining Work
-- Backfill `projects.resource_id` from resources table
-- Backfill `organization_id` on feature tables from profiles
-- Eventually drop `grant_investigators.grant_number` after full code migration to `grant_id`
-- Tighten RLS policies (many are overly permissive with `true`)
+- Backfill `projects.resource_id` and `projects.organization_id`
+- Backfill `resources.organization_id`
+- Tighten RLS policies (20 warnings for overly permissive `true` checks)
