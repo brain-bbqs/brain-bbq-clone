@@ -330,8 +330,10 @@ Deno.serve(async (req) => {
     });
 
     // Fetch publications from NIH Reporter for each grant in parallel
+    // Core project num: strip leading numeric prefix (e.g. "1U01DA063534" -> "U01DA063534")
+    // and any trailing suffix like "-01"
     const pubPromises = grants.map(async (g) => {
-      const coreProjectNum = g.grant_number.replace(/^\d+/, "").replace(/\d+$/, "");
+      const coreProjectNum = g.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
       const pubs = await fetchPublications(coreProjectNum);
       return { grantNumber: g.grant_number, publications: pubs };
     });
