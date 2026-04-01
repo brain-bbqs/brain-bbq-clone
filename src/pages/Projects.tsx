@@ -62,6 +62,81 @@ interface ProjectRow {
   species?: string;
 }
 
+type RawPublication = Partial<Publication> | null | undefined;
+
+type RawPiDetail = Partial<PiDetail> | null | undefined;
+
+type RawProjectRow = Partial<Omit<ProjectRow, "publications" | "piDetails">> & {
+  publications?: RawPublication[] | null;
+  piDetails?: RawPiDetail[] | null;
+};
+
+const toSafeString = (value: unknown): string =>
+  typeof value === "string" ? value : "";
+
+const toSafeNumber = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
+
+const normalizePublication = (publication: RawPublication): Publication => ({
+  pmid: toSafeString(publication?.pmid),
+  title: toSafeString(publication?.title),
+  authors:
+    typeof publication?.authors === "string" || Array.isArray(publication?.authors)
+      ? publication.authors
+      : "",
+  year: toSafeNumber(publication?.year),
+  journal: toSafeString(publication?.journal),
+  citations: toSafeNumber(publication?.citations),
+  rcr: toSafeNumber(publication?.rcr),
+  pubmedLink: toSafeString(publication?.pubmedLink),
+});
+
+const normalizePiDetails = (details: RawPiDetail[] | null | undefined): PiDetail[] | undefined => {
+  if (!Array.isArray(details)) return undefined;
+
+  const normalized = details
+    .map((detail) => ({
+      fullName: toSafeString(detail?.fullName).trim(),
+      firstName: toSafeString(detail?.firstName).trim(),
+      lastName: toSafeString(detail?.lastName).trim(),
+      profileId: typeof detail?.profileId === "number" ? detail.profileId : null,
+      isContactPi: Boolean(detail?.isContactPi),
+    }))
+    .filter((detail) => detail.fullName);
+
+  return normalized.length > 0 ? normalized : undefined;
+};
+
+const normalizeProjectRow = (row: RawProjectRow): ProjectRow | null => {
+  const grantNumber = toSafeString(row.grantNumber).trim();
+  if (!grantNumber) return null;
+
+  const publications = Array.isArray(row.publications)
+    ? row.publications.filter(Boolean).map(normalizePublication)
+    : [];
+
+  const contactPi = toSafeString(row.contactPi).trim();
+  const allPis = toSafeString(row.allPis).trim() || contactPi;
+
+  return {
+    grantNumber,
+    title: toSafeString(row.title).trim() || "Untitled project",
+    contactPi,
+    allPis,
+    piDetails: normalizePiDetails(row.piDetails),
+    institution: toSafeString(row.institution).trim(),
+    fiscalYear: toSafeNumber(row.fiscalYear),
+    awardAmount: toSafeNumber(row.awardAmount),
+    nihLink: toSafeString(row.nihLink).trim(),
+    publications,
+    publicationCount:
+      typeof row.publicationCount === "number" && Number.isFinite(row.publicationCount)
+        ? row.publicationCount
+        : publications.length,
+    species: toSafeString(row.species).trim(),
+  };
+};
+
 const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
   const { open } = useEntitySummary();
   
@@ -252,7 +327,12 @@ const fetchGrants = async (): Promise<ProjectRow[]> => {
   if (data?.error) {
     throw new Error(data.error);
   }
-  return data?.data || [];
+
+  const rawRows = Array.isArray(data?.data) ? data.data : [];
+
+  return rawRows
+    .map((row) => normalizeProjectRow(row as RawProjectRow))
+    .filter((row): row is ProjectRow => row !== null);
 };
 
 const Projects = () => {
@@ -283,7 +363,7 @@ const Projects = () => {
     return map;
   }, [marrProjects]);
 
-  const rowData = useMemo(() => rawRowData.filter(row => row.grantNumber).map(row => {
+  const rowData = useMemo(() => rawRowData.map(row => {
     const noSuffix = row.grantNumber.replace(/-\d+$/, "");
     const noPrefix = noSuffix.replace(/^\d+/, "");
     const species = speciesMap.get(row.grantNumber) || speciesMap.get(noSuffix) || speciesMap.get(noPrefix) || "";
