@@ -366,19 +366,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Get publications for this grant
-      const projectId = projectByGrant.get(g.grant_number);
-      const pubs = projectId ? (projectPubMap.get(projectId) || []) : [];
-      const formattedPubs = pubs.map(p => ({
-        pmid: p.pmid || "",
-        title: p.title || "",
-        authors: p.authors || "",
-        year: p.year || 0,
-        journal: p.journal || "",
-        citations: p.citations || 0,
-        rcr: p.rcr || 0,
-        pubmedLink: p.pubmed_link || (p.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/` : ""),
-      }));
+      // Get publications for this grant from NIH Reporter
+      const pubs = grantPubMap.get(g.grant_number) || [];
 
       return {
         grantNumber: g.grant_number,
@@ -391,8 +380,8 @@ Deno.serve(async (req) => {
         fiscalYear: g.fiscal_year,
         awardAmount: g.award_amount,
         nihLink: g.nih_link,
-        publications: formattedPubs,
-        publicationCount: formattedPubs.length,
+        publications: pubs,
+        publicationCount: pubs.length,
       };
     });
 
