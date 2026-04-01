@@ -129,10 +129,11 @@ export const FundingCharts = ({ data }: FundingChartsProps) => {
     const map = new Map<string, { amount: number; grants: string[]; fullName: string }>();
     data.forEach((d) => {
       const short = shortenInstitution(d.institution);
-      const existing = map.get(short) || { amount: 0, grants: [], fullName: d.institution };
-      const grantType = d.grantNumber.match(/[A-Z]\d+/)?.[0] || d.grantNumber.substring(0, 3);
-      existing.amount += d.awardAmount;
-      existing.grants.push(`${grantType} — ${d.contactPi}`);
+      const existing = map.get(short) || { amount: 0, grants: [], fullName: d.institution || 'Unknown organization' };
+      const gn = d.grantNumber || '';
+      const grantType = gn.match(/[A-Z]\d+/)?.[0] || gn.substring(0, 3) || '???';
+      existing.amount += d.awardAmount || 0;
+      existing.grants.push(`${grantType} — ${d.contactPi || 'Unknown PI'}`);
       map.set(short, existing);
     });
     return Array.from(map.entries())
