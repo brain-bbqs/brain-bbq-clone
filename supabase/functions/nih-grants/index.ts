@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // DEFAULT: serve grant data from grants table
+    // DEFAULT: serve grant data from grants table with full joins
     const { data: grants, error: grantsError } = await supabase
       .from("grants")
       .select("*")
@@ -297,14 +297,95 @@ Deno.serve(async (req) => {
       );
     }
 
-    const results = grants.map(g => ({
-      grantNumber: g.grant_number,
-      title: g.title,
-      abstract: g.abstract,
-      awardAmount: g.award_amount,
-      fiscalYear: g.fiscal_year,
-      nihLink: g.nih_link,
-    }));
+    // Fetch investigators with their organizations for all grants
+    const grantIds = grants.map(g => g.id);
+    const { data: grantInvestigators } = await supabase
+      .from("grant_investigators")
+      .select("grant_id, role, investigator_id")
+      .in("grant_id", grantIds);
+
+    const investigatorIds = [...new Set((grantInvestigators || []).map(gi => gi.investigator_id))];
+    
+    const { data: investigators } = investigatorIds.length > 0
+      ? await supabase.from("investigators").select("id, name, email, orcid, scholar_id").in("id", investigatorIds)
+      : { data: [] };
+
+    const { data: invOrgs } = investigatorIds.length > 0
+      ? await supabase.from("investigator_organizations").select("investigator_id, organization_id").in("investigator_id", investigatorIds)
+      : { data: [] };
+
+    const orgIds = [...new Set((invOrgs || []).map(io => io.organization_id))];
+    const { data: organizations } = orgIds.length > 0
+      ? await supabase.from("organizations").select("id, name").in("id", orgIds)
+      : { data: [] };
+
+    // Build lookup maps
+    const invMap = new Map((investigators || []).map(i => [i.id, i]));
+    const orgMap = new Map((organizations || []).map(o => [o.id, o]));
+    const invOrgMap = new Map<string, string[]>();
+    (invOrgs || []).forEach(io => {
+      const orgs = invOrgMap.get(io.investigator_id) || [];
+      orgs.push(io.organization_id);
+      invOrgMap.set(io.investigator_id, orgs);
+    });
+
+    // Fetch publications from NIH Reporter for each grant in parallel
+    // Core project num: strip leading numeric prefix (e.g. "1U01DA063534" -> "U01DA063534")
+    // and any trailing suffix like "-01"
+    const pubPromises = grants.map(async (g) => {
+      const coreProjectNum = g.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
+      const pubs = await fetchPublications(coreProjectNum);
+      return { grantNumber: g.grant_number, publications: pubs };
+    });
+    const pubResults = await Promise.all(pubPromises);
+    const grantPubMap = new Map(pubResults.map(r => [r.grantNumber, r.publications]));
+
+    const results = grants.map(g => {
+      // Get PIs for this grant
+      const gis = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
+      const piDetails = gis.map(gi => {
+        const inv = invMap.get(gi.investigator_id);
+        return {
+          fullName: inv?.name || "Unknown",
+          firstName: (inv?.name || "").split(" ")[0] || "",
+          lastName: (inv?.name || "").split(" ").slice(-1)[0] || "",
+          profileId: null,
+          isContactPi: gi.role === "contact_pi",
+        };
+      });
+
+      const contactPi = piDetails.find(pi => pi.isContactPi);
+      const allPiNames = piDetails.map(pi => pi.fullName).join(", ");
+
+      // Get institution from contact PI's org, or first PI's org
+      let institution = "Unknown";
+      const contactPiGi = gis.find(gi => gi.role === "contact_pi") || gis[0];
+      if (contactPiGi) {
+        const orgIds = invOrgMap.get(contactPiGi.investigator_id) || [];
+        if (orgIds.length > 0) {
+          const org = orgMap.get(orgIds[0]);
+          if (org) institution = org.name;
+        }
+      }
+
+      // Get publications for this grant from NIH Reporter
+      const pubs = grantPubMap.get(g.grant_number) || [];
+
+      return {
+        grantNumber: g.grant_number,
+        title: g.title,
+        abstract: g.abstract,
+        contactPi: contactPi?.fullName || allPiNames.split(",")[0]?.trim() || "Unknown",
+        allPis: allPiNames || "Unknown",
+        piDetails: piDetails.length > 0 ? piDetails : undefined,
+        institution,
+        fiscalYear: g.fiscal_year,
+        awardAmount: g.award_amount,
+        nihLink: g.nih_link,
+        publications: pubs,
+        publicationCount: pubs.length,
+      };
+    });
 
     return new Response(
       JSON.stringify({ success: true, data: results, source: "grants_table" }),

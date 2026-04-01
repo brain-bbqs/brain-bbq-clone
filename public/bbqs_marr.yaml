@@ -1133,6 +1133,70 @@ projects:
     website: "[Requires Verification]"
     studies_humans: "No"
 
+  - grant_number: "1U01DA063565"
+    project_title: "Neurobehavioral Mechanisms of Social Behavior and Familial Structure"
+    project_leads: ["Froemke, Robert Crooks", "Lin, Dayu", "Savin, Cristina", "Shepard, Kenneth L"]
+    institution: "New York University School of Medicine"
+    nih_link: "https://reporter.nih.gov/project-details/1U01DA063565-01"
+    fiscal_year: 2025
+    award_amount: 1240576
+    publication_count: 0
+    publications: []
+    target_species_domain: "Mus musculus (house mouse)"
+    marr_l1_ethological_goal: "Family social structure, parenting duties, cooperative and competitive foraging, and childcare strategies."
+    marr_l2_algorithmic_function: "Statistical behavioral framework with machine learning for multi-animal tracking; neural data analysis of hypothalamic cell types."
+    marr_l3_implementational_hardware: "Wireless high-frequency single-cell imaging system; 3-D engineered burrow environments."
+    data_analysis_approach: "Continuous video synchronized with neural recordings, machine learning methods for multi-animal behavioral quantification, perturbation of hypothalamic cell types."
+    cross_project_synergy: "Mouse social behavior and family dynamics complement primate social modeling (1U01DA063534) and rodent behavior tracking projects (R34DA059506, R34DA059500)."
+    agentic_action_required: "None."
+    species: ["Mus musculus"]
+    experimental_approaches: ["Multi-animal colony observation", "Wireless neural imaging", "Optogenetic perturbation"]
+    data_modalities: ["Video / Optical", "Neural imaging", "Behavioral tracking"]
+    data_type: ["Video frames", "Single-cell neural activity", "Behavioral state time-series"]
+    analysis_types: ["Multi-animal tracking", "Neural circuit analysis", "Social behavior modeling"]
+    analysis_methods: ["Machine learning", "Statistical behavioral frameworks"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Wireless single-cell imaging system", "Cameras"]
+      data_acquisition_modalities: ["Synchronized video and neural recording"]
+      behavioral_rigs: ["3-D engineered burrow environments"]
+      electrophysiology_setup: ["Wireless high-frequency imaging of hypothalamic cell types"]
+    keywords: ["Mouse family", "Parenting", "Social behavior", "Hypothalamus", "Wireless imaging"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
+  - grant_number: "1U01DA063581"
+    project_title: "Computational Analyses of Family Auditory Communication: Linking Behavior, Vocalization, and Neural Dynamics"
+    project_leads: ["Sanes, Dan Harvey", "Pereira, Talmo D.", "Schneider, David Michael", "Williams, Alexander Henry"]
+    institution: "New York University"
+    nih_link: "https://reporter.nih.gov/project-details/1U01DA063581-01"
+    fiscal_year: 2025
+    award_amount: 854818
+    publication_count: 0
+    publications: []
+    target_species_domain: "Mus musculus (house mouse)"
+    marr_l1_ethological_goal: "Auditory communication within family social units, vocal identity signaling, and social-acoustic interactions."
+    marr_l2_algorithmic_function: "Computational analysis linking vocalization patterns to neural dynamics and behavioral states."
+    marr_l3_implementational_hardware: "Multi-animal audio-visual recording systems for family groups."
+    data_analysis_approach: "Studying auditory communication within cohesive family units, linking vocalizations to neural activity and social behavior in naturalistic settings."
+    cross_project_synergy: "Complements 1U01DA063565 on mouse family behavior with a focus on auditory/vocal communication; relevant to cross-species vocalization studies."
+    agentic_action_required: "None."
+    species: ["Mus musculus"]
+    experimental_approaches: ["Family group observation", "Vocalization recording", "Neural recording"]
+    data_modalities: ["Audio", "Video / Optical", "Neural"]
+    data_type: ["Vocalization recordings", "Neural activity", "Behavioral annotations"]
+    analysis_types: ["Vocalization analysis", "Neural dynamics", "Behavioral state classification"]
+    analysis_methods: ["Computational vocalization analysis", "Neural-behavioral linking"]
+    software_tools_used: ["[Requires Verification]"]
+    devices:
+      sensor: ["Microphone arrays", "Cameras"]
+      data_acquisition_modalities: ["Synchronized audio-visual-neural recording"]
+      behavioral_rigs: ["Family group housing"]
+      electrophysiology_setup: ["[Requires Verification]"]
+    keywords: ["Vocal communication", "Family", "Auditory neuroscience", "Mouse vocalizations", "Social acoustics"]
+    website: "[Requires Verification]"
+    studies_humans: "No"
+
   # ==========================================
   # U24 Data Coordination and AI Center (DCAIC)
   # ==========================================

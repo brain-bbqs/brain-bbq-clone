@@ -507,3 +507,54 @@ organizations ──────┐
 |--------|--------|---------|
 | `neuromcp-audio` | Yes | Voice agent audio files |
 | `paper-uploads` | No | Uploaded research papers (auth required) |
+
+---
+
+## 12. Schema Change Policy
+
+> **Rule**: ALL database schema changes require explicit user approval before execution. No exceptions.
+
+### Governance Principles
+
+1. **No silent schema changes** — Every `CREATE TABLE`, `ALTER TABLE`, `DROP`, `CREATE INDEX`, `CREATE FUNCTION`, `CREATE TRIGGER`, or `CREATE POLICY` must be presented to the user for review before running.
+2. **Fit-check first** — Before proposing any schema change, verify it fits the 3-layer architecture:
+   - **Does it belong to an existing layer?** (Tenant / Node / Edge / Chat / Audit / Supporting)
+   - **If Node Layer**: Does it need a `resource_id` FK → `resources.id`?
+   - **If tenant-scoped**: Does it need `organization_id` FK → `organizations.id`?
+   - **If user-owned**: Does it need a `user_id` or `posted_by` FK and corresponding RLS?
+3. **No orphan tables** — New tables must be documented in this file with their layer assignment, column spec, and RLS summary before the migration runs.
+4. **Prefer extension over creation** — Before creating a new table, evaluate whether the data can be stored as:
+   - A JSONB field on an existing table (e.g., `metadata` column)
+   - A row in `resources` with a new `resource_type` enum value
+   - An edge in `resource_links`
+
+### Required Checklist (before any migration)
+
+| # | Check | Required |
+|---|-------|----------|
+| 1 | Does this change fit an existing layer in the architecture? | ✅ |
+| 2 | If new table: is `organization_id` included (if tenant-scoped)? | ✅ |
+| 3 | If new domain entity: does it have `resource_id` FK → `resources`? | ✅ |
+| 4 | Are RLS policies defined for SELECT, INSERT, UPDATE, DELETE? | ✅ |
+| 5 | Are all FK constraints explicit UUIDs (not text-based lookups)? | ✅ |
+| 6 | Has `DATABASE_DESIGN.md` been updated with the new schema? | ✅ |
+| 7 | Does the migration avoid modifying reserved schemas (`auth`, `storage`, `realtime`)? | ✅ |
+| 8 | If adding columns: are new columns nullable or have sensible defaults? | ✅ |
+| 9 | If destructive (DROP, rename): is there a data migration plan? | ✅ |
+
+### Change Categories
+
+| Category | Examples | Approval |
+|----------|----------|----------|
+| **Additive-safe** | Add nullable column, add index, add RLS policy | User approval required |
+| **Structural** | New table, new enum value, new trigger/function | User approval required |
+| **Destructive** | Drop table/column, rename column, change type | User approval + migration plan required |
+| **Blocked** | Modify `auth.*`, `storage.*`, `realtime.*` schemas | Never allowed |
+
+### Process
+
+1. **Propose** — Present the SQL migration with a plain-English summary of what changes and why.
+2. **Checklist** — Confirm all items in the checklist above are satisfied.
+3. **Approve** — User explicitly approves before execution.
+4. **Document** — Update `DATABASE_DESIGN.md` with the new/changed schema.
+5. **Verify** — Confirm the migration succeeded and existing queries still work.
