@@ -282,7 +282,7 @@ const Projects = () => {
     return map;
   }, [marrProjects]);
 
-  const rowData = useMemo(() => rawRowData.map(row => {
+  const rowData = useMemo(() => rawRowData.filter(row => row.grantNumber).map(row => {
     const noSuffix = row.grantNumber.replace(/-\d+$/, "");
     const noPrefix = noSuffix.replace(/^\d+/, "");
     const species = speciesMap.get(row.grantNumber) || speciesMap.get(noSuffix) || speciesMap.get(noPrefix) || "";
