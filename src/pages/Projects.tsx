@@ -220,6 +220,7 @@ const CurrencyCell = ({ value }: { value: number }) => {
 };
 
 const GrantTypeBadge = ({ value }: { value: string }) => {
+  if (!value) return <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs">—</Badge>;
   // Strip leading digits (e.g. "5R34DA..." -> "R34DA...") then extract mechanism code
   const stripped = value.replace(/^\d+/, "");
   const grantType = stripped.match(/^[A-Z]\d+/)?.[0] || stripped.substring(0, 3);
