@@ -50,6 +50,7 @@ export type Database = {
           element_tag: string | null
           element_text: string | null
           id: string
+          organization_id: string | null
           path: string
           section: string | null
           session_id: string | null
@@ -61,6 +62,7 @@ export type Database = {
           element_tag?: string | null
           element_text?: string | null
           id?: string
+          organization_id?: string | null
           path: string
           section?: string | null
           session_id?: string | null
@@ -72,17 +74,27 @@ export type Database = {
           element_tag?: string | null
           element_text?: string | null
           id?: string
+          organization_id?: string | null
           path?: string
           section?: string | null
           session_id?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analytics_clicks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       analytics_pageviews: {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           path: string
           referrer: string | null
           session_id: string | null
@@ -92,6 +104,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           path: string
           referrer?: string | null
           session_id?: string | null
@@ -101,13 +114,22 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           path?: string
           referrer?: string | null
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analytics_pageviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       announcements: {
         Row: {
@@ -117,6 +139,7 @@ export type Database = {
           is_external_link: boolean
           link: string | null
           link_text: string | null
+          organization_id: string | null
           posted_by: string | null
           posted_by_email: string | null
           resource_id: string | null
@@ -130,6 +153,7 @@ export type Database = {
           is_external_link?: boolean
           link?: string | null
           link_text?: string | null
+          organization_id?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
           resource_id?: string | null
@@ -143,6 +167,7 @@ export type Database = {
           is_external_link?: boolean
           link?: string | null
           link_text?: string | null
+          organization_id?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
           resource_id?: string | null
@@ -150,6 +175,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "announcements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "announcements_resource_id_fkey"
             columns: ["resource_id"]
@@ -163,6 +195,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -170,6 +203,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -177,11 +211,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
@@ -284,7 +327,6 @@ export type Database = {
           old_value: Json | null
           project_id: string | null
           validation_checks: Json | null
-          validation_protocols: string[] | null
           validation_status: string | null
         }
         Insert: {
@@ -298,7 +340,6 @@ export type Database = {
           old_value?: Json | null
           project_id?: string | null
           validation_checks?: Json | null
-          validation_protocols?: string[] | null
           validation_status?: string | null
         }
         Update: {
@@ -312,7 +353,6 @@ export type Database = {
           old_value?: Json | null
           project_id?: string | null
           validation_checks?: Json | null
-          validation_protocols?: string[] | null
           validation_status?: string | null
         }
         Relationships: [
@@ -370,44 +410,6 @@ export type Database = {
           },
         ]
       }
-      extraction_corrections: {
-        Row: {
-          action: string
-          created_at: string
-          extraction_id: string
-          field_name: string
-          id: string
-          user_id: string | null
-          value: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          extraction_id: string
-          field_name: string
-          id?: string
-          user_id?: string | null
-          value: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          extraction_id?: string
-          field_name?: string
-          id?: string
-          user_id?: string | null
-          value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "extraction_corrections_extraction_id_fkey"
-            columns: ["extraction_id"]
-            isOneToOne: false
-            referencedRelation: "paper_extractions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       feature_suggestions: {
         Row: {
           created_at: string
@@ -415,6 +417,7 @@ export type Database = {
           github_issue_number: number | null
           github_issue_url: string | null
           id: string
+          organization_id: string | null
           status: string
           submitted_by: string | null
           submitted_by_email: string | null
@@ -428,6 +431,7 @@ export type Database = {
           github_issue_number?: number | null
           github_issue_url?: string | null
           id?: string
+          organization_id?: string | null
           status?: string
           submitted_by?: string | null
           submitted_by_email?: string | null
@@ -441,6 +445,7 @@ export type Database = {
           github_issue_number?: number | null
           github_issue_url?: string | null
           id?: string
+          organization_id?: string | null
           status?: string
           submitted_by?: string | null
           submitted_by_email?: string | null
@@ -448,7 +453,15 @@ export type Database = {
           updated_at?: string
           votes?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feature_suggestions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feature_votes: {
         Row: {
@@ -547,21 +560,28 @@ export type Database = {
       }
       grant_investigators: {
         Row: {
-          grant_number: string
+          grant_id: string | null
           investigator_id: string
           role: string
         }
         Insert: {
-          grant_number: string
+          grant_id?: string | null
           investigator_id: string
           role?: string
         }
         Update: {
-          grant_number?: string
+          grant_id?: string | null
           investigator_id?: string
           role?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "grant_investigators_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "grant_investigators_investigator_id_fkey"
             columns: ["investigator_id"]
@@ -715,6 +735,7 @@ export type Database = {
           is_active: boolean
           job_type: string
           location: string | null
+          organization_id: string | null
           posted_by: string | null
           posted_by_email: string | null
           resource_id: string | null
@@ -734,6 +755,7 @@ export type Database = {
           is_active?: boolean
           job_type?: string
           location?: string | null
+          organization_id?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
           resource_id?: string | null
@@ -753,6 +775,7 @@ export type Database = {
           is_active?: boolean
           job_type?: string
           location?: string | null
+          organization_id?: string | null
           posted_by?: string | null
           posted_by_email?: string | null
           resource_id?: string | null
@@ -760,6 +783,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_resource_id_fkey"
             columns: ["resource_id"]
@@ -815,68 +845,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      nih_grants_cache: {
-        Row: {
-          created_at: string
-          data: Json
-          grant_id: string | null
-          grant_number: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          data: Json
-          grant_id?: string | null
-          grant_number: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          data?: Json
-          grant_id?: string | null
-          grant_number?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nih_grants_cache_grant_id_fkey"
-            columns: ["grant_id"]
-            isOneToOne: false
-            referencedRelation: "grants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      nih_grants_sync_log: {
-        Row: {
-          completed_at: string | null
-          error_message: string | null
-          grants_updated: number | null
-          id: string
-          started_at: string
-          status: string
-        }
-        Insert: {
-          completed_at?: string | null
-          error_message?: string | null
-          grants_updated?: number | null
-          id?: string
-          started_at?: string
-          status?: string
-        }
-        Update: {
-          completed_at?: string | null
-          error_message?: string | null
-          grants_updated?: number | null
-          id?: string
-          started_at?: string
-          status?: string
-        }
-        Relationships: []
       }
       ontology_standards: {
         Row: {
@@ -939,90 +907,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      paper_extractions: {
-        Row: {
-          authors: string | null
-          chat_messages: Json | null
-          created_at: string
-          develope_hardware_type: string[] | null
-          develope_software_type: string[] | null
-          doi: string | null
-          extracted_metadata: Json | null
-          filename: string
-          grant_numbers: string[] | null
-          id: string
-          keywords: string[] | null
-          orcids: string[] | null
-          produce_data_modality: string[] | null
-          produce_data_type: string[] | null
-          raw_text: string | null
-          status: string
-          storage_path: string | null
-          study_species: string[] | null
-          title: string | null
-          updated_at: string
-          use_analysis_method: string[] | null
-          use_analysis_types: string[] | null
-          use_approaches: string[] | null
-          use_sensors: string[] | null
-          user_id: string | null
-        }
-        Insert: {
-          authors?: string | null
-          chat_messages?: Json | null
-          created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
-          doi?: string | null
-          extracted_metadata?: Json | null
-          filename: string
-          grant_numbers?: string[] | null
-          id?: string
-          keywords?: string[] | null
-          orcids?: string[] | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          raw_text?: string | null
-          status?: string
-          storage_path?: string | null
-          study_species?: string[] | null
-          title?: string | null
-          updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
-          user_id?: string | null
-        }
-        Update: {
-          authors?: string | null
-          chat_messages?: Json | null
-          created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
-          doi?: string | null
-          extracted_metadata?: Json | null
-          filename?: string
-          grant_numbers?: string[] | null
-          id?: string
-          keywords?: string[] | null
-          orcids?: string[] | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          raw_text?: string | null
-          status?: string
-          storage_path?: string | null
-          study_species?: string[] | null
-          title?: string | null
-          updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
-          user_id?: string | null
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -1130,10 +1014,7 @@ export type Database = {
       }
       projects: {
         Row: {
-          collaborators: Json | null
           created_at: string
-          develope_hardware_type: string[] | null
-          develope_software_type: string[] | null
           grant_id: string | null
           grant_number: string
           id: string
@@ -1141,24 +1022,15 @@ export type Database = {
           last_edited_by: string | null
           metadata: Json | null
           metadata_completeness: number | null
-          presentations: Json | null
-          produce_data_modality: string[] | null
-          produce_data_type: string[] | null
-          related_project_ids: string[] | null
+          organization_id: string | null
+          resource_id: string | null
           study_human: boolean | null
           study_species: string[] | null
           updated_at: string
-          use_analysis_method: string[] | null
-          use_analysis_types: string[] | null
-          use_approaches: string[] | null
-          use_sensors: string[] | null
           website: string | null
         }
         Insert: {
-          collaborators?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           grant_id?: string | null
           grant_number: string
           id?: string
@@ -1166,24 +1038,15 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
-          presentations?: Json | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          related_project_ids?: string[] | null
+          organization_id?: string | null
+          resource_id?: string | null
           study_human?: boolean | null
           study_species?: string[] | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           website?: string | null
         }
         Update: {
-          collaborators?: Json | null
           created_at?: string
-          develope_hardware_type?: string[] | null
-          develope_software_type?: string[] | null
           grant_id?: string | null
           grant_number?: string
           id?: string
@@ -1191,17 +1054,11 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
-          presentations?: Json | null
-          produce_data_modality?: string[] | null
-          produce_data_type?: string[] | null
-          related_project_ids?: string[] | null
+          organization_id?: string | null
+          resource_id?: string | null
           study_human?: boolean | null
           study_species?: string[] | null
           updated_at?: string
-          use_analysis_method?: string[] | null
-          use_analysis_types?: string[] | null
-          use_approaches?: string[] | null
-          use_sensors?: string[] | null
           website?: string | null
         }
         Relationships: [
@@ -1210,6 +1067,20 @@ export type Database = {
             columns: ["grant_id"]
             isOneToOne: false
             referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
@@ -1324,6 +1195,7 @@ export type Database = {
           id: string
           metadata: Json | null
           name: string
+          organization_id: string | null
           resource_type: Database["public"]["Enums"]["resource_type"]
           updated_at: string
         }
@@ -1335,6 +1207,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name: string
+          organization_id?: string | null
           resource_type: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
         }
@@ -1346,10 +1219,19 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name?: string
+          organization_id?: string | null
           resource_type?: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_queries: {
         Row: {
@@ -1543,15 +1425,7 @@ export type Database = {
       }
     }
     Views: {
-      correction_pattern_summary: {
-        Row: {
-          action: string | null
-          field_name: string | null
-          frequency: number | null
-          value: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       search_knowledge_embeddings: {

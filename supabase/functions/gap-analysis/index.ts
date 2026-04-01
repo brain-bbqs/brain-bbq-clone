@@ -12,6 +12,14 @@ const METADATA_FIELDS = [
   "develope_software_type", "develope_hardware_type", "keywords", "website",
 ];
 
+/** Read a metadata field — some are top-level columns, others in metadata JSONB */
+function getField(project: Record<string, any>, field: string): any {
+  const TOP_LEVEL = new Set(["study_species", "study_human", "keywords", "website"]);
+  if (TOP_LEVEL.has(field)) return project[field];
+  const meta = project.metadata || {};
+  return meta[field] ?? null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -34,7 +42,7 @@ serve(async (req) => {
       let empty = 0;
 
       for (const project of (projects || [])) {
-        const val = (project as any)[field];
+        const val = getField(project, field);
         const isFilled = Array.isArray(val) ? val.length > 0 : (typeof val === "string" ? val.trim().length > 0 : val !== null && val !== undefined);
         
         if (isFilled) {
@@ -76,7 +84,7 @@ serve(async (req) => {
 
       if (comp < 50) {
         const missing = METADATA_FIELDS.filter(f => {
-          const val = (project as any)[f];
+          const val = getField(project, f);
           if (Array.isArray(val)) return val.length === 0;
           if (typeof val === "string") return val.trim().length === 0;
           return val === null || val === undefined;
@@ -89,10 +97,8 @@ serve(async (req) => {
       }
     }
 
-    // Sort by lowest completeness
     lowCompletenessProjects.sort((a, b) => a.completeness - b.completeness);
 
-    // Most-missing fields (sorted)
     const mostMissing = METADATA_FIELDS
       .map(f => ({ field: f, empty: fieldStats[f].empty, percentage: fieldStats[f].percentage }))
       .sort((a, b) => b.empty - a.empty);

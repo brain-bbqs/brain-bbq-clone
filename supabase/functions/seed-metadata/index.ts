@@ -27,7 +27,14 @@ serve(async (req) => {
     const grantMap = new Map((grants || []).map(g => [g.grant_number, g]));
 
     // Get all projects for "similar projects" context
-    const { data: allProjects } = await sb.from("projects").select("grant_number, study_species, use_approaches, use_analysis_method, keywords").gte("metadata_completeness", 50);
+    const { data: allProjects } = await sb.from("projects").select("grant_number, study_species, keywords, metadata").gte("metadata_completeness", 50);
+
+    // Helper to read field from top-level or metadata JSONB
+    const TOP_LEVEL = new Set(["study_species", "keywords", "website", "study_human"]);
+    function getField(p: any, field: string): any {
+      if (TOP_LEVEL.has(field)) return p[field];
+      return (p.metadata || {})[field] ?? null;
+    }
 
     const results: { grant_number: string; status: string; fields_updated?: number }[] = [];
 
@@ -42,7 +49,8 @@ serve(async (req) => {
       const existingFields: Record<string, any> = {};
       const arrayFields = ["study_species", "use_approaches", "use_sensors", "produce_data_modality", "use_analysis_method", "keywords"];
       for (const f of arrayFields) {
-        if (project[f]?.length > 0) existingFields[f] = project[f];
+        const val = getField(project, f);
+        if (val?.length > 0) existingFields[f] = val;
       }
 
       try {
@@ -104,26 +112,43 @@ serve(async (req) => {
         let fieldsUpdated = 0;
 
         for (const [key, val] of Object.entries(suggestions)) {
-          if (Array.isArray(val) && val.length > 0 && (!project[key] || project[key].length === 0)) {
-            updates[key] = val;
-            fieldsUpdated++;
+          if (Array.isArray(val) && val.length > 0) {
+            const existing = getField(project, key);
+            if (!existing || existing.length === 0) {
+              updates[key] = val;
+              fieldsUpdated++;
+            }
           }
         }
 
         if (fieldsUpdated > 0) {
+          // Split updates into top-level and metadata
+          const topLevel: Record<string, any> = {};
+          const metaUpdates: Record<string, any> = {};
+          for (const [key, val] of Object.entries(updates)) {
+            if (TOP_LEVEL.has(key)) topLevel[key] = val;
+            else metaUpdates[key] = val;
+          }
+
           // Recalculate completeness
-          const merged = { ...project, ...updates };
           const checkFields = ["study_species", "use_approaches", "use_sensors", "produce_data_modality", "produce_data_type", "use_analysis_types", "use_analysis_method", "develope_software_type", "develope_hardware_type", "keywords", "website"];
           const filled = checkFields.filter(f => {
-            const v = merged[f];
+            const v = getField(project, f) ?? updates[f];
             if (Array.isArray(v)) return v.length > 0;
             if (typeof v === "string") return v.trim().length > 0;
             return false;
           });
-          updates.metadata_completeness = Math.round((filled.length / checkFields.length) * 100);
-          updates.last_edited_by = "ai-seed";
 
-          await sb.from("projects").update(updates).eq("grant_number", project.grant_number);
+          const row: Record<string, any> = {
+            ...topLevel,
+            metadata_completeness: Math.round((filled.length / checkFields.length) * 100),
+            last_edited_by: "ai-seed",
+          };
+          if (Object.keys(metaUpdates).length > 0) {
+            row.metadata = { ...(project.metadata || {}), ...metaUpdates };
+          }
+
+          await sb.from("projects").update(row).eq("grant_number", project.grant_number);
         }
 
         results.push({ grant_number: project.grant_number, status: "success", fields_updated: fieldsUpdated });

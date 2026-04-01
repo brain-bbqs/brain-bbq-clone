@@ -219,16 +219,9 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
-    // ACTION: refresh — fetch from NIH APIs and update cache
+    // ACTION: refresh — fetch from NIH APIs and upsert into grants table
     if (action === "refresh") {
       console.log(`Refreshing ${GRANT_NUMBERS.length} grants from NIH Reporter...`);
-
-      // Create sync log entry
-      const { data: syncLog } = await supabase
-        .from("nih_grants_sync_log")
-        .insert({ status: "running" })
-        .select("id")
-        .single();
 
       let updatedCount = 0;
       const errors: string[] = [];
@@ -237,11 +230,16 @@ Deno.serve(async (req) => {
         try {
           const projectData = await fetchGrantData(grant);
           if (projectData) {
+            // Upsert into grants table directly
             await supabase
-              .from("nih_grants_cache")
+              .from("grants")
               .upsert({
                 grant_number: grant,
-                data: projectData,
+                title: (projectData as any).title || "Unknown",
+                abstract: (projectData as any).abstract || null,
+                award_amount: (projectData as any).awardAmount || null,
+                fiscal_year: (projectData as any).fiscalYear || null,
+                nih_link: (projectData as any).nihLink || null,
                 updated_at: new Date().toISOString(),
               }, { onConflict: "grant_number" });
             updatedCount++;
@@ -252,19 +250,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Update sync log
-      if (syncLog) {
-        await supabase
-          .from("nih_grants_sync_log")
-          .update({
-            completed_at: new Date().toISOString(),
-            grants_updated: updatedCount,
-            status: errors.length > 0 ? "completed_with_errors" : "completed",
-            error_message: errors.length > 0 ? errors.join("; ") : null,
-          })
-          .eq("id", syncLog.id);
-      }
-
       console.log(`Refresh complete: ${updatedCount} grants updated, ${errors.length} errors`);
 
       return new Response(
@@ -273,30 +258,33 @@ Deno.serve(async (req) => {
       );
     }
 
-    // DEFAULT: serve cached data from DB
-    const [{ data: cached, error: cacheError }, { data: localGrants }] = await Promise.all([
-      supabase.from("nih_grants_cache").select("data").order("grant_number"),
-      supabase.from("grants").select("grant_number, title"),
-    ]);
+    // DEFAULT: serve grant data from grants table
+    const { data: grants, error: grantsError } = await supabase
+      .from("grants")
+      .select("*")
+      .order("grant_number");
 
-    if (cacheError) {
-      throw new Error(`Cache read error: ${cacheError.message}`);
+    if (grantsError) {
+      throw new Error(`Grants read error: ${grantsError.message}`);
     }
 
-    // If cache is empty, do an initial refresh
-    if (!cached || cached.length === 0) {
-      console.log("Cache empty, performing initial data fetch...");
+    // If no grants, do an initial fetch
+    if (!grants || grants.length === 0) {
+      console.log("No grants found, performing initial data fetch...");
       
       const results = [];
       for (const grant of GRANT_NUMBERS) {
         const projectData = await fetchGrantData(grant);
         if (projectData) {
           await supabase
-            .from("nih_grants_cache")
+            .from("grants")
             .upsert({
               grant_number: grant,
-              data: projectData,
-              updated_at: new Date().toISOString(),
+              title: (projectData as any).title || "Unknown",
+              abstract: (projectData as any).abstract || null,
+              award_amount: (projectData as any).awardAmount || null,
+              fiscal_year: (projectData as any).fiscalYear || null,
+              nih_link: (projectData as any).nihLink || null,
             }, { onConflict: "grant_number" });
           results.push(projectData);
         }
@@ -309,27 +297,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build a map of local title overrides from the grants table
-    const titleOverrides = new Map<string, string>();
-    for (const g of (localGrants || [])) {
-      titleOverrides.set(g.grant_number, g.title);
-    }
-
-    const results = cached.map(row => {
-      const d = row.data as any;
-      // Check for a local title override by matching grant number variants
-      const gn = d.grantNumber || "";
-      const noSuffix = gn.replace(/-\d+$/, "");
-      const noPrefix = noSuffix.replace(/^\d+/, "");
-      const override = titleOverrides.get(gn) || titleOverrides.get(noSuffix) || titleOverrides.get(noPrefix);
-      if (override) {
-        return { ...d, title: override };
-      }
-      return d;
-    });
+    const results = grants.map(g => ({
+      grantNumber: g.grant_number,
+      title: g.title,
+      abstract: g.abstract,
+      awardAmount: g.award_amount,
+      fiscalYear: g.fiscal_year,
+      nihLink: g.nih_link,
+    }));
 
     return new Response(
-      JSON.stringify({ success: true, data: results, source: "cache" }),
+      JSON.stringify({ success: true, data: results, source: "grants_table" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

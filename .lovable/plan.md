@@ -1,37 +1,75 @@
+# Database Schema — Resource-Centric Architecture (COMPLETE)
 
+## Relationship Graph
 
-## Problems Identified
-
-1. **Completeness always 0%**: The grid reads `metadata_completeness` from the `projects` table, which is stored as 0. It needs to be computed dynamically from actual populated fields (species, approaches, sensors, etc.).
-
-2. **Grid not scrollable / can't see all projects**: The AG Grid container is fixed at `height: 200px` with no scrolling, so projects beyond ~5 rows are cut off.
-
-3. **Overall layout feels cramped**: The fixed-height grid plus the chat area below competes for space.
-
----
-
-## Plan
-
-### 1. Compute completeness dynamically in `ProjectGrid.tsx`
-
-Instead of relying on the stored `metadata_completeness` value (which is always 0), compute it client-side from the project's actual fields. Check which of the ~12 metadata fields have non-empty values and calculate a percentage.
-
+### 1. Tenants & Users
 ```
-Fields to check: study_species, use_approaches, use_sensors, 
-produce_data_modality, produce_data_type, use_analysis_types, 
-use_analysis_method, develope_software_type, develope_hardware_type, 
-keywords, website, study_human
+profiles.id                → auth.users.id
+profiles.organization_id   → organizations.id
+allowed_domains.organization_id → organizations.id
 ```
 
-A field counts as "filled" if it's a non-empty array, a non-empty string, or a non-null boolean. Completeness = (filled / total) * 100, rounded.
+### 2. Core Knowledge Graph
+Every domain table has an optional `resource_id → resources.id` FK:
+- `organizations.resource_id`
+- `projects.resource_id`
+- `grants.resource_id`
+- `publications.resource_id`
+- `software_tools.resource_id`
+- `species.resource_id`
+- `investigators.resource_id`
 
-Update the query to select all relevant fields from `projects` rather than just `metadata_completeness`.
+Generic graph edges: `resource_links (source_id, target_id → resources.id)`
 
-### 2. Make the grid scrollable
+### 3. Core Scientific Relationships
+```
+projects.grant_id               → grants.id
+project_publications (project_id → projects.id, publication_id → publications.id)
+project_resources    (project_id → projects.id, resource_id → resources.id)
+grant_investigators  (grant_id → grants.id, investigator_id → investigators.id)
+investigator_organizations (investigator_id → investigators.id, organization_id → organizations.id)
+```
 
-Change the grid height from fixed `200px` to a reasonable constrained height with scrolling enabled. Use something like `height: 220px` with AG Grid's built-in vertical scrollbar (which it already supports in fixed-height mode). The current 200px should actually scroll -- the real issue may be that there are only ~6 rows visible and pagination is off. Increase slightly to ~240px or keep at 200px but ensure the grid scrollbar works properly by verifying row count vs container size.
+### 4. Multi-Tenant Scoping
+`organization_id → organizations.id` on:
+- `projects`
+- `resources`
+- `chat_conversations`
+- `announcements`
+- `jobs`
+- `feature_suggestions`
+- `analytics_pageviews`
+- `analytics_clicks`
 
-### 3. Files to modify
+### 5. Application Features
+- `entity_comments` (resource_id → resources, user_id, parent_id → self)
+- `chat_conversations` (user_id, organization_id) → `chat_messages` (conversation_id)
+- `feature_suggestions` (submitted_by, organization_id) → `feature_votes` (suggestion_id)
+- `announcements` / `jobs` (resource_id, posted_by, organization_id)
 
-- **`src/components/metadata-assistant/ProjectGrid.tsx`**: Update the query to fetch all metadata fields from `projects`, compute completeness client-side, and keep the grid at a compact but scrollable height.
+### 6. Reference & Embeddings
+- `knowledge_embeddings` (resource_id → resources, source_type, source_id)
+- `taxonomies`, `ontology_standards`, `custom_field_usage`, `edit_history`, `search_queries`
 
+## Tables Dropped
+| Table | Reason |
+|---|---|
+| `paper_extractions` | Dropped; metadata lives in projects.metadata JSONB |
+| `nih_grants_cache` | Redundant; grants table + NIH Reporter API |
+| `nih_grants_sync_log` | Operational logging only |
+| `extraction_corrections` | Depended on paper_extractions |
+
+## Migrations Completed
+1. Dropped unused tables
+2. Consolidated projects array columns → `metadata` JSONB
+3. Simplified edit_history
+4. Added `resource_id` to projects
+5. Added `organization_id` to 8 feature/scoping tables (including projects, resources)
+6. Replaced `grant_investigators.grant_number` with `grant_id`
+7. Relaxed `grant_number` uniqueness on projects
+8. Ensured all FK constraints exist across all tables
+
+## Remaining Work
+- Backfill `projects.resource_id` and `projects.organization_id`
+- Backfill `resources.organization_id`
+- Tighten RLS policies (20 warnings for overly permissive `true` checks)

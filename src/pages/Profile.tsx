@@ -188,15 +188,15 @@ export default function Profile() {
       const invIds = invOrgs.map((io) => io.investigator_id);
       const { data: grantInvs } = await supabase
         .from("grant_investigators")
-        .select("grant_number")
+        .select("grant_id")
         .in("investigator_id", invIds);
       if (!grantInvs?.length) return [];
 
-      const grantNumbers = [...new Set(grantInvs.map((gi) => gi.grant_number))];
+      const grantIds = [...new Set(grantInvs.map((gi) => gi.grant_id).filter(Boolean))];
       const { data: grants } = await supabase
         .from("grants")
         .select("grant_number, title")
-        .in("grant_number", grantNumbers);
+        .in("id", grantIds);
       return grants || [];
     },
   });

@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -27,17 +28,131 @@ interface MetadataChatState {
   completeness: number;
   fieldsUpdated: string[];
   lastValidation: ValidationResult | null;
+  conversationId: string | null;
 }
 
 export function useMetadataChat(grantNumber: string | null) {
+  const { user } = useAuth();
   const [state, setState] = useState<MetadataChatState>({
     messages: [],
     isLoading: false,
     completeness: 0,
     fieldsUpdated: [],
     lastValidation: null,
+    conversationId: null,
   });
-  const abortRef = useRef<AbortController | null>(null);
+  const loadedGrantRef = useRef<string | null>(null);
+
+  // Load existing conversation when grant changes
+  useEffect(() => {
+    if (!grantNumber || !user) {
+      setState(prev => ({ ...prev, messages: [], conversationId: null, completeness: 0, fieldsUpdated: [], lastValidation: null }));
+      loadedGrantRef.current = null;
+      return;
+    }
+
+    if (loadedGrantRef.current === grantNumber) return;
+    loadedGrantRef.current = grantNumber;
+
+    const loadConversation = async () => {
+      const { data: convos } = await supabase
+        .from("chat_conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("title", `metadata:${grantNumber}`)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (convos && convos.length > 0) {
+        const convoId = convos[0].id;
+        const { data: msgs } = await supabase
+          .from("chat_messages")
+          .select("role, content")
+          .eq("conversation_id", convoId)
+          .order("created_at", { ascending: true });
+
+        setState(prev => ({
+          ...prev,
+          conversationId: convoId,
+          messages: (msgs || []).map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+        }));
+      } else {
+        setState(prev => ({ ...prev, conversationId: null, messages: [] }));
+      }
+    };
+
+    loadConversation();
+  }, [grantNumber, user]);
+
+  /** Load a specific conversation by ID (used by history sidebar) */
+  const loadConversationById = useCallback(async (conversationId: string, forGrantNumber: string) => {
+    if (!user) return;
+
+    loadedGrantRef.current = forGrantNumber;
+
+    const { data: msgs } = await supabase
+      .from("chat_messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
+
+    setState(prev => ({
+      ...prev,
+      conversationId,
+      messages: (msgs || []).map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+      completeness: 0,
+      fieldsUpdated: [],
+      lastValidation: null,
+    }));
+  }, [user]);
+
+  const ensureConversation = useCallback(async (): Promise<string | null> => {
+    if (!user || !grantNumber) return null;
+    if (state.conversationId) return state.conversationId;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const { data, error } = await supabase
+      .from("chat_conversations")
+      .insert({
+        user_id: user.id,
+        title: `metadata:${grantNumber}`,
+        organization_id: profile?.organization_id || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      console.error("Failed to create conversation:", error);
+      return null;
+    }
+
+    setState(prev => ({ ...prev, conversationId: data.id }));
+    return data.id;
+  }, [user, grantNumber, state.conversationId]);
+
+  const persistMessage = useCallback(async (
+    conversationId: string,
+    role: "user" | "assistant",
+    content: string,
+  ) => {
+    if (!user) return;
+    await supabase.from("chat_messages").insert({
+      conversation_id: conversationId,
+      user_id: user.id,
+      role,
+      content,
+      model: role === "assistant" ? "google/gemini-3-flash-preview" : null,
+    });
+    await supabase
+      .from("chat_conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", conversationId);
+  }, [user]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!grantNumber || !content.trim()) return;
@@ -51,6 +166,9 @@ export function useMetadataChat(grantNumber: string | null) {
     }));
 
     try {
+      const convoId = await ensureConversation();
+      if (convoId) await persistMessage(convoId, "user", content.trim());
+
       const apiMessages = [...state.messages, userMsg].map(m => ({
         role: m.role,
         content: m.content,
@@ -66,6 +184,8 @@ export function useMetadataChat(grantNumber: string | null) {
         role: "assistant",
         content: data.reply || "I couldn't process that. Could you rephrase?",
       };
+
+      if (convoId) await persistMessage(convoId, "assistant", assistantMsg.content);
 
       setState(prev => ({
         ...prev,
@@ -83,11 +203,47 @@ export function useMetadataChat(grantNumber: string | null) {
         isLoading: false,
       }));
     }
-  }, [grantNumber, state.messages]);
+  }, [grantNumber, state.messages, ensureConversation, persistMessage]);
 
-  const clearChat = useCallback(() => {
-    setState({ messages: [], isLoading: false, completeness: 0, fieldsUpdated: [], lastValidation: null });
-  }, []);
+  const clearChat = useCallback(async () => {
+    if (state.conversationId && user) {
+      await supabase
+        .from("chat_conversations")
+        .delete()
+        .eq("id", state.conversationId);
+    }
+    loadedGrantRef.current = null;
+    setState({
+      messages: [],
+      isLoading: false,
+      completeness: 0,
+      fieldsUpdated: [],
+      lastValidation: null,
+      conversationId: null,
+    });
+  }, [state.conversationId, user]);
+
+  /** Delete a conversation by ID (used by history sidebar) */
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    if (!user) return;
+    await supabase
+      .from("chat_conversations")
+      .delete()
+      .eq("id", conversationId);
+
+    // If it's the active one, clear state
+    if (conversationId === state.conversationId) {
+      loadedGrantRef.current = null;
+      setState({
+        messages: [],
+        isLoading: false,
+        completeness: 0,
+        fieldsUpdated: [],
+        lastValidation: null,
+        conversationId: null,
+      });
+    }
+  }, [user, state.conversationId]);
 
   return {
     messages: state.messages,
@@ -95,7 +251,10 @@ export function useMetadataChat(grantNumber: string | null) {
     completeness: state.completeness,
     fieldsUpdated: state.fieldsUpdated,
     lastValidation: state.lastValidation,
+    conversationId: state.conversationId,
     sendMessage,
     clearChat,
+    loadConversationById,
+    deleteConversation,
   };
 }

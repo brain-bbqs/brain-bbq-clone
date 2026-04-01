@@ -78,11 +78,19 @@ serve(async (req) => {
     const updatedProjects: { grant_number: string; updates: Record<string, string[]> }[] = [];
     const customFieldTracker = new Map<string, { field_name: string; field_value: string; category: string; count: number; closest: string | null; distance: number | null }>();
 
+    // Helper: read a field from top-level or metadata JSONB
+    const TOP_LEVEL_FIELDS = new Set(["study_species", "keywords"]);
+    function getFieldValues(project: any, field: string): string[] | null {
+      if (TOP_LEVEL_FIELDS.has(field)) return project[field] || null;
+      return (project.metadata || {})[field] || null;
+    }
+
     for (const project of (projects || [])) {
-      const updates: Record<string, string[]> = {};
+      const metaUpdates: Record<string, string[]> = {};
+      const topUpdates: Record<string, string[]> = {};
 
       for (const [field, category] of Object.entries(FIELD_TO_CATEGORY)) {
-        const values = (project as any)[field] as string[] | null;
+        const values = getFieldValues(project, field);
         if (!values?.length) continue;
 
         const canonicals = canonicalByCategory.get(category) || [];
@@ -92,7 +100,6 @@ serve(async (req) => {
         for (const val of values) {
           const lower = val.toLowerCase().trim();
 
-          // Exact match
           const exactMatch = canonicals.find(c => c.value.toLowerCase() === lower);
           if (exactMatch) {
             normalized.push(exactMatch.value);
@@ -103,7 +110,6 @@ serve(async (req) => {
             continue;
           }
 
-          // Fuzzy match
           let bestMatch: { value: string; dist: number } | null = null;
           for (const c of canonicals) {
             const dist = levenshtein(lower, c.value.toLowerCase());
@@ -119,11 +125,9 @@ serve(async (req) => {
           } else {
             normalized.push(val);
 
-            // Track this as a custom/novel value
             const key = `${field}::${lower}`;
             const existing = customFieldTracker.get(key);
             
-            // Find closest canonical for reference
             let closestCanonical: string | null = null;
             let closestDist: number | null = null;
             for (const c of canonicals) {
@@ -151,14 +155,23 @@ serve(async (req) => {
 
         const deduped = [...new Set(normalized)];
         if (changed || deduped.length < normalized.length) {
-          updates[field] = deduped;
+          if (TOP_LEVEL_FIELDS.has(field)) {
+            topUpdates[field] = deduped;
+          } else {
+            metaUpdates[field] = deduped;
+          }
         }
       }
 
-      if (Object.keys(updates).length > 0) {
-        updatedProjects.push({ grant_number: project.grant_number, updates });
+      const hasUpdates = Object.keys(topUpdates).length > 0 || Object.keys(metaUpdates).length > 0;
+      if (hasUpdates) {
+        updatedProjects.push({ grant_number: project.grant_number, updates: { ...topUpdates, ...metaUpdates } });
         if (!dryRun) {
-          await sb.from("projects").update(updates).eq("grant_number", project.grant_number);
+          const row: Record<string, any> = { ...topUpdates };
+          if (Object.keys(metaUpdates).length > 0) {
+            row.metadata = { ...(project.metadata || {}), ...metaUpdates };
+          }
+          await sb.from("projects").update(row).eq("grant_number", project.grant_number);
         }
       }
     }

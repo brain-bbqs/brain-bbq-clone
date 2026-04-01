@@ -159,8 +159,15 @@ Deno.serve(async (req) => {
     // Fetch grant links
     const { data: grantLinks } = await supabase
       .from("grant_investigators")
-      .select("investigator_id, grant_number")
+      .select("investigator_id, grant_id")
       .in("investigator_id", invIds);
+
+    // Resolve grant_ids to grant_numbers for display
+    const allGrantIds = [...new Set((grantLinks || []).map(gl => gl.grant_id).filter(Boolean))];
+    const { data: grantsForLinks } = allGrantIds.length
+      ? await supabase.from("grants").select("id, grant_number").in("id", allGrantIds)
+      : { data: [] };
+    const grantNumById = new Map((grantsForLinks || []).map(g => [g.id, g.grant_number]));
 
     // Group data by investigator
     const invOrgMap = new Map<string, string[]>();
@@ -174,7 +181,8 @@ Deno.serve(async (req) => {
     const invGrantMap = new Map<string, string[]>();
     for (const gl of grantLinks || []) {
       const nums = invGrantMap.get(gl.investigator_id) || [];
-      nums.push(gl.grant_number);
+      const gn = grantNumById.get(gl.grant_id);
+      if (gn) nums.push(gn);
       invGrantMap.set(gl.investigator_id, nums);
     }
 

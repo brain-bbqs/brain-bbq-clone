@@ -126,16 +126,16 @@ export function InvestigatorSummary({ id }: { id: string }) {
       // Get grants
       const { data: grantLinks } = await supabase
         .from("grant_investigators")
-        .select("grant_number, role")
+        .select("grant_id, role")
         .eq("investigator_id", id);
-      const grantNumbers = grantLinks?.map((g) => g.grant_number) || [];
-      const { data: grants } = grantNumbers.length
-        ? await supabase.from("grants").select("id, grant_number, title, award_amount, resource_id").in("grant_number", grantNumbers)
+      const grantIds = grantLinks?.map((g) => g.grant_id).filter(Boolean) || [];
+      const { data: grants } = grantIds.length
+        ? await supabase.from("grants").select("id, grant_number, title, award_amount, resource_id").in("id", grantIds)
         : { data: [] };
 
       // Get species from projects linked to these grants
-      const { data: projects } = grantNumbers.length
-        ? await supabase.from("projects").select("study_species").in("grant_number", grantNumbers)
+      const { data: projects } = grantIds.length
+        ? await supabase.from("projects").select("study_species, grant_id").in("grant_id", grantIds)
         : { data: [] };
       const speciesSet = new Set<string>();
       projects?.forEach((p) => p.study_species?.forEach((s: string) => speciesSet.add(s)));
@@ -314,7 +314,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Grants ({data.grants.length})</h3>
           <div className="space-y-2">
             {data.grants.map((g) => {
-              const link = data.grantLinks.find((gl: any) => gl.grant_number === g.grant_number);
+              const link = data.grantLinks.find((gl: any) => gl.grant_id === g.id);
               return (
                 <div
                   key={g.id}

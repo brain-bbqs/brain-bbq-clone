@@ -34,12 +34,19 @@ serve(async (req) => {
     // Fetch all projects
     const { data: projects, error } = await sb
       .from("projects")
-      .select("id, grant_number, study_species, use_approaches, use_sensors, produce_data_modality, use_analysis_method, keywords, related_project_ids");
+      .select("id, grant_number, study_species, keywords, metadata");
     if (error) throw error;
     if (!projects?.length) {
       return new Response(JSON.stringify({ suggestions: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Helper: get field value from top-level or metadata JSONB
+    const TOP_LEVEL = new Set(["study_species", "keywords"]);
+    function getField(p: any, field: string): string[] {
+      if (TOP_LEVEL.has(field)) return p[field] || [];
+      return (p.metadata || {})[field] || [];
     }
 
     // Build comparison fields for each project
@@ -61,12 +68,11 @@ serve(async (req) => {
         const shared: Record<string, string[]> = {};
 
         for (const field of fields) {
-          const a = (project as any)[field] || [];
-          const b = (other as any)[field] || [];
+          const a = getField(project, field);
+          const b = getField(other, field);
           const sim = jaccard(a, b);
           totalScore += sim;
 
-          // Track shared values
           if (sim > 0) {
             const setA = new Set((a as string[]).map(s => s.toLowerCase().trim()));
             shared[field] = (b as string[]).filter(s => setA.has(s.toLowerCase().trim()));
@@ -79,17 +85,17 @@ serve(async (req) => {
         }
       }
 
-      // Sort by score desc, take top N
       scores.sort((a, b) => b.score - a.score);
       const topSuggestions = scores.slice(0, maxSuggestions);
 
       const suggestedIds = topSuggestions.map(s => s.other.id);
-      const existingIds = project.related_project_ids || [];
+      const existingIds = (project.metadata || {}).related_project_ids || [];
       const newIds = [...new Set([...existingIds, ...suggestedIds])];
 
       let updated = false;
       if (newIds.length > existingIds.length) {
-        await sb.from("projects").update({ related_project_ids: newIds }).eq("grant_number", project.grant_number);
+        const meta = { ...(project.metadata || {}), related_project_ids: newIds };
+        await sb.from("projects").update({ metadata: meta }).eq("grant_number", project.grant_number);
         updated = true;
       }
 

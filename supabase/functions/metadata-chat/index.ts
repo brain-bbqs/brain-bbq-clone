@@ -19,9 +19,21 @@ const COMPLETENESS_FIELDS = [
   "develope_software_type", "develope_hardware_type", "keywords", "website",
 ];
 
+/** Read a metadata field from project — now stored inside metadata JSONB */
+function getField(project: Record<string, any>, field: string): any {
+  // Top-level columns that still exist
+  if (field === "study_species") return project.study_species;
+  if (field === "study_human") return project.study_human;
+  if (field === "keywords") return project.keywords;
+  if (field === "website") return project.website;
+  // Everything else lives in metadata JSONB
+  const meta = project.metadata || {};
+  return meta[field] ?? null;
+}
+
 function calcCompleteness(project: Record<string, any>): number {
   const filled = COMPLETENESS_FIELDS.filter(f => {
-    const v = project[f];
+    const v = getField(project, f);
     if (Array.isArray(v)) return v.length > 0;
     if (typeof v === "string") return v.trim().length > 0;
     return v !== null && v !== undefined;
@@ -77,7 +89,6 @@ async function writeBackInteraction(
   } catch (e) { console.error("Embedding write-back error:", e); }
 }
 
-/** Call the metadata-validate function internally */
 async function runValidationPipeline(
   changes: { field: string; values: string[] }[],
   supabaseUrl: string,
@@ -103,7 +114,6 @@ async function runValidationPipeline(
   }
 }
 
-/** Format validation results into a markdown section for the AI to include */
 function formatValidationReport(validation: any): string {
   if (!validation) return "";
 
@@ -170,7 +180,7 @@ serve(async (req) => {
       sb.from("projects").select("*").eq("grant_number", grant_number).maybeSingle(),
       sb.from("grants").select("title, abstract, grant_number").eq("grant_number", grant_number).maybeSingle(),
       sb.from("grants").select("grant_number, title"),
-      sb.from("projects").select("grant_number, keywords, study_species, use_approaches, use_sensors, produce_data_modality, produce_data_type, use_analysis_types, use_analysis_method, develope_software_type, develope_hardware_type, metadata"),
+      sb.from("projects").select("grant_number, keywords, study_species, metadata"),
     ]);
 
     const project = projectRes.data || {};
@@ -178,8 +188,9 @@ serve(async (req) => {
 
     const currentMetadata: Record<string, any> = {};
     for (const f of METADATA_FIELDS) {
-      if ((project as any)[f] !== undefined && (project as any)[f] !== null) {
-        currentMetadata[f] = (project as any)[f];
+      const val = getField(project, f);
+      if (val !== undefined && val !== null) {
+        currentMetadata[f] = val;
       }
     }
 
@@ -192,17 +203,18 @@ serve(async (req) => {
       .filter((g: any) => g.grant_number !== grant_number)
       .map((g: any) => {
         const p = projectsByGrant.get(g.grant_number);
+        if (!p) return null;
+        const meta = p.metadata || {};
         const fields: string[] = [];
-        if (p?.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
-        if (p?.use_approaches?.length) fields.push(`Approaches: ${p.use_approaches.join(", ")}`);
-        if (p?.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
-        if (p?.produce_data_modality?.length) fields.push(`Data: ${p.produce_data_modality.join(", ")}`);
-        if (p?.use_analysis_method?.length) fields.push(`Analysis: ${p.use_analysis_method.join(", ")}`);
-        if (p?.develope_software_type?.length) fields.push(`Software: ${p.develope_software_type.join(", ")}`);
-        if (p?.use_sensors?.length) fields.push(`Sensors: ${p.use_sensors.join(", ")}`);
-        const marr = p?.metadata || {};
-        if (marr.marr_l1_ethological_goal) fields.push(`L1: ${String(marr.marr_l1_ethological_goal).slice(0, 120)}`);
-        if (marr.cross_project_synergy) fields.push(`Synergy: ${String(marr.cross_project_synergy).slice(0, 120)}`);
+        if (p.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
+        if (meta.use_approaches?.length) fields.push(`Approaches: ${meta.use_approaches.join(", ")}`);
+        if (p.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
+        if (meta.produce_data_modality?.length) fields.push(`Data: ${meta.produce_data_modality.join(", ")}`);
+        if (meta.use_analysis_method?.length) fields.push(`Analysis: ${meta.use_analysis_method.join(", ")}`);
+        if (meta.develope_software_type?.length) fields.push(`Software: ${meta.develope_software_type.join(", ")}`);
+        if (meta.use_sensors?.length) fields.push(`Sensors: ${meta.use_sensors.join(", ")}`);
+        if (meta.marr_l1_ethological_goal) fields.push(`L1: ${String(meta.marr_l1_ethological_goal).slice(0, 120)}`);
+        if (meta.cross_project_synergy) fields.push(`Synergy: ${String(meta.cross_project_synergy).slice(0, 120)}`);
         return fields.length > 0 ? `- ${g.grant_number} "${g.title}": ${fields.join(" | ")}` : null;
       })
       .filter(Boolean);
@@ -344,7 +356,12 @@ ${ragSection}`;
     const assistantMessage = choice?.message;
 
     const toolCalls = assistantMessage?.tool_calls || [];
-    let dbUpdates: Record<string, any> = {};
+    
+    // Fields that stay as top-level columns
+    const TOP_LEVEL_FIELDS = new Set(["study_species", "study_human", "keywords", "website"]);
+    
+    let topLevelUpdates: Record<string, any> = {};
+    let metadataUpdates: Record<string, any> = { ...(project.metadata || {}) };
     const fieldsUpdated: string[] = [];
     let validationResult: any = null;
     let validationReport = "";
@@ -353,24 +370,27 @@ ${ragSection}`;
       if (tc.function?.name === "update_project_metadata") {
         const args = JSON.parse(tc.function.arguments);
 
-        // Build proposed changes for validation
         const proposedChanges: { field: string; values: string[] }[] = [];
 
         for (const [key, val] of Object.entries(args)) {
           if (Array.isArray(val) && val.length > 0) {
-            const existing = Array.isArray((project as any)[key]) ? (project as any)[key] : [];
+            const existing = Array.isArray(getField(project, key)) ? getField(project, key) : [];
             const newOnly = (val as string[]).filter((v: string) => !existing.includes(v));
             if (newOnly.length > 0) {
               proposedChanges.push({ field: key, values: newOnly });
             }
             const merged = [...new Set([...existing, ...val as string[]])];
-            dbUpdates[key] = merged;
+            if (TOP_LEVEL_FIELDS.has(key)) {
+              topLevelUpdates[key] = merged;
+            } else {
+              metadataUpdates[key] = merged;
+            }
             fieldsUpdated.push(key);
           } else if (key === "website" && typeof val === "string" && val.trim()) {
-            dbUpdates[key] = val;
+            topLevelUpdates[key] = val;
             fieldsUpdated.push(key);
           } else if (key === "study_human" && typeof val === "boolean") {
-            dbUpdates[key] = val;
+            topLevelUpdates[key] = val;
             fieldsUpdated.push(key);
           }
         }
@@ -391,7 +411,11 @@ ${ragSection}`;
               .map((c: any) => c.field)
           );
           for (const f of failedFields) {
-            delete dbUpdates[f];
+            if (TOP_LEVEL_FIELDS.has(f)) {
+              delete topLevelUpdates[f];
+            } else {
+              delete metadataUpdates[f];
+            }
             const idx = fieldsUpdated.indexOf(f);
             if (idx >= 0) fieldsUpdated.splice(idx, 1);
           }
@@ -404,20 +428,26 @@ ${ragSection}`;
 
         for (const [key, val] of Object.entries(args)) {
           if (key === "clear_website" && val === true) {
-            dbUpdates["website"] = "";
+            topLevelUpdates["website"] = "";
             if (!fieldsUpdated.includes("website")) fieldsUpdated.push("website");
           } else if (key === "study_human" && typeof val === "boolean") {
-            dbUpdates[key] = val;
+            topLevelUpdates[key] = val;
             if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
           } else if (Array.isArray(val) && val.length > 0) {
-            const existing = Array.isArray((project as any)[key]) ? [...(project as any)[key]] : [];
-            // Also check dbUpdates in case update_project_metadata was called in the same turn
-            const current = Array.isArray(dbUpdates[key]) ? dbUpdates[key] : existing;
+            const existing = Array.isArray(getField(project, key)) ? [...getField(project, key)] : [];
+            // Check metadataUpdates/topLevelUpdates in case update was called in same turn
+            const current = TOP_LEVEL_FIELDS.has(key) 
+              ? (Array.isArray(topLevelUpdates[key]) ? topLevelUpdates[key] : existing)
+              : (Array.isArray(metadataUpdates[key]) ? metadataUpdates[key] : existing);
             const lowercaseRemovals = (val as string[]).map((v: string) => v.toLowerCase());
             const filtered = current.filter((v: string) =>
               !lowercaseRemovals.includes(v.toLowerCase())
             );
-            dbUpdates[key] = filtered;
+            if (TOP_LEVEL_FIELDS.has(key)) {
+              topLevelUpdates[key] = filtered;
+            } else {
+              metadataUpdates[key] = filtered;
+            }
             if (!fieldsUpdated.includes(key)) fieldsUpdated.push(key);
           }
         }
@@ -425,15 +455,25 @@ ${ragSection}`;
     }
 
     // Apply DB updates if any remain
-    if (Object.keys(dbUpdates).length > 0) {
-      const merged = { ...(project || {}), ...dbUpdates };
-      dbUpdates.metadata_completeness = calcCompleteness(merged);
-      dbUpdates.last_edited_by = "ai-assistant";
-      dbUpdates.updated_at = new Date().toISOString();
+    const hasUpdates = fieldsUpdated.length > 0;
+    let newCompleteness = (project as any).metadata_completeness ?? 0;
+
+    if (hasUpdates) {
+      // Build a virtual merged project to calculate completeness
+      const mergedProject = { ...project, ...topLevelUpdates, metadata: metadataUpdates };
+      newCompleteness = calcCompleteness(mergedProject);
+
+      const dbUpdate: Record<string, any> = {
+        ...topLevelUpdates,
+        metadata: metadataUpdates,
+        metadata_completeness: newCompleteness,
+        last_edited_by: "ai-assistant",
+        updated_at: new Date().toISOString(),
+      };
 
       const { error: updateErr } = await sb
         .from("projects")
-        .update(dbUpdates)
+        .update(dbUpdate)
         .eq("grant_number", grant_number);
 
       if (updateErr) {
@@ -450,11 +490,10 @@ ${ragSection}`;
         grant_number,
         edited_by: "ai-assistant",
         field_name: field,
-        old_value: (project as any)[field] ?? null,
-        new_value: dbUpdates[field],
+        old_value: getField(project, field) ?? null,
+        new_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
         chat_context: chatContext,
         validation_status: validationResult?.overall_status ?? null,
-        validation_protocols: validationResult?.protocols_run ?? [],
         validation_checks: validationResult?.checks?.filter((c: any) => c.field === field) ?? null,
       }));
       if (historyRows.length > 0) {
@@ -469,7 +508,7 @@ ${ragSection}`;
       const toolResultContent: any = {
         success: true,
         fields_updated: fieldsUpdated,
-        new_completeness: dbUpdates.metadata_completeness,
+        new_completeness: newCompleteness,
       };
 
       if (validationResult) {
@@ -515,14 +554,14 @@ ${ragSection}`;
       userMessage: lastUserMsg,
       assistantResponse: finalContent,
       functionName: "metadata-chat",
-      toolCalls: fieldsUpdated.map(f => ({ field: f, value: dbUpdates[f] })),
+      toolCalls: fieldsUpdated.map(f => ({ field: f, value: TOP_LEVEL_FIELDS.has(f) ? topLevelUpdates[f] : metadataUpdates[f] })),
       metadata: { grant_number, fields_updated: fieldsUpdated, validation: validationResult?.overall_status },
     });
 
     return new Response(JSON.stringify({
       reply: finalContent,
       fields_updated: fieldsUpdated,
-      metadata_completeness: dbUpdates.metadata_completeness ?? (project as any).metadata_completeness ?? 0,
+      metadata_completeness: newCompleteness,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,
         summary: validationResult.summary,

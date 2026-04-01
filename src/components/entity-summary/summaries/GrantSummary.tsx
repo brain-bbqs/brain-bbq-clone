@@ -21,8 +21,8 @@ export function GrantSummary({ id }: { id: string }) {
       // Get investigators
       const { data: invLinks } = await supabase
         .from("grant_investigators")
-        .select("investigator_id, role")
-        .eq("grant_number", grant.grant_number);
+        .select("investigator_id, role, grant_id")
+        .eq("grant_id", id);
       const invIds = invLinks?.map((i) => i.investigator_id) || [];
       const { data: investigators } = invIds.length
         ? await supabase.from("investigators").select("id, name, resource_id").in("id", invIds)
@@ -53,30 +53,7 @@ export function GrantSummary({ id }: { id: string }) {
         }
       }
 
-      // If no linked publications, try nih_grants_cache
-      if (publications.length === 0) {
-        const { data: cache } = await supabase
-          .from("nih_grants_cache")
-          .select("data")
-          .eq("grant_number", grant.grant_number)
-          .maybeSingle();
-        if (cache?.data && typeof cache.data === "object") {
-          const cachedPubs = (cache.data as any).publications || [];
-          publications = cachedPubs.map((p: any) => ({
-            id: p.pmid || p.id,
-            title: p.title || "Unknown",
-            authors: Array.isArray(p.authors) ? p.authors.map((a: any) => typeof a === "string" ? a : a.fullName || `${a.firstName || ""} ${a.lastName || ""}`.trim()).join(", ") : (p.authors || ""),
-            year: p.year || null,
-            journal: p.journal || "",
-            doi: p.doi || null,
-            citations: p.citations || 0,
-            rcr: p.rcr || 0,
-            pubmed_link: p.pubmedLink || p.pubmed_link || (p.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/` : null),
-            resource_id: null,
-            _fromCache: true,
-          }));
-        }
-      }
+      // nih_grants_cache fallback removed (table dropped)
 
       return {
         ...grant,
@@ -155,9 +132,9 @@ export function GrantSummary({ id }: { id: string }) {
               <div className="flex flex-wrap gap-1.5">{data.project.study_species.map((s: string) => <Badge key={s} variant="secondary">{s}</Badge>)}</div>
             </SummaryField>
           )}
-          {data.project.use_approaches?.length > 0 && (
+          {(data.project.metadata as any)?.use_approaches?.length > 0 && (
             <SummaryField label="Approaches">
-              <div className="flex flex-wrap gap-1.5">{data.project.use_approaches.map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}</div>
+              <div className="flex flex-wrap gap-1.5">{((data.project.metadata as any).use_approaches as string[]).map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}</div>
             </SummaryField>
           )}
         </div>

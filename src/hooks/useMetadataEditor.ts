@@ -60,13 +60,33 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
     if (!hasChanges) return;
     setIsCommitting(true);
     try {
+      // Fields that stay as top-level columns
+      const TOP_LEVEL = new Set(["study_species", "study_human", "keywords", "website"]);
+      
+      // Split changes into top-level and metadata JSONB
+      const topLevel: Record<string, any> = {};
+      const metaChanges: Record<string, any> = {};
+      for (const [key, val] of Object.entries(changes)) {
+        if (TOP_LEVEL.has(key)) {
+          topLevel[key] = val;
+        } else {
+          metaChanges[key] = val;
+        }
+      }
+
       // Build the row to upsert
       const row: Record<string, any> = {
         grant_number: grantNumber,
         grant_id: grantId,
         last_edited_by: "anonymous",
-        ...changes,
+        ...topLevel,
       };
+
+      // Merge metadata JSONB
+      if (Object.keys(metaChanges).length > 0) {
+        const existingMeta = (originalMetadata as any)?._metadata || {};
+        row.metadata = { ...existingMeta, ...metaChanges };
+      }
 
       // Calculate completeness
       const merged = { ...(originalMetadata || {}), ...changes };
@@ -85,7 +105,8 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
 
       const { error } = await (supabase
         .from("projects" as any) as any)
-        .upsert(row, { onConflict: "grant_number" });
+        .update(row)
+        .eq("grant_number", grantNumber);
       if (error) throw error;
 
       // Log field-level diffs to edit_history

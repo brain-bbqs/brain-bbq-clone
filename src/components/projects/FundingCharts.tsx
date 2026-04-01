@@ -46,7 +46,9 @@ const COLORS = [
   "hsl(75, 60%, 42%)",
 ];
 
-const shortenInstitution = (name: string): string => {
+const shortenInstitution = (name?: string): string => {
+  if (!name) return "Unknown organization";
+
   const map: Record<string, string> = {
     "GEORGIA INSTITUTE OF TECHNOLOGY": "Georgia Tech",
     "CARNEGIE-MELLON UNIVERSITY": "Carnegie Mellon",
