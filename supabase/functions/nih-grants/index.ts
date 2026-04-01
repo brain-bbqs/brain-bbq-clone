@@ -319,23 +319,6 @@ Deno.serve(async (req) => {
       ? await supabase.from("organizations").select("id, name").in("id", orgIds)
       : { data: [] };
 
-    // Fetch publications linked to projects
-    const grantNumbers = grants.map(g => g.grant_number);
-    const { data: projects } = await supabase
-      .from("projects")
-      .select("id, grant_number")
-      .in("grant_number", grantNumbers);
-
-    const projectIds = (projects || []).map(p => p.id);
-    const { data: projectPubs } = projectIds.length > 0
-      ? await supabase.from("project_publications").select("project_id, publication_id").in("project_id", projectIds)
-      : { data: [] };
-
-    const pubIds = [...new Set((projectPubs || []).map(pp => pp.publication_id))];
-    const { data: publications } = pubIds.length > 0
-      ? await supabase.from("publications").select("*").in("id", pubIds)
-      : { data: [] };
-
     // Build lookup maps
     const invMap = new Map((investigators || []).map(i => [i.id, i]));
     const orgMap = new Map((organizations || []).map(o => [o.id, o]));
@@ -345,17 +328,15 @@ Deno.serve(async (req) => {
       orgs.push(io.organization_id);
       invOrgMap.set(io.investigator_id, orgs);
     });
-    const pubMap = new Map((publications || []).map(p => [p.id, p]));
 
-    // Build project -> publications map
-    const projectByGrant = new Map((projects || []).map(p => [p.grant_number, p.id]));
-    const projectPubMap = new Map<string, any[]>();
-    (projectPubs || []).forEach(pp => {
-      const pubs = projectPubMap.get(pp.project_id) || [];
-      const pub = pubMap.get(pp.publication_id);
-      if (pub) pubs.push(pub);
-      projectPubMap.set(pp.project_id, pubs);
+    // Fetch publications from NIH Reporter for each grant in parallel
+    const pubPromises = grants.map(async (g) => {
+      const coreProjectNum = g.grant_number.replace(/^\d+/, "").replace(/\d+$/, "");
+      const pubs = await fetchPublications(coreProjectNum);
+      return { grantNumber: g.grant_number, publications: pubs };
     });
+    const pubResults = await Promise.all(pubPromises);
+    const grantPubMap = new Map(pubResults.map(r => [r.grantNumber, r.publications]));
 
     const results = grants.map(g => {
       // Get PIs for this grant
