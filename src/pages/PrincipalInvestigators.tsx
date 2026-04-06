@@ -72,6 +72,7 @@ interface PIRow {
   skills: string[];
   researchAreas: string[];
   resourceId?: string;
+  workingGroups: string[];
 }
 
 const nameKey = (name: string): string =>
@@ -465,6 +466,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
       resourceId: inv.resource_id || undefined,
+      workingGroups: (inv as any).working_groups || [],
     });
   }
 
@@ -647,6 +649,7 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
 const ALL_COLUMNS = [
   { id: "investigator" as const, label: "Investigator", default: true, locked: true },
   { id: "institution" as const, label: "Institutions", default: true },
+  { id: "workingGroups" as const, label: "Working Groups", default: true },
   { id: "skills" as const, label: "Skills", default: true },
   { id: "researchAreas" as const, label: "Research Areas", default: true },
   { id: "projects" as const, label: "Projects", default: false },
@@ -654,13 +657,22 @@ const ALL_COLUMNS = [
   { id: "grants" as const, label: "Grants", default: false },
 ];
 
-type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
+type ColumnId = "investigator" | "institution" | "workingGroups" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
 type RoleFilter = "all" | "pi";
+type WgFilter = "all" | "WG-Analytics" | "WG-Devices" | "WG-ELSI" | "WG-Standards";
 
 const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "pi", label: "PIs" },
+];
+
+const WG_FILTERS: { id: WgFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "WG-Analytics", label: "Analytics" },
+  { id: "WG-Devices", label: "Devices" },
+  { id: "WG-ELSI", label: "ELSI" },
+  { id: "WG-Standards", label: "Standards" },
 ];
 
 // wgChairNames removed — using isWorkingGroupChair() instead
@@ -670,6 +682,7 @@ export default function PrincipalInvestigators() {
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [wgFilter, setWgFilter] = useState<WgFilter>("all");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
@@ -699,10 +712,11 @@ export default function PrincipalInvestigators() {
   });
 
   const rowData = useMemo(() => {
-    if (roleFilter === "all") return rawRowData;
-    if (roleFilter === "pi") return rawRowData.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
-    return rawRowData;
-  }, [rawRowData, roleFilter]);
+    let filtered = rawRowData;
+    if (roleFilter === "pi") filtered = filtered.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
+    if (wgFilter !== "all") filtered = filtered.filter((pi) => pi.workingGroups.includes(wgFilter));
+    return filtered;
+  }, [rawRowData, roleFilter, wgFilter]);
 
   const totalFundingAll = useMemo(() => {
     const seen = new Set<string>();
@@ -752,6 +766,33 @@ export default function PrincipalInvestigators() {
       cellStyle: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
       cellRenderer: (params: any) => <InstitutionCell data={params.data} />,
       filterValueGetter: (params) => (params.data?.institutions || []).join(", "),
+    },
+    workingGroups: {
+      headerName: "Working Groups",
+      width: 200,
+      minWidth: 160,
+      cellRenderer: (params: any) => {
+        const wgs: string[] = params.data?.workingGroups || [];
+        if (wgs.length === 0) return <span className="text-muted-foreground">—</span>;
+        const colorMap: Record<string, string> = {
+          "WG-Analytics": "bg-blue-500/10 text-blue-700 border-blue-500/30 dark:text-blue-400",
+          "WG-Devices": "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:text-violet-400",
+          "WG-ELSI": "bg-rose-500/10 text-rose-700 border-rose-500/30 dark:text-rose-400",
+          "WG-Standards": "bg-teal-500/10 text-teal-700 border-teal-500/30 dark:text-teal-400",
+        };
+        return (
+          <div className="flex flex-wrap gap-1 py-1">
+            {wgs.map((wg, i) => (
+              <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${colorMap[wg] || ""}`}>
+                {wg.replace("WG-", "")}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+      wrapText: true,
+      autoHeight: true,
+      filterValueGetter: (params) => (params.data?.workingGroups || []).join(", "),
     },
     projects: {
       headerName: "Projects",
@@ -863,6 +904,20 @@ export default function PrincipalInvestigators() {
                   className="text-xs h-7 px-3"
                 >
                   {rf.label}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">WG:</span>
+              {WG_FILTERS.map((wf) => (
+                <Button
+                  key={wf.id}
+                  variant={wgFilter === wf.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWgFilter(wf.id)}
+                  className="text-xs h-7 px-3"
+                >
+                  {wf.label}
                 </Button>
               ))}
             </div>
