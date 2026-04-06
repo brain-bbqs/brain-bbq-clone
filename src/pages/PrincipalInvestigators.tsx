@@ -767,6 +767,33 @@ export default function PrincipalInvestigators() {
       cellRenderer: (params: any) => <InstitutionCell data={params.data} />,
       filterValueGetter: (params) => (params.data?.institutions || []).join(", "),
     },
+    workingGroups: {
+      headerName: "Working Groups",
+      width: 200,
+      minWidth: 160,
+      cellRenderer: (params: any) => {
+        const wgs: string[] = params.data?.workingGroups || [];
+        if (wgs.length === 0) return <span className="text-muted-foreground">—</span>;
+        const colorMap: Record<string, string> = {
+          "WG-Analytics": "bg-blue-500/10 text-blue-700 border-blue-500/30 dark:text-blue-400",
+          "WG-Devices": "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:text-violet-400",
+          "WG-ELSI": "bg-rose-500/10 text-rose-700 border-rose-500/30 dark:text-rose-400",
+          "WG-Standards": "bg-teal-500/10 text-teal-700 border-teal-500/30 dark:text-teal-400",
+        };
+        return (
+          <div className="flex flex-wrap gap-1 py-1">
+            {wgs.map((wg, i) => (
+              <Badge key={i} variant="outline" className={`text-[10px] px-1.5 py-0 font-normal ${colorMap[wg] || ""}`}>
+                {wg.replace("WG-", "")}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+      wrapText: true,
+      autoHeight: true,
+      filterValueGetter: (params) => (params.data?.workingGroups || []).join(", "),
+    },
     projects: {
       headerName: "Projects",
       width: 160,
