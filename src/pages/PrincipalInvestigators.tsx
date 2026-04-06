@@ -72,6 +72,7 @@ interface PIRow {
   skills: string[];
   researchAreas: string[];
   resourceId?: string;
+  workingGroups: string[];
 }
 
 const nameKey = (name: string): string =>
