@@ -17,12 +17,13 @@ const GRANT_NUMBERS = [
   "1U01DA063565", "1U01DA063581", "1R61MH138612"
 ];
 
+// ─── PubMed / iCite helpers ─────────────────────────────────
+
 async function fetchPubMedKeywords(pmids: string[]): Promise<Map<string, string[]>> {
   const keywordsMap = new Map<string, string[]>();
   if (pmids.length === 0) return keywordsMap;
 
   try {
-    // Batch in groups of 50 to avoid URL length limits
     const batchSize = 50;
     for (let i = 0; i < pmids.length; i += batchSize) {
       const batch = pmids.slice(i, i + batchSize);
@@ -31,39 +32,30 @@ async function fetchPubMedKeywords(pmids: string[]): Promise<Map<string, string[
       if (!response.ok) continue;
 
       const xml = await response.text();
-
-      // Parse keywords from XML for each article
       const articleRegex = /<PubmedArticle>([\s\S]*?)<\/PubmedArticle>/g;
       let match;
       while ((match = articleRegex.exec(xml)) !== null) {
         const article = match[1];
-        // Extract PMID
         const pmidMatch = article.match(/<PMID[^>]*>(\d+)<\/PMID>/);
         if (!pmidMatch) continue;
         const pmid = pmidMatch[1];
-
         const keywords: string[] = [];
 
-        // Extract MeSH terms (descriptors only)
         const meshRegex = /<DescriptorName[^>]*>([^<]+)<\/DescriptorName>/g;
         let meshMatch;
         while ((meshMatch = meshRegex.exec(article)) !== null) {
           keywords.push(meshMatch[1]);
         }
 
-        // Extract author-supplied keywords
         const kwRegex = /<Keyword[^>]*>([^<]+)<\/Keyword>/g;
         let kwMatch;
         while ((kwMatch = kwRegex.exec(article)) !== null) {
-          if (!keywords.includes(kwMatch[1])) {
-            keywords.push(kwMatch[1]);
-          }
+          if (!keywords.includes(kwMatch[1])) keywords.push(kwMatch[1]);
         }
 
         keywordsMap.set(pmid, keywords);
       }
 
-      // Small delay between batches
       if (i + batchSize < pmids.length) {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
@@ -85,7 +77,7 @@ async function fetchPubMedDetails(pmids: string[]): Promise<Map<string, any>> {
 
     const data = await response.json();
     const pubs = data.data || data;
-    
+
     for (const pub of pubs) {
       detailsMap.set(String(pub.pmid), {
         title: pub.title || "Unknown",
@@ -123,8 +115,7 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
     if (nihPubs.length === 0) return [];
 
     const pmids = nihPubs.map((p: any) => String(p.pmid)).filter(Boolean);
-    
-    // Fetch iCite details and PubMed keywords in parallel
+
     const [detailsMap, keywordsMap] = await Promise.all([
       fetchPubMedDetails(pmids),
       fetchPubMedKeywords(pmids),
@@ -152,6 +143,8 @@ async function fetchPublications(coreProjectNum: string): Promise<any[]> {
   }
 }
 
+// ─── NIH Reporter fetch ────────────────────────────────────
+
 async function fetchGrantData(grantNumber: string): Promise<any | null> {
   try {
     const response = await fetch("https://api.reporter.nih.gov/v2/projects/search", {
@@ -175,9 +168,9 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
 
     const project = data.results[0];
     const pis = project.principal_investigators || [];
-    const coreProjectNum = project.core_project_num || grantNumber.replace(/\d$/, "");
+    const coreProjectNum = project.core_project_num || grantNumber.replace(/-\d+$/, "");
     const publications = await fetchPublications(coreProjectNum);
-    
+
     const piDetails = pis.map((pi: any) => ({
       fullName: pi.full_name || "",
       firstName: pi.first_name || "",
@@ -206,6 +199,170 @@ async function fetchGrantData(grantNumber: string): Promise<any | null> {
   }
 }
 
+// ─── Full entity seeding pipeline ───────────────────────────
+// Given a grant number and its fetched data, ensures all related
+// entities exist: organization, resource nodes, investigators,
+// grant_investigators links, and project metadata row.
+
+async function seedGrantEntities(supabase: any, grantNumber: string, projectData: any) {
+  // 1. Upsert grant row
+  const { data: grantRow } = await supabase
+    .from("grants")
+    .upsert({
+      grant_number: grantNumber,
+      title: projectData.title || "Unknown",
+      abstract: projectData.abstract || null,
+      award_amount: projectData.awardAmount || null,
+      fiscal_year: projectData.fiscalYear || null,
+      nih_link: projectData.nihLink || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "grant_number" })
+    .select("id, resource_id")
+    .single();
+
+  if (!grantRow) {
+    console.error(`Failed to upsert grant ${grantNumber}`);
+    return;
+  }
+
+  const grantId = grantRow.id;
+
+  // 2. Ensure grant has a resource node
+  if (!grantRow.resource_id) {
+    const { data: grantResource } = await supabase
+      .from("resources")
+      .insert({
+        name: projectData.title || grantNumber,
+        resource_type: "grant",
+        description: (projectData.abstract || "").slice(0, 500) || null,
+      })
+      .select("id")
+      .single();
+
+    if (grantResource) {
+      await supabase
+        .from("grants")
+        .update({ resource_id: grantResource.id })
+        .eq("id", grantId);
+    }
+  }
+
+  // 3. Ensure organization exists
+  const institutionName = projectData.institution;
+  let orgId: string | null = null;
+  if (institutionName && institutionName !== "Unknown") {
+    const { data: existingOrg } = await supabase
+      .from("organizations")
+      .select("id")
+      .ilike("name", institutionName)
+      .maybeSingle();
+
+    if (existingOrg) {
+      orgId = existingOrg.id;
+    } else {
+      const { data: newOrg } = await supabase
+        .from("organizations")
+        .insert({ name: institutionName })
+        .select("id")
+        .single();
+      orgId = newOrg?.id || null;
+    }
+  }
+
+  // 4. Ensure investigators exist and are linked
+  const piDetails: any[] = projectData.piDetails || [];
+  for (const pi of piDetails) {
+    const piName = (pi.fullName || "").trim();
+    if (!piName) continue;
+
+    // Find or create investigator by name
+    const { data: existingInv } = await supabase
+      .from("investigators")
+      .select("id, resource_id")
+      .ilike("name", piName)
+      .maybeSingle();
+
+    let invId: string;
+    if (existingInv) {
+      invId = existingInv.id;
+    } else {
+      // Create resource node for investigator
+      const { data: invResource } = await supabase
+        .from("resources")
+        .insert({
+          name: piName,
+          resource_type: "investigator",
+        })
+        .select("id")
+        .single();
+
+      const { data: newInv } = await supabase
+        .from("investigators")
+        .insert({
+          name: piName,
+          resource_id: invResource?.id || null,
+        })
+        .select("id")
+        .single();
+
+      if (!newInv) continue;
+      invId = newInv.id;
+
+      console.log(`Created investigator: ${piName} (${invId})`);
+    }
+
+    // Link investigator to organization
+    if (orgId) {
+      const { data: existingLink } = await supabase
+        .from("investigator_organizations")
+        .select("investigator_id")
+        .eq("investigator_id", invId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+
+      if (!existingLink) {
+        await supabase
+          .from("investigator_organizations")
+          .insert({ investigator_id: invId, organization_id: orgId });
+      }
+    }
+
+    // Link investigator to grant
+    const role = pi.isContactPi ? "contact_pi" : "co_pi";
+    const { data: existingGi } = await supabase
+      .from("grant_investigators")
+      .select("investigator_id")
+      .eq("investigator_id", invId)
+      .eq("grant_id", grantId)
+      .maybeSingle();
+
+    if (!existingGi) {
+      await supabase
+        .from("grant_investigators")
+        .insert({ investigator_id: invId, grant_id: grantId, role });
+    }
+  }
+
+  // 5. Ensure project metadata row exists
+  const { data: existingProject } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("grant_number", grantNumber)
+    .maybeSingle();
+
+  if (!existingProject) {
+    await supabase
+      .from("projects")
+      .insert({
+        grant_number: grantNumber,
+        grant_id: grantId,
+      });
+    console.log(`Created project metadata for ${grantNumber}`);
+  }
+}
+
+// ─── Main handler ───────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -219,9 +376,9 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
-    // ACTION: refresh — fetch from NIH APIs and upsert into grants table
+    // ACTION: refresh — full pipeline: fetch from NIH APIs, seed all entities
     if (action === "refresh") {
-      console.log(`Refreshing ${GRANT_NUMBERS.length} grants from NIH Reporter...`);
+      console.log(`Refreshing ${GRANT_NUMBERS.length} grants (full pipeline)...`);
 
       let updatedCount = 0;
       const errors: string[] = [];
@@ -230,30 +387,21 @@ Deno.serve(async (req) => {
         try {
           const projectData = await fetchGrantData(grant);
           if (projectData) {
-            // Upsert into grants table directly
-            await supabase
-              .from("grants")
-              .upsert({
-                grant_number: grant,
-                title: (projectData as any).title || "Unknown",
-                abstract: (projectData as any).abstract || null,
-                award_amount: (projectData as any).awardAmount || null,
-                fiscal_year: (projectData as any).fiscalYear || null,
-                nih_link: (projectData as any).nihLink || null,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: "grant_number" });
+            await seedGrantEntities(supabase, grant, projectData);
             updatedCount++;
           }
           await new Promise(resolve => setTimeout(resolve, 150));
         } catch (err) {
-          errors.push(`${grant}: ${err instanceof Error ? err.message : "unknown"}`);
+          const msg = err instanceof Error ? err.message : "unknown";
+          errors.push(`${grant}: ${msg}`);
+          console.error(`Error seeding ${grant}:`, msg);
         }
       }
 
-      console.log(`Refresh complete: ${updatedCount} grants updated, ${errors.length} errors`);
+      console.log(`Refresh complete: ${updatedCount} grants fully seeded, ${errors.length} errors`);
 
       return new Response(
-        JSON.stringify({ success: true, updated: updatedCount, errors: errors.length }),
+        JSON.stringify({ success: true, updated: updatedCount, errors: errors.length, errorDetails: errors }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -268,24 +416,15 @@ Deno.serve(async (req) => {
       throw new Error(`Grants read error: ${grantsError.message}`);
     }
 
-    // If no grants, do an initial fetch
+    // If no grants, do full initial seed
     if (!grants || grants.length === 0) {
-      console.log("No grants found, performing initial data fetch...");
-      
+      console.log("No grants found, performing initial full seed...");
+
       const results = [];
       for (const grant of GRANT_NUMBERS) {
         const projectData = await fetchGrantData(grant);
         if (projectData) {
-          await supabase
-            .from("grants")
-            .upsert({
-              grant_number: grant,
-              title: (projectData as any).title || "Unknown",
-              abstract: (projectData as any).abstract || null,
-              award_amount: (projectData as any).awardAmount || null,
-              fiscal_year: (projectData as any).fiscalYear || null,
-              nih_link: (projectData as any).nihLink || null,
-            }, { onConflict: "grant_number" });
+          await seedGrantEntities(supabase, grant, projectData);
           results.push(projectData);
         }
         await new Promise(resolve => setTimeout(resolve, 150));
@@ -305,7 +444,7 @@ Deno.serve(async (req) => {
       .in("grant_id", grantIds);
 
     const investigatorIds = [...new Set((grantInvestigators || []).map(gi => gi.investigator_id))];
-    
+
     const { data: investigators } = investigatorIds.length > 0
       ? await supabase.from("investigators").select("id, name, email, orcid, scholar_id").in("id", investigatorIds)
       : { data: [] };
@@ -330,8 +469,6 @@ Deno.serve(async (req) => {
     });
 
     // Fetch publications from NIH Reporter for each grant in parallel
-    // Core project num: strip leading numeric prefix (e.g. "1U01DA063534" -> "U01DA063534")
-    // and any trailing suffix like "-01"
     const pubPromises = grants.map(async (g) => {
       const coreProjectNum = g.grant_number.replace(/^\d+/, "").replace(/-\d+$/, "");
       const pubs = await fetchPublications(coreProjectNum);
@@ -341,7 +478,6 @@ Deno.serve(async (req) => {
     const grantPubMap = new Map(pubResults.map(r => [r.grantNumber, r.publications]));
 
     const results = grants.map(g => {
-      // Get PIs for this grant
       const gis = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
       const piDetails = gis.map(gi => {
         const inv = invMap.get(gi.investigator_id);
@@ -357,18 +493,16 @@ Deno.serve(async (req) => {
       const contactPi = piDetails.find(pi => pi.isContactPi);
       const allPiNames = piDetails.map(pi => pi.fullName).join(", ");
 
-      // Get institution from contact PI's org, or first PI's org
       let institution = "Unknown";
       const contactPiGi = gis.find(gi => gi.role === "contact_pi") || gis[0];
       if (contactPiGi) {
-        const orgIds = invOrgMap.get(contactPiGi.investigator_id) || [];
-        if (orgIds.length > 0) {
-          const org = orgMap.get(orgIds[0]);
+        const piOrgIds = invOrgMap.get(contactPiGi.investigator_id) || [];
+        if (piOrgIds.length > 0) {
+          const org = orgMap.get(piOrgIds[0]);
           if (org) institution = org.name;
         }
       }
 
-      // Get publications for this grant from NIH Reporter
       const pubs = grantPubMap.get(g.grant_number) || [];
 
       return {
