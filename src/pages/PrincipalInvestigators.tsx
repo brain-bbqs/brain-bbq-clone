@@ -682,6 +682,7 @@ export default function PrincipalInvestigators() {
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [wgFilter, setWgFilter] = useState<WgFilter>("all");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
