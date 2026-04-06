@@ -1282,3 +1282,22 @@ projects:
     keywords: ["EMBER", "Data Archive", "NWB", "Ontologies", "Reproducibility"]
     website: "Visit EMBER via the Brain-Behavior Data Archive portal"
     studies_humans: "Yes (Infrastructure covers human projects)"
+  - grant_number: "1R61MH138612"
+    project_title: "SeeMe: A multimodal behavioral-electrophysiological tool for real-time detection of consciousness"
+    target_species_domain: "Homo sapiens (human)"
+    species: ["Homo sapiens"]
+    marr_levels:
+      ethological:
+        description: "Studying voluntary behavior recovery and consciousness detection in brain injury patients"
+        behavioral_paradigms: ["Voluntary motor behavior assessment", "Consciousness detection"]
+      algorithmic:
+        description: "Real-time multimodal signal processing combining behavioral and electrophysiological data for consciousness detection"
+        computational_models: ["Multimodal behavioral-electrophysiological integration", "Real-time signal processing"]
+      implementational:
+        description: "Combined behavioral and electrophysiology recording system for clinical consciousness assessment"
+        hardware_platforms: ["Clinical EEG", "Behavioral monitoring"]
+        behavioral_rigs: ["Motor behavior assessment apparatus"]
+        electrophysiology_setup: ["Scalp EEG"]
+    keywords: ["Consciousness", "Brain Injury", "Electrophysiology", "Motor Behavior", "Real-time Detection"]
+    website: "N/A"
+    studies_humans: "Yes"
