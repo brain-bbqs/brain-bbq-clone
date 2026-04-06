@@ -907,6 +907,20 @@ export default function PrincipalInvestigators() {
                 </Button>
               ))}
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">WG:</span>
+              {WG_FILTERS.map((wf) => (
+                <Button
+                  key={wf.id}
+                  variant={wgFilter === wf.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWgFilter(wf.id)}
+                  className="text-xs h-7 px-3"
+                >
+                  {wf.label}
+                </Button>
+              ))}
+            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5">
