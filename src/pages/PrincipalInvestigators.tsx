@@ -657,13 +657,22 @@ const ALL_COLUMNS = [
   { id: "grants" as const, label: "Grants", default: false },
 ];
 
-type ColumnId = "investigator" | "institution" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
+type ColumnId = "investigator" | "institution" | "workingGroups" | "projects" | "grants" | "funding" | "skills" | "researchAreas";
 
 type RoleFilter = "all" | "pi";
+type WgFilter = "all" | "WG-Analytics" | "WG-Devices" | "WG-ELSI" | "WG-Standards";
 
 const ROLE_FILTERS: { id: RoleFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "pi", label: "PIs" },
+];
+
+const WG_FILTERS: { id: WgFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "WG-Analytics", label: "Analytics" },
+  { id: "WG-Devices", label: "Devices" },
+  { id: "WG-ELSI", label: "ELSI" },
+  { id: "WG-Standards", label: "Standards" },
 ];
 
 // wgChairNames removed — using isWorkingGroupChair() instead
