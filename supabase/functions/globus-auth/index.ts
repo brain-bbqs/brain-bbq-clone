@@ -89,10 +89,38 @@ Deno.serve(async (req) => {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      // Check if user exists
+      // Resolve the canonical email for this person.
+      // If they logged in with a secondary email, find their primary email
+      // so the Supabase auth account is always tied to the primary.
+      let canonicalEmail = email;
+      const emailLower = email.toLowerCase();
+
+      // Check if this email is a secondary_email for any investigator
+      const { data: invBySecondary } = await supabaseAdmin
+        .from("investigators")
+        .select("email")
+        .contains("secondary_emails", [emailLower])
+        .maybeSingle();
+
+      if (invBySecondary?.email) {
+        canonicalEmail = invBySecondary.email;
+        console.log(`Resolved secondary email ${email} → canonical ${canonicalEmail}`);
+      } else {
+        // Also check if this email matches a primary investigator email
+        const { data: invByPrimary } = await supabaseAdmin
+          .from("investigators")
+          .select("email")
+          .ilike("email", emailLower)
+          .maybeSingle();
+        if (invByPrimary?.email) {
+          canonicalEmail = invByPrimary.email;
+        }
+      }
+
+      // Check if user exists (by canonical email)
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find(
-        (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+        (u: any) => u.email?.toLowerCase() === canonicalEmail.toLowerCase()
       );
 
       let userId: string;
@@ -100,22 +128,29 @@ Deno.serve(async (req) => {
       if (existingUser) {
         userId = existingUser.id;
       } else {
-        // Validate domain against allowed_domains
-        const domain = email.split("@")[1]?.toLowerCase();
+        // Validate: either the domain is allowed OR this person is a known consortium member
+        const domain = canonicalEmail.split("@")[1]?.toLowerCase();
         const { data: allowedDomain } = await supabaseAdmin
           .from("allowed_domains")
           .select("domain")
           .eq("domain", domain)
           .maybeSingle();
 
-        if (!allowedDomain) {
+        // Also check if they're a known investigator (by any email)
+        const { data: knownInvestigator } = await supabaseAdmin
+          .from("investigators")
+          .select("id")
+          .or(`email.ilike.${emailLower},secondary_emails.cs.{${emailLower}}`)
+          .maybeSingle();
+
+        if (!allowedDomain && !knownInvestigator) {
           const errorRedirect = new URL(frontendRedirect);
           errorRedirect.searchParams.set("globus_error", "domain_not_allowed");
           return Response.redirect(errorRedirect.toString(), 302);
         }
 
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
+          email: canonicalEmail,
           email_confirm: true,
           user_metadata: { full_name: name },
         });
