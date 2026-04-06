@@ -649,6 +649,7 @@ const InstitutionCell = ({ data }: { data: PIRow }) => {
 const ALL_COLUMNS = [
   { id: "investigator" as const, label: "Investigator", default: true, locked: true },
   { id: "institution" as const, label: "Institutions", default: true },
+  { id: "workingGroups" as const, label: "Working Groups", default: true },
   { id: "skills" as const, label: "Skills", default: true },
   { id: "researchAreas" as const, label: "Research Areas", default: true },
   { id: "projects" as const, label: "Projects", default: false },
