@@ -712,10 +712,11 @@ export default function PrincipalInvestigators() {
   });
 
   const rowData = useMemo(() => {
-    if (roleFilter === "all") return rawRowData;
-    if (roleFilter === "pi") return rawRowData.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
-    return rawRowData;
-  }, [rawRowData, roleFilter]);
+    let filtered = rawRowData;
+    if (roleFilter === "pi") filtered = filtered.filter((pi) => pi.grants.some((g) => g.role === "contact_pi"));
+    if (wgFilter !== "all") filtered = filtered.filter((pi) => pi.workingGroups.includes(wgFilter));
+    return filtered;
+  }, [rawRowData, roleFilter, wgFilter]);
 
   const totalFundingAll = useMemo(() => {
     const seen = new Set<string>();
