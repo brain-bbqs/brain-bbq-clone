@@ -466,6 +466,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
       resourceId: inv.resource_id || undefined,
+      workingGroups: (inv as any).working_groups || [],
     });
   }
 
