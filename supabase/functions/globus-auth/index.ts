@@ -164,11 +164,11 @@ Deno.serve(async (req) => {
         userId = newUser.user.id;
       }
 
-      // Generate magic link
+      // Generate magic link using canonical email
       const { data: linkData, error: linkError } =
         await supabaseAdmin.auth.admin.generateLink({
           type: "magiclink",
-          email,
+          email: canonicalEmail,
         });
 
       if (linkError || !linkData) {
