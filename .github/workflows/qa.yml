@@ -53,6 +53,7 @@ jobs:
         env:
           BASE_URL: http://localhost:8080
           CI: true
+          CI_AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
 
       - name: Upload test report
         if: always()
