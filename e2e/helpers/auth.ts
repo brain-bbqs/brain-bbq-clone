@@ -16,7 +16,7 @@ export async function loginAsTestUser(page: Page) {
       apikey: anonKey,
       "Content-Type": "application/json",
     },
-    data: { secret: process.env.CI_AUTH_SECRET || "ci-test-secret" },
+    data: { secret: process.env.CI_AUTH_SECRET },
   });
 
   if (!res.ok()) {
