@@ -1,9 +1,6 @@
 "use client";
 
 import { useSearchParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, AlertTriangle, HelpCircle } from "lucide-react";
 
 import { useState, useMemo, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,7 +17,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, ExternalLink, DollarSign, Columns3, Filter, ShieldAlert } from "lucide-react";
+import { Loader2, Users, ExternalLink, Columns3, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
@@ -395,6 +392,11 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const profileId = inv.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(inv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
 
     const piGrantLinks = grantInvLinks.filter(gi => gi.investigator_id === inv.id);
+    const wgs: string[] = (inv as any).working_groups || [];
+
+    // Only include investigators who have grants OR working groups
+    if (piGrantLinks.length === 0 && wgs.length === 0) continue;
+
     let piAsPi = 0;
     let piAsCoPi = 0;
     const piGrants: GrantInfo[] = [];
@@ -466,7 +468,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
       resourceId: inv.resource_id || undefined,
-      workingGroups: (inv as any).working_groups || [],
+      workingGroups: wgs,
     });
   }
 
@@ -486,66 +488,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     });
     pi.skills = Array.from(skills);
     pi.researchAreas = Array.from(areas);
-  }
-
-  // Enrich with nih-pi-grants for additional non-BBQS grants
-  const profileIds = Array.from(piMap.values())
-    .map(pi => pi.profileId)
-    .filter((id): id is number => id !== null);
-
-  if (profileIds.length > 0) {
-    try {
-      const { data: allGrantsData, error: allGrantsError } = await supabase.functions.invoke("nih-pi-grants", {
-        body: { profile_ids: profileIds },
-      });
-
-      if (!allGrantsError && allGrantsData?.data) {
-        const allGrantsByPi = allGrantsData.data as Record<number, any[]>;
-
-        for (const [, pi] of piMap) {
-          if (!pi.profileId) continue;
-          const piGrants = allGrantsByPi[pi.profileId] || [];
-          const existingGrantNums = new Set(pi.grants.map(g => g.grantNumber));
-
-          let additionalPi = 0;
-          let additionalCoPi = 0;
-
-          for (const g of piGrants) {
-            if (existingGrantNums.has(g.grantNumber)) continue;
-
-            const isBbqs = bbqsGrantNumbers.has(g.grantNumber);
-            if (g.isContactPi) additionalPi++;
-            else additionalCoPi++;
-            if (g.institution && !pi.institutions.includes(g.institution)) {
-              pi.institutions.push(g.institution);
-            }
-
-            pi.grants.push({
-              grantNumber: g.grantNumber,
-              title: g.title,
-              nihLink: g.nihLink,
-              role: g.isContactPi ? "contact_pi" : "co_pi",
-              awardAmount: g.awardAmount || 0,
-              institution: g.institution || "",
-              fiscalYear: g.fiscalYear || null,
-              isBbqs,
-              coPis: (g.coPis || []).map((c: any) => ({
-                name: c.name || "",
-                profileId: c.profileId || null,
-                isContactPi: c.isContactPi || false,
-              })),
-            });
-          }
-
-          pi.projectsAsPi += additionalPi;
-          pi.projectsAsCoPi += additionalCoPi;
-          pi.totalProjects = pi.grants.length;
-          pi.totalFunding = pi.grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to enrich with nih-pi-grants:", e);
-    }
   }
 
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
@@ -686,23 +628,6 @@ export default function PrincipalInvestigators() {
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verifyResults, setVerifyResults] = useState<any>(null);
-  const [verifying, setVerifying] = useState(false);
-
-  const runVerification = useCallback(async () => {
-    setVerifying(true);
-    setVerifyOpen(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-affiliations");
-      if (error) throw error;
-      setVerifyResults(data);
-    } catch (e: any) {
-      setVerifyResults({ success: false, error: e.message });
-    } finally {
-      setVerifying(false);
-    }
-  }, []);
 
   const { data: rawRowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
@@ -945,10 +870,6 @@ export default function PrincipalInvestigators() {
               </PopoverContent>
             </Popover>
             <span className="text-sm text-muted-foreground">{rowData.length} people</span>
-            <Button variant="outline" size="sm" className="gap-1.5 ml-auto" onClick={runVerification} disabled={verifying}>
-              <ShieldAlert className="h-4 w-4" />
-              {verifying ? "Verifying..." : "Verify Affiliations"}
-            </Button>
           </div>
         </div>
 
@@ -988,99 +909,6 @@ export default function PrincipalInvestigators() {
         </div>
         </div>
 
-        {/* Verification Results Dialog */}
-        <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                Affiliation Verification Report
-              </DialogTitle>
-              <DialogDescription>
-                Cross-referenced against NIH RePORTER and ORCID records.
-              </DialogDescription>
-            </DialogHeader>
-            {verifying ? (
-              <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm">Querying NIH RePORTER & ORCID for each investigator...</p>
-                <p className="text-xs text-muted-foreground">This may take a minute.</p>
-              </div>
-            ) : verifyResults?.success ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <Card className="bg-emerald-500/10 border-emerald-500/30">
-                    <CardContent className="p-3 text-center">
-                      <ShieldCheck className="h-5 w-5 text-emerald-600 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-emerald-600">{verifyResults.summary.verified}</p>
-                      <p className="text-xs text-muted-foreground">Verified</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-destructive/10 border-destructive/30">
-                    <CardContent className="p-3 text-center">
-                      <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-1" />
-                      <p className="text-lg font-bold text-destructive">{verifyResults.summary.mismatches}</p>
-                      <p className="text-xs text-muted-foreground">Mismatches</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted border-border">
-                    <CardContent className="p-3 text-center">
-                      <HelpCircle className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-lg font-bold text-foreground">{verifyResults.summary.missing}</p>
-                      <p className="text-xs text-muted-foreground">No Data</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {verifyResults.results.filter((r: any) => r.status === "mismatch").length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-destructive mb-2">⚠️ Mismatches Found</h3>
-                    <ScrollArea className="max-h-[300px]">
-                      <div className="space-y-2">
-                        {verifyResults.results
-                          .filter((r: any) => r.status === "mismatch")
-                          .map((r: any) => (
-                            <div key={r.investigator_id} className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                              <p className="font-medium text-sm">{r.name}</p>
-                              <div className="grid grid-cols-2 gap-2 mt-1.5 text-xs">
-                                <div>
-                                  <span className="text-muted-foreground">Current: </span>
-                                  <span className="text-foreground">{r.current_orgs.join(", ") || "None"}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">NIH/ORCID: </span>
-                                  <span className="font-medium text-primary">{r.nih_org}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
-
-                {verifyResults.results.filter((r: any) => r.status === "verified").length > 0 && (
-                  <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                      ✅ {verifyResults.summary.verified} verified affiliations
-                    </summary>
-                    <div className="mt-2 space-y-1 max-h-[200px] overflow-y-auto">
-                      {verifyResults.results
-                        .filter((r: any) => r.status === "verified")
-                        .map((r: any) => (
-                          <p key={r.investigator_id} className="text-xs text-muted-foreground">
-                            {r.name} — {r.nih_org}
-                          </p>
-                        ))}
-                    </div>
-                  </details>
-                )}
-              </div>
-            ) : verifyResults ? (
-              <p className="text-destructive text-sm py-4">Error: {verifyResults.error || "Unknown error"}</p>
-            ) : null}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
