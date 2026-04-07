@@ -395,6 +395,11 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     const profileId = inv.profile_url?.match(/pi_id=(\d+)/)?.[1] ? Number(inv.profile_url.match(/pi_id=(\d+)/)![1]) : null;
 
     const piGrantLinks = grantInvLinks.filter(gi => gi.investigator_id === inv.id);
+    const wgs: string[] = (inv as any).working_groups || [];
+
+    // Only include investigators who have grants OR working groups
+    if (piGrantLinks.length === 0 && wgs.length === 0) continue;
+
     let piAsPi = 0;
     let piAsCoPi = 0;
     const piGrants: GrantInfo[] = [];
@@ -466,7 +471,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
       skills: inv.skills || [],
       researchAreas: inv.research_areas || [],
       resourceId: inv.resource_id || undefined,
-      workingGroups: (inv as any).working_groups || [],
+      workingGroups: wgs,
     });
   }
 
@@ -486,66 +491,6 @@ const fetchPIs = async (): Promise<PIRow[]> => {
     });
     pi.skills = Array.from(skills);
     pi.researchAreas = Array.from(areas);
-  }
-
-  // Enrich with nih-pi-grants for additional non-BBQS grants
-  const profileIds = Array.from(piMap.values())
-    .map(pi => pi.profileId)
-    .filter((id): id is number => id !== null);
-
-  if (profileIds.length > 0) {
-    try {
-      const { data: allGrantsData, error: allGrantsError } = await supabase.functions.invoke("nih-pi-grants", {
-        body: { profile_ids: profileIds },
-      });
-
-      if (!allGrantsError && allGrantsData?.data) {
-        const allGrantsByPi = allGrantsData.data as Record<number, any[]>;
-
-        for (const [, pi] of piMap) {
-          if (!pi.profileId) continue;
-          const piGrants = allGrantsByPi[pi.profileId] || [];
-          const existingGrantNums = new Set(pi.grants.map(g => g.grantNumber));
-
-          let additionalPi = 0;
-          let additionalCoPi = 0;
-
-          for (const g of piGrants) {
-            if (existingGrantNums.has(g.grantNumber)) continue;
-
-            const isBbqs = bbqsGrantNumbers.has(g.grantNumber);
-            if (g.isContactPi) additionalPi++;
-            else additionalCoPi++;
-            if (g.institution && !pi.institutions.includes(g.institution)) {
-              pi.institutions.push(g.institution);
-            }
-
-            pi.grants.push({
-              grantNumber: g.grantNumber,
-              title: g.title,
-              nihLink: g.nihLink,
-              role: g.isContactPi ? "contact_pi" : "co_pi",
-              awardAmount: g.awardAmount || 0,
-              institution: g.institution || "",
-              fiscalYear: g.fiscalYear || null,
-              isBbqs,
-              coPis: (g.coPis || []).map((c: any) => ({
-                name: c.name || "",
-                profileId: c.profileId || null,
-                isContactPi: c.isContactPi || false,
-              })),
-            });
-          }
-
-          pi.projectsAsPi += additionalPi;
-          pi.projectsAsCoPi += additionalCoPi;
-          pi.totalProjects = pi.grants.length;
-          pi.totalFunding = pi.grants.reduce((sum, g) => sum + (g.awardAmount || 0), 0);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to enrich with nih-pi-grants:", e);
-    }
   }
 
   return Array.from(piMap.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
