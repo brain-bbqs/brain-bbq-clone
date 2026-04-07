@@ -1,0 +1,92 @@
+name: Claude Review - Lovable + Supabase
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code PR Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You are reviewing a pull request for a Lovable frontend + Supabase backend application.
+
+            Review ONLY files changed in this PR.
+            Be specific, technical, and actionable.
+            Prefer high-signal findings over many low-value comments.
+            Do not comment on formatting or naming unless it causes bugs or confusion.
+
+            Evaluate the PR in these areas:
+
+            1) Lovable frontend review
+            - React/Vite/TypeScript correctness
+            - Component state bugs, effect misuse, stale state, race conditions
+            - Broken loading, empty, and error states
+            - Form validation and user feedback quality
+            - Unsafe client-side trust of privileged data
+            - Tailwind/shadcn UI misuse only when it harms maintainability or UX
+            - Accessibility issues: labels, keyboard nav, button semantics, contrast
+            - Supabase client usage in frontend: auth handling, session assumptions, query mistakes, overfetching
+
+            2) Supabase backend review
+            - Row Level Security correctness and missing policies
+            - Auth bugs, tenant-isolation risks, and privilege escalation
+            - SQL migration safety, destructive schema changes, missing indexes
+            - Postgres query correctness and performance
+            - Edge Function security, input validation, secret handling, and error handling
+            - Storage policy issues and public/private bucket mistakes
+            - Risks of exposing service-role behavior to client paths
+
+            3) Full-stack integration review
+            - Frontend assumptions that do not match database constraints or policies
+            - Breaking API/data-shape changes
+            - Nullability mismatches between UI and DB
+            - Missing handling for auth expiration, permission denial, or network failures
+
+            Severity levels:
+            - HIGH: security issue, data leak, auth/RLS flaw, destructive migration risk, major correctness bug
+            - MEDIUM: likely bug, scalability issue, broken UX path, missing validation
+            - LOW: maintainability concern with clear future risk
+
+            Output format:
+            ## Summary
+            2-4 sentences on what changed and overall risk.
+
+            ## Findings
+            For each finding provide:
+            - Severity: HIGH | MEDIUM | LOW
+            - File: path
+            - Lines: line range if clear
+            - Problem: one concise sentence
+            - Why it matters: one concise sentence
+            - Fix: concrete suggested change
+
+            ## Positive notes
+            Mention 1-3 things done well if applicable.
+
+            Additional rules:
+            - Prioritize RLS, auth, tenancy boundaries, migrations, and data integrity.
+            - Call out missing indexes on foreign keys or frequently filtered columns when relevant.
+            - For frontend, prioritize correctness and user-facing breakage over style.
+            - If no material issues are found, say so clearly.
+          claude_args: "--max-turns 5"
