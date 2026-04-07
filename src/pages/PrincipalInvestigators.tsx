@@ -1,9 +1,6 @@
 "use client";
 
 import { useSearchParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, AlertTriangle, HelpCircle } from "lucide-react";
 
 import { useState, useMemo, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -631,23 +628,6 @@ export default function PrincipalInvestigators() {
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verifyResults, setVerifyResults] = useState<any>(null);
-  const [verifying, setVerifying] = useState(false);
-
-  const runVerification = useCallback(async () => {
-    setVerifying(true);
-    setVerifyOpen(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-affiliations");
-      if (error) throw error;
-      setVerifyResults(data);
-    } catch (e: any) {
-      setVerifyResults({ success: false, error: e.message });
-    } finally {
-      setVerifying(false);
-    }
-  }, []);
 
   const { data: rawRowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
