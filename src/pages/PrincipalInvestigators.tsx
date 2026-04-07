@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "react-router-dom";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 import { AgGridReact } from "ag-grid-react";
@@ -17,7 +17,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, ExternalLink, DollarSign, Columns3, Filter, ShieldAlert } from "lucide-react";
+import { Loader2, Users, ExternalLink, Columns3, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePiName, piProfileUrl, institutionUrl } from "@/lib/pi-utils";
