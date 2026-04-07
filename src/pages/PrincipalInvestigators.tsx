@@ -870,10 +870,6 @@ export default function PrincipalInvestigators() {
               </PopoverContent>
             </Popover>
             <span className="text-sm text-muted-foreground">{rowData.length} people</span>
-            <Button variant="outline" size="sm" className="gap-1.5 ml-auto" onClick={runVerification} disabled={verifying}>
-              <ShieldAlert className="h-4 w-4" />
-              {verifying ? "Verifying..." : "Verify Affiliations"}
-            </Button>
           </div>
         </div>
 
