@@ -678,10 +678,13 @@ export type Database = {
           profile_url: string | null
           research_areas: string[] | null
           resource_id: string | null
+          role: string | null
           scholar_id: string | null
+          secondary_emails: string[] | null
           skills: string[] | null
           updated_at: string
           user_id: string | null
+          working_groups: string[] | null
         }
         Insert: {
           created_at?: string
@@ -692,10 +695,13 @@ export type Database = {
           profile_url?: string | null
           research_areas?: string[] | null
           resource_id?: string | null
+          role?: string | null
           scholar_id?: string | null
+          secondary_emails?: string[] | null
           skills?: string[] | null
           updated_at?: string
           user_id?: string | null
+          working_groups?: string[] | null
         }
         Update: {
           created_at?: string
@@ -706,10 +712,13 @@ export type Database = {
           profile_url?: string | null
           research_areas?: string[] | null
           resource_id?: string | null
+          role?: string | null
           scholar_id?: string | null
+          secondary_emails?: string[] | null
           skills?: string[] | null
           updated_at?: string
           user_id?: string | null
+          working_groups?: string[] | null
         }
         Relationships: [
           {
