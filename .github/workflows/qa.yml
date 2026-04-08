@@ -1,9 +1,7 @@
-name: QA – Visual Regression & Smoke Tests
+name: QA – Smoke & Visual Regression
 
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
   workflow_dispatch:
 
@@ -12,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  playwright:
+  qa:
     name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -39,8 +37,6 @@ jobs:
 
       - name: Start preview server
         run: npx vite preview --port 8080 &
-        env:
-          NODE_ENV: production
 
       - name: Wait for server
         run: |
