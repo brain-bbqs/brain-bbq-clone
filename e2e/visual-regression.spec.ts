@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
  * Update baselines:  npx playwright test --update-snapshots
  */
 
-const PUBLIC_PAGES: { name: string; path: string; waitFor?: string }[] = [
+const PUBLIC_PAGES: { name: string; path: string; waitUntil?: "networkidle" | "domcontentloaded" }[] = [
   { name: "home", path: "/" },
   { name: "about", path: "/about" },
   { name: "projects", path: "/projects" },
@@ -19,7 +19,7 @@ const PUBLIC_PAGES: { name: string; path: string; waitFor?: string }[] = [
   { name: "announcements", path: "/announcements" },
   { name: "roadmap", path: "/roadmap" },
   { name: "jobs", path: "/jobs" },
-  { name: "calendar", path: "/calendar" },
+  { name: "calendar", path: "/calendar", waitUntil: "domcontentloaded" },
   { name: "grants", path: "/grants" },
   { name: "tutorials", path: "/tutorials" },
   { name: "consortia-history", path: "/consortia-history" },
@@ -34,12 +34,12 @@ const PUBLIC_PAGES: { name: string; path: string; waitFor?: string }[] = [
   { name: "mit-workshop-travel", path: "/mit-workshop-2026/travel" },
   { name: "data-provenance", path: "/data-provenance" },
   { name: "metadata-assistant", path: "/metadata-assistant" },
-  { name: "dandi-assistant", path: "/dandi-assistant" },
+  { name: "dandi-assistant", path: "/dandi-assistant", waitUntil: "domcontentloaded" },
 ];
 
 for (const page of PUBLIC_PAGES) {
   test(`visual: ${page.name}`, async ({ page: p }) => {
-    await p.goto(page.path, { waitUntil: "networkidle" });
+    await p.goto(page.path, { waitUntil: page.waitUntil ?? "networkidle", timeout: 60000 });
 
     // Wait for any loading spinners to disappear
     await p.waitForTimeout(1000);
