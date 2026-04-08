@@ -15,7 +15,20 @@ permissions:
 jobs:
   claude:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
     steps:
-      - uses: anthropics/claude-code-action@v1
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 0  # full history so Claude's git ops work
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          # optional: claude_args: '--mode tag'
           anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
