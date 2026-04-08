@@ -68,7 +68,7 @@ const DataSharingPolicy = () => {
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
       <div className="mb-8">
-        <Badge variant="outline" className="mb-3 text-xs">DRAFT — V8</Badge>
+        <Badge className="mb-3 text-sm px-4 py-1.5 bg-yellow-400 text-yellow-950 border-yellow-500 font-bold tracking-wide hover:bg-yellow-400">⚠ WORKING DRAFT — V8</Badge>
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Brain Behaviour and Quantification Synchronization Data Sharing Policy
         </h1>
