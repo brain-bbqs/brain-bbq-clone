@@ -20,6 +20,9 @@ const versionHistory = [
   { date: "Dec 16th, 2025", step: "Draft Proposal V6", authors: "Laura Y. Cabrera, Suliman Sharif" },
   { date: "Feb 3, 2026", step: "Draft Proposal V7", authors: "Laura Y. Cabrera [feedback from ethics advisory board]" },
   { date: "Feb 11, 2026", step: "Draft Proposal V8", authors: "Suliman Sharif" },
+  { date: "Feb 17, 2026", step: "Draft Proposal V9", authors: "Laura Y. Cabrera, Satrajit S. Ghosh" },
+  { date: "Feb 20, 2026", step: "Draft Proposal V10", authors: "Suliman Sharif" },
+  { date: "Feb 27, 2026", step: "Draft Proposal V11", authors: "Suliman Sharif" },
 ];
 
 const VersionHistoryGrid = () => {
@@ -68,17 +71,14 @@ const DataSharingPolicy = () => {
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
       <div className="mb-8">
-        <Badge variant="outline" className="mb-3 text-xs">DRAFT — V8</Badge>
+        <Badge className="mb-3 text-sm px-4 py-1.5 bg-yellow-400 text-yellow-950 border-yellow-500 font-bold tracking-wide hover:bg-yellow-400">⚠ WORKING DRAFT — V11</Badge>
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Brain Behaviour and Quantification Synchronization Data Sharing Policy
         </h1>
         <p className="text-muted-foreground text-sm">
-          Last updated: February 11, 2026
+          Last updated: February 27, 2026
         </p>
       </div>
-
-
-
 
       <Separator className="my-8" />
 
@@ -123,7 +123,7 @@ const DataSharingPolicy = () => {
             Investigators are encouraged to share their Data Management and Sharing Plan (DMSP) with the Data Coordination and Artificial Intelligence Center (DCAIC) so that planned data handling and sharing practices can be reviewed for consistency with this Policy alignment. The DCAIC may provide feedback or recommendations, including suggested consent language to enable broad data sharing when appropriate, which investigators may choose to incorporate into materials submitted for Institutional Review Board (IRB) review prior to the start of data collection. Templates and example broad consent language are available in the Resources section of this Policy<sup>4</sup>. DMSPs may be used as a convenient reference for how investigators intend to handle and share data within the EMBER repositories and serve as a model for aligning project practices with this Policy.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            For research involving human participants or identifiable private information, investigators should work with their IRB or equivalent oversight body to ensure that data collection and sharing comply with legal and ethical requirements, including appropriate informed consent for data sharing and secondary use, and where the institution provides a certification or attestation confirming that data may be shared under specified conditions, investigators should retain this documentation and, when requested, provide it as part of the data submission record. BBQS recognizes that institutions and IRBs may not have standardized attestation forms specific to EMBER. Where additional documentation is needed to confirm that data may be shared under specified conditions, the DCAIC will provide example language or templates that investigators may use in consultation with their IRB or equivalent oversight body. When uploading data or metadata to EMBER-DANDI or EMBERvault, investigators are responsible for ensuring that submissions are consistent with this Policy and applicable institutional approvals, while security controls for EMBER infrastructure and repositories are implemented and maintained by the DCAIC in accordance with appropriate industry and federal standards; the EMBER website will describe any documentation that must be provided at the time of upload and any review steps required before data become publicly accessible or available in controlled-access.
+            For research involving human participants or identifiable private information, investigators should work with their IRB or equivalent oversight body to ensure that data collection and sharing comply with legal and ethical requirements, including appropriate informed consent for data sharing and secondary use, and where the institution provides a certification or attestation confirming that data may be shared under specified conditions, investigators should retain this documentation and, when requested, provide it as part of the data submission record. BBQS recognizes that institutions and IRBs may not have standardized attestation forms specific to EMBER. Where additional documentation is needed to confirm that data may be shared under specified conditions, the DCAIC will provide example language or templates that investigators may use in consultation with their IRB or equivalent oversight body. When uploading data or metadata to EMBER-DANDI or EMBERvault, investigators are responsible for ensuring that submissions are consistent with this Policy and applicable institutional approvals, while security controls for EMBER infrastructure and repositories are implemented and maintained by the DCAIC in accordance with appropriate industry and federal standards; the EMBER website will describe any documentation that must be provided at the time of upload and any review steps required before data become publicly accessible or available in controlled-access
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
             Unless explicitly specified in a given project's Data Management and Sharing Plan, this Policy is intended for human‑generated, human‑ or animal‑subject research data (including associated metadata and documentation) rather than purely synthetic datasets; projects that generate synthetic or simulated data products should clearly label them as such in metadata and, where shared, describe their relationship to underlying research data.
@@ -142,18 +142,21 @@ const DataSharingPolicy = () => {
 
       {/* Section 3 */}
       <section className="mb-10 space-y-6">
-        <h2 className="text-xl font-bold text-foreground">Section 3: Data Storage and Access</h2>
+        <h2 className="text-xl font-bold text-foreground">Section 3: Data Storage and Access / Human Data Sharing</h2>
 
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-2">3.1 Data Repositories</h3>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            The primary basis for determining where BBQS data are stored and how they are governed is whether the data contain protected health information (PHI) or other personally identifiable information (PII), and whether they are subject to the HIPAA Privacy Rule or comparable legal and institutional requirements. Human data that include PHI/PII, or that have not been determined to be de-identified under applicable standards, must be stored in EMBERvault and are governed as identifiable data. Only human data that have been assessed and documented as de-identified under HIPAA or other relevant frameworks, and non-human data that do not contain PII/PHI, may be stored in platforms designated for open or broadly shareable datasets.
+            The primary basis for determining where BBQS data are stored and how they are governed is whether the data contain protected health information (PHI) or other personally identifiable information (PII), and whether they are subject to the HIPAA Privacy Rule or comparable legal and institutional requirements. Human data that include PHI/PII, or that have not been determined to be de-identified under applicable standards, must be stored in EMBERvault and are governed as identifiable data. Only human data that have been assessed and documented as de-identified under HIPAA or other relevant frameworks, and non-human data that do not contain PII/PHI, may be stored in EMBER-DANDI.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            In general, investigators are expected to begin preparing data for submission to EMBER repositories early in the project lifecycle and to make good‑faith efforts to submit data in a timely manner relative to data collection and analysis. Recognizing the effort required for curation, standardization, and quality control, specific timelines for submission may vary by project type and will be informed by the requirements in the specific RFA, guidance from the DCAIC and program officials. Given the collaborative nature of BBQS, members of the consortium (consortia users) are expected to make BBQS project data available to other BBQS Consortia members ahead of the timeline for public release (for data in EMBERvault, this requires a request to the DAC which, if granted, will authorize the access request). Data associated with a publication should ordinarily be made available to other authorized users in an EMBER repository no later than the time of acceptance of the first publication that relies substantially on that data, unless more rapid sharing is required by sponsor or journal policies or justified exceptions are approved. Data use may be subject to license terms and access conditions, and users must provide appropriate attribution to EMBER, the DCAIC, and the contributing project in accordance with those terms.
+            In general, investigators are expected to begin preparing data for submission to EMBER repositories early in the project lifecycle and to make good‑faith efforts to submit data in a timely manner relative to data collection and analysis. Recognizing the effort required for curation, standardization, and quality control, specific timelines for submission may vary by project type and will be informed by the requirements in the specific RFA, guidance from the DCAIC and program officials. Given the collaborative nature of BBQS, members of the consortium (consortia users) are expected to make BBQS project data available to other BBQS Consortia members ahead of the timeline for public release (for data in EMBERvault, this requires a request to the Data Access Committee (DAC) which, if granted, will authorize the access request). Data associated with a publication should ordinarily be made available to other registered/authorized users in an EMBER repository no later than the time of acceptance of the first publication that relies substantially on that data, unless more rapid sharing is required by sponsor or journal policies or justified exceptions are approved. Data use may be subject to license terms and access conditions, and users must provide appropriate attribution to EMBER, the DCAIC, and the contributing project in accordance with those terms.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
             Access by secondary users will follow the applicable access tiers and data use conditions, and all users must provide appropriate attribution to EMBER, the DCAIC, and the contributing project in accordance with the selected license and citation guidance.<sup>5</sup>
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            For operational purposes, BBQS distinguishes among: (a) data that may be shared openly with the general public, including some non‑human datasets and certain human datasets that have been assessed as de-identified and for which no law, regulation, or institutional policy requires controlled access; (b) data that are subject to temporary access restrictions solely for reasons such as publication embargoes requested by data contributors; and (c) data that must remain under controlled access because they involve identifiable or potentially re‑identifiable human information, or otherwise trigger HIPAA, IRB, or comparable legal and institutional protections.
           </p>
         </div>
 
@@ -162,7 +165,10 @@ const DataSharingPolicy = () => {
 
           <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.1 Non-Human Data Sharing</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            All non-human multimodal data, including brain function, brain physiology, peripheral nervous system, and associated data, should be shared by depositing them in EMBER-DANDI, consistent with applicable consortium and repository standards. Investigators are encouraged to share both raw data whenever feasible, with sufficient documentation of data provenance and processing to enable others to understand and reuse the data; more detailed expectations for what constitutes "raw" versus "processed" and which stages should be shared will be developed through EMBER/BBQS standards and communicated in separate guidance and templates for Data Management and Sharing Plans (DMSPs). The timing and scope of public data release, including any embargo periods, should be described in each project's DMSP and will be informed by journal and sponsor requirements as well as consortium guidance, rather than fixed deadlines in this Policy.
+            All non-human multimodal datasets, including video or other media involving brain function, brain physiology, peripheral nervous system, and associated data, are generally expected to be shared in EMBER-DANDI, consistent with applicable consortium and repository standards. Investigators may request more restrictive access or an exception from sharing when there is a reasonable concern that public release could materially increase risks such as targeted harassment of research personnel, facilities, or animal subjects, or substantial misrepresentation of the research in ways that could lead to real-world harms. Requests for such restrictions or exceptions must be submitted to the DCAIC. Moreover, investigators should be aware that some animal recordings may incidentally capture humans. In such cases, submitting investigators are responsible for exercising due diligence to ensure that any incidentally captured human individuals are not personally identifiable in the shared version of the dataset (consistent with the No Reidentification (NR) clause), for example by cropping, blurring, or otherwise transforming the material to remove or obscure direct identifiers. Where such transformations are not feasible or would substantially compromise the scientific value of the dataset, the human‑containing portions should be treated as partially releasable data under this Policy and managed using the procedures described in Section 4.2 (for example, by restricting access, segmenting the dataset, or applying additional data‑use limitations).
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Investigators are encouraged to share both raw data whenever feasible, with sufficient documentation of data provenance and processing to enable others to understand and reuse the data; more detailed expectations for what constitutes "raw" versus "processed" and which stages should be shared will be developed through EMBER/BBQS standards and communicated in separate guidance and templates for Data Management and Sharing Plans (DMSPs). The timing and scope of public data release, including any embargo periods, should be as described in each project's DMSP and as informed by sponsor requirements as well as consortium guidance.
           </p>
 
           <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.2 Human Data Sharing</h4>
@@ -179,34 +185,35 @@ const DataSharingPolicy = () => {
             Before submitting human data to EMBER-DANDI, investigators should ensure that the dataset, in its submitted form, does not contain PHI or other PII under applicable laws and institutional policies, and that sharing is consistent with informed consent, IRB determinations, and any other governing requirements (for example, HIPAA and the Common Rule).
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Figure 1.) illustrates how different BBQS data types (non-human multimodal, human de-identified, associated metadata, and human identifiable data) route through attestation and review steps to either EMBER-DANDI or EMBERvault, and how resulting repository placements determine whether users interact as public, registered, or authorized users under appropriate access controls.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
             Human datasets that currently include PHI/PII, or that have not been assessed as lacking PHI/PII, must instead be deposited in EMBERvault. Investigators may create and submit de-identified derivatives to EMBER-DANDI once identifiers have been removed or transformed using accepted methods such as HIPAA Safe Harbor or Expert Determination.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Decisions about whether a given human dataset that is claimed to be "de-identified but not publicly shareable" may be hosted in EMBER-DANDI, or whether special handling is required (for example, for identifiable but non‑HIPAA‑covered data such as healthy-volunteer videos), will be made by DCAIC in consultation with the PI and, where appropriate, the IRB or other oversight entities, taking into account consent, risk, and NIH program guidance. In the event of unresolved disagreement regarding repository placement or access tiering for a human dataset, the dataset will default to the more protective repository/tier pending final determination by NIH program officials.
+            Decisions about whether a given human dataset that is claimed to be "de-identified but not publicly shareable" may be hosted in EMBER-DANDI, or whether special handling is required (for example, for identifiable but non‑HIPAA‑covered data such as healthy-volunteer videos), will be made by DCAIC in consultation with the PI and, where appropriate, the IRB or other oversight entities, taking into account consent, risk, and NIH program guidance. In the event of unresolved disagreement regarding repository placement or access tiering for a human dataset, the dataset will default to the more protective repository/tier pending final determination by NIH program officials. Within EMBER‑DANDI, non‑identifiable human and non‑human datasets may be made available either as public‑access data, which can be viewed and downloaded without registration, or as registered‑access data, which require users to create an account, agree to basic terms of use, and log in before accessing datasets. The choice between public and registered access will be based on factors such as residual re‑identification risk, sensitivity of the population or behaviors studied, and applicable consent and institutional requirements; DCAIC will provide guidance and, where necessary, consult with the submitting PI and IRB in determining the appropriate access tier for a given dataset.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Before submitting data to EMBERvault, investigators must confirm they have selected the appropriate repository. EMBERvault is intended exclusively for human datasets that are subject to the HIPAA Privacy Rule or comparable.
+            Before submitting data to EMBERvault, investigators must confirm they have selected the appropriate repository. EMBERvault is intended exclusively for human datasets that are subject to the HIPAA Privacy Rule or comparable protections (for example, because they contain PHI or other direct or indirect identifiers), or for human data with a heightened risk of re-identification or particular sensitivity under applicable laws and institutional policies. Data that does not contain PHI/PII should not be submitted to EMBERvault.
           </p>
-
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.2 Data Protection and Access</h4>
-          <p className="text-sm text-foreground/90 leading-relaxed">
-            protections (for example, because they contain PHI or other direct or indirect identifiers), or for human data with a heightened risk of re-identification or particular sensitivity under applicable laws and institutional policies. Data that does not contain PHI/PII should not be submitted to EMBERvault. Within EMBER‑DANDI, non‑identifiable human and non‑human datasets may be made available either as public‑access data, which can be viewed and downloaded without registration, or as registered‑access data, which require users to create an account, agree to basic terms of use, and log in before accessing datasets. The choice between public and registered access will be based on factors such as residual re‑identification risk, sensitivity of the population or behaviors studied, and applicable consent and institutional requirements; DCAIC will provide guidance and, where necessary, consult with the submitting PI and IRB in determining the appropriate access tier for a given dataset.
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Some human datasets may, after appropriate de‑identification and risk assessment, be shared in EMBER‑DANDI under public‑ or registered‑access tiers when this is consistent with type of informed consent obtained, IRB determinations, the Common Rule, and applicable legal and institutional requirements (including, where relevant, IRB‑approved broad consent language). In all cases, such datasets remain subject to the technical and governance controls of the EMBER environment.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Human datasets for which investigators or institutions determine that open or registered sharing is inappropriate—for example, because of identifiability concerns, heightened sensitivity, or more restrictive consent terms—must be deposited and managed in EMBERvault or an equivalent HIPAA‑compliant, IRB‑governed environment and are only available through the controlled‑access workflows described in this Policy.
           </p>
 
           <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.2.1 Certificate of Confidentiality</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            Obtaining a Certificate of Confidentiality (CoC) from NIH may be appropriate for certain EMBERvault submissions that include identifiable, sensitive human data, as an additional protection against compelled disclosure beyond standard regulatory safeguards. When a CoC is in place, the covered institution and investigators are responsible for complying with CoC requirements, including informing participants about the CoC, limiting disclosures as required by subsection 301(d) of the Public Health Service Act, and ensuring that any downstream recipients of identifiable, sensitive information understand that they are also subject to those CoC obligations. CoC status should be recorded in dataset metadata, and the EMBER access workflow should include a click-through acknowledgment in the Data Use Certification or access agreement in which secondary users affirm that they understand the applicable CoC-related restrictions and that subsection 301(d) obligations extend to them.
+            A Certificate of Confidentiality (CoC) from NIH is deemed automatic for eligible studies (after 2017) and available for EMBERvault submissions that include identifiable, sensitive human data, as an additional protection against compelled disclosure beyond standard regulatory safeguards. When a CoC is in place, the covered institution and investigators are responsible for complying with CoC requirements, including informing participants about the CoC, limiting disclosures as required by subsection 301(d) of the Public Health Service Act, and ensuring that any downstream recipients of identifiable, sensitive information understand that they are also subject to those CoC obligations. CoC status should be recorded in dataset metadata, and the EMBER access workflow should include a click-through acknowledgment in the Data Use Certification or access agreement in which secondary users affirm that they understand the applicable CoC-related restrictions and that subsection 301(d) obligations extend to them.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            If the original data were collected under NIH funding and thus covered by a Certificate of Confidentiality, that protection follows the data when they are shared, and secondary recipients are required to uphold the same CoC obligations.
+            If the original data were collected under NIH funding and thus covered by a Certificate of Confidentiality, that protection follows the data when they are shared in perpetuity, and secondary recipients are required to uphold the same CoC obligations.
           </p>
 
           <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.2.2 Group‑ and Community‑Level Risks</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            Even when data are appropriately de‑identified and all individual privacy and consent requirements are met, sharing brain and behavioral data can still create risks at the level of groups or communities (for example, by reinforcing stigma or misleading generalizations about particular diagnostic categories or demographic groups).
-          </p>
-          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            BBQS therefore encourages investigators, institutions, and data users to consider potential group‑level and societal impacts when designing studies, formulating data‑use limitations, and interpreting or disseminating results, and to consult emerging neuroethics guidance and related resources on responsible reuse of brain and behavioral data.
+            Even when data are appropriately de‑identified and all individual privacy and consent requirements are met, sharing brain and behavioral data can still create risks at the level of groups or communities (for example, by reinforcing stigma or misleading generalizations about particular diagnostic categories or demographic groups). BBQS therefore encourages investigators, institutions, and data users to consider potential group‑level and societal impacts when designing studies, formulating data‑use limitations, and interpreting or disseminating results, and to consult emerging neuroethics guidance and related resources on responsible reuse of brain and behavioral data.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
             Emerging technologies, including large‑scale machine learning and generative Artificial Intelligence systems, may enable unanticipated inferences or uses of shared brain and behavioral data, particularly when public datasets are combined with other sources. Even when individual re‑identification does not occur, the ingestion of openly available behavioral, audio, or video data into such systems may contribute to downstream applications or narratives that affect individuals or groups in ways that were not anticipated at the time of data collection. BBQS therefore encourages investigators and data users to consider these evolving technological risks when choosing access tiers, formulating Data Use Limitations, and designing secondary analyses.
@@ -217,30 +224,31 @@ const DataSharingPolicy = () => {
             Access tiers and repository placements are based on contemporary assessments of identifiability, sensitivity, and applicable consent and policy constraints, but these factors may change over time as additional data are generated, linked, or combined with other resources, and as analytic technologies evolve. DCAIC may periodically review dataset‑level risk (including potential group‑ and community‑level risks) and, in consultation with the submitting investigators, institutions, and, where appropriate, NIH program officials, may recommend adjustments to repository placement, access tier, or data‑use conditions when warranted. When such changes materially affect access (for example, moving a dataset from public to registered access, or adding new data‑use limitations), EMBER will provide advance notice and a brief justification to registered users and will update associated documentation and metadata to reflect the new conditions.
           </p>
 
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.3 Animal Data Sharing</h4>
-          <p className="text-sm text-foreground/90 leading-relaxed">
-            Nonhuman datasets, including video or other media involving research animals, are generally expected to be shared in EMBER-DANDI; however, investigators may request more restrictive access or an exception from sharing when there is a reasonable concern that public release could materially increase risks such as targeted harassment of research personnel, facilities, or animal subjects, or substantial misrepresentation of the research in ways that could lead to real-world harms. Requests for such restrictions or exceptions must be submitted to the DCAIC.
-          </p>
-          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Although animal datasets are generally expected to be shared in EMBER‑DANDI, investigators should be aware that some animal recordings may incidentally capture humans. In such cases, submitting investigators are responsible for exercising due diligence to ensure that any incidentally captured human individuals are not personally identifiable in the shared version of the dataset (consistent with the No Reidentification (NR) clause), for example by cropping, blurring, or otherwise transforming the material to remove or obscure direct identifiers. Where such transformations are not feasible or would substantially compromise the scientific value of the dataset, the human‑containing portions should be treated as partially releasable data under this Policy and managed using the procedures described in Section 4.2 (for example, by restricting access, segmenting the dataset, or applying additional data‑use limitations).
-          </p>
-
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.4 Distribution of Data</h4>
+          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.3 Distribution of Data</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
             Data in EMBER‑DANDI may be made available either as public‑access datasets, which can be viewed and downloaded without creating an account, or as registered‑access datasets, which require users to register, log in, and agree to basic terms of use. Public‑access datasets are limited to materials that have been assessed as de‑identified under applicable standards and judged to pose very low residual risk under the consent, IRB, and policy framework for the originating study; datasets with higher residual risk or additional conditions may instead be placed in the registered‑access tier, which requires account creation but does not involve project‑specific DAC review.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Data in EMBERvault have restricted access and are available for secondary research only after a registered user has obtained authorization through the EMBER access process: prospective users must complete a standardized BBQS registration workflow (including identity verification, required training, and acceptance of a common data use agreement) and then obtain project‑specific approval through review by the DCAIC Data Access Committee in consultation with the submitting principal investigator and, where applicable, the submitting institution, to ensure that any proposed use is consistent with the project's attestation documentation, consent, and other governing requirements.
+            Data in EMBERvault have restricted access and are available for secondary research only after a registered user has obtained authorization through the EMBER access process: prospective users must complete a standardized BBQS registration workflow (including identity verification, required training, and acceptance of a common data use agreement) and then obtain project‑specific approval through review by the DCAIC DAC in consultation with the submitting principal investigator and, where applicable, the submitting institution, to ensure that any proposed use is consistent with the project's attestation documentation, consent, and other governing requirements.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Temporary embargoes for reasons such as pending publications may be applied to otherwise public or registered‑access datasets, with embargo duration and conditions described in project‑specific Data Management and Sharing Plans and associated metadata.
           </p>
 
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.5 Informed Consent</h4>
+          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.4 Informed Consent</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            When determining how to share human research data, PIs and submitting institutions should align their data-sharing decisions with the informed consent under which the data were collected, the relevant DMSP, and any applicable institutional or sponsor guidance. These materials provide the basis for determining the appropriate level of data.
+            When determining how to share human research data, PIs and submitting institutions should align their data-sharing decisions with the informed consent (which preferably includes provisions for broad consent) under which the data were collected, the relevant DMSP, and any applicable institutional or sponsor guidance. These materials provide the basis for determining the appropriate level of data sharing, including which data should be archived in EMBER-DANDI or EMBERvault and whether restricted data may be shared for secondary research under a Data Use Agreement between EMBER and the institution of data provenance.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            When determining how to share human research data, PIs and submitting institutions should base their decisions primarily on the informed consent under which the data were collected and on applicable institutional and sponsor requirements, such as IRB determinations and relevant NIH policies. Where helpful, the DMSP submitted at the time of award may be used as a reference point or guidance document, recognizing that specific data-sharing approaches may evolve over the course of a project.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            Investigators should consider existing template examples (see Resources) to include in their consent and data use agreement language, in consultation with their IRB or other oversight bodies. These practices are intended primarily for prospective and future studies; for projects with existing data and consent protocols, investigators are expected only to make reasonable, good‑faith efforts to align with this Policy within the constraints of prior approvals and available resources, documenting any constraints that prevent full alignment.
           </p>
 
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.6 Attestation Documentation</h4>
+          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.5 Attestation Documentation</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            BBQS, through DCAIC, will provide standardized documentation and templates for Attestation Documentation. Attestation documentation is intended to streamline, not duplicate, existing compliance obligations by leveraging materials that have already been reviewed and approved by NIH, institutional IRBs, and other oversight bodies. Rather than creating a new, independent review layer, the Attestation formalizes the responsible Institutional Signing Official's<sup>1</sup> confirmation that the submission and sharing plans are consistent with these prior determinations and protections. Specifically, the signing official attests that the submission and sharing plans are consistent with:
+            BBQS, through DCAIC, will provide standardized documentation and templates for Attestation Documentation. Attestation documentation is intended to streamline, not duplicate, existing compliance obligations by leveraging materials that have already been reviewed and approved by NIH, institutional IRBs, and other oversight bodies. Rather than creating a new, independent review layer, the Attestation formalizes the responsible Institutional Signing Official's<sup>13</sup> confirmation that the submission and sharing plans are consistent with these prior determinations and protections. Specifically, the signing official attests that the submission and sharing plans are consistent with:
           </p>
           <ul className="list-disc list-inside text-sm text-foreground/90 leading-relaxed mt-2 space-y-1 ml-4">
             <li>the IRB‑approved protocol and informed consent;</li>
@@ -248,7 +256,7 @@ const DataSharingPolicy = () => {
             <li>the NIH‑approved Data Management and Sharing Plan (DMSP), including any documented data‑use limitations.</li>
           </ul>
 
-          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.7 Data Withdrawal</h4>
+          <h4 className="text-base font-medium text-foreground mt-4 mb-2">3.2.6 Data Withdrawal</h4>
           <p className="text-sm text-foreground/90 leading-relaxed">
             Submitting investigators and their institutions may request removal of data on individual participants from EMBER in the event that a research participant withdraws or changes his or her consent. However, it must be acknowledged that any data that have already been distributed for registered or authorized researchers for secondary use cannot be retrieved or withdrawn.
           </p>
@@ -270,13 +278,10 @@ const DataSharingPolicy = () => {
             Request for access human data in EMBERvault need to be submitted to the DCAIC DAC rather than directly to individual data‑submitting investigators; DCAIC will notify the PIs when access requests are received and, where appropriate, facilitate communication between requesters and data‑submitting teams for clarification or potential collaboration. DAC decisions are based primarily upon conformance of the proposed research as described in the access request to the data use limitations established by the submitting institution through the Attestation document. DCAIC will accept requests for proposed research uses beginning one month prior to the anticipated data release date. The access period for all controlled-access data is 3 years; at the end of each approved period, data users are able to request extensions based on justified research needs.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Access to human data in EMBER‑DANDI is managed through tiered mechanisms within a fully de‑identified environment: only datasets that have been assessed and documented as lacking PHI/PII under applicable standards may be hosted in EMBER‑DANDI, but they may nonetheless differ in residual re‑identification risk, population sensitivity, or consent‑imposed data‑use limitations. Within this de‑identified space, some datasets are released as open public‑access resources, while others are made available only to registered users or are temporarily embargoed until key publications are complete; in all cases, these tiers are determined based on consent, institutional policies, and risk assessments rather than the presence of direct identifiers.
+            Access to human data in EMBER‑DANDI is managed through tiered mechanisms within a fully de‑identified environment: only datasets that have been assessed and documented as lacking PHI/PII under applicable standards may be hosted in EMBER‑DANDI, but they may nonetheless differ in residual re‑identification risk, population sensitivity, or consent‑imposed data‑use limitations. Within this de‑identified space, some datasets are released as open public‑access resources, while others are made available only to registered users or are temporarily embargoed until key publications are complete; in all cases, these tiers are determined based on consent, institutional policies, and risk assessments rather than the presence of direct identifiers. Requests for access to registered‑tier or embargoed datasets are evaluated primarily to ensure that the proposed use is consistent with the data‑use limitations specified by the contributing institution and any applicable consent or policy constraints, and to facilitate communication between requesters and data‑submitting investigators when clarification, collaboration, or coordinated release is appropriate.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            Requests for access to registered‑tier or embargoed datasets are evaluated primarily to ensure that the proposed use is consistent with the data‑use limitations specified by the contributing institution and any applicable consent or policy constraints, and to facilitate communication between requesters and data‑submitting investigators when clarification, collaboration, or coordinated release is appropriate.
-          </p>
-          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            If the original data were collected under NIH funding and thus covered by a Certificate of Confidentiality, that protection follows the data when they are shared, and secondary recipients are required to uphold the same CoC obligations.
+            Access to BBQS resources is determined by a combination of user attributes, including consortial membership, registration and authorization status within EMBER, and project‑specific governance such as IRB protocols and Attestation documentation. Within these guardrails, submitting investigators may designate limited embargoed access for designated project teams or collaborators, and EMBER may support group or administrative accounts as needed for internal operations, provided that all such arrangements remain consistent with applicable consent, institutional policies, and this Policy.
           </p>
         </div>
 
@@ -316,14 +321,17 @@ const DataSharingPolicy = () => {
             BBQS, through DCAIC, will focus on incident detection, containment, and coordination rather than direct sanctioning. Suspected efforts to reidentify human participants—including attempts by users of unrestricted-access data—will be treated as incidents under this workflow, even where the actor is not a known registered/authorized user. In the event of a suspected or confirmed violation of the Data Use Certification or Code of Conduct, DCAIC will receive and document incident reports, take immediate technical steps within EMBER and EMBERvault to contain the issue where feasible (such as temporarily suspending affected accounts or access paths), promptly notify the relevant submitting institutions and NIH with a concise incident description, and then coordinate with those parties on remediation, follow‑up, and any necessary changes to local policies or infrastructure.
           </p>
           <p className="text-sm text-foreground/90 leading-relaxed mt-3">
-            NIH will assess the scope and seriousness of the incident and may require specific corrective and preventive actions. Depending on severity and whether problems are remediated, possible actions include requiring technical or policy fixes and retraining as conditions for continued access, suspending or terminating specific Data Access Requests, revoking access to controlled data, and referring serious or unresolved matters to the institution or relevant oversight bodies.
+            NIH will assess the scope and seriousness of the incident and may require specific corrective and preventive actions. Depending on severity and whether problems are remediated, possible actions include requiring technical or policy fixes and retraining as conditions for continued access, suspending or terminating specific Data Access Requests, revoking access to some or all controlled‑access datasets, and, in more serious or repeated cases, taking broader compliance or award‑related actions consistent with NIH grants policy.
           </p>
         </div>
 
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-2">4.6 License Applicability and Distribution</h3>
           <p className="text-sm text-foreground/90 leading-relaxed">
-            All human‑derived data—including imaging, electrophysiological recordings, time‑series, behavioral videos, derived measurements, and annotations—must carry the No Reidentification (NR) clause unless explicitly exempted through the DAC, and multimodal datasets must include documentation describing the linkage across data types, with any reuse required to preserve these documented relationships. For public and unrestricted-access distributions, the NR clause will be presented as a standardized license rider or terms-of-use notice (e.g., via the EMBER portal and/or repository dataset-level metadata) so that it travels with the dataset and is visible at the point of access.
+            All human‑derived data—including imaging, electrophysiological recordings, time‑series, behavioral videos, derived measurements, and annotations—must carry the No Reidentification (NR) clause unless explicitly exempted through the DAC, and multimodal datasets must include documentation describing the linkage across data types, with any reuse required to preserve these documented relationships, regardless of the underlying copyright license. For public and unrestricted-access distributions, the NR clause will be presented as a standardized license rider or terms-of-use notice (e.g., via the EMBER portal and/or repository dataset-level metadata) so that it travels with the dataset and is visible at the point of access.
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed mt-3">
+            License terms (for example, CC‑BY or more restrictive terms governing commercial use) operate independently of access tiers, and submitting investigators should select licenses that are consistent with consent, institutional policies, and intended downstream uses while recognizing that even openly licensed human‑derived data remain subject to the NR clause and applicable ethical and legal constraints.
           </p>
         </div>
 
@@ -351,11 +359,11 @@ const DataSharingPolicy = () => {
           <li>The list of HIPAA identifiers that must be removed is available at 45 CFR 164.514(b)(2). See: <a href="http://www.gpo.gov/fdsys/pkg/CFR-2002-title45-vol1/pdf/CFR-2002-title45-vol1-sec164-514.pdf" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">http://www.gpo.gov/fdsys/pkg/CFR-2002-title45-vol1/pdf/CFR-2002-title45-vol1-sec164-514.pdf</a>.</li>
           <li>Federal Policy for the Protection of Human Subjects (Common Rule). 45 CFR Part 46. See <a href="http://www.hhs.gov/ohrp/humansubjects/commonrule/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">http://www.hhs.gov/ohrp/humansubjects/commonrule/</a>.</li>
           <li>For additional information about Certificates of Confidentiality, see <a href="https://grants.nih.gov/grants/policy/co" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://grants.nih.gov/grants/policy/co</a>.</li>
-          <li>Confidentiality Certificate. HG-2009-01. Issued to the National Center for Biotechnology Information, National Library of Medicine, NIH.</li>
+          <li>Confidentiality Certificate. HG-2009-01. Issued to the National Center for Biotechnology Information, National Library of Medicine, NIH. See <a href="http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/GetPdf.cgi?document_name=ConfidentialityCertificate.pdf" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/GetPdf.cgi?document_name=ConfidentialityCertificate.pdf</a>.</li>
           <li>Presidential Commission for the Study of Bioethical Issues. Anticipate and Communicate: Ethical Management of Incidental and Secondary Findings in the Clinical, Research, and Direct-to-Consumer Contexts. December 2013. See <a href="http://bioethics.gov/node/3183" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">http://bioethics.gov/node/3183</a>.</li>
           <li>An Institutional Signing Official is generally a senior official at an institution who is credentialed through NIH eRA Commons system and is authorized to enter the institution into a legally binding contract and sign on behalf of an investigator who has submitted data or a data access request to NIH.</li>
           <li>For guidance on clearly communicating inappropriate data uses, see NIH Points to Consider in Drafting Effective Data Use Limitation Statements, <a href="http://gwas.nih.gov/pdf/NIH_PTC_in_Drafting_DUL_Statements.pdf" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">http://gwas.nih.gov/pdf/NIH_PTC_in_Drafting_DUL_Statements.pdf</a>.</li>
-          <li>For guidance see, <a href="https://www.researchallofus.org/faq/data-user-code-of-conduct/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.researchallofus.org/faq/data-user-code-of-conduct/</a></li>
+          <li>For guidance see, <a href="https://www.researchallofus.org/faq/data-user-code-of-conduct/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.researchallofus.org/faq/data-user-code-of-conduct/</a> <a href="https://support.researchallofus.org/hc/en-us/article_attachments/22130615077908" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://support.researchallofus.org/hc/en-us/article_attachments/22130615077908</a></li>
           <li>For guidance see, <a href="https://nda.nih.gov/ndapublicweb/Documents/NDA+Data+Access+Request+DUC+FINAL.pdf" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://nda.nih.gov/ndapublicweb/Documents/NDA+Data+Access+Request+DUC+FINAL.pdf</a></li>
         </ol>
       </section>
@@ -367,8 +375,16 @@ const DataSharingPolicy = () => {
         <h2 className="text-xl font-bold text-foreground">Glossary</h2>
         <dl className="text-sm text-foreground/90 leading-relaxed space-y-4">
           <div>
-            <dt className="font-semibold text-foreground">"Controlled Access Data"</dt>
+            <dt className="font-semibold text-foreground">Controlled Access Data</dt>
             <dd className="ml-4">Data that require a Data Use Certification or institutional approval before access is granted.</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-foreground">Common Rule</dt>
+            <dd className="ml-4">The U.S. Federal Policy for the Protection of Human Subjects that sets baseline requirements for IRB review, informed consent, and protections for people in research (45 CFR 46, Subpart A).</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-foreground">Broad consent</dt>
+            <dd className="ml-4">Informed consent that allows storage, maintenance, and secondary research use of identifiable private information or biospecimens for future, unspecified studies, as permitted under the Common Rule and applicable institutional policies.</dd>
           </div>
           <div>
             <dt className="font-semibold text-foreground">Data Access Tiers</dt>
@@ -388,7 +404,7 @@ const DataSharingPolicy = () => {
           </div>
           <div>
             <dt className="font-semibold text-foreground">DCAIC Data Access Committee</dt>
-            <dd className="ml-4">A trusted advisory body comprised by selected BBQS members that can facilitate discussions around data sharing.</dd>
+            <dd className="ml-4">A trusted advisory body composed of selected experts that reviews and advises on data access requests, helps interpret data‑use limitations, and facilitates discussions around responsible data sharing within BBQS.</dd>
           </div>
           <div>
             <dt className="font-semibold text-foreground">DUL (Data Use Limitation)</dt>
@@ -404,7 +420,7 @@ const DataSharingPolicy = () => {
           </div>
           <div>
             <dt className="font-semibold text-foreground">EMBER-DANDI</dt>
-            <dd className="ml-4">Open access data store for EMBER with embargo function.</dd>
+            <dd className="ml-4">Open access data store for EMBER.</dd>
           </div>
           <div>
             <dt className="font-semibold text-foreground">EMBERvault</dt>
@@ -470,7 +486,16 @@ const DataSharingPolicy = () => {
             <dt className="font-semibold text-foreground">Authorized Users</dt>
             <dd className="ml-4">Registered users that have been granted access to EMBERvault.</dd>
           </div>
+          <div>
+            <dt className="font-semibold text-foreground">Consortia User</dt>
+            <dd className="ml-4">A user who is a member of the BBQS consortium. Consortia users are typically Registered users and may receive prioritized or early access to BBQS project data and internal resources, consistent with this Policy and applicable agreements.</dd>
+          </div>
         </dl>
+
+        <h3 className="text-lg font-semibold text-foreground mt-6 mb-2">Workspace</h3>
+        <p className="text-sm text-foreground/90 leading-relaxed ml-2">
+          A user-created analytical sandbox within the EMBER Workbench where users can virtually pull in subsets of data from the BBQS Program database and perform analyses; Authorized Data Users must create a new Workspace for each research project using BBQS data and provide a plain language description of the research project, as well as other project information, that will be published publicly in the DCAIC/EMBER projects directory.
+        </p>
       </section>
 
       <Separator className="my-8" />
@@ -480,12 +505,13 @@ const DataSharingPolicy = () => {
         <h2 className="text-xl font-bold text-foreground">Resources</h2>
         <p className="text-sm text-foreground/90 font-medium">Examples of Broad Consent templates:</p>
         <ul className="list-disc list-inside text-sm text-foreground/90 leading-relaxed space-y-1 ml-4">
-          <li>Attachment C - August 2, 2017</li>
-          <li>Open Brain Consent</li>
-          <li>Brainlife EZGov</li>
-          <li>Lookit Community IRB and Legal Information</li>
-          <li>All of Us Consent Process</li>
-          <li>All of Us Consent to Join</li>
+          <li><a href="https://www.hhs.gov/ohrp/sachrp-committee/recommendations/attachment-d-august-2-2017/index.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">SACHRP Attachment D - August 2, 2017</a></li>
+          <li><a href="https://www.hhs.gov/ohrp/sachrp-committee/recommendations/attachment-c-august-2-2017/index.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">SACHRP Attachment C - August 2, 2017</a></li>
+          <li><a href="https://open-brain-consent.readthedocs.io/en/stable/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Open Brain Consent</a></li>
+          <li><a href="https://brainlife.io/ezgov/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Brainlife EZGov</a></li>
+          <li><a href="https://lookit.readthedocs.io/en/develop/community-irb-and-legal-information.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Lookit Community IRB and Legal Information</a></li>
+          <li><a href="https://allofus.nih.gov/article/all-us-consent-process" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">All of Us Consent Process</a></li>
+          <li><a href="https://allofus.nih.gov/sfsites/c/resource/aouConsenttoJoinAoUEnglish" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">All of Us Consent to Join</a></li>
         </ul>
       </section>
 
