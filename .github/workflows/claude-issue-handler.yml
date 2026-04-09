@@ -1,0 +1,66 @@
+name: Claude Issue Handler
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  handle-issue:
+    if: |
+      github.event.action == 'labeled' && github.event.label.name == 'claude' ||
+      github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Handle issue with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          direct_prompt: |
+            You are an AI assistant that handles GitHub issues for this repository.
+
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            Issue body:
+            ${{ github.event.issue.body }}
+
+            Follow these steps:
+
+            1. **Analyze the issue**: Read the issue carefully and understand what needs to be done.
+
+            2. **Post a plan**: Comment on the issue with a clear plan describing:
+               - What files need to be changed
+               - What the approach will be
+               - Any potential risks or considerations
+
+            3. **Check if already fixed**: Search the codebase and recent git history to see if this issue has already been addressed. If it has, comment on the issue explaining that it appears to be fixed, reference the relevant commit(s) or code, and stop.
+
+            4. **Implement the fix**: If the issue is not yet fixed, make the necessary code changes. Create clear, minimal changes that address the issue.
+
+            5. **Create a PR**: Create a pull request with:
+               - A descriptive title referencing the issue
+               - A summary of changes in the PR body
+               - A reference to the issue (Fixes #${{ github.event.issue.number }})
+
+            Important guidelines:
+            - Be conservative in your changes — only modify what is needed
+            - Do not introduce new dependencies unless absolutely necessary
+            - Follow the existing code style and patterns
+            - If the issue is unclear or requires more information, comment asking for clarification instead of guessing
+          claude_args: "--max-turns 25"
