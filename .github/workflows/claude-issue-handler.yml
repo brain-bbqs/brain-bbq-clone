@@ -135,7 +135,7 @@ jobs:
             - Do not introduce new dependencies unless absolutely necessary
             - Follow the existing code style and patterns
             - If the issue is unclear or requires more information, comment asking for clarification instead of making changes
-          claude_args: "--max-turns 25"
+          claude_args: "--max-turns 50"
 
       - name: Remove working label
         if: always() && steps.check-existing.outputs.skip != 'true'
