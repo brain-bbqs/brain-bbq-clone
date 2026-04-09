@@ -14,6 +14,11 @@ permissions:
 
 jobs:
   claude:
+    # Only run for PR-related comments (issue_comment on PRs or PR review comments)
+    # Issue-only comments with @claude are handled by claude-issue-handler.yml
+    if: |
+      github.event_name == 'pull_request_review_comment' ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     runs-on: ubuntu-latest
     permissions:
       contents: write

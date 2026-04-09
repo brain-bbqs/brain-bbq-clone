@@ -3,6 +3,8 @@ name: Claude Issue Handler
 on:
   issues:
     types: [opened, labeled]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
@@ -12,9 +14,14 @@ permissions:
 
 jobs:
   handle-issue:
+    # Trigger when:
+    # 1. Issue is labeled with 'claude'
+    # 2. Issue is opened with 'claude' label
+    # 3. Someone comments '@claude' on an issue (not a PR)
     if: |
-      github.event.action == 'labeled' && github.event.label.name == 'claude' ||
-      github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'claude')
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'claude')) ||
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.comment.body, '@claude'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,12 +30,80 @@ jobs:
       id-token: write
 
     steps:
+      - name: Check if issue is already being addressed
+        id: check-existing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Check for 'in-progress' or 'claude-working' labels
+            const skipLabels = ['in-progress', 'claude-working'];
+            const hasSkipLabel = issue.labels.some(l => skipLabels.includes(l.name));
+            if (hasSkipLabel) {
+              core.setOutput('skip', 'true');
+              core.info('Issue already has in-progress/claude-working label, skipping');
+              return;
+            }
+
+            // Check for linked open PRs that reference this issue
+            const { data: events } = await github.rest.issues.listEventsForTimeline({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              per_page: 100,
+            });
+
+            const linkedPRs = events.filter(e =>
+              e.event === 'cross-referenced' &&
+              e.source?.issue?.pull_request &&
+              e.source?.issue?.state === 'open'
+            );
+
+            if (linkedPRs.length > 0) {
+              core.setOutput('skip', 'true');
+              core.info(`Issue already has ${linkedPRs.length} linked open PR(s), skipping`);
+              return;
+            }
+
+            core.setOutput('skip', 'false');
+
+      - name: Skip notification
+        if: steps.check-existing.outputs.skip == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: '⏭️ This issue appears to already be in progress (has a linked open PR or in-progress label). Skipping to avoid duplicate work.'
+            });
+
+      - name: Add working label
+        if: steps.check-existing.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: ['claude-working']
+              });
+            } catch (e) {
+              core.info('Could not add label: ' + e.message);
+            }
+
       - name: Checkout repo
+        if: steps.check-existing.outputs.skip != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Handle issue with Claude
+        if: steps.check-existing.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -64,3 +139,19 @@ jobs:
             - Follow the existing code style and patterns
             - If the issue is unclear or requires more information, comment asking for clarification instead of guessing
           claude_args: "--max-turns 25"
+
+      - name: Remove working label
+        if: always() && steps.check-existing.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                name: 'claude-working'
+              });
+            } catch (e) {
+              core.info('Could not remove label: ' + e.message);
+            }
