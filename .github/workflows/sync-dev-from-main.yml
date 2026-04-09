@@ -27,24 +27,18 @@ jobs:
       - name: Create sync PR
         if: steps.check.outputs.behind != '0'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Check if a sync PR already exists
-          EXISTING=$(gh pr list --repo "$GITHUB_REPOSITORY" --head main --base dev --state open --json number --jq '.[0].number')
+          EXISTING=$(gh pr list --head main --base dev --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             echo "Sync PR #$EXISTING already exists, skipping"
             exit 0
           fi
 
           gh pr create \
-            --repo "$GITHUB_REPOSITORY" \
             --title "Sync dev from main" \
-            --body "$(cat <<'EOF'
-          Automated PR to keep `dev` up to date with `main`.
-
-          This was triggered by a merge to `main`. Please review and merge to rebase `dev`.
-          EOF
-          )" \
+            --body "Automated PR to keep \`dev\` up to date with \`main\`. Triggered by a merge to \`main\`." \
             --head main \
             --base dev \
             --label "sync"
