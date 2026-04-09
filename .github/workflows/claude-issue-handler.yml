@@ -138,6 +138,8 @@ jobs:
             - Do not introduce new dependencies unless absolutely necessary
             - Follow the existing code style and patterns
             - If the issue is unclear or requires more information, comment asking for clarification instead of guessing
+            - PRs should target the `dev` branch as the base branch, unless the issue is a critical hotfix (e.g., security vulnerability, production outage, broken deploy) in which case target `main`
+            - Create your feature branch from `dev` (or `main` for hotfixes)
           claude_args: "--max-turns 25"
 
       - name: Remove working label
