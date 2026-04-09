@@ -107,7 +107,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          additional_permissions: "Edit,Write,Bash(npm:*),Bash(npx:*),Bash(gh pr create:*),Bash(git checkout:*),Bash(git branch:*),Bash(git diff:*),Bash(git log:*),Bash(git status:*)"
           base_branch: "dev"
           prompt: |
             You are an AI assistant that handles GitHub issues for this repository.
