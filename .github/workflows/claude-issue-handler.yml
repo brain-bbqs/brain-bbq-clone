@@ -107,39 +107,35 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          direct_prompt: |
+          additional_permissions: "Edit,Write,Bash(npm:*),Bash(npx:*),Bash(gh pr create:*),Bash(git checkout:*),Bash(git branch:*),Bash(git diff:*),Bash(git log:*),Bash(git status:*)"
+          base_branch: "dev"
+          prompt: |
             You are an AI assistant that handles GitHub issues for this repository.
-
-            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
-
-            Issue body:
-            ${{ github.event.issue.body }}
 
             Follow these steps:
 
             1. **Analyze the issue**: Read the issue carefully and understand what needs to be done.
 
-            2. **Post a plan**: Comment on the issue with a clear plan describing:
+            2. **Post a plan**: Comment on the issue describing:
                - What files need to be changed
                - What the approach will be
                - Any potential risks or considerations
 
-            3. **Check if already fixed**: Search the codebase and recent git history to see if this issue has already been addressed. If it has, comment on the issue explaining that it appears to be fixed, reference the relevant commit(s) or code, and stop.
+            3. **Check if already fixed**: Search the codebase and recent git history to determine if this issue has already been addressed. If it has, comment on the issue explaining that it appears to be fixed, reference the relevant commit(s) or code, and stop here.
 
-            4. **Implement the fix**: If the issue is not yet fixed, make the necessary code changes. Create clear, minimal changes that address the issue.
+            4. **Implement the fix**: If the issue is not yet fixed, make the necessary code changes. Create clear, minimal changes that address the issue. Commit your changes with a descriptive message.
 
-            5. **Create a PR**: Create a pull request with:
+            5. **Create a PR**: Push your branch and create a pull request targeting the `dev` branch with:
                - A descriptive title referencing the issue
                - A summary of changes in the PR body
-               - A reference to the issue (Fixes #${{ github.event.issue.number }})
+               - A reference to close the issue (Fixes #${{ github.event.issue.number }})
+               - If this is a critical hotfix (security vulnerability, production outage, broken deploy), target `main` instead of `dev`
 
             Important guidelines:
             - Be conservative in your changes — only modify what is needed
             - Do not introduce new dependencies unless absolutely necessary
             - Follow the existing code style and patterns
-            - If the issue is unclear or requires more information, comment asking for clarification instead of guessing
-            - PRs should target the `dev` branch as the base branch, unless the issue is a critical hotfix (e.g., security vulnerability, production outage, broken deploy) in which case target `main`
-            - Create your feature branch from `dev` (or `main` for hotfixes)
+            - If the issue is unclear or requires more information, comment asking for clarification instead of making changes
           claude_args: "--max-turns 25"
 
       - name: Remove working label
