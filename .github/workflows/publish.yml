@@ -16,30 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  migrate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      - name: Link Supabase project
-        run: supabase link --project-ref vpexxhfpvghlejljwpvt
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
-      - name: Push database migrations
-        run: supabase db push
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
   build:
     runs-on: ubuntu-latest
-    needs: migrate
     steps:
       - name: Checkout
         uses: actions/checkout@v4
