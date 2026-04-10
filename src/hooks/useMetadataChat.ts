@@ -156,6 +156,13 @@ export function useMetadataChat(grantNumber: string | null) {
 
   const sendMessage = useCallback(async (content: string) => {
     if (!grantNumber || !content.trim()) return;
+    if (!user) {
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, { role: "assistant" as const, content: "Please sign in to use the metadata assistant." }],
+      }));
+      return;
+    }
 
     const userMsg: ChatMessage = { role: "user", content: content.trim() };
     setState(prev => ({
