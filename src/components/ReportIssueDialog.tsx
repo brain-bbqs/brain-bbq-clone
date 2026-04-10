@@ -42,7 +42,10 @@ export function ReportIssueDialog() {
 
     try {
       const { data, error } = await supabase.functions.invoke("create-github-issue", {
-        body: { title: title.trim(), description: description.trim() },
+        body: {
+          title: title.trim(),
+          description: `${description.trim() || "No description provided."}\n\n---\n_Reported via BBQS Issue Reporter by ${user?.email || "anonymous"}_`,
+        },
       });
 
       if (error) {
