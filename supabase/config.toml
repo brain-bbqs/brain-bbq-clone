@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.verify-affiliations]
 verify_jwt = false
+
+[functions.auth-notify]
+verify_jwt = false
