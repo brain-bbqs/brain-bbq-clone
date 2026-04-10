@@ -71,7 +71,7 @@ export default function FeatureSuggestions() {
       const { data: ghData, error: ghError } = await supabase.functions.invoke("create-github-issue", {
         body: {
           title: `[Feature Request] ${title.trim()}`,
-          description: `**User Request**\n\n${description.trim() || "No description provided."}\n\n---\n_Submitted via BBQS Feature Suggestions by ${user?.email || "anonymous"}_`,
+          description: `**User Request**\n\n${description.trim() || "No description provided."}\n\n---\n_Submitted via BBQS Feature Suggestions_`,
           labels: ["enhancement", "user-request"],
         },
       });
