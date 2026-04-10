@@ -28,21 +28,48 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use Supabase's built-in SMTP to send via the admin API
-    // Since we don't have a transactional email service set up,
-    // we'll use the Resend API if available, otherwise log the notification
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY"); // just checking env availability
-
-    // Try sending via a simple SMTP relay or log it
-    // For now, we store the notification in the database as a fallback
-    // and log it prominently so it shows up in edge function logs
-    console.log("=== AUTH FAILURE NOTIFICATION ===");
+    // Always log the notification for audit purposes
+    console.log("=== AUTH NOTIFICATION ===");
     console.log(`TO: ${to}`);
     console.log(`SUBJECT: ${subject}`);
-    console.log(`BODY: ${html}`);
-    console.log("=== END NOTIFICATION ===");
 
-    return new Response(JSON.stringify({ success: true, method: "logged" }), {
+    // Send via Resend API
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY not set — falling back to log-only mode");
+      console.log(`BODY: ${html}`);
+      console.log("=== END NOTIFICATION (logged only) ===");
+      return new Response(JSON.stringify({ success: true, method: "logged" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const resendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "BBQS Alerts <alerts@brain-bbqs.org>",
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+
+    const resendData = await resendRes.json();
+
+    if (!resendRes.ok) {
+      console.error("Resend API error:", JSON.stringify(resendData));
+      return new Response(JSON.stringify({ success: false, error: resendData }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("=== EMAIL SENT via Resend ===", resendData.id);
+    return new Response(JSON.stringify({ success: true, method: "resend", id: resendData.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
