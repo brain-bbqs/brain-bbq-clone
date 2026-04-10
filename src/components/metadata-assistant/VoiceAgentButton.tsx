@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,13 @@ export function VoiceAgentButton({ className }: VoiceAgentButtonProps) {
 
   const isConnected = conversation.status === "connected";
 
+  const { user } = useAuth();
+
   const startConversation = useCallback(async () => {
+    if (!user) {
+      toast.error("Please sign in to use the voice agent.");
+      return;
+    }
     setIsConnecting(true);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
