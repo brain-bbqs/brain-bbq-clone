@@ -6,6 +6,79 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ADMIN_NOTIFY_EMAIL = "dcaic-admin@brain-bbqs.org";
+
+interface FailureInfo {
+  email?: string;
+  name?: string;
+  errorReason: string;
+  ipAddress?: string;
+  metadata?: Record<string, unknown>;
+}
+
+async function logAndNotifyFailure(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  info: FailureInfo,
+) {
+  // 1. Log to auth_audit_log table
+  try {
+    await supabaseAdmin.from("auth_audit_log").insert({
+      attempted_email: info.email || null,
+      globus_name: info.name || null,
+      error_reason: info.errorReason,
+      ip_address: info.ipAddress || null,
+      metadata: info.metadata || {},
+    });
+  } catch (e) {
+    console.error("Failed to log auth failure:", e);
+  }
+
+  // 2. Send admin notification email via Supabase Auth admin API (magic-link style)
+  //    We use a simple approach: invoke a separate edge function or send directly
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const timestamp = new Date().toISOString();
+    const subject = `[BBQS] Failed Auth Attempt: ${info.errorReason}`;
+    const body = [
+      `<h2>Failed Authentication Attempt</h2>`,
+      `<p><strong>Time:</strong> ${timestamp}</p>`,
+      `<p><strong>Email:</strong> ${info.email || "unknown"}</p>`,
+      `<p><strong>Globus Name:</strong> ${info.name || "unknown"}</p>`,
+      `<p><strong>Error:</strong> ${info.errorReason}</p>`,
+      `<p><strong>IP:</strong> ${info.ipAddress || "unknown"}</p>`,
+      info.metadata
+        ? `<p><strong>Details:</strong> <pre>${JSON.stringify(info.metadata, null, 2)}</pre></p>`
+        : "",
+    ].join("\n");
+
+    // Use the auth-notify edge function for sending email
+    await fetch(`${SUPABASE_URL}/functions/v1/auth-notify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        to: ADMIN_NOTIFY_EMAIL,
+        subject,
+        html: body,
+      }),
+    });
+  } catch (e) {
+    console.error("Failed to send admin notification:", e);
+  }
+}
+
+function getClientIp(req: Request): string | undefined {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    undefined
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,6 +90,7 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const url = new URL(req.url);
+  const clientIp = getClientIp(req);
 
   try {
     // GET request = Globus callback (redirect from Globus after user auth)
@@ -36,6 +110,29 @@ Deno.serve(async (req) => {
       } catch {
         return new Response("Invalid state parameter", { status: 400 });
       }
+
+      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      // Helper to redirect with error and log/notify
+      const errorRedirectAndNotify = async (
+        errorCode: string,
+        email?: string,
+        name?: string,
+        extra?: Record<string, unknown>,
+      ) => {
+        await logAndNotifyFailure(supabaseAdmin, {
+          email,
+          name,
+          errorReason: errorCode,
+          ipAddress: clientIp,
+          metadata: extra,
+        });
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", errorCode);
+        return Response.redirect(errorRedirect.toString(), 302);
+      };
 
       // The redirect_uri for token exchange must be THIS edge function URL
       const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/globus-auth`;
@@ -57,9 +154,7 @@ Deno.serve(async (req) => {
       if (!tokenRes.ok) {
         const err = await tokenRes.text();
         console.error("Globus token error:", err);
-        const errorRedirect = new URL(frontendRedirect);
-        errorRedirect.searchParams.set("globus_error", "token_exchange_failed");
-        return Response.redirect(errorRedirect.toString(), 302);
+        return await errorRedirectAndNotify("token_exchange_failed", undefined, undefined, { globus_error: err });
       }
 
       const tokens = await tokenRes.json();
@@ -70,9 +165,7 @@ Deno.serve(async (req) => {
       });
 
       if (!userinfoRes.ok) {
-        const errorRedirect = new URL(frontendRedirect);
-        errorRedirect.searchParams.set("globus_error", "userinfo_failed");
-        return Response.redirect(errorRedirect.toString(), 302);
+        return await errorRedirectAndNotify("userinfo_failed");
       }
 
       const userinfo = await userinfoRes.json();
@@ -80,18 +173,10 @@ Deno.serve(async (req) => {
       const name = userinfo.name || userinfo.preferred_username || "";
 
       if (!email) {
-        const errorRedirect = new URL(frontendRedirect);
-        errorRedirect.searchParams.set("globus_error", "no_email");
-        return Response.redirect(errorRedirect.toString(), 302);
+        return await errorRedirectAndNotify("no_email", undefined, name);
       }
 
-      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-
       // Resolve the canonical email for this person.
-      // If they logged in with a secondary email, find their primary email
-      // so the Supabase auth account is always tied to the primary.
       let canonicalEmail = email;
       const emailLower = email.toLowerCase();
 
@@ -106,7 +191,6 @@ Deno.serve(async (req) => {
         canonicalEmail = invBySecondary.email;
         console.log(`Resolved secondary email ${email} → canonical ${canonicalEmail}`);
       } else {
-        // Also check if this email matches a primary investigator email
         const { data: invByPrimary } = await supabaseAdmin
           .from("investigators")
           .select("email")
@@ -136,7 +220,6 @@ Deno.serve(async (req) => {
           .eq("domain", domain)
           .maybeSingle();
 
-        // Also check if they're a known investigator (by any email)
         const { data: knownInvestigator } = await supabaseAdmin
           .from("investigators")
           .select("id")
@@ -144,9 +227,10 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (!allowedDomain && !knownInvestigator) {
-          const errorRedirect = new URL(frontendRedirect);
-          errorRedirect.searchParams.set("globus_error", "domain_not_allowed");
-          return Response.redirect(errorRedirect.toString(), 302);
+          return await errorRedirectAndNotify("domain_not_allowed", email, name, {
+            domain,
+            globus_username: userinfo.preferred_username,
+          });
         }
 
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -157,9 +241,9 @@ Deno.serve(async (req) => {
 
         if (createError) {
           console.error("Create user error:", createError);
-          const errorRedirect = new URL(frontendRedirect);
-          errorRedirect.searchParams.set("globus_error", "create_user_failed");
-          return Response.redirect(errorRedirect.toString(), 302);
+          return await errorRedirectAndNotify("create_user_failed", email, name, {
+            error: createError.message,
+          });
         }
         userId = newUser.user.id;
       }
@@ -173,9 +257,9 @@ Deno.serve(async (req) => {
 
       if (linkError || !linkData) {
         console.error("Generate link error:", linkError);
-        const errorRedirect = new URL(frontendRedirect);
-        errorRedirect.searchParams.set("globus_error", "session_failed");
-        return Response.redirect(errorRedirect.toString(), 302);
+        return await errorRedirectAndNotify("session_failed", email, name, {
+          error: linkError?.message,
+        });
       }
 
       // Redirect back to frontend with token_hash
@@ -191,10 +275,7 @@ Deno.serve(async (req) => {
     const { action, redirect_uri } = await req.json();
 
     if (action === "login") {
-      // The redirect_uri for Globus must be THIS edge function (GET handler)
       const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/globus-auth`;
-
-      // Encode the frontend redirect URI in the state parameter
       const state = btoa(JSON.stringify({ redirect_uri }));
 
       const authUrl = new URL("https://auth.globus.org/v2/oauth2/authorize");
