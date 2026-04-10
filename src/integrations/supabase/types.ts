@@ -191,6 +191,36 @@ export type Database = {
           },
         ]
       }
+      auth_audit_log: {
+        Row: {
+          attempted_email: string | null
+          created_at: string
+          error_reason: string
+          globus_name: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          attempted_email?: string | null
+          created_at?: string
+          error_reason: string
+          globus_name?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          attempted_email?: string | null
+          created_at?: string
+          error_reason?: string
+          globus_name?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
