@@ -194,7 +194,7 @@ serve(async (req) => {
 
     const messages: Message[] = history?.map((m) => ({ role: m.role as any, content: m.content })) || [];
 
-    const contexts = await searchKnowledge(supabaseClient, message);
+    const contexts = await searchKnowledge(supabaseClient, sanitizedMessage);
     const systemPrompt = buildSystemPrompt(contexts);
 
     await supabaseClient.from("chat_messages").insert({
@@ -216,7 +216,7 @@ serve(async (req) => {
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
-          { role: "user", content: message },
+          { role: "user", content: sanitizedMessage },
         ],
         max_tokens: 2048,
         temperature: 0.7,
