@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { load as yamlLoad } from "https://esm.sh/js-yaml@4.1.0";
+import {
+  checkRateLimit,
+  rateLimitResponse,
+  getClientIP,
+  PUBLIC_API_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
