@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Decrypt all .sql.gpg migrations back to .sql (used in CI)
+# Decrypt all .sql.enc migrations back to .sql (used in CI)
 # Usage: MIGRATIONS_KEY=<passphrase> ./scripts/decrypt-migrations.sh
 set -euo pipefail
 
@@ -11,12 +11,12 @@ if [ -z "${MIGRATIONS_KEY:-}" ]; then
 fi
 
 count=0
-for f in "$DIR"/*.sql.gpg; do
+for f in "$DIR"/*.sql.enc; do
   [ -f "$f" ] || continue
-  out="${f%.gpg}"
-  gpg --batch --yes --decrypt \
-      --passphrase "$MIGRATIONS_KEY" \
-      --output "$out" "$f"
+  out="${f%.enc}"
+  openssl enc -aes-256-cbc -d -pbkdf2 -iter 100000 \
+    -pass "pass:${MIGRATIONS_KEY}" \
+    -in "$f" -out "$out"
   count=$((count + 1))
 done
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Encrypt all plaintext .sql migrations to .sql.gpg
+# Encrypt all plaintext .sql migrations to .sql.enc (AES-256-CBC via openssl)
 # Usage: MIGRATIONS_KEY=<passphrase> ./scripts/encrypt-migrations.sh
 set -euo pipefail
 
@@ -13,11 +13,11 @@ fi
 count=0
 for f in "$DIR"/*.sql; do
   [ -f "$f" ] || continue
-  gpg --batch --yes --symmetric --cipher-algo AES256 \
-      --passphrase "$MIGRATIONS_KEY" \
-      --output "${f}.gpg" "$f"
+  openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000 \
+    -pass "pass:${MIGRATIONS_KEY}" \
+    -in "$f" -out "${f}.enc"
   rm "$f"
   count=$((count + 1))
 done
 
-echo "Encrypted $count migration(s) → .sql.gpg"
+echo "Encrypted $count migration(s) → .sql.enc"
