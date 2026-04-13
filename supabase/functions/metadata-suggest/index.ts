@@ -10,7 +10,25 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
-    const { grantTitle, grantAbstract, existingFields, similarProjects } = await req.json();
+    const body = await req.json();
+    const { grantTitle, grantAbstract, existingFields, similarProjects } = body;
+
+    // --- Input validation ---
+    if (!grantTitle || typeof grantTitle !== "string" || grantTitle.length > 500) {
+      return new Response(JSON.stringify({ error: "Valid grantTitle required (max 500 chars)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (grantAbstract && (typeof grantAbstract !== "string" || grantAbstract.length > 10000)) {
+      return new Response(JSON.stringify({ error: "grantAbstract too long (max 10000 chars)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (similarProjects && (!Array.isArray(similarProjects) || similarProjects.length > 50)) {
+      return new Response(JSON.stringify({ error: "similarProjects must be an array (max 50)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");

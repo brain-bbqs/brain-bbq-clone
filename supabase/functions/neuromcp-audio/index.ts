@@ -51,8 +51,21 @@ serve(async (req) => {
 
     // Get the audio file path from request
     const { audioPath } = await req.json();
-    if (!audioPath) {
+    if (!audioPath || typeof audioPath !== "string") {
       return new Response(JSON.stringify({ error: "audioPath is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Prevent path traversal attacks
+    if (audioPath.includes("..") || audioPath.includes("//") || audioPath.startsWith("/") || audioPath.length > 500) {
+      return new Response(JSON.stringify({ error: "Invalid audioPath" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!/^[a-zA-Z0-9_\-./]+$/.test(audioPath)) {
+      return new Response(JSON.stringify({ error: "audioPath contains invalid characters" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

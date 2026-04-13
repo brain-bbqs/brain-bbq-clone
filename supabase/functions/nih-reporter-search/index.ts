@@ -13,6 +13,23 @@ serve(async (req) => {
   try {
     const { pi_profile_id, first_name, last_name } = await req.json();
 
+    // Input validation
+    if (pi_profile_id && (typeof pi_profile_id !== "number" || pi_profile_id < 0 || pi_profile_id > 99999999)) {
+      return new Response(JSON.stringify({ error: "Invalid pi_profile_id" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (first_name && (typeof first_name !== "string" || first_name.length > 100 || !/^[A-Za-z\s.\-']+$/.test(first_name))) {
+      return new Response(JSON.stringify({ error: "Invalid first_name" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (last_name && (typeof last_name !== "string" || last_name.length > 100 || !/^[A-Za-z\s.\-']+$/.test(last_name))) {
+      return new Response(JSON.stringify({ error: "Invalid last_name" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let criteria: Record<string, unknown>;
     if (first_name && last_name) {
       criteria = {

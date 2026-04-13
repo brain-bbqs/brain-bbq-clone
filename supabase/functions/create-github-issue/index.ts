@@ -12,7 +12,23 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
-    const { title, description, labels: customLabels, milestone, action, issue_number, state, assignees } = await req.json();
+    const body = await req.json();
+    const { title, description, labels: customLabels, milestone, action, issue_number, state, assignees } = body;
+
+    // Validate description length to prevent abuse
+    if (description && (typeof description !== "string" || description.length > 10000)) {
+      return new Response(
+        JSON.stringify({ error: "Description too long (max 10000 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Validate issue_number if provided
+    if (issue_number !== undefined && (typeof issue_number !== "number" || issue_number < 1 || issue_number > 999999)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid issue_number" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN");
     if (!GITHUB_TOKEN) {
