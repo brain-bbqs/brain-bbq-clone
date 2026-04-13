@@ -1464,7 +1464,72 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_jobs: {
+        Row: {
+          application_url: string | null
+          created_at: string | null
+          department: string | null
+          description: string | null
+          expires_at: string | null
+          id: string | null
+          institution: string | null
+          is_active: boolean | null
+          job_type: string | null
+          location: string | null
+          organization_id: string | null
+          resource_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string | null
+          institution?: string | null
+          is_active?: boolean | null
+          job_type?: string | null
+          location?: string | null
+          organization_id?: string | null
+          resource_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string | null
+          institution?: string | null
+          is_active?: boolean | null
+          job_type?: string | null
+          location?: string | null
+          organization_id?: string | null
+          resource_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       decrement_vote_count: {

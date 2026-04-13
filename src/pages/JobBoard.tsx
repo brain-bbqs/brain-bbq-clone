@@ -62,16 +62,26 @@ export default function JobBoard() {
   const [form, setForm] = useState<JobFormData>(INITIAL_FORM);
   const [filterType, setFilterType] = useState<string>("all");
 
+  // Authenticated users see full jobs table (with contact info); anonymous users see the safe public_jobs view
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ["jobs"],
+    queryKey: ["jobs", !!user],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("jobs")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as any[];
+      if (user) {
+        const { data, error } = await (supabase as any)
+          .from("jobs")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data as any[];
+      } else {
+        const { data, error } = await (supabase as any)
+          .from("public_jobs")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return data as any[];
+      }
     },
   });
 
