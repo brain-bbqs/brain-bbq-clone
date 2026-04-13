@@ -9,96 +9,6 @@ import { getCorsHeaders } from "../_shared/auth.ts";
  * baseline of expected policies, and alerts via Resend on drift.
  */
 
-// ─── Expected Policy Baseline ────────────────────────────────
-// Each entry: table → { command → { policyName: role } }
-// This is the source of truth after Phase 4 tightening.
-
-const EXPECTED_POLICIES: Record<string, Record<string, Record<string, string>>> = {
-  profiles: {
-    SELECT: { "Users can view own profile": "authenticated" },
-    INSERT: { "Users can insert own profile": "authenticated" },
-    UPDATE: { "Users can update own profile": "authenticated" },
-  },
-  entity_comments: {
-    SELECT: { "Anyone can view entity comments": "public" },
-    INSERT: { "Authenticated users can insert comments": "authenticated" },
-    UPDATE: { "Users can update their own comments": "authenticated" },
-    DELETE: { "Users can delete their own comments": "authenticated" },
-  },
-  feature_suggestions: {
-    SELECT: { "Authenticated users can view feature suggestions": "authenticated" },
-    INSERT: { "Authenticated can insert suggestions": "authenticated" },
-    UPDATE: { "Users can update own suggestions": "authenticated" },
-  },
-  feature_votes: {
-    SELECT: { "Authenticated users can view votes": "authenticated" },
-    INSERT: { "Authenticated can insert votes": "authenticated" },
-    DELETE: { "Users can delete own votes": "authenticated" },
-  },
-  resources: {
-    SELECT: { "Anyone can view resources": "public" },
-    INSERT: { "Authenticated can insert resources": "authenticated" },
-    UPDATE: { "Users can update own resources": "authenticated" },
-  },
-  chat_conversations: {
-    SELECT: { "Users can view their own conversations": "authenticated" },
-    INSERT: { "Users can create their own conversations": "authenticated" },
-    UPDATE: { "Users can update their own conversations": "authenticated" },
-    DELETE: { "Users can delete their own conversations": "authenticated" },
-  },
-  chat_messages: {
-    SELECT: { "Users can view their own messages": "authenticated" },
-    INSERT: { "Users can create their own messages": "authenticated" },
-  },
-  investigators: {
-    SELECT: { "Authenticated users can view investigators": "authenticated" },
-    UPDATE: { "Users can update own investigator": "authenticated" },
-  },
-  projects: {
-    SELECT: { "Anyone can view project metadata": "public" },
-    INSERT: { "Authenticated users can insert project metadata": "authenticated" },
-    UPDATE: { "Authenticated users can update project metadata": "authenticated" },
-  },
-  edit_history: {
-    SELECT: { "Authenticated users can view edit history": "authenticated" },
-    INSERT: { "Authenticated users can insert edit history": "authenticated" },
-  },
-  announcements: {
-    SELECT: { "Anyone can view announcements": "public" },
-    INSERT: { "Authenticated users can post announcements": "authenticated" },
-    UPDATE: { "Users can update their own announcements": "authenticated" },
-    DELETE: { "Users can delete their own announcements": "authenticated" },
-  },
-  jobs: {
-    SELECT: { "Anyone can view active jobs": "public" },
-    INSERT: { "Authenticated users can post jobs": "authenticated" },
-    UPDATE: { "Users can update their own jobs": "authenticated" },
-    DELETE: { "Users can delete their own jobs": "authenticated" },
-  },
-  auth_audit_log: {
-    SELECT: { "Service role can view audit log": "service_role" },
-    INSERT: { "Service role can insert audit log": "service_role" },
-  },
-  security_audit_results: {
-    SELECT: { "Service role can view audit results": "service_role" },
-    INSERT: { "Service role can insert audit results": "service_role" },
-    UPDATE: { "Service role can update audit results": "service_role" },
-  },
-};
-
-// Tables that must have RLS enabled
-const RLS_REQUIRED_TABLES = [
-  "profiles", "entity_comments", "feature_suggestions", "feature_votes",
-  "resources", "chat_conversations", "chat_messages", "investigators",
-  "projects", "edit_history", "announcements", "jobs", "auth_audit_log",
-  "grants", "publications", "species", "software_tools", "organizations",
-  "knowledge_embeddings", "project_publications", "project_resources",
-  "analytics_pageviews", "analytics_clicks", "search_queries",
-  "allowed_domains", "custom_field_usage", "funding_opportunities",
-  "grant_investigators", "investigator_organizations", "ontology_standards",
-  "resource_links", "state_privacy_rules", "taxonomies",
-  "security_audit_results",
-];
 
 interface Finding {
   severity: "error" | "warn" | "info";
@@ -124,38 +34,7 @@ serve(async (req) => {
     // Connectivity probe
     await sb.from("security_audit_results").select("id").limit(0);
 
-    // Since we can't run raw SQL via REST, query pg_policies via a dedicated approach.
-    // We'll create a helper RPC or use the analytics endpoint instead.
-    // For now, query the Supabase management API metadata.
-
-    // ─── Alternative: Query policies via information_schema ──
-    // Use supabase-js .rpc() won't work for pg_catalog.
-    // Instead, use the PostgREST /rpc endpoint with a pre-created function.
-    // Since we need this to work without additional migrations, let's query
-    // what we CAN access and build the audit from there.
-
-    // Approach: Use the Supabase Management API to get policies
-    // But that requires a management API key which we don't have.
-    
-    // Best approach: Create a SECURITY DEFINER function that returns policy data.
-    // But we need that as a migration first. Let's try a different approach:
-    // Use the pg_catalog directly via the PostgREST proxy.
-
-    // Actually, the service role can query pg_catalog tables directly through
-    // a raw SQL RPC. Let's check if we have one, or just use the management API.
-
-    // Final approach: Use fetch to the Supabase SQL endpoint
-    const sqlEndpoint = `${SUPABASE_URL}/pg`;
-    
-    // Most reliable: query via the pg_meta endpoint
-    const policiesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/?apikey=${SUPABASE_SERVICE_ROLE_KEY}`,
-      {
-        headers: {
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      }
-    ).catch(() => null);
+    // ─── Behavioral testing: verify RLS blocks unauthorized access ──
 
     // Since direct pg_catalog access is limited via PostgREST, we'll use
     // a pragmatic approach: try to perform operations that SHOULD fail
