@@ -87,7 +87,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // --- 1. Get embedding for user query ---
-    const queryEmbedding = await generateEmbeddingLovable(query, LOVABLE_API_KEY);
+    const queryEmbedding = await generateEmbeddingLovable(sanitizedQuery, LOVABLE_API_KEY);
 
     let ragContext = "";
 
