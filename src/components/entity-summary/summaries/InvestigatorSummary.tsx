@@ -15,11 +15,12 @@ import { ExternalLink, FileText, User, Pencil, Check, X, UserCheck, UserPlus } f
 import { useToast } from "@/hooks/use-toast";
 
 // Editable inline field
-function EditableText({ value, onSave, placeholder, type = "text" }: {
+function EditableText({ value, onSave, placeholder, type = "text", href }: {
   value: string;
   onSave: (val: string) => void;
   placeholder: string;
   type?: string;
+  href?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -29,7 +30,7 @@ function EditableText({ value, onSave, placeholder, type = "text" }: {
       <div className="group flex items-center gap-1.5 min-h-[28px]">
         {value ? (
           type === "url" ? (
-            <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+            <a href={href ?? value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
               {value} <ExternalLink className="h-3 w-3" />
             </a>
           ) : type === "email" ? (
@@ -232,7 +233,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
       {/* ORCID */}
       <SummaryField label="ORCID">
         {canEdit ? (
-          <EditableText value={data.orcid || ""} onSave={(v) => handleSave("orcid", v)} placeholder="e.g. 0000-0002-1234-5678" type="url" />
+          <EditableText value={data.orcid || ""} onSave={(v) => handleSave("orcid", v)} placeholder="e.g. 0000-0002-1234-5678" type="url" href={data.orcid ? `https://orcid.org/${data.orcid}` : undefined} />
         ) : data.orcid ? (
           <a href={`https://orcid.org/${data.orcid}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
             {data.orcid} <ExternalLink className="h-3 w-3" />
@@ -245,7 +246,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
       {/* Google Scholar */}
       <SummaryField label="Google Scholar">
         {canEdit ? (
-          <EditableText value={data.scholar_id || ""} onSave={(v) => handleSave("scholar_id", v)} placeholder="Enter Google Scholar user ID" type="url" />
+          <EditableText value={data.scholar_id || ""} onSave={(v) => handleSave("scholar_id", v)} placeholder="Enter Google Scholar user ID" type="url" href={data.scholar_id ? `https://scholar.google.com/citations?user=${data.scholar_id}` : undefined} />
         ) : data.scholar_id ? (
           <a href={`https://scholar.google.com/citations?user=${data.scholar_id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
             View Profile <ExternalLink className="h-3 w-3" />
