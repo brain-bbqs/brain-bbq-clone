@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("Globus auth error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
