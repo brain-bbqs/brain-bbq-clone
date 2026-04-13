@@ -1,1 +1,0 @@
-ALTER TABLE public.software_tools ADD COLUMN version text;
