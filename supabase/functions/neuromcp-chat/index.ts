@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -155,8 +162,18 @@ serve(async (req) => {
       });
     }
 
-    const startTime = Date.now();
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`neuromcp-chat:${user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
 
+    // Phase 5: Sanitize for prompt injection
+    const sanitized = sanitizeForLLM(message);
+    if (sanitized.injectionDetected) {
+      console.warn(`Prompt injection detected in neuromcp-chat from user ${user.id}:`, sanitized.patternsMatched);
+    }
+    const sanitizedMessage = sanitized.sanitized;
+
+    const startTime = Date.now();
     let convId = conversationId;
     if (!convId) {
       const { data: newConv, error: convError } = await supabaseClient
@@ -177,7 +194,7 @@ serve(async (req) => {
 
     const messages: Message[] = history?.map((m) => ({ role: m.role as any, content: m.content })) || [];
 
-    const contexts = await searchKnowledge(supabaseClient, message);
+    const contexts = await searchKnowledge(supabaseClient, sanitizedMessage);
     const systemPrompt = buildSystemPrompt(contexts);
 
     await supabaseClient.from("chat_messages").insert({
@@ -199,7 +216,7 @@ serve(async (req) => {
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
-          { role: "user", content: message },
+          { role: "user", content: sanitizedMessage },
         ],
         max_tokens: 2048,
         temperature: 0.7,
@@ -212,7 +229,14 @@ serve(async (req) => {
     }
 
     const chatData = await chatResponse.json();
-    const assistantContent = chatData.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+    const rawContent = chatData.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+
+    // Phase 5: Scrub output for PII/secret leakage
+    const { scrubbed: assistantContent, leaksDetected } = scrubOutput(rawContent);
+    if (leaksDetected > 0) {
+      console.error(`SECURITY: ${leaksDetected} potential data leaks scrubbed from neuromcp-chat output`);
+    }
+
     const tokensUsed = chatData.usage?.total_tokens || 0;
     const latencyMs = Date.now() - startTime;
     const contextSources = contexts.map((c) => ({ type: c.source_type, title: c.title }));
@@ -248,7 +272,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("NeuroMCP chat error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 async function generateEmbeddingLovable(text: string, apiKey: string): Promise<number[] | null> {
   try {
@@ -47,6 +54,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`discovery-chat:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
       return new Response(JSON.stringify({ error: "query is required" }), {
@@ -61,6 +72,13 @@ serve(async (req) => {
       });
     }
 
+    // Phase 5: Sanitize user input for prompt injection
+    const sanitized = sanitizeForLLM(query);
+    if (sanitized.injectionDetected) {
+      console.warn(`Prompt injection detected in discovery-chat from user ${auth.user.id}:`, sanitized.patternsMatched);
+    }
+    const sanitizedQuery = sanitized.sanitized;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -69,7 +87,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // --- 1. Get embedding for user query ---
-    const queryEmbedding = await generateEmbeddingLovable(query, LOVABLE_API_KEY);
+    const queryEmbedding = await generateEmbeddingLovable(sanitizedQuery, LOVABLE_API_KEY);
 
     let ragContext = "";
 
@@ -192,7 +210,7 @@ ${fullContext || "No specific matches found in the database for this query."}`;
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: query },
+            { role: "user", content: sanitizedQuery },
           ],
           stream: true,
         }),
@@ -250,7 +268,7 @@ ${fullContext || "No specific matches found in the database for this query."}`;
   } catch (e) {
     console.error("discovery-chat error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
