@@ -138,10 +138,14 @@ serve(async (req) => {
       throw new Error(`Failed to upload spectrogram: ${uploadError.message}`);
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // Get signed URL (bucket is now private)
+    const { data: urlData, error: signError } = await supabase.storage
       .from("neuromcp-audio")
-      .getPublicUrl(spectrogramPath);
+      .createSignedUrl(spectrogramPath, 3600); // 1 hour expiry
+
+    if (signError || !urlData?.signedUrl) {
+      throw new Error(`Failed to create signed URL: ${signError?.message}`);
+    }
 
     // Extract detection metadata if available (second element)
     const detectionMeta = hfResult.data?.[1] || null;
@@ -149,7 +153,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        spectrogramUrl: urlData.publicUrl,
+        spectrogramUrl: urlData.signedUrl,
         detections: detectionMeta,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
