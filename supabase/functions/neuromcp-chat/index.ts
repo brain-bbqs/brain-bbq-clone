@@ -172,6 +172,9 @@ serve(async (req) => {
       console.warn(`Prompt injection detected in neuromcp-chat from user ${user.id}:`, sanitized.patternsMatched);
     }
     const sanitizedMessage = sanitized.sanitized;
+
+    const startTime = Date.now();
+    let convId = conversationId;
     if (!convId) {
       const { data: newConv, error: convError } = await supabaseClient
         .from("chat_conversations")
