@@ -175,6 +175,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`metadata-chat:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -203,12 +207,20 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // Phase 5: Sanitize user messages for prompt injection
     for (const msg of messages) {
       if (!msg || typeof msg !== "object" || typeof msg.content !== "string" || msg.content.length > 10000) {
         return new Response(JSON.stringify({ error: "Each message.content must be a string (max 10000 chars)" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+      if (msg.role === "user") {
+        const sanitized = sanitizeForLLM(msg.content);
+        if (sanitized.injectionDetected) {
+          console.warn(`Prompt injection detected in metadata-chat from user ${auth.user.id}:`, sanitized.patternsMatched);
+        }
+        msg.content = sanitized.sanitized;
       }
     }
 
