@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
 import {
   sanitizeForLLM,
-  scrubOutput,
   checkRateLimit,
   rateLimitResponse,
   LLM_RATE_LIMIT,
