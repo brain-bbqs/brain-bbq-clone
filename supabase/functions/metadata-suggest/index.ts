@@ -1,15 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Require authentication
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth.error) return auth.error;
+
   try {
-    const { grantTitle, grantAbstract, existingFields, similarProjects } = await req.json();
+    const body = await req.json();
+    const { grantTitle, grantAbstract, existingFields, similarProjects } = body;
+
+    // --- Input validation ---
+    if (!grantTitle || typeof grantTitle !== "string" || grantTitle.length > 500) {
+      return new Response(JSON.stringify({ error: "Valid grantTitle required (max 500 chars)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (grantAbstract && (typeof grantAbstract !== "string" || grantAbstract.length > 10000)) {
+      return new Response(JSON.stringify({ error: "grantAbstract too long (max 10000 chars)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (similarProjects && (!Array.isArray(similarProjects) || similarProjects.length > 50)) {
+      return new Response(JSON.stringify({ error: "similarProjects must be an array (max 50)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");

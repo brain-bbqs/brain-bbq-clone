@@ -1,19 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Require authentication
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth.error) return auth.error;
+
   try {
-    const { title, description, labels: customLabels, milestone, action, issue_number, state, assignees } = await req.json();
+    const body = await req.json();
+    const { title, description, labels: customLabels, milestone, action, issue_number, state, assignees } = body;
+
+    // Validate description length to prevent abuse
+    if (description && (typeof description !== "string" || description.length > 10000)) {
+      return new Response(
+        JSON.stringify({ error: "Description too long (max 10000 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Validate issue_number if provided
+    if (issue_number !== undefined && (typeof issue_number !== "number" || issue_number < 1 || issue_number > 999999)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid issue_number" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN");
     if (!GITHUB_TOKEN) {

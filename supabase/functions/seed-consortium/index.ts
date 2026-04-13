@@ -1,10 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, requireAdmin } from "../_shared/auth.ts";
 
 interface ConsortiumPerson {
   name: string;
@@ -1998,9 +1993,14 @@ const CONSORTIUM_PEOPLE: ConsortiumPerson[] = [
 ];
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  // Require admin access
+  const auth = await requireAdmin(req, corsHeaders);
+  if (auth.error) return auth.error;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

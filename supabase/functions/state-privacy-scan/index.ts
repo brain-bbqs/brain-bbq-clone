@@ -1,10 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
 
 // BBQS categories (must match frontend)
 const CATEGORIES = [
@@ -48,15 +43,33 @@ For each affected category, give:
 You MUST use the suggest_risk_matrix tool to return your analysis. For each category, always include the statute, conflict, note, and label fields. If the law is unclear, use label NO_EXTRA, statute "" and say "not clearly addressed beyond HIPAA/general privacy law" in the note.`;
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Require authentication
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth.error) return auth.error;
 
   try {
     const { state, stateName } = await req.json();
     if (!state || !stateName) {
       return new Response(
         JSON.stringify({ error: "state and stateName are required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Validate state code (2-letter) and state name
+    if (typeof state !== "string" || !/^[A-Z]{2}$/.test(state)) {
+      return new Response(
+        JSON.stringify({ error: "state must be a 2-letter code (e.g. CA)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (typeof stateName !== "string" || stateName.length > 50 || !/^[A-Za-z\s]+$/.test(stateName)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid stateName" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

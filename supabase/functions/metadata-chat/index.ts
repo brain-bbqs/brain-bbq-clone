@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
 
 const METADATA_FIELDS = [
   "study_species", "use_approaches", "use_sensors", "produce_data_modality",
@@ -157,7 +153,12 @@ function formatValidationReport(validation: any): string {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Require authentication
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth.error) return auth.error;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -166,13 +167,35 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { messages, grant_number } = await req.json();
+    const body = await req.json();
+    const { messages, grant_number } = body;
 
-    if (!grant_number) {
-      return new Response(JSON.stringify({ error: "grant_number is required" }), {
+    // --- Input validation ---
+    if (!grant_number || typeof grant_number !== "string" || grant_number.length > 30) {
+      return new Response(JSON.stringify({ error: "Valid grant_number is required (max 30 chars)" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+    if (!/^[A-Z0-9][A-Z0-9\-]{3,29}$/i.test(grant_number.trim())) {
+      return new Response(JSON.stringify({ error: "Invalid grant_number format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
+      return new Response(JSON.stringify({ error: "messages must be an array (1-50 items)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    for (const msg of messages) {
+      if (!msg || typeof msg !== "object" || typeof msg.content !== "string" || msg.content.length > 10000) {
+        return new Response(JSON.stringify({ error: "Each message.content must be a string (max 10000 chars)" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Fetch current project state + grant info + all consortium projects

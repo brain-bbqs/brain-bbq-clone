@@ -137,6 +137,24 @@ serve(async (req) => {
     }
 
     const { message, conversationId }: ChatRequest = await req.json();
+    
+    // --- Input validation ---
+    if (!message || typeof message !== "string") {
+      return new Response(JSON.stringify({ error: "message is required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (message.length > 5000) {
+      return new Response(JSON.stringify({ error: "message too long (max 5000 chars)" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (conversationId && (typeof conversationId !== "string" || conversationId.length > 100)) {
+      return new Response(JSON.stringify({ error: "Invalid conversationId" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const startTime = Date.now();
 
     let convId = conversationId;

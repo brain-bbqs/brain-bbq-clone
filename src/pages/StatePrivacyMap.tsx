@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { USStateMap } from "@/components/diagrams/USStateMap";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getFullMatrix,
   mostRestrictive,
@@ -239,7 +240,13 @@ export default function StatePrivacyMap() {
     setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const { user } = useAuth();
+
   const handleScan = useCallback(async () => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Please sign in to run privacy scans.", variant: "destructive" });
+      return;
+    }
     const row = selectedState ? matrix.find((r) => r.state === selectedState) : null;
     if (!row) return;
     setIsScanning(true);
