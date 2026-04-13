@@ -265,15 +265,16 @@ serve(async (req) => {
     }
 
     // ─── Test 6: Check auth_audit_log is NOT accessible ──────
+    // service_role-only: anon gets empty array (RLS blocks), not an error
     {
       const { data, error } = await anonClient.from("auth_audit_log").select("id").limit(1);
-      const accessible = !error && data !== null;
-      policySnapshot["auth_audit_log_anon_select"] = { accessible, error: error?.message };
-      if (accessible && (data as any[]).length > 0) {
+      const dataReturned = !error && Array.isArray(data) && data.length > 0;
+      policySnapshot["auth_audit_log_anon_select"] = { data_returned: dataReturned, error: error?.message };
+      if (dataReturned) {
         findings.push({
           severity: "error",
           table: "auth_audit_log",
-          message: "Auth audit log is accessible to anonymous users",
+          message: "Auth audit log data is accessible to anonymous users",
           details: "Contains IP addresses and attempted emails. Must be service_role only.",
         });
       }
