@@ -51,7 +51,7 @@ const EXPECTED_POLICIES: Record<string, Record<string, Record<string, string>>> 
     INSERT: { "Users can create their own messages": "authenticated" },
   },
   investigators: {
-    SELECT: { "Anyone can view investigators": "public" },
+    SELECT: { "Authenticated users can view investigators": "authenticated" },
     UPDATE: { "Users can update own investigator": "authenticated" },
   },
   projects: {
