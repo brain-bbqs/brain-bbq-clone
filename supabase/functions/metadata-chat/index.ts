@@ -405,6 +405,20 @@ ${ragSection}`;
     const assistantMessage = choice?.message;
 
     const toolCalls = assistantMessage?.tool_calls || [];
+
+    // Phase 5: Validate tool calls against whitelist
+    if (toolCalls.length > 0) {
+      const validation = validateToolCalls(toolCalls, ALLOWED_TOOL_FUNCTIONS);
+      if (!validation.valid) {
+        console.error(`SECURITY: LLM attempted unauthorized tool calls: ${validation.rejected.join(", ")}`);
+        // Filter out unauthorized tool calls
+        const filteredToolCalls = toolCalls.filter((tc: any) =>
+          ALLOWED_TOOL_FUNCTIONS.has(tc?.function?.name)
+        );
+        toolCalls.length = 0;
+        toolCalls.push(...filteredToolCalls);
+      }
+    }
     
     // Fields that stay as top-level columns
     const TOP_LEVEL_FIELDS = new Set(["study_species", "study_human", "keywords", "website"]);
