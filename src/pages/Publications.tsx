@@ -91,7 +91,7 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
       {authors.map((author, i) => {
         const url = getAuthorUrl(author);
         let isOrcid = false;
-        try { isOrcid = new URL(url).hostname.endsWith("orcid.org"); } catch { isOrcid = false; }
+        try { const h = new URL(url).hostname; isOrcid = h === "orcid.org" || h.endsWith(".orcid.org"); } catch { isOrcid = false; }
         return (
           <span key={i} className="whitespace-nowrap">
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"
