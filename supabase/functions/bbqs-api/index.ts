@@ -146,6 +146,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Phase 6: Per-IP rate limiting for public API
+  const clientIP = getClientIP(req);
+  const rl = checkRateLimit(`bbqs-api:${clientIP}`, PUBLIC_API_RATE_LIMIT);
+  if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
   const url = new URL(req.url);
   const path = url.pathname.replace(/^\/bbqs-api\/?/, "").replace(/\/$/, "");
 
