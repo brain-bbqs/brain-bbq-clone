@@ -1,6 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  validateToolCalls,
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
+
+// Whitelist of tool function names the LLM is allowed to call
+const ALLOWED_TOOL_FUNCTIONS = new Set([
+  "update_project_metadata",
+  "remove_project_metadata",
+]);
 
 const METADATA_FIELDS = [
   "study_species", "use_approaches", "use_sensors", "produce_data_modality",

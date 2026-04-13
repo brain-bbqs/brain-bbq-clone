@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);

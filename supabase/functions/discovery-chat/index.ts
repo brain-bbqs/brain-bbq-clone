@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 async function generateEmbeddingLovable(text: string, apiKey: string): Promise<number[] | null> {
   try {
