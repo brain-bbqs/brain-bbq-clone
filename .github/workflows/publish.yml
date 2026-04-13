@@ -36,6 +36,11 @@ jobs:
         with:
           version: latest
 
+      - name: Decrypt migrations
+        run: bash scripts/decrypt-migrations.sh
+        env:
+          MIGRATIONS_KEY: ${{ secrets.MIGRATIONS_KEY }}
+
       - name: Push database migrations
         run: supabase db push --project-ref $SUPABASE_PROJECT_REF
         env:
