@@ -17,6 +17,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`metadata-suggest:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const body = await req.json();
     const { grantTitle, grantAbstract, existingFields, similarProjects } = body;
 
