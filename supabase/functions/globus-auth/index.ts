@@ -304,6 +304,7 @@ Deno.serve(async (req) => {
       authUrl.searchParams.set("scope", "openid profile email");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("state", state);
+      authUrl.searchParams.set("prompt", "login");
 
       return new Response(JSON.stringify({ url: authUrl.toString() }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
