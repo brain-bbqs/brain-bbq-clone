@@ -103,10 +103,10 @@ export default function FeatureSuggestions() {
       const hasVoted = votedIds.has(suggestionId);
       if (hasVoted) {
         await supabase.from("feature_votes").delete().eq("user_id", user!.id).eq("suggestion_id", suggestionId);
-        await supabase.from("feature_suggestions").update({ votes: suggestions.find(s => s.id === suggestionId)!.votes - 1 }).eq("id", suggestionId);
+        await supabase.rpc("decrement_vote_count", { _suggestion_id: suggestionId });
       } else {
         await supabase.from("feature_votes").insert({ user_id: user!.id, suggestion_id: suggestionId });
-        await supabase.from("feature_suggestions").update({ votes: suggestions.find(s => s.id === suggestionId)!.votes + 1 }).eq("id", suggestionId);
+        await supabase.rpc("increment_vote_count", { _suggestion_id: suggestionId });
       }
     },
     onSuccess: () => {
