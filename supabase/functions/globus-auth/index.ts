@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ADMIN_NOTIFY_EMAIL = "dcaic-admin@brain-bbqs.org";
+const ADMIN_NOTIFY_EMAIL = "nader.nikbakht@gmail.com";
 
 interface FailureInfo {
   email?: string;
@@ -304,6 +304,7 @@ Deno.serve(async (req) => {
       authUrl.searchParams.set("scope", "openid profile email");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("state", state);
+      authUrl.searchParams.set("prompt", "login");
 
       return new Response(JSON.stringify({ url: authUrl.toString() }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -316,7 +317,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("Globus auth error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

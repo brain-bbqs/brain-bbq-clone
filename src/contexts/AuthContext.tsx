@@ -60,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     if (preview) return;
     await supabase.auth.signOut();
+    // Revoke Globus session so the next login prompts for identity selection
+    window.location.href = "https://auth.globus.org/v2/web/logout?redirect_uri=" + encodeURIComponent(window.location.origin + "/auth");
   };
 
   return (
