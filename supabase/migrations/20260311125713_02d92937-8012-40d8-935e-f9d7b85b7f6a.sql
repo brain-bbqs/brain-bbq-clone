@@ -1,1 +1,0 @@
-DELETE FROM funding_opportunities WHERE fon IN ('RFA-NS-25-019', 'RFA-DA-26-039', 'RFA-MH-26-100', 'PAR-25-200');
