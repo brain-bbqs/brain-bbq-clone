@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -10,6 +15,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`metadata-suggest:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const body = await req.json();
     const { grantTitle, grantAbstract, existingFields, similarProjects } = body;
 
@@ -121,6 +130,14 @@ Please suggest values for any empty fields based on the abstract and similar pro
       throw new Error("No tool call in AI response");
     }
 
+    // Phase 5: Validate tool call is the expected function
+    if (toolCall.function?.name !== "suggest_metadata") {
+      console.error(`SECURITY: LLM returned unexpected tool call: ${toolCall.function?.name}`);
+      return new Response(JSON.stringify({ error: "Unexpected AI response" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const suggestions = JSON.parse(toolCall.function.arguments);
 
     return new Response(JSON.stringify({ suggestions }), {
@@ -128,7 +145,7 @@ Please suggest values for any empty fields based on the abstract and similar pro
     });
   } catch (e) {
     console.error("metadata-suggest error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

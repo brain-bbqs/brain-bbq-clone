@@ -118,6 +118,23 @@ serve(async (req) => {
     const issue = await issueResponse.json();
     console.log(`Issue created successfully: #${issue.number} - ${issue.html_url}`);
 
+    // If the issue has the 'claude' label, post a comment to trigger the Claude workflow
+    if (Array.isArray(customLabels) && customLabels.includes("claude")) {
+      try {
+        await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/issues/${issue.number}/comments`,
+          {
+            method: "POST",
+            headers: ghHeaders,
+            body: JSON.stringify({ body: "@claude Please analyze this feature request and implement it." }),
+          }
+        );
+        console.log(`Posted @claude comment on issue #${issue.number}`);
+      } catch (commentErr) {
+        console.error("Failed to post @claude comment:", commentErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

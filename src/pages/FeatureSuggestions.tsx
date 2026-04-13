@@ -72,7 +72,7 @@ export default function FeatureSuggestions() {
         body: {
           title: `[Feature Request] ${title.trim()}`,
           description: `**User Request**\n\n${description.trim() || "No description provided."}\n\n---\n_Submitted via BBQS Feature Suggestions_`,
-          labels: ["enhancement", "user-request"],
+          labels: ["enhancement", "user-request", "claude"],
         },
       });
       if (ghError) throw ghError;

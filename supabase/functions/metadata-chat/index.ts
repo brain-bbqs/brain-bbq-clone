@@ -1,6 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
 import { getCorsHeaders, requireAuth } from "../_shared/auth.ts";
+import {
+  validateToolCalls,
+  sanitizeForLLM,
+  scrubOutput,
+  checkRateLimit,
+  rateLimitResponse,
+  LLM_RATE_LIMIT,
+} from "../_shared/security.ts";
+
+// Whitelist of tool function names the LLM is allowed to call
+const ALLOWED_TOOL_FUNCTIONS = new Set([
+  "update_project_metadata",
+  "remove_project_metadata",
+]);
 
 const METADATA_FIELDS = [
   "study_species", "use_approaches", "use_sensors", "produce_data_modality",
@@ -161,6 +175,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`metadata-chat:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -189,12 +207,20 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // Phase 5: Sanitize user messages for prompt injection
     for (const msg of messages) {
       if (!msg || typeof msg !== "object" || typeof msg.content !== "string" || msg.content.length > 10000) {
         return new Response(JSON.stringify({ error: "Each message.content must be a string (max 10000 chars)" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+      if (msg.role === "user") {
+        const sanitized = sanitizeForLLM(msg.content);
+        if (sanitized.injectionDetected) {
+          console.warn(`Prompt injection detected in metadata-chat from user ${auth.user.id}:`, sanitized.patternsMatched);
+        }
+        msg.content = sanitized.sanitized;
       }
     }
 
@@ -379,6 +405,20 @@ ${ragSection}`;
     const assistantMessage = choice?.message;
 
     const toolCalls = assistantMessage?.tool_calls || [];
+
+    // Phase 5: Validate tool calls against whitelist
+    if (toolCalls.length > 0) {
+      const validation = validateToolCalls(toolCalls, ALLOWED_TOOL_FUNCTIONS);
+      if (!validation.valid) {
+        console.error(`SECURITY: LLM attempted unauthorized tool calls: ${validation.rejected.join(", ")}`);
+        // Filter out unauthorized tool calls
+        const filteredToolCalls = toolCalls.filter((tc: any) =>
+          ALLOWED_TOOL_FUNCTIONS.has(tc?.function?.name)
+        );
+        toolCalls.length = 0;
+        toolCalls.push(...filteredToolCalls);
+      }
+    }
     
     // Fields that stay as top-level columns
     const TOP_LEVEL_FIELDS = new Set(["study_species", "study_human", "keywords", "website"]);
@@ -581,8 +621,14 @@ ${ragSection}`;
       metadata: { grant_number, fields_updated: fieldsUpdated, validation: validationResult?.overall_status },
     });
 
+    // Phase 5: Scrub output for PII/secret leakage
+    const { scrubbed: scrubbedReply, leaksDetected } = scrubOutput(finalContent);
+    if (leaksDetected > 0) {
+      console.error(`SECURITY: ${leaksDetected} potential data leaks scrubbed from metadata-chat output`);
+    }
+
     return new Response(JSON.stringify({
-      reply: finalContent,
+      reply: scrubbedReply,
       fields_updated: fieldsUpdated,
       metadata_completeness: newCompleteness,
       validation: validationResult ? {
@@ -596,7 +642,7 @@ ${ragSection}`;
     });
   } catch (e) {
     console.error("metadata-chat error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { load as yamlLoad } from "https://esm.sh/js-yaml@4.1.0";
+import {
+  checkRateLimit,
+  rateLimitResponse,
+  getClientIP,
+  PUBLIC_API_RATE_LIMIT,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,6 +145,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Phase 6: Per-IP rate limiting for public API
+  const clientIP = getClientIP(req);
+  const rl = checkRateLimit(`bbqs-api:${clientIP}`, PUBLIC_API_RATE_LIMIT);
+  if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
 
   const url = new URL(req.url);
   const path = url.pathname.replace(/^\/bbqs-api\/?/, "").replace(/\/$/, "");

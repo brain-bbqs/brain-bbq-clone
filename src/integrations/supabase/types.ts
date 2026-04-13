@@ -1296,6 +1296,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_results: {
+        Row: {
+          created_at: string
+          drift_detected: boolean
+          findings: Json
+          findings_count: number
+          id: string
+          notified: boolean
+          policy_snapshot: Json
+          scan_type: string
+          tables_scanned: number
+        }
+        Insert: {
+          created_at?: string
+          drift_detected?: boolean
+          findings?: Json
+          findings_count?: number
+          id?: string
+          notified?: boolean
+          policy_snapshot?: Json
+          scan_type?: string
+          tables_scanned?: number
+        }
+        Update: {
+          created_at?: string
+          drift_detected?: boolean
+          findings?: Json
+          findings_count?: number
+          id?: string
+          notified?: boolean
+          policy_snapshot?: Json
+          scan_type?: string
+          tables_scanned?: number
+        }
+        Relationships: []
+      }
       software_tools: {
         Row: {
           created_at: string
