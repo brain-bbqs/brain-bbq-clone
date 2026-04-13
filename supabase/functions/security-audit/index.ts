@@ -121,24 +121,8 @@ serve(async (req) => {
     const findings: Finding[] = [];
 
     // ─── 1. Check RLS is enabled on all tables ──────────────
-    const { data: rlsStatus, error: rlsErr } = await sb.rpc("", {}).maybeSingle();
-    // Use raw SQL via pg_catalog
-    const rlsQuery = `
-      SELECT tablename, rowsecurity
-      FROM pg_tables
-      WHERE schemaname = 'public'
-      ORDER BY tablename
-    `;
-    const { data: tables } = await sb.from("security_audit_results").select("id").limit(0);
-    // We need to use the REST API to run raw SQL — use a direct fetch
-    const pgResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        "Content-Type": "application/json",
-      },
-    }).catch(() => null);
+    // Connectivity probe
+    await sb.from("security_audit_results").select("id").limit(0);
 
     // Since we can't run raw SQL via REST, query pg_policies via a dedicated approach.
     // We'll create a helper RPC or use the analytics endpoint instead.

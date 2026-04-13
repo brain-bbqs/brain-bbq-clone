@@ -4,7 +4,7 @@
  * Phase 6: Per-user / per-IP rate limiting
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 // ═══════════════════════════════════════════════════════════════
 // Phase 5: Tool Call Whitelist Validation
