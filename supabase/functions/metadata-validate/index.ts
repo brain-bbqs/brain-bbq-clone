@@ -273,6 +273,34 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    if (changes.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Too many changes (max 50)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    for (const change of changes) {
+      if (!change.field || typeof change.field !== "string" || change.field.length > 100) {
+        return new Response(
+          JSON.stringify({ error: "Each change must have a valid field name" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!Array.isArray(change.values) || change.values.length > 100) {
+        return new Response(
+          JSON.stringify({ error: `Too many values for field "${change.field}" (max 100)` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      for (const v of change.values) {
+        if (typeof v !== "string" || v.length > 500) {
+          return new Response(
+            JSON.stringify({ error: `Invalid value in field "${change.field}" (max 500 chars each)` }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
 
     const allChecks: ValidationCheck[] = [];
     const protocols = ["BIDS", "NWB", "HED", "Species Naming", "Quality"];
