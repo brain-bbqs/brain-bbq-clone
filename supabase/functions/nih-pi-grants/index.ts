@@ -24,6 +24,21 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // Limit array size and validate each ID
+    if (profile_ids.length > 100) {
+      return new Response(JSON.stringify({ error: "Too many profile_ids (max 100)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    for (const id of profile_ids) {
+      if (typeof id !== "number" || id < 0 || id > 99999999) {
+        return new Response(JSON.stringify({ error: "Each profile_id must be a valid number" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Query NIH Reporter for all grants by these PI profile IDs
     // Process in batches of 25 to avoid API limits

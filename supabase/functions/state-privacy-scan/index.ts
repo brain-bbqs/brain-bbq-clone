@@ -60,6 +60,19 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    // Validate state code (2-letter) and state name
+    if (typeof state !== "string" || !/^[A-Z]{2}$/.test(state)) {
+      return new Response(
+        JSON.stringify({ error: "state must be a 2-letter code (e.g. CA)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (typeof stateName !== "string" || stateName.length > 50 || !/^[A-Za-z\s]+$/.test(stateName)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid stateName" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) {
