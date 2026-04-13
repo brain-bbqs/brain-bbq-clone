@@ -621,8 +621,14 @@ ${ragSection}`;
       metadata: { grant_number, fields_updated: fieldsUpdated, validation: validationResult?.overall_status },
     });
 
+    // Phase 5: Scrub output for PII/secret leakage
+    const { scrubbed: scrubbedReply, leaksDetected } = scrubOutput(finalContent);
+    if (leaksDetected > 0) {
+      console.error(`SECURITY: ${leaksDetected} potential data leaks scrubbed from metadata-chat output`);
+    }
+
     return new Response(JSON.stringify({
-      reply: finalContent,
+      reply: scrubbedReply,
       fields_updated: fieldsUpdated,
       metadata_completeness: newCompleteness,
       validation: validationResult ? {
@@ -636,7 +642,7 @@ ${ragSection}`;
     });
   } catch (e) {
     console.error("metadata-chat error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
