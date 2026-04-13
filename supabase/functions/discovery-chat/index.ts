@@ -210,7 +210,7 @@ ${fullContext || "No specific matches found in the database for this query."}`;
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: query },
+            { role: "user", content: sanitizedQuery },
           ],
           stream: true,
         }),
@@ -268,7 +268,7 @@ ${fullContext || "No specific matches found in the database for this query."}`;
   } catch (e) {
     console.error("discovery-chat error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
