@@ -162,9 +162,16 @@ serve(async (req) => {
       });
     }
 
-    const startTime = Date.now();
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`neuromcp-chat:${user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
 
-    let convId = conversationId;
+    // Phase 5: Sanitize for prompt injection
+    const sanitized = sanitizeForLLM(message);
+    if (sanitized.injectionDetected) {
+      console.warn(`Prompt injection detected in neuromcp-chat from user ${user.id}:`, sanitized.patternsMatched);
+    }
+    const sanitizedMessage = sanitized.sanitized;
     if (!convId) {
       const { data: newConv, error: convError } = await supabaseClient
         .from("chat_conversations")
