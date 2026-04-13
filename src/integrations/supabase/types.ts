@@ -1467,6 +1467,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_vote_count: {
+        Args: { _suggestion_id: string }
+        Returns: undefined
+      }
+      increment_vote_count: {
+        Args: { _suggestion_id: string }
+        Returns: undefined
+      }
       search_knowledge_embeddings: {
         Args: {
           match_count?: number
