@@ -90,7 +90,8 @@ const AuthorsCell = ({ value, data }: { value: string; data: Publication }) => {
     <span className="flex flex-wrap gap-x-1 gap-y-0.5 py-1" style={{ whiteSpace: 'normal', lineHeight: '1.5' }}>
       {authors.map((author, i) => {
         const url = getAuthorUrl(author);
-        const isOrcid = url.includes("orcid.org");
+        let isOrcid = false;
+        try { isOrcid = new URL(url).hostname.endsWith("orcid.org"); } catch { isOrcid = false; }
         return (
           <span key={i} className="whitespace-nowrap">
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"
