@@ -54,6 +54,10 @@ serve(async (req) => {
   if (auth.error) return auth.error;
 
   try {
+    // Phase 6: Per-user rate limiting
+    const rl = checkRateLimit(`discovery-chat:${auth.user.id}`, LLM_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitResponse(corsHeaders, rl.retryAfterMs);
+
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
       return new Response(JSON.stringify({ error: "query is required" }), {
@@ -67,6 +71,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Phase 5: Sanitize user input for prompt injection
+    const sanitized = sanitizeForLLM(query);
+    if (sanitized.injectionDetected) {
+      console.warn(`Prompt injection detected in discovery-chat from user ${auth.user.id}:`, sanitized.patternsMatched);
+    }
+    const sanitizedQuery = sanitized.sanitized;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
