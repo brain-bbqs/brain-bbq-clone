@@ -229,7 +229,14 @@ serve(async (req) => {
     }
 
     const chatData = await chatResponse.json();
-    const assistantContent = chatData.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+    const rawContent = chatData.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+
+    // Phase 5: Scrub output for PII/secret leakage
+    const { scrubbed: assistantContent, leaksDetected } = scrubOutput(rawContent);
+    if (leaksDetected > 0) {
+      console.error(`SECURITY: ${leaksDetected} potential data leaks scrubbed from neuromcp-chat output`);
+    }
+
     const tokensUsed = chatData.usage?.total_tokens || 0;
     const latencyMs = Date.now() - startTime;
     const contextSources = contexts.map((c) => ({ type: c.source_type, title: c.title }));
@@ -265,7 +272,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("NeuroMCP chat error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
