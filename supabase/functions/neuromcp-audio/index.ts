@@ -153,7 +153,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        spectrogramUrl: urlData.publicUrl,
+        spectrogramUrl: urlData.signedUrl,
         detections: detectionMeta,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
