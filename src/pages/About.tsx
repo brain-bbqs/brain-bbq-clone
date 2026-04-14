@@ -23,15 +23,24 @@ export default function About() {
 
         {/* Video Section */}
         <div className="mb-12 mt-8">
-          <div className="aspect-video rounded-lg overflow-hidden border border-border bg-muted">
-            <iframe
-              src="https://www.youtube.com/embed/UrvmYz41wsA"
-              title="BBQS Program Overview"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
+          <a
+            href="https://www.youtube.com/watch?v=UrvmYz41wsA"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="aspect-video rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center hover:opacity-90 transition-opacity relative"
+          >
+            <img
+              src="https://img.youtube.com/vi/UrvmYz41wsA/hqdefault.jpg"
+              alt="BBQS Program Overview video thumbnail"
+              className="w-full h-full object-cover"
+              loading="lazy"
             />
-          </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+          </a>
         </div>
 
         {/* Goals Section */}
