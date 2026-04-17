@@ -85,9 +85,14 @@ export default function MetadataAssistant() {
         body: { grant_number: gn },
       });
       if (error) throw error;
-      const status = (data as any)?.status;
+      const payload = data as any;
+      if (payload?.ok === false) {
+        sendMessage(`I couldn't register **${gn}**: ${payload.error || "unknown error"}.`);
+        return;
+      }
+      const status = payload?.status;
       if (status === "not_found") {
-        sendMessage(`**${gn}** was not found on NIH RePORTER, so I didn't add it. Double-check the format (e.g. R34DA059510).`);
+        sendMessage(payload?.message || `**${gn}** was not found on NIH RePORTER, so I didn't add it. Double-check the format (e.g. R34DA059510).`);
         return;
       }
       if (status === "exists_locally" || status === "created_from_reporter") {
