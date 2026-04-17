@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
  */
 export function AccessGate({
   reason, grantNumber,
-}: { reason: "unauthenticated" | "not-member"; grantNumber: string }) {
+}: { reason: "unauthenticated" | "not-member" | "insufficient-tier"; grantNumber: string }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">
       <div className="bg-card border border-border rounded-2xl p-8 text-center">
