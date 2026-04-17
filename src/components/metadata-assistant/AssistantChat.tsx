@@ -230,15 +230,15 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             </div>
             <div className="space-y-1.5">
               <p className="text-base font-semibold text-foreground">
-                {projectTitle ? projectTitle : "Select a project to begin"}
+                {projectTitle ? projectTitle : "How can I help?"}
               </p>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 {projectTitle
                   ? "Choose a workflow below to get started, or describe your experiments in plain language."
-                  : "Click on a project above to start curating its metadata with AI assistance."}
+                  : "Search by PI or project title, paste a NIH grant ID, or ask anything about the consortium."}
               </p>
             </div>
-            {projectTitle && (
+            {projectTitle ? (
               <div className="grid grid-cols-2 gap-2 w-full max-w-md mt-1">
                 {WORKFLOW_ACTIONS.map((action, i) => (
                   <button
@@ -247,6 +247,23 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                     className="group flex items-start gap-2.5 text-left text-xs px-3.5 py-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
                   >
                     <span className="text-primary/60 group-hover:text-primary mt-0.5 shrink-0">{action.icon}</span>
+                    <span className="leading-snug font-medium">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-1">
+                {[
+                  { label: "Find a project by PI name", prompt: "Find projects by " },
+                  { label: "Look up a NIH grant ID", prompt: "Is grant R34DA059510 in the consortium?" },
+                  { label: "What is BBQS?", prompt: "What is the BBQS consortium?" },
+                ].map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onSend(action.prompt)}
+                    className="group flex items-center gap-2.5 text-left text-xs px-3.5 py-2.5 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary/60 group-hover:text-primary shrink-0" />
                     <span className="leading-snug font-medium">{action.label}</span>
                   </button>
                 ))}
