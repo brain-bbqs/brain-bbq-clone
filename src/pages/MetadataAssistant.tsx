@@ -120,8 +120,11 @@ export default function MetadataAssistant() {
     }
     setAddingGrant(gn);
     try {
+      // Explicitly attach the access token — invoke() doesn't always forward it
+      // reliably across origins, especially in preview iframes.
       const { data, error } = await supabase.functions.invoke("add-project-by-grant", {
         body: { grant_number: gn },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
       console.log("[add-project-by-grant] response:", { data, error });
       if (error) {

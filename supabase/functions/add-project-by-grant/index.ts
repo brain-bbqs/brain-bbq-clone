@@ -132,25 +132,27 @@ Deno.serve(async (req) => {
 
   // ── Auth: require admin or curator ─────────────────────────
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
+  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+    console.error("[add-project-by-grant] missing/invalid Authorization header");
     return fail("You're not signed in. Please sign in with an admin or curator account and try again.");
   }
+  const token = authHeader.slice(7).trim();
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-  // User-context client to read the caller identity
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes?.user) {
-    return fail("Your sign-in session is invalid or expired. Please sign in again.");
-  }
-
-  // Service-role client for role check + writes
+  // Service-role client for token validation, role check, and writes.
   const admin = createClient(supabaseUrl, serviceKey);
+
+  // Validate the JWT explicitly using the service-role client.
+  const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userRes?.user) {
+    console.error("[add-project-by-grant] getUser failed:", userErr?.message, "token len:", token.length);
+    return fail(`Your sign-in session is invalid or expired. Please sign in again. (${userErr?.message ?? "no user"})`);
+  }
+  console.log("[add-project-by-grant] authenticated user:", userRes.user.email, userRes.user.id);
+
   const { data: roles } = await admin
     .from("user_roles")
     .select("role")
