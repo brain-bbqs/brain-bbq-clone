@@ -609,6 +609,7 @@ ${ragSection}`;
         success: true,
         fields_updated: fieldsUpdated,
         new_completeness: newCompleteness,
+        proposed: proposeMode,
       };
 
       if (validationResult) {
@@ -620,8 +621,11 @@ ${ragSection}`;
         toolResultContent.validation_report = validationReport;
       }
 
+      const proposeNote = proposeMode
+        ? `\n\nIMPORTANT: This is PROPOSE mode. Changes were NOT applied directly — they were submitted as suggestions for the project team to review on the Project Profile page. Phrase your response as "I've suggested updates to X, Y..." and remind the user that a project member needs to accept the changes.`
+        : "";
       const followUpMessages = [
-        { role: "system", content: systemPrompt + `\n\nIMPORTANT: Include the validation protocol results in your response. Here is the formatted report to include:\n${validationReport}` },
+        { role: "system", content: systemPrompt + `\n\nIMPORTANT: Include the validation protocol results in your response. Here is the formatted report to include:\n${validationReport}${proposeNote}` },
         ...messages,
         assistantMessage,
         ...toolCalls.map((tc: any) => ({
