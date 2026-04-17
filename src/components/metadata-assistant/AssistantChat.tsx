@@ -323,8 +323,8 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 <ValidationChecklist validation={lastValidation} />
               </div>
             )}
-            {/* Show suggested follow-up actions after the last assistant message */}
-            {msg.role === "assistant" && i === messages.length - 1 && (
+            {/* Show suggested follow-up actions after the last assistant message (only when curating a project) */}
+            {msg.role === "assistant" && i === messages.length - 1 && projectTitle && (
               <SuggestedActions
                 onSend={onSend}
                 lastAssistantMsg={msg.content}
