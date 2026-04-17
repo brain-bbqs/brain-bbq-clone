@@ -20,6 +20,10 @@ interface AssistantChatProps {
   projectTitle?: string;
   lastValidation?: ValidationResult | null;
   fieldsUpdated?: string[];
+  /** Called when the user picks a candidate project from a discovery card. */
+  onSelectCandidate?: (grantNumber: string) => void;
+  /** Called when the user confirms adding a new grant proposed by the router. */
+  onConfirmAddGrant?: (grantNumber: string) => void;
 }
 
 
