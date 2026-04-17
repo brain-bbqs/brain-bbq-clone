@@ -17,11 +17,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Always return 200 so the Supabase JS SDK delivers the body to the client.
+// Errors are signalled via { ok: false, error, ... } in the JSON payload.
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+function ok(body: Record<string, unknown>) {
+  return jsonResponse({ ok: true, ...body }, 200);
+}
+function fail(error: string, extra: Record<string, unknown> = {}) {
+  return jsonResponse({ ok: false, error, ...extra }, 200);
 }
 
 // NIH RePORTER grant numbers look like: optional 1-digit prefix, 1 letter activity-code section letter
