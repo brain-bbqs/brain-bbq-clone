@@ -186,7 +186,16 @@ serve(async (req) => {
 
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
-    const { messages, grant_number } = body;
+    const { messages, grant_number, mode, conversation_id } = body;
+    // mode: "apply" (default, mutates projects directly) or "propose" (writes to pending_changes for review)
+    const proposeMode = mode === "propose";
+
+    // For propose mode, use a user-scoped client so RLS enforces edit permissions on pending_changes
+    const userSb = proposeMode
+      ? createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
+          global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
+        })
+      : null;
 
     // --- Input validation ---
     if (!grant_number || typeof grant_number !== "string" || grant_number.length > 30) {
@@ -521,8 +530,36 @@ ${ragSection}`;
     const hasUpdates = fieldsUpdated.length > 0;
     let newCompleteness = (project as any).metadata_completeness ?? 0;
 
-    if (hasUpdates) {
-      // Build a virtual merged project to calculate completeness
+    if (hasUpdates && proposeMode && userSb) {
+      // PROPOSE MODE: write to pending_changes for human review
+      const { data: profile } = await sb
+        .from("profiles").select("email").eq("id", auth.user.id).maybeSingle();
+
+      const proposedRows = fieldsUpdated.map((field: string) => ({
+        grant_number,
+        project_id: (project as any)?.id ?? null,
+        field_name: field,
+        current_value: getField(project, field) ?? null,
+        proposed_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
+        source: "assistant",
+        proposed_by: auth.user.id,
+        proposed_by_email: profile?.email || auth.user.email || null,
+        rationale: typeof lastUserMsg === "string" ? lastUserMsg.slice(0, 500) : null,
+        conversation_id: conversation_id || null,
+        status: "pending",
+      }));
+
+      const { error: pendingErr } = await userSb.from("pending_changes").insert(proposedRows);
+      if (pendingErr) {
+        console.error("pending_changes insert error:", pendingErr);
+        // If RLS blocks, surface a clear message
+        return new Response(JSON.stringify({
+          error: "Could not record proposals. You may not have edit access to this project.",
+          details: pendingErr.message,
+        }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    } else if (hasUpdates) {
+      // APPLY MODE (legacy): mutate project directly
       const mergedProject = { ...project, ...topLevelUpdates, metadata: metadataUpdates };
       newCompleteness = calcCompleteness(mergedProject);
 
@@ -572,6 +609,7 @@ ${ragSection}`;
         success: true,
         fields_updated: fieldsUpdated,
         new_completeness: newCompleteness,
+        proposed: proposeMode,
       };
 
       if (validationResult) {
@@ -583,8 +621,11 @@ ${ragSection}`;
         toolResultContent.validation_report = validationReport;
       }
 
+      const proposeNote = proposeMode
+        ? `\n\nIMPORTANT: This is PROPOSE mode. Changes were NOT applied directly — they were submitted as suggestions for the project team to review on the Project Profile page. Phrase your response as "I've suggested updates to X, Y..." and remind the user that a project member needs to accept the changes.`
+        : "";
       const followUpMessages = [
-        { role: "system", content: systemPrompt + `\n\nIMPORTANT: Include the validation protocol results in your response. Here is the formatted report to include:\n${validationReport}` },
+        { role: "system", content: systemPrompt + `\n\nIMPORTANT: Include the validation protocol results in your response. Here is the formatted report to include:\n${validationReport}${proposeNote}` },
         ...messages,
         assistantMessage,
         ...toolCalls.map((tc: any) => ({
@@ -630,6 +671,7 @@ ${ragSection}`;
     return new Response(JSON.stringify({
       reply: scrubbedReply,
       fields_updated: fieldsUpdated,
+      proposed: proposeMode,
       metadata_completeness: newCompleteness,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,

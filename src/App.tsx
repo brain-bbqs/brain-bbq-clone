@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
+import ProjectProfile from "./pages/ProjectProfile";
 import SFN2025 from "./pages/SFN2025";
 import MITWorkshop2026 from "./pages/MITWorkshop2026";
 import MITWorkshopTravel from "./pages/MITWorkshopTravel";
@@ -40,6 +41,7 @@ import FundingOpportunities from "./pages/FundingOpportunities";
 
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
+import AdminUsers from "./pages/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/about" element={<About />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:grantNumber/profile" element={<ProjectProfile />} />
               <Route path="/sfn-2025" element={<SFN2025 />} />
               <Route path="/mit-workshop-2026" element={<MITWorkshop2026 />} />
               <Route path="/mit-workshop-2026/travel" element={<MITWorkshopTravel />} />
@@ -86,6 +89,7 @@ const App = () => (
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/state-privacy" element={<StatePrivacyMap />} />
               <Route path="/grants" element={<FundingOpportunities />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
               <Route path="/ml-models" element={<Navigate to="/resources" replace />} />

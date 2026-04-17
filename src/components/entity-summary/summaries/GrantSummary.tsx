@@ -6,11 +6,22 @@ import { EntityComments } from "../EntityComments";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileText, MessageSquare, FolderOpen, Microscope } from "lucide-react";
+import { ExternalLink, FileText, MessageSquare, FolderOpen, Microscope, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useCanEditProject } from "@/hooks/useCanEditProject";
 import { GrantMarrSection } from "./GrantMarrSection";
 
 export function GrantSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
+  const grantNumberQ = useQuery({
+    queryKey: ["grant-number-only", id],
+    queryFn: async () => {
+      const { data } = await supabase.from("grants").select("grant_number").eq("id", id).single();
+      return data?.grant_number ?? null;
+    },
+  });
+  const { canEdit } = useCanEditProject(grantNumberQ.data ?? null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["entity-grant", id],
@@ -184,10 +195,17 @@ export function GrantSummary({ id }: { id: string }) {
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <FolderOpen className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-foreground">{data.grant_number}</h2>
             <p className="text-sm text-muted-foreground">NIH Grant</p>
           </div>
+          {canEdit && (
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/projects/${data.grant_number}/profile`}>
+                <Settings className="h-3.5 w-3.5 mr-1.5" /> Manage
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
       <SummaryTabs tabs={[

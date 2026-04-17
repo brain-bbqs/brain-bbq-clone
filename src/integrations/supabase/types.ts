@@ -947,6 +947,71 @@ export type Database = {
           },
         ]
       }
+      pending_changes: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          current_value: Json | null
+          field_name: string
+          grant_number: string
+          id: string
+          project_id: string | null
+          proposed_by: string | null
+          proposed_by_email: string | null
+          proposed_value: Json | null
+          rationale: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          field_name: string
+          grant_number: string
+          id?: string
+          project_id?: string | null
+          proposed_by?: string | null
+          proposed_by_email?: string | null
+          proposed_value?: Json | null
+          rationale?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          field_name?: string
+          grant_number?: string
+          id?: string
+          project_id?: string | null
+          proposed_by?: string | null
+          proposed_by_email?: string | null
+          proposed_value?: Json | null
+          rationale?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_changes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1498,6 +1563,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_jobs: {
@@ -1568,14 +1657,23 @@ export type Database = {
       }
     }
     Functions: {
+      accept_pending_change: { Args: { _change_id: string }; Returns: Json }
       decrement_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       increment_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
+      is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       search_knowledge_embeddings: {
         Args: {
           match_count?: number
@@ -1592,6 +1690,10 @@ export type Database = {
           title: string
         }[]
       }
+      user_can_edit_grant_roster: {
+        Args: { _grant_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_can_edit_project: {
         Args: { _grant_number: string; _user_id: string }
         Returns: boolean
@@ -1606,6 +1708,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "member" | "curator"
       resource_type:
         | "investigator"
         | "organization"
@@ -1746,6 +1849,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "member", "curator"],
       resource_type: [
         "investigator",
         "organization",

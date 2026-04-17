@@ -21,6 +21,7 @@ import {
   Bot,
   FlaskConical,
   Hotel,
+  ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -30,6 +31,7 @@ export interface NavItem {
   icon: LucideIcon;
   disabled?: boolean;
   authRequired?: boolean;
+  adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -81,6 +83,7 @@ const conferencesItems: NavItem[] = [
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
+  { title: "User Roles", url: "/admin/users", icon: ShieldCheck, adminOnly: true },
 ];
 
 const legalItems: NavItem[] = [
