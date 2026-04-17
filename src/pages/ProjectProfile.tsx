@@ -175,6 +175,16 @@ export default function ProjectProfile() {
           </div>
         </div>
 
+        {/* Helpful link to assistant */}
+        <div className="bg-muted/30 border border-border rounded-xl p-4 text-sm text-muted-foreground">
+          💡 Tip: Use the{" "}
+          <Link to={`/metadata-assistant?grant=${grantNumber}`} className="text-primary hover:underline font-medium">
+            BBQS Assistant
+          </Link>{" "}
+          to propose updates conversationally — its suggestions will appear in the pending panel
+          below for your team to review.
+        </div>
+
         {/* Sticky action bar */}
         {hasChanges && (
           <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border border-amber-500/30 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
@@ -221,16 +231,8 @@ export default function ProjectProfile() {
           ))}
         </div>
 
-        {/* Helpful link to assistant */}
-        <div className="bg-muted/30 border border-border rounded-xl p-4 text-sm text-muted-foreground">
-          💡 Tip: Use the{" "}
-          <Link to={`/metadata-assistant?grant=${grantNumber}`} className="text-primary hover:underline font-medium">
-            BBQS Assistant
-          </Link>{" "}
-          to propose updates conversationally — its suggestions will appear in the panel above
-          for your team to review.
-        </div>
       </div>
     </>
   );
 }
+
