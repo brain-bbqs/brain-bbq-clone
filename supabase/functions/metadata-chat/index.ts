@@ -530,8 +530,36 @@ ${ragSection}`;
     const hasUpdates = fieldsUpdated.length > 0;
     let newCompleteness = (project as any).metadata_completeness ?? 0;
 
-    if (hasUpdates) {
-      // Build a virtual merged project to calculate completeness
+    if (hasUpdates && proposeMode && userSb) {
+      // PROPOSE MODE: write to pending_changes for human review
+      const { data: profile } = await sb
+        .from("profiles").select("email").eq("id", auth.user.id).maybeSingle();
+
+      const proposedRows = fieldsUpdated.map((field: string) => ({
+        grant_number,
+        project_id: (project as any)?.id ?? null,
+        field_name: field,
+        current_value: getField(project, field) ?? null,
+        proposed_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
+        source: "assistant",
+        proposed_by: auth.user.id,
+        proposed_by_email: profile?.email || auth.user.email || null,
+        rationale: typeof lastUserMsg === "string" ? lastUserMsg.slice(0, 500) : null,
+        conversation_id: conversation_id || null,
+        status: "pending",
+      }));
+
+      const { error: pendingErr } = await userSb.from("pending_changes").insert(proposedRows);
+      if (pendingErr) {
+        console.error("pending_changes insert error:", pendingErr);
+        // If RLS blocks, surface a clear message
+        return new Response(JSON.stringify({
+          error: "Could not record proposals. You may not have edit access to this project.",
+          details: pendingErr.message,
+        }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    } else if (hasUpdates) {
+      // APPLY MODE (legacy): mutate project directly
       const mergedProject = { ...project, ...topLevelUpdates, metadata: metadataUpdates };
       newCompleteness = calcCompleteness(mergedProject);
 
