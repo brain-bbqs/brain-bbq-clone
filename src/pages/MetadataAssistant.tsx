@@ -97,8 +97,14 @@ export default function MetadataAssistant() {
 
   /** Router proposed adding a new grant from RePORTER → run the add-by-grant flow. */
   const handleConfirmAddGrant = async (gn: string) => {
-    if (!user) {
-      postAssistantMessage(`Please sign in to register **${gn}**.`);
+    // Re-check the live session — preview mode fakes admin tier client-side, but
+    // the edge function needs a real JWT to authorize the import.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData?.session;
+    if (!user || !session) {
+      postAssistantMessage(
+        `I can't register **${gn}** because you're not signed in. Please [sign in](/auth) with an admin or curator account and try again.`
+      );
       return;
     }
     if (!isCurator) {
