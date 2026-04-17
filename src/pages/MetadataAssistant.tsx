@@ -6,9 +6,11 @@ import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { ChatHistorySidebar } from "@/components/metadata-assistant/ChatHistorySidebar";
+import { AddProjectDialog } from "@/components/metadata-assistant/AddProjectDialog";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
+import { useUserTier } from "@/hooks/useUserTier";
 import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen, Sparkles, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
