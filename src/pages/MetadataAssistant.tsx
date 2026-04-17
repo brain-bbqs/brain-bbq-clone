@@ -56,6 +56,7 @@ export default function MetadataAssistant() {
   const {
     messages, isLoading, completeness, fieldsUpdated, lastValidation,
     conversationId, sendMessage, clearChat, loadConversationById, deleteConversation,
+    appendAssistantMessage,
   } = useMetadataChat(grantNumber, { mode: proposeMode ? "propose" : "apply" });
 
   const handleSelectConversation = (convoId: string, convoGrantNumber: string) => {
