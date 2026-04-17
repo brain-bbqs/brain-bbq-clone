@@ -2,9 +2,20 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface ProjectCandidate {
+  grant_number: string;
+  title: string;
+  pi?: string;
+  institution?: string;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** When set, this assistant message offers project candidates for the user to select. */
+  candidates?: ProjectCandidate[];
+  /** When set, this assistant message proposes adding a new grant from NIH RePORTER. */
+  proposeAddGrant?: string;
 }
 
 export interface ValidationCheck {
@@ -164,14 +175,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
   }, [user]);
 
   const sendMessage = useCallback(async (content: string) => {
-    if (!grantNumber || !content.trim()) return;
-    if (!user) {
-      setState(prev => ({
-        ...prev,
-        messages: [...prev.messages, { role: "assistant" as const, content: "Please sign in to use the metadata assistant." }],
-      }));
-      return;
-    }
+    if (!content.trim()) return;
 
     const userMsg: ChatMessage = { role: "user", content: content.trim() };
     setState(prev => ({
@@ -180,6 +184,46 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
       isLoading: true,
       lastValidation: null,
     }));
+
+    // ── Pre-selection mode: no project chosen yet → route through assistant-router ──
+    if (!grantNumber) {
+      try {
+        const apiMessages = [...state.messages, userMsg].map(m => ({ role: m.role, content: m.content }));
+        const { data, error } = await supabase.functions.invoke("assistant-router", {
+          body: { messages: apiMessages },
+        });
+        if (error) throw error;
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: data?.reply || "I'm not sure how to help with that yet.",
+          candidates: Array.isArray(data?.candidates) && data.candidates.length > 0 ? data.candidates : undefined,
+          proposeAddGrant: data?.intent === "add_grant" ? data?.grant_number : undefined,
+        };
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, assistantMsg],
+          isLoading: false,
+        }));
+      } catch (err: any) {
+        console.error("assistant-router error:", err);
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, { role: "assistant", content: `Error: ${err.message || "Something went wrong."}` }],
+          isLoading: false,
+        }));
+      }
+      return;
+    }
+
+    // ── Project-selected mode: existing metadata-chat flow ──
+    if (!user) {
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, { role: "assistant" as const, content: "Please sign in to use the metadata assistant." }],
+        isLoading: false,
+      }));
+      return;
+    }
 
     try {
       const convoId = await ensureConversation();
@@ -225,7 +269,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         isLoading: false,
       }));
     }
-  }, [grantNumber, state.messages, ensureConversation, persistMessage, mode]);
+  }, [grantNumber, user, state.messages, ensureConversation, persistMessage, mode]);
 
   const clearChat = useCallback(async () => {
     if (state.conversationId && user) {

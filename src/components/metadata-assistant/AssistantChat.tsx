@@ -20,6 +20,10 @@ interface AssistantChatProps {
   projectTitle?: string;
   lastValidation?: ValidationResult | null;
   fieldsUpdated?: string[];
+  /** Called when the user picks a candidate project from a discovery card. */
+  onSelectCandidate?: (grantNumber: string) => void;
+  /** Called when the user confirms adding a new grant proposed by the router. */
+  onConfirmAddGrant?: (grantNumber: string) => void;
 }
 
 
@@ -156,7 +160,7 @@ function ValidationChecklist({ validation }: { validation: ValidationResult }) {
     </div>
   );
 }
-export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation, fieldsUpdated = [] }: AssistantChatProps) {
+export function AssistantChat({ messages, isLoading, completeness, onSend, onClear, projectTitle, lastValidation, fieldsUpdated = [], onSelectCandidate, onConfirmAddGrant }: AssistantChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -226,15 +230,15 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             </div>
             <div className="space-y-1.5">
               <p className="text-base font-semibold text-foreground">
-                {projectTitle ? projectTitle : "Select a project to begin"}
+                {projectTitle ? projectTitle : "How can I help?"}
               </p>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 {projectTitle
                   ? "Choose a workflow below to get started, or describe your experiments in plain language."
-                  : "Click on a project above to start curating its metadata with AI assistance."}
+                  : "Search by PI or project title, paste a NIH grant ID, or ask anything about the consortium."}
               </p>
             </div>
-            {projectTitle && (
+            {projectTitle ? (
               <div className="grid grid-cols-2 gap-2 w-full max-w-md mt-1">
                 {WORKFLOW_ACTIONS.map((action, i) => (
                   <button
@@ -243,6 +247,23 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                     className="group flex items-start gap-2.5 text-left text-xs px-3.5 py-3 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
                   >
                     <span className="text-primary/60 group-hover:text-primary mt-0.5 shrink-0">{action.icon}</span>
+                    <span className="leading-snug font-medium">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-1">
+                {[
+                  { label: "Find a project by PI name", prompt: "Find projects by " },
+                  { label: "Look up a NIH grant ID", prompt: "Is grant R34DA059510 in the consortium?" },
+                  { label: "What is BBQS?", prompt: "What is the BBQS consortium?" },
+                ].map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onSend(action.prompt)}
+                    className="group flex items-center gap-2.5 text-left text-xs px-3.5 py-2.5 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/20 text-muted-foreground hover:text-foreground transition-all duration-200"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary/60 group-hover:text-primary shrink-0" />
                     <span className="leading-snug font-medium">{action.label}</span>
                   </button>
                 ))}
@@ -264,14 +285,46 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 </div>
               )}
             </div>
+            {/* Pre-selection: project candidates picker */}
+            {msg.role === "assistant" && msg.candidates && msg.candidates.length > 0 && onSelectCandidate && (
+              <div className="mt-2 ml-1 space-y-1.5 max-w-[85%]">
+                {msg.candidates.map((c) => (
+                  <button
+                    key={c.grant_number}
+                    onClick={() => onSelectCandidate(c.grant_number)}
+                    className="w-full group flex items-start gap-2.5 text-left px-3 py-2 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{c.title}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {c.grant_number}{c.pi ? ` · PI ${c.pi}` : ""}{c.institution ? ` · ${c.institution}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">Open →</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Pre-selection: confirm-add-grant card */}
+            {msg.role === "assistant" && msg.proposeAddGrant && onConfirmAddGrant && (
+              <div className="mt-2 ml-1 max-w-[85%]">
+                <button
+                  onClick={() => onConfirmAddGrant(msg.proposeAddGrant!)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-xs font-medium text-foreground transition-all"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Look up {msg.proposeAddGrant} on NIH RePORTER
+                </button>
+              </div>
+            )}
             {/* Show validation checklist after the last assistant message */}
             {msg.role === "assistant" && i === messages.length - 1 && lastValidation && (
               <div className="mt-3">
                 <ValidationChecklist validation={lastValidation} />
               </div>
             )}
-            {/* Show suggested follow-up actions after the last assistant message */}
-            {msg.role === "assistant" && i === messages.length - 1 && (
+            {/* Show suggested follow-up actions after the last assistant message (only when curating a project) */}
+            {msg.role === "assistant" && i === messages.length - 1 && projectTitle && (
               <SuggestedActions
                 onSend={onSend}
                 lastAssistantMsg={msg.content}
@@ -312,7 +365,7 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your experiment, methods, species..."
+            placeholder={projectTitle ? "Describe your experiment, methods, species..." : "Search for a project, paste a NIH grant ID, or ask anything..."}
             disabled={isLoading}
             className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30 flex-1"
             rows={1}
