@@ -235,7 +235,4 @@ export default function ProjectProfile() {
     </>
   );
 }
-      </div>
-    </>
-  );
-}
+
