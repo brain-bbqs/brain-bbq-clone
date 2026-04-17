@@ -235,9 +235,7 @@ export default function AdminUsers() {
                         </TableCell>
                         <TableCell>
                           {u.is_linked_investigator ? (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
-                              Linked
-                            </Badge>
+                            <Badge variant="secondary">Linked</Badge>
                           ) : (
                             <Badge variant="outline" className="text-muted-foreground">
                               Unlinked
