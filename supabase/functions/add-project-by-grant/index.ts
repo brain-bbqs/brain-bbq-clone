@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
   });
 
   // Newly created → no questionnaire fields populated yet
-  return jsonResponse({
+  return ok({
     status: "created_from_reporter",
     grant_number: grantNumber,
     grant: {
