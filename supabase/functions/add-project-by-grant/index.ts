@@ -132,7 +132,9 @@ Deno.serve(async (req) => {
 
   // ── Auth: require admin or curator ─────────────────────────
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return fail("Unauthorized");
+  if (!authHeader) {
+    return fail("You're not signed in. Please sign in with an admin or curator account and try again.");
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -143,7 +145,9 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes?.user) return fail("Unauthorized");
+  if (userErr || !userRes?.user) {
+    return fail("Your sign-in session is invalid or expired. Please sign in again.");
+  }
 
   // Service-role client for role check + writes
   const admin = createClient(supabaseUrl, serviceKey);
@@ -153,7 +157,9 @@ Deno.serve(async (req) => {
     .eq("user_id", userRes.user.id);
   const roleSet = new Set((roles ?? []).map((r) => r.role));
   if (!roleSet.has("admin") && !roleSet.has("curator")) {
-    return fail("Forbidden — admin or curator role required");
+    return fail(
+      `Only admins or curators can register new projects, and ${userRes.user.email ?? "your account"} doesn't have that role. Please ask a consortium admin to import this grant.`,
+    );
   }
 
   // ── Parse + validate body ──────────────────────────────────
