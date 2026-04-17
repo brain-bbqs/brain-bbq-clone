@@ -74,12 +74,9 @@ export default function MetadataAssistant() {
     setGrantNumber(gn);
   };
 
-  /** Append an assistant message directly to the visible chat without round-tripping the LLM. */
+  /** Append a system/status message into the chat without invoking the LLM. */
   const postAssistantMessage = (content: string) => {
-    // sendMessage triggers another router call; we just need a passive update.
-    // Easiest: dispatch via clearing trick is bad — instead, post via sendMessage
-    // with a special "system" prefix so the user sees a reply. Fallback to sendMessage.
-    sendMessage(content);
+    appendAssistantMessage(content);
   };
 
   /** Router proposed adding a new grant from RePORTER → run the add-by-grant flow. */
