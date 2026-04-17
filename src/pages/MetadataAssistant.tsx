@@ -18,6 +18,7 @@ export default function MetadataAssistant() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const { isCurator } = useUserTier(); // tier 1 (admin) or tier 2 (curator)
   const [showBanner, setShowBanner] = useState(() => {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
