@@ -15,12 +15,25 @@ import { Button } from "@/components/ui/button";
 export default function MetadataAssistant() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [showBanner, setShowBanner] = useState(() => {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
-  const [grantNumber, setGrantNumber] = useState<string | null>(null);
+  const [grantNumber, setGrantNumber] = useState<string | null>(
+    () => searchParams.get("grant")
+  );
   const [showHistory, setShowHistory] = useState(false);
   const { canEdit } = useCanEditProject(grantNumber);
+
+  // When ?grant= is present, the assistant is being used in PROPOSE mode from
+  // a project profile context — suggestions go to pending_changes for review.
+  const proposeMode = !!searchParams.get("grant");
+
+  // Sync URL param into local state (e.g. when navigating between project profiles)
+  useEffect(() => {
+    const param = searchParams.get("grant");
+    if (param && param !== grantNumber) setGrantNumber(param);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: grantTitle } = useQuery({
     queryKey: ["grant-title", grantNumber],
@@ -39,7 +52,7 @@ export default function MetadataAssistant() {
   const {
     messages, isLoading, completeness, fieldsUpdated, lastValidation,
     conversationId, sendMessage, clearChat, loadConversationById, deleteConversation,
-  } = useMetadataChat(grantNumber);
+  } = useMetadataChat(grantNumber, { mode: proposeMode ? "propose" : "apply" });
 
   const handleSelectConversation = (convoId: string, convoGrantNumber: string) => {
     setGrantNumber(convoGrantNumber);
