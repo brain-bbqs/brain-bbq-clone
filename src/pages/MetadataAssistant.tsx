@@ -26,6 +26,7 @@ export default function MetadataAssistant() {
     () => searchParams.get("grant")
   );
   const [showHistory, setShowHistory] = useState(false);
+  const [addingGrant, setAddingGrant] = useState<string | null>(null);
   const { canEdit } = useCanEditProject(grantNumber);
 
   // When ?grant= is present, the assistant is being used in PROPOSE mode from
@@ -65,6 +66,40 @@ export default function MetadataAssistant() {
   const handleDeleteConversation = async (convoId: string) => {
     await deleteConversation(convoId);
     queryClient.invalidateQueries({ queryKey: ["chat-history"] });
+  };
+
+  /** Picker selected a candidate from the chat router → switch to that grant. */
+  const handleSelectCandidate = (gn: string) => {
+    setGrantNumber(gn);
+  };
+
+  /** Router proposed adding a new grant from RePORTER → run the add-by-grant flow. */
+  const handleConfirmAddGrant = async (gn: string) => {
+    if (!isCurator) {
+      sendMessage(`I can't add **${gn}** because only admins or curators can register new projects. Please ask a consortium admin to import it.`);
+      return;
+    }
+    setAddingGrant(gn);
+    try {
+      const { data, error } = await supabase.functions.invoke("add-project-by-grant", {
+        body: { grant_number: gn },
+      });
+      if (error) throw error;
+      const status = (data as any)?.status;
+      if (status === "not_found") {
+        sendMessage(`**${gn}** was not found on NIH RePORTER, so I didn't add it. Double-check the format (e.g. R34DA059510).`);
+        return;
+      }
+      if (status === "exists_locally" || status === "created_from_reporter") {
+        queryClient.invalidateQueries({ queryKey: ["grants-for-picker"] });
+        queryClient.invalidateQueries({ queryKey: ["projects-completeness"] });
+        setGrantNumber(gn);
+      }
+    } catch (err: any) {
+      sendMessage(`Error registering ${gn}: ${err?.message || "unknown error"}.`);
+    } finally {
+      setAddingGrant(null);
+    }
   };
 
   return (
