@@ -135,14 +135,18 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {sidebarGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-              {group.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>{renderMenuItems(group.items)}</SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {sidebarGroups.map((group) => {
+          const visible = group.items.filter((item) => !item.adminOnly || isAdmin);
+          if (visible.length === 0) return null;
+          return (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>{renderMenuItems(visible)}</SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="p-2 space-y-2">
