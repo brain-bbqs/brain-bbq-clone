@@ -242,6 +242,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
       fieldsUpdated: [],
       lastValidation: null,
       conversationId: null,
+      lastProposed: false,
     });
   }, [state.conversationId, user]);
 
@@ -263,6 +264,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         fieldsUpdated: [],
         lastValidation: null,
         conversationId: null,
+        lastProposed: false,
       });
     }
   }, [user, state.conversationId]);
@@ -274,6 +276,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
     fieldsUpdated: state.fieldsUpdated,
     lastValidation: state.lastValidation,
     conversationId: state.conversationId,
+    lastProposed: state.lastProposed,
     sendMessage,
     clearChat,
     loadConversationById,
