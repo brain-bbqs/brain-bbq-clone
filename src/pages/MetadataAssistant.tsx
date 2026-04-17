@@ -6,9 +6,11 @@ import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
 import { AssistantChat } from "@/components/metadata-assistant/AssistantChat";
 import { MetadataTable } from "@/components/metadata-assistant/MetadataTable";
 import { ChatHistorySidebar } from "@/components/metadata-assistant/ChatHistorySidebar";
+import { AddProjectDialog } from "@/components/metadata-assistant/AddProjectDialog";
 import { useMetadataChat } from "@/hooks/useMetadataChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
+import { useUserTier } from "@/hooks/useUserTier";
 import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen, Sparkles, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +18,7 @@ export default function MetadataAssistant() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const { isCurator } = useUserTier(); // tier 1 (admin) or tier 2 (curator)
   const [showBanner, setShowBanner] = useState(() => {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
@@ -124,7 +127,12 @@ export default function MetadataAssistant() {
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* Project selector */}
           <div className="border-b border-border shrink-0 px-5 py-3 bg-card">
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Select Project</label>
+              {isCurator && (
+                <AddProjectDialog onProjectAdded={(gn) => setGrantNumber(gn)} />
+              )}
+            </div>
             <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
           </div>
 
