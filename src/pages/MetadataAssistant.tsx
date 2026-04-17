@@ -56,7 +56,24 @@ export default function MetadataAssistant() {
   const {
     messages, isLoading, completeness, fieldsUpdated, lastValidation,
     conversationId, sendMessage, clearChat, loadConversationById, deleteConversation,
+    appendAssistantMessage,
   } = useMetadataChat(grantNumber, { mode: proposeMode ? "propose" : "apply" });
+
+  // Auto-trigger add-grant flow when the user explicitly asked to add/register a grant
+  // and the router proposed it. Avoids requiring a second click for a clear ask.
+  const [autoAddedFor, setAutoAddedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (messages.length < 2) return;
+    const last = messages[messages.length - 1];
+    const prior = messages[messages.length - 2];
+    if (last.role !== "assistant" || !last.proposeAddGrant) return;
+    if (prior.role !== "user") return;
+    if (autoAddedFor === last.proposeAddGrant) return;
+    if (!/\b(add|register|import|create|put|onboard)\b/i.test(prior.content)) return;
+    setAutoAddedFor(last.proposeAddGrant);
+    handleConfirmAddGrant(last.proposeAddGrant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const handleSelectConversation = (convoId: string, convoGrantNumber: string) => {
     setGrantNumber(convoGrantNumber);
@@ -73,10 +90,19 @@ export default function MetadataAssistant() {
     setGrantNumber(gn);
   };
 
+  /** Append a system/status message into the chat without invoking the LLM. */
+  const postAssistantMessage = (content: string) => {
+    appendAssistantMessage(content);
+  };
+
   /** Router proposed adding a new grant from RePORTER → run the add-by-grant flow. */
   const handleConfirmAddGrant = async (gn: string) => {
+    if (!user) {
+      postAssistantMessage(`Please sign in to register **${gn}**.`);
+      return;
+    }
     if (!isCurator) {
-      sendMessage(`I can't add **${gn}** because only admins or curators can register new projects. Please ask a consortium admin to import it.`);
+      postAssistantMessage(`I can't add **${gn}** because only admins or curators can register new projects. Please ask a consortium admin to import it.`);
       return;
     }
     setAddingGrant(gn);
@@ -84,24 +110,45 @@ export default function MetadataAssistant() {
       const { data, error } = await supabase.functions.invoke("add-project-by-grant", {
         body: { grant_number: gn },
       });
-      if (error) throw error;
+      console.log("[add-project-by-grant] response:", { data, error });
+      if (error) {
+        // Surface raw error so users aren't left with a silent UI.
+        postAssistantMessage(`I hit an error registering **${gn}**: ${error.message || "Edge Function error."}`);
+        return;
+      }
       const payload = data as any;
-      if (payload?.ok === false) {
-        sendMessage(`I couldn't register **${gn}**: ${payload.error || "unknown error"}.`);
+      if (!payload) {
+        postAssistantMessage(`I didn't get a response back from the registration service for **${gn}**. Please retry in a moment.`);
         return;
       }
-      const status = payload?.status;
+      if (payload.ok === false) {
+        postAssistantMessage(`I couldn't register **${gn}**: ${payload.error || "unknown error"}.`);
+        return;
+      }
+      const status = payload.status;
       if (status === "not_found") {
-        sendMessage(payload?.message || `**${gn}** was not found on NIH RePORTER, so I didn't add it. Double-check the format (e.g. R34DA059510).`);
+        postAssistantMessage(payload.message || `**${gn}** was not found on NIH RePORTER, so I didn't add it. Double-check the format (e.g. R34DA059510).`);
         return;
       }
-      if (status === "exists_locally" || status === "created_from_reporter") {
+      if (status === "exists_locally") {
+        queryClient.invalidateQueries({ queryKey: ["grants-for-picker"] });
+        setGrantNumber(gn);
+        postAssistantMessage(`**${gn}** is already in the consortium — I've opened it for you.`);
+        return;
+      }
+      if (status === "created_from_reporter") {
         queryClient.invalidateQueries({ queryKey: ["grants-for-picker"] });
         queryClient.invalidateQueries({ queryKey: ["projects-completeness"] });
+        const title = payload.grant?.title ? ` — *${payload.grant.title}*` : "";
+        const pi = payload.grant?.contact_pi ? ` (PI ${payload.grant.contact_pi})` : "";
         setGrantNumber(gn);
+        postAssistantMessage(`Registered **${gn}** from NIH RePORTER${title}${pi}. Opening it now so we can curate the remaining metadata fields.`);
+        return;
       }
+      postAssistantMessage(`Got an unexpected response for **${gn}** (status: ${status ?? "unknown"}).`);
     } catch (err: any) {
-      sendMessage(`Error registering ${gn}: ${err?.message || "unknown error"}.`);
+      console.error("[add-project-by-grant] threw:", err);
+      postAssistantMessage(`Error registering **${gn}**: ${err?.message || "unknown error"}.`);
     } finally {
       setAddingGrant(null);
     }

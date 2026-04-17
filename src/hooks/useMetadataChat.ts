@@ -313,6 +313,15 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
     }
   }, [user, state.conversationId]);
 
+  /** Append a passive assistant message (no LLM call). Useful for system status updates. */
+  const appendAssistantMessage = useCallback((content: string) => {
+    setState(prev => ({
+      ...prev,
+      messages: [...prev.messages, { role: "assistant", content }],
+      isLoading: false,
+    }));
+  }, []);
+
   return {
     messages: state.messages,
     isLoading: state.isLoading,
@@ -325,5 +334,6 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
     clearChat,
     loadConversationById,
     deleteConversation,
+    appendAssistantMessage,
   };
 }
