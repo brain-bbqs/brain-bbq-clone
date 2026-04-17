@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
@@ -9,7 +9,7 @@ import { ChatHistorySidebar } from "@/components/metadata-assistant/ChatHistoryS
 import { useMetadataChat } from "@/hooks/useMetadataChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
-import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen, Sparkles, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function MetadataAssistant() {
