@@ -101,9 +101,16 @@ export default function MetadataAssistant() {
     // the edge function needs a real JWT to authorize the import.
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData?.session;
-    if (!user || !session) {
+    console.log("[add-project-by-grant] session check:", {
+      hasUser: !!user,
+      userEmail: user?.email,
+      hasSession: !!session,
+      origin: typeof window !== "undefined" ? window.location.origin : "n/a",
+    });
+    if (!session) {
       postAssistantMessage(
-        `I can't register **${gn}** because you're not signed in. Please [sign in](/auth) with an admin or curator account and try again.`
+        `I can't register **${gn}** because there's no active sign-in session on **${typeof window !== "undefined" ? window.location.origin : "this preview"}**. ` +
+        `If you signed in on a different URL (e.g. the published site), please sign in again here first. [Sign in](/auth)`
       );
       return;
     }
