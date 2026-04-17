@@ -29,9 +29,17 @@ interface MetadataChatState {
   fieldsUpdated: string[];
   lastValidation: ValidationResult | null;
   conversationId: string | null;
+  lastProposed: boolean;
 }
 
-export function useMetadataChat(grantNumber: string | null) {
+interface UseMetadataChatOptions {
+  /** "apply" (default): chat mutates project metadata directly.
+   *  "propose": chat writes suggestions to pending_changes for team review. */
+  mode?: "apply" | "propose";
+}
+
+export function useMetadataChat(grantNumber: string | null, options: UseMetadataChatOptions = {}) {
+  const { mode = "apply" } = options;
   const { user } = useAuth();
   const [state, setState] = useState<MetadataChatState>({
     messages: [],
@@ -40,6 +48,7 @@ export function useMetadataChat(grantNumber: string | null) {
     fieldsUpdated: [],
     lastValidation: null,
     conversationId: null,
+    lastProposed: false,
   });
   const loadedGrantRef = useRef<string | null>(null);
 
