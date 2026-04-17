@@ -59,6 +59,22 @@ export default function MetadataAssistant() {
     appendAssistantMessage,
   } = useMetadataChat(grantNumber, { mode: proposeMode ? "propose" : "apply" });
 
+  // Auto-trigger add-grant flow when the user explicitly asked to add/register a grant
+  // and the router proposed it. Avoids requiring a second click for a clear ask.
+  const [autoAddedFor, setAutoAddedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (messages.length < 2) return;
+    const last = messages[messages.length - 1];
+    const prior = messages[messages.length - 2];
+    if (last.role !== "assistant" || !last.proposeAddGrant) return;
+    if (prior.role !== "user") return;
+    if (autoAddedFor === last.proposeAddGrant) return;
+    if (!/\b(add|register|import|create|put|onboard)\b/i.test(prior.content)) return;
+    setAutoAddedFor(last.proposeAddGrant);
+    handleConfirmAddGrant(last.proposeAddGrant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
   const handleSelectConversation = (convoId: string, convoGrantNumber: string) => {
     setGrantNumber(convoGrantNumber);
     loadConversationById(convoId, convoGrantNumber);
