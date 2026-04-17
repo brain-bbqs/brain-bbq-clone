@@ -225,7 +225,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         isLoading: false,
       }));
     }
-  }, [grantNumber, state.messages, ensureConversation, persistMessage]);
+  }, [grantNumber, state.messages, ensureConversation, persistMessage, mode]);
 
   const clearChat = useCallback(async () => {
     if (state.conversationId && user) {
