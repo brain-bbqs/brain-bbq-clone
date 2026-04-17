@@ -365,7 +365,7 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your experiment, methods, species..."
+            placeholder={projectTitle ? "Describe your experiment, methods, species..." : "Search for a project, paste a NIH grant ID, or ask anything..."}
             disabled={isLoading}
             className="min-h-[44px] max-h-32 resize-none text-sm rounded-xl border-border/80 bg-background shadow-sm focus-visible:ring-primary/30 flex-1"
             rows={1}
