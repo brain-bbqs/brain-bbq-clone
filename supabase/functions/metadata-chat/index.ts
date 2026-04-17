@@ -671,6 +671,7 @@ ${ragSection}`;
     return new Response(JSON.stringify({
       reply: scrubbedReply,
       fields_updated: fieldsUpdated,
+      proposed: proposeMode,
       metadata_completeness: newCompleteness,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,
