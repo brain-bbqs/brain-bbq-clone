@@ -1673,6 +1673,7 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
+      is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       search_knowledge_embeddings: {
         Args: {
           match_count?: number
