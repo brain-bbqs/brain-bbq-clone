@@ -191,7 +191,12 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
       }));
 
       const { data, error } = await supabase.functions.invoke("metadata-chat", {
-        body: { messages: apiMessages, grant_number: grantNumber },
+        body: {
+          messages: apiMessages,
+          grant_number: grantNumber,
+          mode,
+          conversation_id: convoId,
+        },
       });
 
       if (error) throw error;
@@ -210,6 +215,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         completeness: data.metadata_completeness ?? prev.completeness,
         fieldsUpdated: data.fields_updated?.length ? data.fields_updated : prev.fieldsUpdated,
         lastValidation: data.validation ?? null,
+        lastProposed: !!data.proposed,
       }));
     } catch (err: any) {
       console.error("metadata-chat error:", err);
