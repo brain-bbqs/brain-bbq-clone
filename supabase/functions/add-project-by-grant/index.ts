@@ -179,10 +179,13 @@ Deno.serve(async (req) => {
   // ── 2. Look up on RePORTER ─────────────────────────────────
   const reporter = await fetchGrantFromReporter(grantNumber);
   if (!reporter) {
+    // Hard stop: do NOT seed anything when RePORTER has no record.
     return jsonResponse({
       status: "not_found",
       grant_number: grantNumber,
-      message: "Grant number not found on NIH RePORTER. Double-check the format (e.g. R34DA059510).",
+      message:
+        `Grant ${grantNumber} was not found on NIH RePORTER, so it was not added. ` +
+        `Double-check the format (e.g. R34DA059510) or confirm the grant exists at reporter.nih.gov.`,
     }, 404);
   }
 
