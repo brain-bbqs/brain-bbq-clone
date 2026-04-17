@@ -127,7 +127,12 @@ export default function MetadataAssistant() {
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* Project selector */}
           <div className="border-b border-border shrink-0 px-5 py-3 bg-card">
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Select Project</label>
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Select Project</label>
+              {isCurator && (
+                <AddProjectDialog onProjectAdded={(gn) => setGrantNumber(gn)} />
+              )}
+            </div>
             <ProjectPicker value={grantNumber} onChange={setGrantNumber} />
           </div>
 
