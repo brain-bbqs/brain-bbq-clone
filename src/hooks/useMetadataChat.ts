@@ -29,9 +29,17 @@ interface MetadataChatState {
   fieldsUpdated: string[];
   lastValidation: ValidationResult | null;
   conversationId: string | null;
+  lastProposed: boolean;
 }
 
-export function useMetadataChat(grantNumber: string | null) {
+interface UseMetadataChatOptions {
+  /** "apply" (default): chat mutates project metadata directly.
+   *  "propose": chat writes suggestions to pending_changes for team review. */
+  mode?: "apply" | "propose";
+}
+
+export function useMetadataChat(grantNumber: string | null, options: UseMetadataChatOptions = {}) {
+  const { mode = "apply" } = options;
   const { user } = useAuth();
   const [state, setState] = useState<MetadataChatState>({
     messages: [],
@@ -40,6 +48,7 @@ export function useMetadataChat(grantNumber: string | null) {
     fieldsUpdated: [],
     lastValidation: null,
     conversationId: null,
+    lastProposed: false,
   });
   const loadedGrantRef = useRef<string | null>(null);
 
@@ -182,7 +191,12 @@ export function useMetadataChat(grantNumber: string | null) {
       }));
 
       const { data, error } = await supabase.functions.invoke("metadata-chat", {
-        body: { messages: apiMessages, grant_number: grantNumber },
+        body: {
+          messages: apiMessages,
+          grant_number: grantNumber,
+          mode,
+          conversation_id: convoId,
+        },
       });
 
       if (error) throw error;
@@ -201,6 +215,7 @@ export function useMetadataChat(grantNumber: string | null) {
         completeness: data.metadata_completeness ?? prev.completeness,
         fieldsUpdated: data.fields_updated?.length ? data.fields_updated : prev.fieldsUpdated,
         lastValidation: data.validation ?? null,
+        lastProposed: !!data.proposed,
       }));
     } catch (err: any) {
       console.error("metadata-chat error:", err);
@@ -210,7 +225,7 @@ export function useMetadataChat(grantNumber: string | null) {
         isLoading: false,
       }));
     }
-  }, [grantNumber, state.messages, ensureConversation, persistMessage]);
+  }, [grantNumber, state.messages, ensureConversation, persistMessage, mode]);
 
   const clearChat = useCallback(async () => {
     if (state.conversationId && user) {
@@ -227,6 +242,7 @@ export function useMetadataChat(grantNumber: string | null) {
       fieldsUpdated: [],
       lastValidation: null,
       conversationId: null,
+      lastProposed: false,
     });
   }, [state.conversationId, user]);
 
@@ -248,6 +264,7 @@ export function useMetadataChat(grantNumber: string | null) {
         fieldsUpdated: [],
         lastValidation: null,
         conversationId: null,
+        lastProposed: false,
       });
     }
   }, [user, state.conversationId]);
@@ -259,6 +276,7 @@ export function useMetadataChat(grantNumber: string | null) {
     fieldsUpdated: state.fieldsUpdated,
     lastValidation: state.lastValidation,
     conversationId: state.conversationId,
+    lastProposed: state.lastProposed,
     sendMessage,
     clearChat,
     loadConversationById,

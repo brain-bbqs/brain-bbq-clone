@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectPicker } from "@/components/metadata-assistant/ProjectPicker";
@@ -9,18 +9,31 @@ import { ChatHistorySidebar } from "@/components/metadata-assistant/ChatHistoryS
 import { useMetadataChat } from "@/hooks/useMetadataChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
-import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Database, BookOpen, X, ShieldAlert, PanelLeftClose, PanelLeftOpen, Sparkles, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function MetadataAssistant() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [showBanner, setShowBanner] = useState(() => {
     return !localStorage.getItem("bbqs-tutorial-dismissed");
   });
-  const [grantNumber, setGrantNumber] = useState<string | null>(null);
+  const [grantNumber, setGrantNumber] = useState<string | null>(
+    () => searchParams.get("grant")
+  );
   const [showHistory, setShowHistory] = useState(false);
   const { canEdit } = useCanEditProject(grantNumber);
+
+  // When ?grant= is present, the assistant is being used in PROPOSE mode from
+  // a project profile context — suggestions go to pending_changes for review.
+  const proposeMode = !!searchParams.get("grant");
+
+  // Sync URL param into local state (e.g. when navigating between project profiles)
+  useEffect(() => {
+    const param = searchParams.get("grant");
+    if (param && param !== grantNumber) setGrantNumber(param);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: grantTitle } = useQuery({
     queryKey: ["grant-title", grantNumber],
@@ -39,7 +52,7 @@ export default function MetadataAssistant() {
   const {
     messages, isLoading, completeness, fieldsUpdated, lastValidation,
     conversationId, sendMessage, clearChat, loadConversationById, deleteConversation,
-  } = useMetadataChat(grantNumber);
+  } = useMetadataChat(grantNumber, { mode: proposeMode ? "propose" : "apply" });
 
   const handleSelectConversation = (convoId: string, convoGrantNumber: string) => {
     setGrantNumber(convoGrantNumber);
@@ -130,6 +143,20 @@ export default function MetadataAssistant() {
               <p className="text-xs text-foreground">
                 <Link to="/auth" className="text-primary hover:underline font-medium">Sign in</Link> to edit project metadata.
               </p>
+            </div>
+          )}
+          {grantNumber && proposeMode && canEdit && (
+            <div className="border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent px-5 py-2 shrink-0 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-foreground flex-1">
+                <span className="font-medium">Suggestion mode.</span> Edits will appear as pending suggestions on the project profile for team review.
+              </p>
+              <Link
+                to={`/projects/${grantNumber}/profile`}
+                className="text-xs text-primary hover:underline font-medium flex items-center gap-1 shrink-0"
+              >
+                Open profile <ExternalLink className="h-3 w-3" />
+              </Link>
             </div>
           )}
 
