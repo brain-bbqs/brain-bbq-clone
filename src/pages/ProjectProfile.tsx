@@ -231,15 +231,10 @@ export default function ProjectProfile() {
           ))}
         </div>
 
-        {/* Helpful link to assistant */}
-        <div className="bg-muted/30 border border-border rounded-xl p-4 text-sm text-muted-foreground">
-          💡 Tip: Use the{" "}
-          <Link to={`/metadata-assistant?grant=${grantNumber}`} className="text-primary hover:underline font-medium">
-            BBQS Assistant
-          </Link>{" "}
-          to propose updates conversationally — its suggestions will appear in the panel above
-          for your team to review.
-        </div>
+      </div>
+    </>
+  );
+}
       </div>
     </>
   );
