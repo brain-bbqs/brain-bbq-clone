@@ -210,13 +210,15 @@ export default function MetadataAssistant() {
               <div className="flex-1 flex flex-col min-h-0 rounded-xl border border-border shadow-sm overflow-hidden bg-card">
                 <AssistantChat
                   messages={messages}
-                  isLoading={isLoading}
+                  isLoading={isLoading || !!addingGrant}
                   completeness={completeness}
                   onSend={sendMessage}
                   onClear={clearChat}
                   projectTitle={grantTitle || undefined}
                   lastValidation={lastValidation}
                   fieldsUpdated={fieldsUpdated}
+                  onSelectCandidate={handleSelectCandidate}
+                  onConfirmAddGrant={handleConfirmAddGrant}
                 />
               </div>
             </div>
