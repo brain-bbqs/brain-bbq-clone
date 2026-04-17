@@ -947,6 +947,71 @@ export type Database = {
           },
         ]
       }
+      pending_changes: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          current_value: Json | null
+          field_name: string
+          grant_number: string
+          id: string
+          project_id: string | null
+          proposed_by: string | null
+          proposed_by_email: string | null
+          proposed_value: Json | null
+          rationale: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          field_name: string
+          grant_number: string
+          id?: string
+          project_id?: string | null
+          proposed_by?: string | null
+          proposed_by_email?: string | null
+          proposed_value?: Json | null
+          rationale?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          field_name?: string
+          grant_number?: string
+          id?: string
+          project_id?: string | null
+          proposed_by?: string | null
+          proposed_by_email?: string | null
+          proposed_value?: Json | null
+          rationale?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_changes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1568,6 +1633,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_pending_change: { Args: { _change_id: string }; Returns: Json }
       decrement_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
@@ -1591,6 +1657,10 @@ export type Database = {
           source_type: string
           title: string
         }[]
+      }
+      user_can_edit_grant_roster: {
+        Args: { _grant_id: string; _user_id: string }
+        Returns: boolean
       }
       user_can_edit_project: {
         Args: { _grant_number: string; _user_id: string }
