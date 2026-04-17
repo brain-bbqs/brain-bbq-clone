@@ -285,6 +285,38 @@ export function AssistantChat({ messages, isLoading, completeness, onSend, onCle
                 </div>
               )}
             </div>
+            {/* Pre-selection: project candidates picker */}
+            {msg.role === "assistant" && msg.candidates && msg.candidates.length > 0 && onSelectCandidate && (
+              <div className="mt-2 ml-1 space-y-1.5 max-w-[85%]">
+                {msg.candidates.map((c) => (
+                  <button
+                    key={c.grant_number}
+                    onClick={() => onSelectCandidate(c.grant_number)}
+                    className="w-full group flex items-start gap-2.5 text-left px-3 py-2 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{c.title}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {c.grant_number}{c.pi ? ` · PI ${c.pi}` : ""}{c.institution ? ` · ${c.institution}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">Open →</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Pre-selection: confirm-add-grant card */}
+            {msg.role === "assistant" && msg.proposeAddGrant && onConfirmAddGrant && (
+              <div className="mt-2 ml-1 max-w-[85%]">
+                <button
+                  onClick={() => onConfirmAddGrant(msg.proposeAddGrant!)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-xs font-medium text-foreground transition-all"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Look up {msg.proposeAddGrant} on NIH RePORTER
+                </button>
+              </div>
+            )}
             {/* Show validation checklist after the last assistant message */}
             {msg.role === "assistant" && i === messages.length - 1 && lastValidation && (
               <div className="mt-3">
