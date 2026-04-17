@@ -186,7 +186,16 @@ serve(async (req) => {
 
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
-    const { messages, grant_number } = body;
+    const { messages, grant_number, mode, conversation_id } = body;
+    // mode: "apply" (default, mutates projects directly) or "propose" (writes to pending_changes for review)
+    const proposeMode = mode === "propose";
+
+    // For propose mode, use a user-scoped client so RLS enforces edit permissions on pending_changes
+    const userSb = proposeMode
+      ? createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
+          global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
+        })
+      : null;
 
     // --- Input validation ---
     if (!grant_number || typeof grant_number !== "string" || grant_number.length > 30) {
