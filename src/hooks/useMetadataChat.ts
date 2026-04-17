@@ -2,9 +2,20 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export interface ProjectCandidate {
+  grant_number: string;
+  title: string;
+  pi?: string;
+  institution?: string;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** When set, this assistant message offers project candidates for the user to select. */
+  candidates?: ProjectCandidate[];
+  /** When set, this assistant message proposes adding a new grant from NIH RePORTER. */
+  proposeAddGrant?: string;
 }
 
 export interface ValidationCheck {
