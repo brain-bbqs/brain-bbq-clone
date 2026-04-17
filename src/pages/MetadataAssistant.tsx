@@ -145,6 +145,20 @@ export default function MetadataAssistant() {
               </p>
             </div>
           )}
+          {grantNumber && proposeMode && canEdit && (
+            <div className="border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent px-5 py-2 shrink-0 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-foreground flex-1">
+                <span className="font-medium">Suggestion mode.</span> Edits will appear as pending suggestions on the project profile for team review.
+              </p>
+              <Link
+                to={`/projects/${grantNumber}/profile`}
+                className="text-xs text-primary hover:underline font-medium flex items-center gap-1 shrink-0"
+              >
+                Open profile <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
 
           {/* Chat + metadata table */}
           <div className="flex-1 flex min-h-0">
