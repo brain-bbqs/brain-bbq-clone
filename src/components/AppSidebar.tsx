@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserTier } from "@/hooks/useUserTier";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
@@ -29,6 +30,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useUserTier();
 
   const isActive = (path: string) => currentPath === path;
 
@@ -38,7 +40,7 @@ export function AppSidebar() {
 
   const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
-      {items.map((item) => {
+      {items.filter((item) => !item.adminOnly || isAdmin).map((item) => {
         const locked = item.authRequired && !user;
 
         if (item.disabled || locked) {
