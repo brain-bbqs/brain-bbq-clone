@@ -1,0 +1,19 @@
+{
+  "_snapshot_date": "2026-04-20",
+  "_source": "production brain-bbqs.org",
+  "_note": "Update by running the count query in docs/STAGING_RUNBOOK.md",
+  "investigators": 228,
+  "grants": 30,
+  "publications": 45,
+  "organizations": 35,
+  "jobs": 4,
+  "projects": 30,
+  "resources": 235,
+  "software_tools": 18,
+  "species": 14,
+  "announcements": 10,
+  "grant_investigators": 76,
+  "investigator_organizations": 83,
+  "allowed_domains": 27,
+  "funding_opportunities": 6
+}
