@@ -17,6 +17,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -29,14 +30,14 @@ interface ChatRequest {
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
-  const response = await fetch("https://openrouter.ai/api/v1/embeddings", {
+  // OpenRouter does NOT host embeddings — must call OpenAI directly.
+  const response = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://bbqs.dev",
     },
-    body: JSON.stringify({ model: "openai/text-embedding-3-small", input: text }),
+    body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
   });
   if (!response.ok) {
     const error = await response.text();
