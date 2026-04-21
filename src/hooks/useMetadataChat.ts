@@ -51,7 +51,7 @@ interface UseMetadataChatOptions {
 
 export function useMetadataChat(grantNumber: string | null, options: UseMetadataChatOptions = {}) {
   const { mode = "apply" } = options;
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [state, setState] = useState<MetadataChatState>({
     messages: [],
     isLoading: false,
@@ -127,7 +127,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
   }, [user]);
 
   const ensureConversation = useCallback(async (): Promise<string | null> => {
-    if (!user || !grantNumber) return null;
+    if (!user || !session || !grantNumber) return null;
     if (state.conversationId) return state.conversationId;
 
     const { data: profile } = await supabase
@@ -153,26 +153,38 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
 
     setState(prev => ({ ...prev, conversationId: data.id }));
     return data.id;
-  }, [user, grantNumber, state.conversationId]);
+  }, [user, session, grantNumber, state.conversationId]);
 
   const persistMessage = useCallback(async (
     conversationId: string,
     role: "user" | "assistant",
     content: string,
   ) => {
-    if (!user) return;
-    await supabase.from("chat_messages").insert({
+    if (!user || !session) return;
+
+    const { error: insertError } = await supabase.from("chat_messages").insert({
       conversation_id: conversationId,
       user_id: user.id,
       role,
       content,
       model: role === "assistant" ? "google/gemini-3-flash-preview" : null,
     });
-    await supabase
+
+    if (insertError) {
+      console.error("Failed to persist chat message:", insertError);
+      throw insertError;
+    }
+
+    const { error: updateError } = await supabase
       .from("chat_conversations")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", conversationId);
-  }, [user]);
+
+    if (updateError) {
+      console.error("Failed to update conversation timestamp:", updateError);
+      throw updateError;
+    }
+  }, [user, session]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -216,10 +228,13 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
     }
 
     // ── Project-selected mode: existing metadata-chat flow ──
-    if (!user) {
+    if (!user || !session) {
       setState(prev => ({
         ...prev,
-        messages: [...prev.messages, { role: "assistant" as const, content: "Please sign in to use the metadata assistant." }],
+        messages: [...prev.messages, {
+          role: "assistant" as const,
+          content: `Please sign in on this URL to use the metadata assistant. I need a live session before I can save chat history for **${grantNumber}**.`,
+        }],
         isLoading: false,
       }));
       return;
@@ -235,6 +250,9 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
       }));
 
       const { data, error } = await supabase.functions.invoke("metadata-chat", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           messages: apiMessages,
           grant_number: grantNumber,
@@ -269,7 +287,7 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         isLoading: false,
       }));
     }
-  }, [grantNumber, user, state.messages, ensureConversation, persistMessage, mode]);
+  }, [grantNumber, user, session, state.messages, ensureConversation, persistMessage, mode]);
 
   const clearChat = useCallback(async () => {
     if (state.conversationId && user) {
