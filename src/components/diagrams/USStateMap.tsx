@@ -80,7 +80,7 @@ export function USStateMap({ matrix, flags, selectedState, onSelectState }: Prop
       topoData.objects.states as any
     ) as unknown as FeatureCollection;
 
-    const projection = d3.geoAlbersUsa().fitSize([width, height], states);
+    const projection = d3.geoAlbersUsa().fitSize([width, height], states as any);
     const path = d3.geoPath().projection(projection);
     const scores = scoreMap();
 
