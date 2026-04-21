@@ -665,8 +665,8 @@ ${ragSection}`;
       }
     }
 
-    // Write back interaction
-    writeBackInteraction(sb, LOVABLE_API_KEY, {
+    // Write back interaction before returning so chat learning isn't dropped.
+    await writeBackInteraction(sb, LOVABLE_API_KEY, {
       userMessage: lastUserMsg,
       assistantResponse: finalContent,
       functionName: "metadata-chat",
