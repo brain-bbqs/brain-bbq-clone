@@ -118,13 +118,12 @@ const MITWorkshop2026 = () => {
                   <span className="font-semibold text-foreground">Travel & Hotels:</span>{" "}
                   View negotiated rates and travel logistics for the workshop.
                 </p>
-                <Link
-                  to="/mit-workshop-2026/travel"
-                  className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                >
-                  <Plane className="h-4 w-4" />
-                  View Travel & Hotels
-                </Link>
+                <Button asChild variant="outline" size="sm" className="mt-3 gap-2">
+                  <Link to="/mit-workshop-2026/travel">
+                    <Plane className="h-4 w-4" />
+                    View Travel & Hotels
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>
