@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 
@@ -113,6 +113,18 @@ const MITWorkshop2026 = () => {
                   </p>
                 </div>
               )}
+              <div className="pt-2 border-t border-primary/10">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">Travel & Hotels:</span>{" "}
+                  View negotiated rates and travel logistics for the workshop.
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-3 gap-2">
+                  <Link to="/mit-workshop-2026/travel">
+                    <Plane className="h-4 w-4" />
+                    View Travel & Hotels
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

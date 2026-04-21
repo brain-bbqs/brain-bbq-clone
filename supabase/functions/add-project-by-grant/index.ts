@@ -17,11 +17,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Always return 200 so the Supabase JS SDK delivers the body to the client.
+// Errors are signalled via { ok: false, error, ... } in the JSON payload.
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+function ok(body: Record<string, unknown>) {
+  return jsonResponse({ ok: true, ...body }, 200);
+}
+function fail(error: string, extra: Record<string, unknown> = {}) {
+  return jsonResponse({ ok: false, error, ...extra }, 200);
 }
 
 // NIH RePORTER grant numbers look like: optional 1-digit prefix, 1 letter activity-code section letter
@@ -119,43 +127,51 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return fail("Method not allowed");
   }
 
   // ── Auth: require admin or curator ─────────────────────────
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return jsonResponse({ error: "Unauthorized" }, 401);
+  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+    console.error("[add-project-by-grant] missing/invalid Authorization header");
+    return fail("You're not signed in. Please sign in with an admin or curator account and try again.");
+  }
+  const token = authHeader.slice(7).trim();
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-  // User-context client to read the caller identity
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes?.user) return jsonResponse({ error: "Unauthorized" }, 401);
-
-  // Service-role client for role check + writes
+  // Service-role client for token validation, role check, and writes.
   const admin = createClient(supabaseUrl, serviceKey);
+
+  // Validate the JWT explicitly using the service-role client.
+  const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userRes?.user) {
+    console.error("[add-project-by-grant] getUser failed:", userErr?.message, "token len:", token.length);
+    return fail(`Your sign-in session is invalid or expired. Please sign in again. (${userErr?.message ?? "no user"})`);
+  }
+  console.log("[add-project-by-grant] authenticated user:", userRes.user.email, userRes.user.id);
+
   const { data: roles } = await admin
     .from("user_roles")
     .select("role")
     .eq("user_id", userRes.user.id);
   const roleSet = new Set((roles ?? []).map((r) => r.role));
   if (!roleSet.has("admin") && !roleSet.has("curator")) {
-    return jsonResponse({ error: "Forbidden — admin or curator role required" }, 403);
+    return fail(
+      `Only admins or curators can register new projects, and ${userRes.user.email ?? "your account"} doesn't have that role. Please ask a consortium admin to import this grant.`,
+    );
   }
 
   // ── Parse + validate body ──────────────────────────────────
   let body: any;
-  try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+  try { body = await req.json(); } catch { return fail("Invalid JSON"); }
   const raw = typeof body?.grant_number === "string" ? body.grant_number : "";
-  if (!raw) return jsonResponse({ error: "grant_number is required" }, 400);
+  if (!raw) return fail("grant_number is required");
   const grantNumber = normalizeGrantNumber(raw);
   if (!GRANT_RE.test(grantNumber)) {
-    return jsonResponse({ error: "Invalid grant number format. Example: R34DA059510" }, 400);
+    return fail("Invalid grant number format. Example: R34DA059510");
   }
 
   // ── 1. Already in our DB? ──────────────────────────────────
@@ -167,7 +183,7 @@ Deno.serve(async (req) => {
 
   if (existingProject) {
     const { populated, missing } = summarizePopulation(existingProject);
-    return jsonResponse({
+    return ok({
       status: "exists_locally",
       grant_number: grantNumber,
       grant: existingProject.grants ?? null,
@@ -180,13 +196,13 @@ Deno.serve(async (req) => {
   const reporter = await fetchGrantFromReporter(grantNumber);
   if (!reporter) {
     // Hard stop: do NOT seed anything when RePORTER has no record.
-    return jsonResponse({
+    return ok({
       status: "not_found",
       grant_number: grantNumber,
       message:
         `Grant ${grantNumber} was not found on NIH RePORTER, so it was not added. ` +
         `Double-check the format (e.g. R34DA059510) or confirm the grant exists at reporter.nih.gov.`,
-    }, 404);
+    });
   }
 
   // ── 3. Seed grant + project rows (light version of nih-grants seeder) ──
@@ -206,7 +222,7 @@ Deno.serve(async (req) => {
 
   if (grantErr || !grantRow) {
     console.error("Failed to upsert grant:", grantErr);
-    return jsonResponse({ error: "Failed to register grant locally" }, 500);
+    return fail("Failed to register grant locally", { details: grantErr?.message });
   }
 
   // Resource hub node for the grant
@@ -286,7 +302,7 @@ Deno.serve(async (req) => {
   });
 
   // Newly created → no questionnaire fields populated yet
-  return jsonResponse({
+  return ok({
     status: "created_from_reporter",
     grant_number: grantNumber,
     grant: {

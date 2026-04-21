@@ -69,7 +69,7 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
         body: { grant_number: trimmed },
       });
       if (fnErr) {
-        // Edge function error often arrives via fnErr.context.json()
+        // Network/runtime failure (function didn't return JSON). Try to extract a body.
         let msg = fnErr.message || "Lookup failed";
         try {
           const ctx = (fnErr as any).context;
@@ -82,15 +82,22 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
         setError(msg);
         return;
       }
-      setResult(data as LookupResult);
+      // Function always returns 200 now: branch on ok flag.
+      const payload = data as any;
+      if (payload?.ok === false) {
+        setError(payload.error || "Lookup failed");
+        return;
+      }
+      const result = payload as LookupResult;
+      setResult(result);
 
       // Refresh picker caches if we mutated the DB
-      if ((data as LookupResult).status === "created_from_reporter") {
+      if (result.status === "created_from_reporter") {
         queryClient.invalidateQueries({ queryKey: ["grants-for-picker"] });
         queryClient.invalidateQueries({ queryKey: ["projects-completeness"] });
         toast({
           title: "Project added",
-          description: `${(data as LookupResult).grant_number} registered from NIH RePORTER.`,
+          description: `${result.grant_number} registered from NIH RePORTER.`,
         });
       }
     } catch (e: any) {
