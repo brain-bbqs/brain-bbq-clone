@@ -47,9 +47,7 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical, authRequired: true },
   { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot, authRequired: true },
-  
 ];
 
 const toolsItems: NavItem[] = [
