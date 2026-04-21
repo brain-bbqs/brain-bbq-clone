@@ -53,16 +53,16 @@ function calcCompleteness(project: Record<string, any>): number {
 
 async function generateEmbedding(text: string, _apiKey: string): Promise<number[] | null> {
   try {
-    // Lovable AI Gateway does NOT host embeddings — call OpenAI directly.
-    const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey) {
-      console.error("OPENAI_API_KEY missing — cannot generate embedding");
+    // Lovable AI Gateway does NOT host embeddings — use OpenRouter (proxies OpenAI's model).
+    const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+    if (!openrouterKey) {
+      console.error("OPENROUTER_API_KEY missing — cannot generate embedding");
       return null;
     }
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    const res = await fetch("https://openrouter.ai/api/v1/embeddings", {
       method: "POST",
-      headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+      headers: { Authorization: `Bearer ${openrouterKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openai/text-embedding-3-small", input: text.slice(0, 8000) }),
     });
     if (!res.ok) {
       console.error("Embedding API error:", res.status, await res.text());
