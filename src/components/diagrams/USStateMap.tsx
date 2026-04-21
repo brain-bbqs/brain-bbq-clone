@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
 import * as topojson from "topojson-client";
-import type { FeatureCollection, Geometry } from "geojson";
-
 type Topology = {
   type: "Topology";
   objects: { [key: string]: any };
   arcs: any[];
   transform?: any;
   bbox?: any;
+};
+
+type FeatureCollection = {
+  type: "FeatureCollection";
+  features: Array<{ id?: string | number; properties: any; geometry: any }>;
 };
 import {
   type StateRiskRow,
@@ -75,7 +78,7 @@ export function USStateMap({ matrix, flags, selectedState, onSelectState }: Prop
     const states = topojson.feature(
       topoData as any,
       topoData.objects.states as any
-    ) as FeatureCollection<Geometry>;
+    ) as unknown as FeatureCollection;
 
     const projection = d3.geoAlbersUsa().fitSize([width, height], states);
     const path = d3.geoPath().projection(projection);
