@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { recordCurationAudit, showUndoableToast } from "@/lib/curation-audit";
 
 export interface TeamMember {
   investigator_id: string;
@@ -57,10 +58,30 @@ export function useTeamRoster(grantId: string | null) {
         .from("grant_investigators")
         .insert({ investigator_id: investigatorId, grant_id: grantId!, role });
       if (error) throw error;
+      // Look up grant_number for permission scoping in audit row
+      const { data: g } = await supabase
+        .from("grants")
+        .select("grant_number")
+        .eq("id", grantId!)
+        .maybeSingle();
+      const auditId = await recordCurationAudit({
+        entity_type: "team_roster",
+        action: "create",
+        grant_number: g?.grant_number ?? null,
+        investigator_id: investigatorId,
+        before_value: null,
+        after_value: { grant_id: grantId, investigator_id: investigatorId, role },
+        source: "team_roster_editor",
+      });
+      return auditId;
     },
-    onSuccess: () => {
+    onSuccess: (auditId) => {
       queryClient.invalidateQueries({ queryKey });
-      toast({ title: "Team member added" });
+      showUndoableToast({
+        title: "Team member added",
+        auditId,
+        onReverted: () => queryClient.invalidateQueries({ queryKey }),
+      });
     },
     onError: (e: any) => {
       toast({ title: "Could not add member", description: e.message, variant: "destructive" });
@@ -69,16 +90,42 @@ export function useTeamRoster(grantId: string | null) {
 
   const updateRole = useMutation({
     mutationFn: async ({ investigatorId, role }: { investigatorId: string; role: string }) => {
+      // Capture previous role before mutating
+      const { data: prev } = await supabase
+        .from("grant_investigators")
+        .select("role")
+        .eq("grant_id", grantId!)
+        .eq("investigator_id", investigatorId)
+        .maybeSingle();
       const { error } = await supabase
         .from("grant_investigators")
         .update({ role })
         .eq("grant_id", grantId!)
         .eq("investigator_id", investigatorId);
       if (error) throw error;
+      const { data: g } = await supabase
+        .from("grants")
+        .select("grant_number")
+        .eq("id", grantId!)
+        .maybeSingle();
+      const auditId = await recordCurationAudit({
+        entity_type: "team_roster",
+        action: "update",
+        grant_number: g?.grant_number ?? null,
+        investigator_id: investigatorId,
+        before_value: { grant_id: grantId, investigator_id: investigatorId, role: prev?.role ?? "co_pi" },
+        after_value: { grant_id: grantId, investigator_id: investigatorId, role },
+        source: "team_roster_editor",
+      });
+      return auditId;
     },
-    onSuccess: () => {
+    onSuccess: (auditId) => {
       queryClient.invalidateQueries({ queryKey });
-      toast({ title: "Role updated" });
+      showUndoableToast({
+        title: "Role updated",
+        auditId,
+        onReverted: () => queryClient.invalidateQueries({ queryKey }),
+      });
     },
     onError: (e: any) => {
       toast({ title: "Could not update role", description: e.message, variant: "destructive" });
@@ -87,16 +134,42 @@ export function useTeamRoster(grantId: string | null) {
 
   const removeMember = useMutation({
     mutationFn: async (investigatorId: string) => {
+      // Snapshot the row before deleting so revert can recreate it
+      const { data: prev } = await supabase
+        .from("grant_investigators")
+        .select("role")
+        .eq("grant_id", grantId!)
+        .eq("investigator_id", investigatorId)
+        .maybeSingle();
       const { error } = await supabase
         .from("grant_investigators")
         .delete()
         .eq("grant_id", grantId!)
         .eq("investigator_id", investigatorId);
       if (error) throw error;
+      const { data: g } = await supabase
+        .from("grants")
+        .select("grant_number")
+        .eq("id", grantId!)
+        .maybeSingle();
+      const auditId = await recordCurationAudit({
+        entity_type: "team_roster",
+        action: "delete",
+        grant_number: g?.grant_number ?? null,
+        investigator_id: investigatorId,
+        before_value: { grant_id: grantId, investigator_id: investigatorId, role: prev?.role ?? "co_pi" },
+        after_value: null,
+        source: "team_roster_editor",
+      });
+      return auditId;
     },
-    onSuccess: () => {
+    onSuccess: (auditId) => {
       queryClient.invalidateQueries({ queryKey });
-      toast({ title: "Team member removed" });
+      showUndoableToast({
+        title: "Team member removed",
+        auditId,
+        onReverted: () => queryClient.invalidateQueries({ queryKey }),
+      });
     },
     onError: (e: any) => {
       toast({ title: "Could not remove member", description: e.message, variant: "destructive" });
