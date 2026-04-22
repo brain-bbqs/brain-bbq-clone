@@ -303,6 +303,80 @@ export type Database = {
           },
         ]
       }
+      curation_audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["curation_action"]
+          actor_email: string | null
+          actor_id: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["curation_entity_type"]
+          field_name: string | null
+          grant_number: string | null
+          id: string
+          investigator_id: string | null
+          is_revert: boolean
+          project_id: string | null
+          resource_id: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          reverted_from_audit_id: string | null
+          source: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["curation_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: Database["public"]["Enums"]["curation_entity_type"]
+          field_name?: string | null
+          grant_number?: string | null
+          id?: string
+          investigator_id?: string | null
+          is_revert?: boolean
+          project_id?: string | null
+          resource_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_from_audit_id?: string | null
+          source?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["curation_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["curation_entity_type"]
+          field_name?: string | null
+          grant_number?: string | null
+          id?: string
+          investigator_id?: string | null
+          is_revert?: boolean
+          project_id?: string | null
+          resource_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_from_audit_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curation_audit_log_reverted_from_audit_id_fkey"
+            columns: ["reverted_from_audit_id"]
+            isOneToOne: false
+            referencedRelation: "curation_audit_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_field_usage: {
         Row: {
           category: string | null
@@ -1740,6 +1814,7 @@ export type Database = {
         Returns: undefined
       }
       is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      revert_curation_change: { Args: { _audit_id: string }; Returns: Json }
       search_knowledge_embeddings: {
         Args: {
           match_count?: number
@@ -1764,6 +1839,10 @@ export type Database = {
         Args: { _grant_number: string; _user_id: string }
         Returns: boolean
       }
+      user_can_revert_audit: {
+        Args: { _audit_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_owns_investigator: {
         Args: { _investigator_id: string; _user_id: string }
         Returns: boolean
@@ -1775,6 +1854,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "curator"
+      curation_action: "create" | "update" | "delete"
+      curation_entity_type:
+        | "project_metadata"
+        | "team_roster"
+        | "pending_change_decision"
+        | "investigator"
+        | "entity_comment"
       resource_type:
         | "investigator"
         | "organization"
@@ -1916,6 +2002,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "curator"],
+      curation_action: ["create", "update", "delete"],
+      curation_entity_type: [
+        "project_metadata",
+        "team_roster",
+        "pending_change_decision",
+        "investigator",
+        "entity_comment",
+      ],
       resource_type: [
         "investigator",
         "organization",
