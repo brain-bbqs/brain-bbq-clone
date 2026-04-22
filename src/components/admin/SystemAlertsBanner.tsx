@@ -24,7 +24,7 @@ interface SystemAlert {
 
 const SEVERITY_STYLES: Record<SystemAlert["severity"], string> = {
   critical: "bg-destructive/10 text-destructive border-destructive/30",
-  warning: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+  warning: "bg-accent/10 text-accent-foreground border-accent/30",
   info: "bg-primary/10 text-primary border-primary/30",
 };
 
@@ -75,10 +75,10 @@ export function SystemAlertsBanner() {
 
   if (!alerts || alerts.length === 0) {
     return (
-      <Card className="mb-6 border-emerald-500/30 bg-emerald-500/5">
+      <Card className="mb-6 border-primary/30 bg-primary/5">
         <CardContent className="py-4 flex items-center gap-2 text-sm">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          <span className="font-medium">All systems healthy.</span>
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <span className="font-medium text-foreground">All systems healthy.</span>
           <span className="text-muted-foreground">No unresolved critical alerts.</span>
         </CardContent>
       </Card>
