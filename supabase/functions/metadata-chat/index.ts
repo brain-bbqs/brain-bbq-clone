@@ -673,6 +673,32 @@ ${ragSection}`;
       if (historyRows.length > 0) {
         await sb.from("edit_history").insert(historyRows);
       }
+
+      // Per-field curation_audit_log rows so chat edits are individually undoable
+      const auditRows = fieldsUpdated.map((field: string) => ({
+        entity_type: "project_metadata",
+        action: "update",
+        field_name: field,
+        grant_number,
+        project_id: (project as any)?.id ?? null,
+        before_value: getField(project, field) ?? null,
+        after_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
+        actor_id: auth.user.id,
+        actor_email: auth.user.email ?? null,
+        source: "metadata_chat",
+      }));
+      if (auditRows.length > 0) {
+        const { data: inserted, error: auditErr } = await sb
+          .from("curation_audit_log")
+          .insert(auditRows)
+          .select("id");
+        if (auditErr) {
+          console.warn("curation_audit_log insert failed:", auditErr.message);
+        } else if (inserted && inserted.length > 0) {
+          // Stash the most recent audit id so the response can carry it
+          (globalThis as any).__lastAuditId = inserted[inserted.length - 1].id;
+        }
+      }
     }
 
     // Second AI call with tool results + validation
