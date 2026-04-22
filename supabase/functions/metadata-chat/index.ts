@@ -272,11 +272,13 @@ serve(async (req) => {
     }
 
     // Fetch current project state + grant info + all consortium projects
-    const [projectRes, grantRes, allGrantsRes, allProjectsRes] = await Promise.all([
+    const [projectRes, grantRes, allGrantsRes, allProjectsRes, allInvRes, allGrantInvRes] = await Promise.all([
       sb.from("projects").select("*").eq("grant_number", grant_number).maybeSingle(),
       sb.from("grants").select("title, abstract, grant_number").eq("grant_number", grant_number).maybeSingle(),
-      sb.from("grants").select("grant_number, title"),
+      sb.from("grants").select("id, grant_number, title"),
       sb.from("projects").select("grant_number, keywords, study_species, metadata"),
+      sb.from("investigators").select("id, name, role"),
+      sb.from("grant_investigators").select("grant_id, investigator_id, role"),
     ]);
 
     const project = projectRes.data || {};
@@ -295,16 +297,38 @@ serve(async (req) => {
     const allProjects = allProjectsRes.data || [];
     const projectsByGrant = new Map(allProjects.map((p: any) => [p.grant_number, p]));
 
+    // Build PI lookup: grant_number -> [{ name, role }]
+    const allInv = allInvRes.data || [];
+    const allGrantInv = allGrantInvRes.data || [];
+    const invById = new Map(allInv.map((i: any) => [i.id, i]));
+    const pisByGrantId = new Map<string, { name: string; role: string }[]>();
+    for (const gi of allGrantInv) {
+      const inv = invById.get(gi.investigator_id);
+      if (!inv) continue;
+      const list = pisByGrantId.get(gi.grant_id) || [];
+      list.push({ name: inv.name, role: gi.role || inv.role || "investigator" });
+      pisByGrantId.set(gi.grant_id, list);
+    }
+    const pisByGrantNumber = new Map<string, { name: string; role: string }[]>();
+    for (const g of allGrants) {
+      const pis = pisByGrantId.get(g.id);
+      if (pis?.length) pisByGrantNumber.set(g.grant_number, pis);
+    }
+
     const consortiumSummaries = allGrants
       .filter((g: any) => g.grant_number !== grant_number)
       .map((g: any) => {
         const p = projectsByGrant.get(g.grant_number);
-        if (!p) return null;
-        const meta = p.metadata || {};
+        const meta = (p?.metadata) || {};
         const fields: string[] = [];
-        if (p.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
+        const pis = pisByGrantNumber.get(g.grant_number) || [];
+        if (pis.length) {
+          const piStr = pis.map((x) => `${x.name}${x.role ? ` (${x.role})` : ""}`).join("; ");
+          fields.push(`PIs: ${piStr}`);
+        }
+        if (p?.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
         if (meta.use_approaches?.length) fields.push(`Approaches: ${meta.use_approaches.join(", ")}`);
-        if (p.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
+        if (p?.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
         if (meta.produce_data_modality?.length) fields.push(`Data: ${meta.produce_data_modality.join(", ")}`);
         if (meta.use_analysis_method?.length) fields.push(`Analysis: ${meta.use_analysis_method.join(", ")}`);
         if (meta.develope_software_type?.length) fields.push(`Software: ${meta.develope_software_type.join(", ")}`);
@@ -333,6 +357,11 @@ RESPONSE STYLE:
 - For UPDATE requests (e.g. "we study mice using calcium imaging", "add optogenetics to approaches"): Extract metadata, call the update tool, and give a concise summary of what changed.
 - For CROSS-PROJECT questions (e.g. "which projects study similar species?", "who else uses calcium imaging?"): Search the consortium project list below and provide a clear summary of matching projects with their grant numbers and relevant overlapping metadata.
 - Keep responses under 200 words. Be direct.
+
+PI / INVESTIGATOR LOOKUPS:
+- When the user names a person (e.g. "Inman", "Dr. Chang", "Cory Inman"), match against the "PIs:" field in the consortium list using CASE-INSENSITIVE SUBSTRING matching on ANY part of the full name (first, middle, last, surname-only, partial).
+- Treat "Inman" as a match for "Cory Shields Inman", "Chang" as a match for "Steve W. C. Chang", etc.
+- If multiple PIs match, list each with their grant number and project title. Never reply "no match" without first scanning every "PIs:" entry below for substring overlap.
 
 The project you're working with:
 - Grant: ${grant?.grant_number || grant_number}
