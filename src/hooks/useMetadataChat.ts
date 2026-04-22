@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { showUndoableToast } from "@/lib/curation-audit";
 
 export interface ProjectCandidate {
   grant_number: string;
@@ -279,6 +280,17 @@ export function useMetadataChat(grantNumber: string | null, options: UseMetadata
         lastValidation: data.validation ?? null,
         lastProposed: !!data.proposed,
       }));
+
+      // If chat applied edits directly (not propose mode), surface an Undo toast
+      // tied to the most recent audit row.
+      if (!data.proposed && Array.isArray(data.audit_ids) && data.audit_ids.length > 0) {
+        const fieldCount = data.fields_updated?.length ?? data.audit_ids.length;
+        showUndoableToast({
+          title: `${fieldCount} field${fieldCount === 1 ? "" : "s"} updated by assistant`,
+          description: "Click Undo to revert the last change.",
+          auditId: data.audit_ids[data.audit_ids.length - 1],
+        });
+      }
     } catch (err: any) {
       console.error("metadata-chat error:", err);
       setState(prev => ({
