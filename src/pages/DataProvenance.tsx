@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { History, Search, Loader2, User, Bot, MessageSquare, Shield, CheckCircle2, AlertTriangle, XCircle, LogIn } from "lucide-react";
+import { History, Search, Loader2, User, Bot, MessageSquare, Shield, CheckCircle2, AlertTriangle, XCircle, LogIn, Undo2 } from "lucide-react";
 import { useState, useMemo, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { revertCurationChange } from "@/lib/curation-audit";
+import { useQueryClient } from "@tanstack/react-query";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "@/styles/ag-grid-theme.css";
@@ -30,6 +32,8 @@ interface EditRow {
   project_title?: string;
   validation_status?: string | null;
   validation_checks?: any | null;
+  audit_id?: string | null;
+  audit_reverted?: boolean;
 }
 
 interface ChatMessage {
@@ -228,6 +232,7 @@ const ChatContextCell = ({ data }: ICellRendererParams) => {
 
 export default function DataProvenance() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const gridRef = useRef<AgGridReact>(null);
   const [quickFilter, setQuickFilter] = useState("");
 
@@ -253,17 +258,92 @@ export default function DataProvenance() {
     enabled: !!user,
   });
 
+  // Pull recent curation audit rows so we can offer per-row Revert on edits
+  // captured by the new audit pipeline. Older edit_history rows that pre-date
+  // the audit pipeline simply won't show a Revert button.
+  const { data: auditRows } = useQuery({
+    queryKey: ["curation-audit-recent"],
+    queryFn: async () => {
+      const { data } = await (supabase
+        .from("curation_audit_log" as any) as any)
+        .select("id, grant_number, field_name, after_value, created_at, reverted_at, entity_type, is_revert")
+        .in("entity_type", ["project_metadata", "pending_change_decision"])
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      return (data as any[]) || [];
+    },
+    enabled: !!user,
+  });
+
   const grantMap = useMemo(() => {
     return new Map((grants || []).map(g => [g.grant_number, g.title]));
   }, [grants]);
 
+  // Index audit rows by (grant_number, field_name) → most recent audit id within 30s of edit_history row
+  const auditIndex = useMemo(() => {
+    const m = new Map<string, { id: string; reverted: boolean; created_at: string }[]>();
+    for (const r of auditRows || []) {
+      if (r.is_revert) continue;
+      const key = `${r.grant_number}::${r.field_name}`;
+      const list = m.get(key) || [];
+      list.push({ id: r.id, reverted: !!r.reverted_at, created_at: r.created_at });
+      m.set(key, list);
+    }
+    return m;
+  }, [auditRows]);
+
   const rowData = useMemo<EditRow[]>(() => {
     if (!history) return [];
-    return history.map((h: any) => ({
-      ...h,
-      project_title: grantMap.get(h.grant_number) || "",
-    }));
-  }, [history, grantMap]);
+    return history.map((h: any) => {
+      const candidates = auditIndex.get(`${h.grant_number}::${h.field_name}`) || [];
+      const histTs = new Date(h.created_at).getTime();
+      // pick the audit row whose timestamp is closest to (and within 30s of) this edit_history row
+      let match: { id: string; reverted: boolean; created_at: string } | null = null;
+      let bestDelta = Infinity;
+      for (const c of candidates) {
+        const d = Math.abs(new Date(c.created_at).getTime() - histTs);
+        if (d < bestDelta && d <= 30_000) {
+          bestDelta = d;
+          match = c;
+        }
+      }
+      return {
+        ...h,
+        project_title: grantMap.get(h.grant_number) || "",
+        audit_id: match?.id ?? null,
+        audit_reverted: match?.reverted ?? false,
+      };
+    });
+  }, [history, grantMap, auditIndex]);
+
+  const handleRevert = useCallback(async (auditId: string) => {
+    if (!confirm("Revert this change? The previous value will be restored.")) return;
+    const ok = await revertCurationChange(auditId);
+    if (ok) {
+      queryClient.invalidateQueries({ queryKey: ["edit-history-all"] });
+      queryClient.invalidateQueries({ queryKey: ["curation-audit-recent"] });
+    }
+  }, [queryClient]);
+
+  const RevertCell = useCallback((p: ICellRendererParams) => {
+    const row = p.data as EditRow;
+    if (!row.audit_id) {
+      return <span className="text-[10px] text-muted-foreground italic">—</span>;
+    }
+    if (row.audit_reverted) {
+      return <span className="text-[10px] text-muted-foreground">reverted</span>;
+    }
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 text-[11px] gap-1"
+        onClick={() => handleRevert(row.audit_id!)}
+      >
+        <Undo2 className="h-3 w-3" /> Revert
+      </Button>
+    );
+  }, [handleRevert]);
 
   const columnDefs = useMemo<ColDef[]>(() => [
     {
@@ -316,7 +396,14 @@ export default function DataProvenance() {
       width: 200,
       cellRenderer: ChatContextCell,
     },
-  ], []);
+    {
+      headerName: "Action",
+      width: 110,
+      sortable: false,
+      filter: false,
+      cellRenderer: RevertCell,
+    },
+  ], [RevertCell]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     sortable: true,
