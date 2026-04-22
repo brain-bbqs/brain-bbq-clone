@@ -13,7 +13,7 @@ import { useCanEditProject } from "@/hooks/useCanEditProject";
 import { GrantMarrSection } from "./GrantMarrSection";
 
 export function GrantSummary({ id }: { id: string }) {
-  const { open } = useEntitySummary();
+  const { open, close } = useEntitySummary();
   const grantNumberQ = useQuery({
     queryKey: ["grant-number-only", id],
     queryFn: async () => {
@@ -201,7 +201,7 @@ export function GrantSummary({ id }: { id: string }) {
           </div>
           {canEdit && (
             <Button asChild size="sm" variant="outline">
-              <Link to={`/projects/${data.grant_number}/profile`}>
+              <Link to={`/projects/${data.grant_number}/profile`} onClick={() => close()}>
                 <Settings className="h-3.5 w-3.5 mr-1.5" /> Manage
               </Link>
             </Button>
