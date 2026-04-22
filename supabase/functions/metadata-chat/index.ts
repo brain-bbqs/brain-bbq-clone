@@ -603,6 +603,7 @@ ${ragSection}`;
     // Apply DB updates if any remain
     const hasUpdates = fieldsUpdated.length > 0;
     let newCompleteness = (project as any).metadata_completeness ?? 0;
+    const auditIds: string[] = [];
 
     if (hasUpdates && proposeMode && userSb) {
       // PROPOSE MODE: write to pending_changes for human review
@@ -672,6 +673,31 @@ ${ragSection}`;
       }));
       if (historyRows.length > 0) {
         await sb.from("edit_history").insert(historyRows);
+      }
+
+      // Per-field curation_audit_log rows so chat edits are individually undoable
+      const auditRows = fieldsUpdated.map((field: string) => ({
+        entity_type: "project_metadata",
+        action: "update",
+        field_name: field,
+        grant_number,
+        project_id: (project as any)?.id ?? null,
+        before_value: getField(project, field) ?? null,
+        after_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
+        actor_id: auth.user.id,
+        actor_email: auth.user.email ?? null,
+        source: "metadata_chat",
+      }));
+      if (auditRows.length > 0) {
+        const { data: inserted, error: auditErr } = await sb
+          .from("curation_audit_log")
+          .insert(auditRows)
+          .select("id");
+        if (auditErr) {
+          console.warn("curation_audit_log insert failed:", auditErr.message);
+        } else if (inserted) {
+          for (const r of inserted) auditIds.push(r.id);
+        }
       }
     }
 
@@ -747,6 +773,7 @@ ${ragSection}`;
       fields_updated: fieldsUpdated,
       proposed: proposeMode,
       metadata_completeness: newCompleteness,
+      audit_ids: auditIds,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,
         summary: validationResult.summary,

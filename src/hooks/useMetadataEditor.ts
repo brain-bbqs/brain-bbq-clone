@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useEditHistory } from "@/hooks/useEditHistory";
+import { recordCurationAudit, showUndoableToast } from "@/lib/curation-audit";
 
 export interface MetadataChanges {
   [fieldKey: string]: any;
@@ -112,7 +113,30 @@ export function useMetadataEditor({ grantNumber, grantId, originalMetadata, onCo
       // Log field-level diffs to edit_history
       await logChanges(null, changes, originalMetadata);
 
-      toast({ title: "Changes committed", description: `${Object.keys(changes).length} field(s) updated.` });
+      // Write per-field audit rows so each one can be reverted individually
+      const auditIds: string[] = [];
+      for (const [field, newVal] of Object.entries(changes)) {
+        const id = await recordCurationAudit({
+          entity_type: "project_metadata",
+          action: "update",
+          field_name: field,
+          grant_number: grantNumber,
+          before_value: originalMetadata?.[field] ?? null,
+          after_value: newVal,
+          source: "manual_editor",
+        });
+        if (id) auditIds.push(id);
+      }
+
+      // Use the most recent (last) audit id for the inline Undo affordance.
+      // Reverting the last edit is the common "oops" case; older ones are
+      // available via Data Provenance.
+      showUndoableToast({
+        title: "Changes committed",
+        description: `${Object.keys(changes).length} field(s) updated.`,
+        auditId: auditIds[auditIds.length - 1] ?? null,
+        onReverted: () => onCommitSuccess?.(),
+      });
       setChanges({});
       onCommitSuccess?.();
     } catch (e: any) {
