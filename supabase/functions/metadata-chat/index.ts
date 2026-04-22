@@ -9,6 +9,7 @@ import {
   rateLimitResponse,
   LLM_RATE_LIMIT,
 } from "../_shared/security.ts";
+import { reportCriticalError } from "../_shared/alerts.ts";
 
 // Whitelist of tool function names the LLM is allowed to call
 const ALLOWED_TOOL_FUNCTIONS = new Set([
@@ -56,7 +57,12 @@ async function generateEmbedding(text: string, _apiKey: string): Promise<number[
     // Lovable AI Gateway does NOT host embeddings — use OpenRouter (proxies OpenAI's model).
     const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
     if (!openrouterKey) {
-      console.error("OPENROUTER_API_KEY missing — cannot generate embedding");
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "MISSING_API_KEY",
+        message: "OPENROUTER_API_KEY missing — embeddings disabled, RAG context will degrade",
+        details: { secret_name: "OPENROUTER_API_KEY", impact: "knowledge_embeddings writes skipped" },
+      });
       return null;
     }
     const res = await fetch("https://openrouter.ai/api/v1/embeddings", {
@@ -65,13 +71,25 @@ async function generateEmbedding(text: string, _apiKey: string): Promise<number[
       body: JSON.stringify({ model: "openai/text-embedding-3-small", input: text.slice(0, 8000) }),
     });
     if (!res.ok) {
-      console.error("Embedding API error:", res.status, await res.text());
+      const body = await res.text();
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "EMBEDDING_API_FAILURE",
+        severity: res.status >= 500 ? "critical" : "warning",
+        message: `OpenRouter embedding API returned ${res.status}`,
+        details: { status: res.status, body: body.slice(0, 500) },
+      });
       return null;
     }
     const data = await res.json();
     return data?.data?.[0]?.embedding ?? null;
   } catch (e) {
-    console.error("generateEmbedding exception:", e);
+    reportCriticalError({
+      source: "metadata-chat",
+      errorCode: "EMBEDDING_EXCEPTION",
+      message: `Unexpected error generating embedding: ${e instanceof Error ? e.message : String(e)}`,
+      details: { error: String(e) },
+    });
     return null;
   }
 }
@@ -194,7 +212,15 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "MISSING_API_KEY",
+        message: "LOVABLE_API_KEY not configured — AI gateway calls will fail",
+        details: { secret_name: "LOVABLE_API_KEY", user_id: auth.user.id },
+      });
+      throw new Error("LOVABLE_API_KEY not configured");
+    }
 
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
@@ -418,6 +444,13 @@ ${ragSection}`;
       }
       const errText = await aiResponse.text();
       console.error("AI error:", status, errText);
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "AI_GATEWAY_FAILURE",
+        severity: status >= 500 ? "critical" : "warning",
+        message: `Lovable AI gateway returned ${status}`,
+        details: { status, body: errText.slice(0, 500), user_id: auth.user.id },
+      });
       throw new Error(`AI gateway returned ${status}`);
     }
 
@@ -696,6 +729,16 @@ ${ragSection}`;
     });
   } catch (e) {
     console.error("metadata-chat error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    // Only alert on truly unexpected errors (already-reported cases will dedupe)
+    if (!/LOVABLE_API_KEY not configured|AI gateway returned/.test(msg)) {
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "UNEXPECTED_EXCEPTION",
+        message: `Unhandled exception in metadata-chat: ${msg}`,
+        details: { error: msg, stack: e instanceof Error ? e.stack?.slice(0, 1000) : undefined },
+      });
+    }
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

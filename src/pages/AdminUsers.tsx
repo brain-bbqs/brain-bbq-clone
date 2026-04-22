@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { PageMeta } from "@/components/PageMeta";
+import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
 
 type AssignableRole = "admin" | "curator" | "member";
 
@@ -205,6 +206,8 @@ export default function AdminUsers() {
           Assign access tiers across the consortium. Changes take effect immediately.
         </p>
       </div>
+
+      <SystemAlertsBanner />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {(["admin", "curator", "member"] as AssignableRole[]).map((r) => {

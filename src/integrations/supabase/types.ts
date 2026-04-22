@@ -1533,6 +1533,72 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          created_at: string
+          details: Json | null
+          email_sent: boolean
+          email_sent_at: string | null
+          error_code: string
+          fingerprint: string
+          first_seen_at: string
+          github_issue_number: number | null
+          github_issue_url: string | null
+          id: string
+          last_seen_at: string
+          message: string
+          occurrence_count: number
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          error_code: string
+          fingerprint: string
+          first_seen_at?: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          last_seen_at?: string
+          message: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          error_code?: string
+          fingerprint?: string
+          first_seen_at?: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          last_seen_at?: string
+          message?: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       taxonomies: {
         Row: {
           category: string
