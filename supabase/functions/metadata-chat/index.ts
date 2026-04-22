@@ -358,6 +358,11 @@ RESPONSE STYLE:
 - For CROSS-PROJECT questions (e.g. "which projects study similar species?", "who else uses calcium imaging?"): Search the consortium project list below and provide a clear summary of matching projects with their grant numbers and relevant overlapping metadata.
 - Keep responses under 200 words. Be direct.
 
+PI / INVESTIGATOR LOOKUPS:
+- When the user names a person (e.g. "Inman", "Dr. Chang", "Cory Inman"), match against the "PIs:" field in the consortium list using CASE-INSENSITIVE SUBSTRING matching on ANY part of the full name (first, middle, last, surname-only, partial).
+- Treat "Inman" as a match for "Cory Shields Inman", "Chang" as a match for "Steve W. C. Chang", etc.
+- If multiple PIs match, list each with their grant number and project title. Never reply "no match" without first scanning every "PIs:" entry below for substring overlap.
+
 The project you're working with:
 - Grant: ${grant?.grant_number || grant_number}
 - Title: ${grant?.title || "Unknown"}
