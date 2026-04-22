@@ -603,6 +603,7 @@ ${ragSection}`;
     // Apply DB updates if any remain
     const hasUpdates = fieldsUpdated.length > 0;
     let newCompleteness = (project as any).metadata_completeness ?? 0;
+    const auditIds: string[] = [];
 
     if (hasUpdates && proposeMode && userSb) {
       // PROPOSE MODE: write to pending_changes for human review
@@ -694,9 +695,8 @@ ${ragSection}`;
           .select("id");
         if (auditErr) {
           console.warn("curation_audit_log insert failed:", auditErr.message);
-        } else if (inserted && inserted.length > 0) {
-          // Stash the most recent audit id so the response can carry it
-          (globalThis as any).__lastAuditId = inserted[inserted.length - 1].id;
+        } else if (inserted) {
+          for (const r of inserted) auditIds.push(r.id);
         }
       }
     }
@@ -773,6 +773,7 @@ ${ragSection}`;
       fields_updated: fieldsUpdated,
       proposed: proposeMode,
       metadata_completeness: newCompleteness,
+      audit_ids: auditIds,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,
         summary: validationResult.summary,
