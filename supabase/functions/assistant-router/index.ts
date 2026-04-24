@@ -35,7 +35,52 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
 async function searchGrants(admin: any, query: string, limit = 6) {
   const cleaned = query.trim();
   if (!cleaned) return [];
-  // Search title + grant_number
+  // Tokenize for fuzzy multi-word matching (handles "Satrajit Ghosh" matching
+  // "Satrajit Sujit Ghosh", or "cory inman" matching "Cory Shields Inman").
+  const tokens = cleaned
+    .split(/\s+/)
+    .map((t) => t.replace(/[^\p{L}\p{N}\-']/gu, ""))
+    .filter((t) => t.length >= 2);
+
+  // ── PI search first (most common intent) ──
+  // Build an AND of ilike filters across all tokens against investigator name.
+  let invQuery = admin.from("investigators").select("id, name").limit(20);
+  if (tokens.length > 0) {
+    for (const t of tokens) {
+      invQuery = invQuery.ilike("name", `%${t}%`);
+    }
+  } else {
+    invQuery = invQuery.ilike("name", `%${cleaned}%`);
+  }
+  const { data: invs } = await invQuery;
+
+  const collected: any[] = [];
+  const seen = new Set<string>();
+
+  if (invs && invs.length > 0) {
+    const invIds = invs.map((i: any) => i.id);
+    const { data: gi } = await admin
+      .from("grant_investigators")
+      .select("grant_id, role, investigators:investigator_id(name), grants:grant_id(grant_number, title)")
+      .in("investigator_id", invIds)
+      .limit(limit * 3);
+    for (const row of gi || []) {
+      if (!row?.grants) continue;
+      const gn = row.grants.grant_number;
+      if (seen.has(gn)) continue;
+      seen.add(gn);
+      collected.push({
+        grant_number: gn,
+        title: row.grants.title,
+        pi: row.investigators?.name,
+      });
+      if (collected.length >= limit) break;
+    }
+  }
+
+  if (collected.length >= limit) return collected;
+
+  // ── Title / grant_number fallback ──
   const { data: grants } = await admin
     .from("grants")
     .select("grant_number, title, id")
@@ -43,26 +88,7 @@ async function searchGrants(admin: any, query: string, limit = 6) {
     .limit(limit);
 
   if (!grants || grants.length === 0) {
-    // Try by PI name via investigators
-    const { data: invs } = await admin
-      .from("investigators")
-      .select("id, name")
-      .ilike("name", `%${cleaned}%`)
-      .limit(8);
-    if (!invs || invs.length === 0) return [];
-    const invIds = invs.map((i: any) => i.id);
-    const { data: gi } = await admin
-      .from("grant_investigators")
-      .select("grant_id, role, investigators:investigator_id(name), grants:grant_id(grant_number, title)")
-      .in("investigator_id", invIds)
-      .limit(limit);
-    return (gi || [])
-      .filter((row: any) => row?.grants)
-      .map((row: any) => ({
-        grant_number: row.grants.grant_number,
-        title: row.grants.title,
-        pi: row.investigators?.name,
-      }));
+    return collected;
   }
 
   // Enrich with contact PI + institution
@@ -77,11 +103,17 @@ async function searchGrants(admin: any, query: string, limit = 6) {
       piByGrant.set(row.grant_id, row.investigators.name);
     }
   }
-  return grants.map((g: any) => ({
-    grant_number: g.grant_number,
-    title: g.title,
-    pi: piByGrant.get(g.id) || undefined,
-  }));
+  for (const g of grants) {
+    if (seen.has(g.grant_number)) continue;
+    seen.add(g.grant_number);
+    collected.push({
+      grant_number: g.grant_number,
+      title: g.title,
+      pi: piByGrant.get(g.id) || undefined,
+    });
+    if (collected.length >= limit) break;
+  }
+  return collected;
 }
 
 async function callLLM(messages: { role: string; content: string }[], system: string) {
@@ -152,19 +184,27 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 2. Looks like a discovery request? (mentions PI, project, search verbs, or 3+ word noun phrase)
+  // 2. Treat almost anything that isn't a clear Q&A question as a discovery
+  // attempt. This makes the assistant invariant to capitalization, partial
+  // names ("inman", "satra"), and lowercase input.
   const lower = last.toLowerCase();
-  const discoveryHints = ["find", "search", "look", "show", "which project", "whose", "pi ", "project on", "project about", "grant for"];
-  const looksDiscovery = discoveryHints.some((h) => lower.includes(h)) || /^[A-Z][a-z]+ [A-Z][a-z]+/.test(last);
+  const isQuestion =
+    /[?]$/.test(last) ||
+    /^(what|who|when|where|why|how|can|could|would|should|do |does |is |are |tell me|explain|help)/i.test(last);
+  const wordCount = last.split(/\s+/).filter(Boolean).length;
+  const looksDiscovery = !isQuestion && wordCount <= 6;
 
   if (looksDiscovery) {
     // Strip leading verbs
-    const query = last.replace(/^(find|search|show|look up|look for|which project|whose|project on|project about|grant for)\s+/i, "").replace(/[?.!]+$/, "").trim();
+    const query = last
+      .replace(/^(find|search|show|look up|look for|which project|whose|project on|project about|grant for|pi |open|edit|select)\s+/i, "")
+      .replace(/[?.!]+$/, "")
+      .trim();
     const candidates = await searchGrants(admin, query, 6);
     if (candidates.length > 0) {
       const reply = candidates.length === 1
-        ? `I found one match. Open it to begin curating?`
-        : `I found ${candidates.length} possible matches — pick one to begin curating, or refine your search.`;
+        ? `I found one match for "${query}". Open it to begin curating?`
+        : `I found ${candidates.length} possible matches for "${query}" — pick one to begin curating, or refine your search.`;
       return jsonResponse({ intent: "discover", reply, candidates });
     }
     // Fall through to QA if no matches
