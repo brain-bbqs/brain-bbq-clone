@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          created_at: string
+          email: string
+          globus_name: string | null
+          globus_subject: string | null
+          id: string
+          message: string | null
+          requested_role: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          globus_name?: string | null
+          globus_subject?: string | null
+          id?: string
+          message?: string | null
+          requested_role?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          globus_name?: string | null
+          globus_subject?: string | null
+          id?: string
+          message?: string | null
+          requested_role?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       allowed_domains: {
         Row: {
           created_at: string
@@ -1802,6 +1847,7 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
+      email_is_consortium_member: { Args: { _email: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
