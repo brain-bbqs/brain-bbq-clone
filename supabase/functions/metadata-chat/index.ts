@@ -9,6 +9,7 @@ import {
   rateLimitResponse,
   LLM_RATE_LIMIT,
 } from "../_shared/security.ts";
+import { reportCriticalError } from "../_shared/alerts.ts";
 
 // Whitelist of tool function names the LLM is allowed to call
 const ALLOWED_TOOL_FUNCTIONS = new Set([
@@ -51,17 +52,46 @@ function calcCompleteness(project: Record<string, any>): number {
   return Math.round((filled.length / COMPLETENESS_FIELDS.length) * 100);
 }
 
-async function generateEmbedding(text: string, apiKey: string): Promise<number[] | null> {
+async function generateEmbedding(text: string, _apiKey: string): Promise<number[] | null> {
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+    // Lovable AI Gateway does NOT host embeddings — use OpenRouter (proxies OpenAI's model).
+    const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+    if (!openrouterKey) {
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "MISSING_API_KEY",
+        message: "OPENROUTER_API_KEY missing — embeddings disabled, RAG context will degrade",
+        details: { secret_name: "OPENROUTER_API_KEY", impact: "knowledge_embeddings writes skipped" },
+      });
+      return null;
+    }
+    const res = await fetch("https://openrouter.ai/api/v1/embeddings", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+      headers: { Authorization: `Bearer ${openrouterKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openai/text-embedding-3-small", input: text.slice(0, 8000) }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text();
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "EMBEDDING_API_FAILURE",
+        severity: res.status >= 500 ? "critical" : "warning",
+        message: `OpenRouter embedding API returned ${res.status}`,
+        details: { status: res.status, body: body.slice(0, 500) },
+      });
+      return null;
+    }
     const data = await res.json();
     return data?.data?.[0]?.embedding ?? null;
-  } catch { return null; }
+  } catch (e) {
+    reportCriticalError({
+      source: "metadata-chat",
+      errorCode: "EMBEDDING_EXCEPTION",
+      message: `Unexpected error generating embedding: ${e instanceof Error ? e.message : String(e)}`,
+      details: { error: String(e) },
+    });
+    return null;
+  }
 }
 
 async function searchKnowledge(supabase: any, query: string, apiKey: string, limit = 5) {
@@ -182,7 +212,15 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "MISSING_API_KEY",
+        message: "LOVABLE_API_KEY not configured — AI gateway calls will fail",
+        details: { secret_name: "LOVABLE_API_KEY", user_id: auth.user.id },
+      });
+      throw new Error("LOVABLE_API_KEY not configured");
+    }
 
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
@@ -234,11 +272,13 @@ serve(async (req) => {
     }
 
     // Fetch current project state + grant info + all consortium projects
-    const [projectRes, grantRes, allGrantsRes, allProjectsRes] = await Promise.all([
+    const [projectRes, grantRes, allGrantsRes, allProjectsRes, allInvRes, allGrantInvRes] = await Promise.all([
       sb.from("projects").select("*").eq("grant_number", grant_number).maybeSingle(),
       sb.from("grants").select("title, abstract, grant_number").eq("grant_number", grant_number).maybeSingle(),
-      sb.from("grants").select("grant_number, title"),
+      sb.from("grants").select("id, grant_number, title"),
       sb.from("projects").select("grant_number, keywords, study_species, metadata"),
+      sb.from("investigators").select("id, name, role"),
+      sb.from("grant_investigators").select("grant_id, investigator_id, role"),
     ]);
 
     const project = projectRes.data || {};
@@ -257,16 +297,38 @@ serve(async (req) => {
     const allProjects = allProjectsRes.data || [];
     const projectsByGrant = new Map(allProjects.map((p: any) => [p.grant_number, p]));
 
+    // Build PI lookup: grant_number -> [{ name, role }]
+    const allInv = allInvRes.data || [];
+    const allGrantInv = allGrantInvRes.data || [];
+    const invById = new Map(allInv.map((i: any) => [i.id, i]));
+    const pisByGrantId = new Map<string, { name: string; role: string }[]>();
+    for (const gi of allGrantInv) {
+      const inv = invById.get(gi.investigator_id);
+      if (!inv) continue;
+      const list = pisByGrantId.get(gi.grant_id) || [];
+      list.push({ name: inv.name, role: gi.role || inv.role || "investigator" });
+      pisByGrantId.set(gi.grant_id, list);
+    }
+    const pisByGrantNumber = new Map<string, { name: string; role: string }[]>();
+    for (const g of allGrants) {
+      const pis = pisByGrantId.get(g.id);
+      if (pis?.length) pisByGrantNumber.set(g.grant_number, pis);
+    }
+
     const consortiumSummaries = allGrants
       .filter((g: any) => g.grant_number !== grant_number)
       .map((g: any) => {
         const p = projectsByGrant.get(g.grant_number);
-        if (!p) return null;
-        const meta = p.metadata || {};
+        const meta = (p?.metadata) || {};
         const fields: string[] = [];
-        if (p.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
+        const pis = pisByGrantNumber.get(g.grant_number) || [];
+        if (pis.length) {
+          const piStr = pis.map((x) => `${x.name}${x.role ? ` (${x.role})` : ""}`).join("; ");
+          fields.push(`PIs: ${piStr}`);
+        }
+        if (p?.study_species?.length) fields.push(`Species: ${p.study_species.join(", ")}`);
         if (meta.use_approaches?.length) fields.push(`Approaches: ${meta.use_approaches.join(", ")}`);
-        if (p.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
+        if (p?.keywords?.length) fields.push(`Keywords: ${p.keywords.join(", ")}`);
         if (meta.produce_data_modality?.length) fields.push(`Data: ${meta.produce_data_modality.join(", ")}`);
         if (meta.use_analysis_method?.length) fields.push(`Analysis: ${meta.use_analysis_method.join(", ")}`);
         if (meta.develope_software_type?.length) fields.push(`Software: ${meta.develope_software_type.join(", ")}`);
@@ -295,6 +357,11 @@ RESPONSE STYLE:
 - For UPDATE requests (e.g. "we study mice using calcium imaging", "add optogenetics to approaches"): Extract metadata, call the update tool, and give a concise summary of what changed.
 - For CROSS-PROJECT questions (e.g. "which projects study similar species?", "who else uses calcium imaging?"): Search the consortium project list below and provide a clear summary of matching projects with their grant numbers and relevant overlapping metadata.
 - Keep responses under 200 words. Be direct.
+
+PI / INVESTIGATOR LOOKUPS:
+- When the user names a person (e.g. "Inman", "Dr. Chang", "Cory Inman"), match against the "PIs:" field in the consortium list using CASE-INSENSITIVE SUBSTRING matching on ANY part of the full name (first, middle, last, surname-only, partial).
+- Treat "Inman" as a match for "Cory Shields Inman", "Chang" as a match for "Steve W. C. Chang", etc.
+- If multiple PIs match, list each with their grant number and project title. Never reply "no match" without first scanning every "PIs:" entry below for substring overlap.
 
 The project you're working with:
 - Grant: ${grant?.grant_number || grant_number}
@@ -406,6 +473,13 @@ ${ragSection}`;
       }
       const errText = await aiResponse.text();
       console.error("AI error:", status, errText);
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "AI_GATEWAY_FAILURE",
+        severity: status >= 500 ? "critical" : "warning",
+        message: `Lovable AI gateway returned ${status}`,
+        details: { status, body: errText.slice(0, 500), user_id: auth.user.id },
+      });
       throw new Error(`AI gateway returned ${status}`);
     }
 
@@ -529,6 +603,7 @@ ${ragSection}`;
     // Apply DB updates if any remain
     const hasUpdates = fieldsUpdated.length > 0;
     let newCompleteness = (project as any).metadata_completeness ?? 0;
+    const auditIds: string[] = [];
 
     if (hasUpdates && proposeMode && userSb) {
       // PROPOSE MODE: write to pending_changes for human review
@@ -599,6 +674,31 @@ ${ragSection}`;
       if (historyRows.length > 0) {
         await sb.from("edit_history").insert(historyRows);
       }
+
+      // Per-field curation_audit_log rows so chat edits are individually undoable
+      const auditRows = fieldsUpdated.map((field: string) => ({
+        entity_type: "project_metadata",
+        action: "update",
+        field_name: field,
+        grant_number,
+        project_id: (project as any)?.id ?? null,
+        before_value: getField(project, field) ?? null,
+        after_value: TOP_LEVEL_FIELDS.has(field) ? topLevelUpdates[field] : metadataUpdates[field],
+        actor_id: auth.user.id,
+        actor_email: auth.user.email ?? null,
+        source: "metadata_chat",
+      }));
+      if (auditRows.length > 0) {
+        const { data: inserted, error: auditErr } = await sb
+          .from("curation_audit_log")
+          .insert(auditRows)
+          .select("id");
+        if (auditErr) {
+          console.warn("curation_audit_log insert failed:", auditErr.message);
+        } else if (inserted) {
+          for (const r of inserted) auditIds.push(r.id);
+        }
+      }
     }
 
     // Second AI call with tool results + validation
@@ -653,8 +753,8 @@ ${ragSection}`;
       }
     }
 
-    // Write back interaction
-    writeBackInteraction(sb, LOVABLE_API_KEY, {
+    // Write back interaction before returning so chat learning isn't dropped.
+    await writeBackInteraction(sb, LOVABLE_API_KEY, {
       userMessage: lastUserMsg,
       assistantResponse: finalContent,
       functionName: "metadata-chat",
@@ -673,6 +773,7 @@ ${ragSection}`;
       fields_updated: fieldsUpdated,
       proposed: proposeMode,
       metadata_completeness: newCompleteness,
+      audit_ids: auditIds,
       validation: validationResult ? {
         overall_status: validationResult.overall_status,
         summary: validationResult.summary,
@@ -684,6 +785,16 @@ ${ragSection}`;
     });
   } catch (e) {
     console.error("metadata-chat error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    // Only alert on truly unexpected errors (already-reported cases will dedupe)
+    if (!/LOVABLE_API_KEY not configured|AI gateway returned/.test(msg)) {
+      reportCriticalError({
+        source: "metadata-chat",
+        errorCode: "UNEXPECTED_EXCEPTION",
+        message: `Unhandled exception in metadata-chat: ${msg}`,
+        details: { error: msg, stack: e instanceof Error ? e.stack?.slice(0, 1000) : undefined },
+      });
+    }
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

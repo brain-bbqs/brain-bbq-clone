@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Service role can insert audit rows" ON public.curation_audit_log;

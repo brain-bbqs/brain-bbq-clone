@@ -31,10 +31,16 @@ export default function Auth() {
         userinfo_failed: "Failed to retrieve your Globus profile.",
         no_email: "No email was returned from Globus.",
         domain_not_allowed: "Access is restricted to BBQS consortium university emails.",
+        not_a_member:
+          "Your email isn't on the BBQS consortium roster yet. We've notified the admins — you'll get an email once your account is approved.",
         create_user_failed: "Failed to create your account.",
         session_failed: "Failed to generate a session.",
       };
-      toast.error(errorMessages[globusError] || "Globus sign-in failed.");
+      if (globusError === "not_a_member") {
+        toast.info(errorMessages.not_a_member, { duration: 10000 });
+      } else {
+        toast.error(errorMessages[globusError] || "Globus sign-in failed.");
+      }
       window.history.replaceState({}, "", "/auth");
       return;
     }

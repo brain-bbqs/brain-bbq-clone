@@ -21,12 +21,13 @@ export interface TierInfo {
 }
 
 export function useUserTier(): TierInfo {
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const preview = isPreviewMode();
+  const usePreviewFallback = preview && !session;
 
   const { data, isLoading } = useQuery<{ tier: UserTier }>({
     queryKey: ["user-tier", user?.id],
-    enabled: !!user && !preview,
+    enabled: !!user && !usePreviewFallback,
     staleTime: 60_000,
     queryFn: async () => {
       // Roles
@@ -52,7 +53,7 @@ export function useUserTier(): TierInfo {
   });
 
   // Preview = treat developer as admin so all gated UI renders
-  if (preview) {
+  if (usePreviewFallback) {
     return { tier: "admin", isAdmin: true, isCurator: true, isMember: true, isLoading: false };
   }
 

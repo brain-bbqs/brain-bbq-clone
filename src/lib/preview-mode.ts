@@ -4,9 +4,13 @@
  * without signing in via Globus.
  */
 export function isPreviewMode(): boolean {
-  // Only allow preview mode in development builds, not production
   try {
-    return import.meta.env.DEV;
+    if (!import.meta.env.DEV || typeof window === "undefined") {
+      return false;
+    }
+
+    const host = window.location.hostname;
+    return host === "localhost" || host === "127.0.0.1";
   } catch {
     return false;
   }

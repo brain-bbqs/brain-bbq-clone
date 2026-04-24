@@ -10,6 +10,7 @@ import {
   Scale,
   Wrench,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 
 interface NavCard {
@@ -42,7 +43,7 @@ const navCards: NavCard[] = [
     color: "hsl(280 50% 60%)",
     links: [
       { label: "EMBER Assistant", to: "/dandi-assistant" },
-      { label: "Metadata Assistant (Beta)", to: "/metadata-assistant" },
+      { label: "Metadata Assistant (Beta)", to: "https://assistant.brain-bbqs.org/metadata-assistant" },
       
     ],
   },
@@ -108,6 +109,25 @@ const Index = () => {
         </div>
       </div>
 
+
+      {/* BBQS Assistant CTA */}
+      <section className="px-4 sm:px-6 mt-6">
+        <div className="max-w-5xl mx-auto flex justify-center">
+          <a
+            href="https://assistant.brain-bbqs.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all duration-150 text-sm"
+          >
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <span className="font-medium text-foreground">Talk to the BBQS Assistant</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+              Beta
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 text-primary opacity-70 group-hover:translate-x-0.5 transition-transform" />
+          </a>
+        </div>
+      </section>
 
       {/* Navigation Cards */}
       <main className="px-4 sm:px-6 pb-16 mt-8">

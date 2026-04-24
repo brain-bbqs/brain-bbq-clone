@@ -30,35 +30,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const preview = isPreviewMode();
 
   useEffect(() => {
-    if (preview) {
-      // In preview mode, immediately provide a fake authenticated user
-      setUser(PREVIEW_USER);
-      setSession(null);
+    const applyAuthState = (nextSession: Session | null) => {
+      setSession(nextSession);
+      if (nextSession?.user) {
+        setUser(nextSession.user);
+      } else if (preview) {
+        setUser(PREVIEW_USER);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
-      return;
+    };
+
+    if (preview) {
+      setUser(PREVIEW_USER);
     }
 
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        applyAuthState(session);
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      applyAuthState(session);
     });
 
     return () => subscription.unsubscribe();
   }, [preview]);
 
   const signOut = async () => {
-    if (preview) return;
+    if (preview && !session) return;
     await supabase.auth.signOut();
     // Revoke Globus session so the next login prompts for identity selection
     window.location.href = "https://auth.globus.org/v2/web/logout?redirect_uri=" + encodeURIComponent(window.location.origin + "/auth");
@@ -74,13 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    // In preview mode, return a fallback so components render even if
-    // AuthProvider hasn't mounted yet (e.g. during initial render tree)
-    if (typeof window !== "undefined" && (
-      window.location.hostname.endsWith(".lovable.app") ||
-      window.location.hostname.endsWith(".lovableproject.com") ||
-      window.location.hostname === "localhost"
-    )) {
+    // Only use the fake auth fallback for true local development preview.
+    if (isPreviewMode()) {
       return {
         user: PREVIEW_USER,
         session: null,

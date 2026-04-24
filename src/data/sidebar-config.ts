@@ -22,6 +22,7 @@ import {
   FlaskConical,
   Hotel,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -32,6 +33,7 @@ export interface NavItem {
   disabled?: boolean;
   authRequired?: boolean;
   adminOnly?: boolean;
+  external?: boolean;
 }
 
 export interface NavGroup {
@@ -47,9 +49,12 @@ const mainItems: NavItem[] = [
 ];
 
 const assistantsItems: NavItem[] = [
-  { title: "EMBER Assistant", url: "/dandi-assistant", icon: FlaskConical, authRequired: true },
-  { title: "Metadata Assistant (Beta)", url: "/metadata-assistant", icon: Bot, authRequired: true },
-  
+  {
+    title: "Metadata Assistant (Beta)",
+    url: "https://assistant.brain-bbqs.org/metadata-assistant",
+    icon: Bot,
+    external: true,
+  },
 ];
 
 const toolsItems: NavItem[] = [

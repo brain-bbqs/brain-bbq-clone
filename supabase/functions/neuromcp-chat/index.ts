@@ -7,6 +7,7 @@ import {
   rateLimitResponse,
   LLM_RATE_LIMIT,
 } from "../_shared/security.ts";
+import { reportCriticalError } from "../_shared/alerts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,17 +30,33 @@ interface ChatRequest {
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
+  // OpenRouter proxies OpenAI's embedding model — single key for chat + embeddings.
+  if (!OPENROUTER_API_KEY) {
+    reportCriticalError({
+      source: "neuromcp-chat",
+      errorCode: "MISSING_API_KEY",
+      message: "OPENROUTER_API_KEY missing — NeuroMCP embeddings/RAG disabled",
+      details: { secret_name: "OPENROUTER_API_KEY" },
+    });
+    throw new Error("OPENROUTER_API_KEY not configured");
+  }
   const response = await fetch("https://openrouter.ai/api/v1/embeddings", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://bbqs.dev",
     },
     body: JSON.stringify({ model: "openai/text-embedding-3-small", input: text }),
   });
   if (!response.ok) {
     const error = await response.text();
+    reportCriticalError({
+      source: "neuromcp-chat",
+      errorCode: "EMBEDDING_API_FAILURE",
+      severity: response.status >= 500 ? "critical" : "warning",
+      message: `OpenRouter embedding API returned ${response.status}`,
+      details: { status: response.status, body: error.slice(0, 500) },
+    });
     throw new Error(`Embedding API error: ${error}`);
   }
   const data = await response.json();
@@ -225,6 +242,13 @@ serve(async (req) => {
 
     if (!chatResponse.ok) {
       const error = await chatResponse.text();
+      reportCriticalError({
+        source: "neuromcp-chat",
+        errorCode: "OPENROUTER_CHAT_FAILURE",
+        severity: chatResponse.status >= 500 ? "critical" : "warning",
+        message: `OpenRouter chat API returned ${chatResponse.status}`,
+        details: { status: chatResponse.status, body: error.slice(0, 500), user_id: user.id },
+      });
       throw new Error(`OpenRouter error: ${error}`);
     }
 
@@ -271,6 +295,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("NeuroMCP chat error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (!/OPENROUTER_API_KEY not configured|OpenRouter (error|chat API)/.test(msg)) {
+      reportCriticalError({
+        source: "neuromcp-chat",
+        errorCode: "UNEXPECTED_EXCEPTION",
+        message: `Unhandled exception in neuromcp-chat: ${msg}`,
+        details: { error: msg, stack: error instanceof Error ? error.stack?.slice(0, 1000) : undefined },
+      });
+    }
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

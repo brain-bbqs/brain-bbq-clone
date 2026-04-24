@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Send, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { recordCurationAudit, showUndoableToast } from "@/lib/curation-audit";
 
 interface Comment {
   id: string;
@@ -48,26 +49,62 @@ export function EntityComments({ resourceId }: { resourceId: string }) {
 
   const addComment = useMutation({
     mutationFn: async (content: string) => {
-      const { error } = await supabase.from("entity_comments").insert({
-        resource_id: resourceId,
-        user_id: user!.id,
-        content,
-      });
+      const { data, error } = await supabase
+        .from("entity_comments")
+        .insert({ resource_id: resourceId, user_id: user!.id, content })
+        .select("id")
+        .single();
       if (error) throw error;
+      const auditId = await recordCurationAudit({
+        entity_type: "entity_comment",
+        action: "create",
+        entity_id: data.id,
+        resource_id: resourceId,
+        before_value: null,
+        after_value: { resource_id: resourceId, user_id: user!.id, content },
+        source: "entity_comments",
+      });
+      return auditId;
     },
-    onSuccess: () => {
+    onSuccess: (auditId) => {
       queryClient.invalidateQueries({ queryKey: ["entity-comments", resourceId] });
       setNewComment("");
+      showUndoableToast({
+        title: "Comment added",
+        auditId,
+        onReverted: () => queryClient.invalidateQueries({ queryKey: ["entity-comments", resourceId] }),
+      });
     },
   });
 
   const deleteComment = useMutation({
     mutationFn: async (commentId: string) => {
+      // Snapshot before deletion so revert can restore
+      const { data: prev } = await supabase
+        .from("entity_comments")
+        .select("id, resource_id, user_id, parent_id, content, created_at")
+        .eq("id", commentId)
+        .maybeSingle();
       const { error } = await supabase.from("entity_comments").delete().eq("id", commentId);
       if (error) throw error;
+      const auditId = await recordCurationAudit({
+        entity_type: "entity_comment",
+        action: "delete",
+        entity_id: commentId,
+        resource_id: resourceId,
+        before_value: prev ?? null,
+        after_value: null,
+        source: "entity_comments",
+      });
+      return auditId;
     },
-    onSuccess: () => {
+    onSuccess: (auditId) => {
       queryClient.invalidateQueries({ queryKey: ["entity-comments", resourceId] });
+      showUndoableToast({
+        title: "Comment deleted",
+        auditId,
+        onReverted: () => queryClient.invalidateQueries({ queryKey: ["entity-comments", resourceId] }),
+      });
     },
   });
 

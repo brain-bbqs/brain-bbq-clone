@@ -20,7 +20,6 @@ import NeuroMCP from "./pages/NeuroMCP";
 import ConsortiaHistory from "./pages/ConsortiaHistory";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
-import MetadataAssistant from "./pages/MetadataAssistant";
 import DataProvenance from "./pages/DataProvenance";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 
@@ -42,6 +41,7 @@ import FundingOpportunities from "./pages/FundingOpportunities";
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminUsers from "./pages/AdminUsers";
+import AdminAccessRequests from "./pages/AdminAccessRequests";
 
 const queryClient = new QueryClient();
 
@@ -76,7 +76,6 @@ const App = () => (
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
               <Route path="/species" element={<Species />} />
               
-              <Route path="/metadata-assistant" element={<MetadataAssistant />} />
               <Route path="/dandi-assistant" element={<DandiAssistant />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
@@ -90,6 +89,7 @@ const App = () => (
               <Route path="/state-privacy" element={<StatePrivacyMap />} />
               <Route path="/grants" element={<FundingOpportunities />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/access-requests" element={<AdminAccessRequests />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
               <Route path="/ml-models" element={<Navigate to="/resources" replace />} />

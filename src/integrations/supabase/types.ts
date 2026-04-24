@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          created_at: string
+          email: string
+          globus_name: string | null
+          globus_subject: string | null
+          id: string
+          message: string | null
+          requested_role: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          globus_name?: string | null
+          globus_subject?: string | null
+          id?: string
+          message?: string | null
+          requested_role?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          globus_name?: string | null
+          globus_subject?: string | null
+          id?: string
+          message?: string | null
+          requested_role?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       allowed_domains: {
         Row: {
           created_at: string
@@ -299,6 +344,80 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curation_audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["curation_action"]
+          actor_email: string | null
+          actor_id: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["curation_entity_type"]
+          field_name: string | null
+          grant_number: string | null
+          id: string
+          investigator_id: string | null
+          is_revert: boolean
+          project_id: string | null
+          resource_id: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          reverted_from_audit_id: string | null
+          source: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["curation_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: Database["public"]["Enums"]["curation_entity_type"]
+          field_name?: string | null
+          grant_number?: string | null
+          id?: string
+          investigator_id?: string | null
+          is_revert?: boolean
+          project_id?: string | null
+          resource_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_from_audit_id?: string | null
+          source?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["curation_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["curation_entity_type"]
+          field_name?: string | null
+          grant_number?: string | null
+          id?: string
+          investigator_id?: string | null
+          is_revert?: boolean
+          project_id?: string | null
+          resource_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_from_audit_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curation_audit_log_reverted_from_audit_id_fkey"
+            columns: ["reverted_from_audit_id"]
+            isOneToOne: false
+            referencedRelation: "curation_audit_log"
             referencedColumns: ["id"]
           },
         ]
@@ -1533,6 +1652,72 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          created_at: string
+          details: Json | null
+          email_sent: boolean
+          email_sent_at: string | null
+          error_code: string
+          fingerprint: string
+          first_seen_at: string
+          github_issue_number: number | null
+          github_issue_url: string | null
+          id: string
+          last_seen_at: string
+          message: string
+          occurrence_count: number
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          error_code: string
+          fingerprint: string
+          first_seen_at?: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          last_seen_at?: string
+          message: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          email_sent?: boolean
+          email_sent_at?: string | null
+          error_code?: string
+          fingerprint?: string
+          first_seen_at?: string
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string
+          last_seen_at?: string
+          message?: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       taxonomies: {
         Row: {
           category: string
@@ -1662,6 +1847,7 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
+      email_is_consortium_member: { Args: { _email: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1674,6 +1860,7 @@ export type Database = {
         Returns: undefined
       }
       is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      revert_curation_change: { Args: { _audit_id: string }; Returns: Json }
       search_knowledge_embeddings: {
         Args: {
           match_count?: number
@@ -1698,6 +1885,10 @@ export type Database = {
         Args: { _grant_number: string; _user_id: string }
         Returns: boolean
       }
+      user_can_revert_audit: {
+        Args: { _audit_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_owns_investigator: {
         Args: { _investigator_id: string; _user_id: string }
         Returns: boolean
@@ -1709,6 +1900,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "curator"
+      curation_action: "create" | "update" | "delete"
+      curation_entity_type:
+        | "project_metadata"
+        | "team_roster"
+        | "pending_change_decision"
+        | "investigator"
+        | "entity_comment"
       resource_type:
         | "investigator"
         | "organization"
@@ -1850,6 +2048,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "curator"],
+      curation_action: ["create", "update", "delete"],
+      curation_entity_type: [
+        "project_metadata",
+        "team_roster",
+        "pending_change_decision",
+        "investigator",
+        "entity_comment",
+      ],
       resource_type: [
         "investigator",
         "organization",
