@@ -176,6 +176,49 @@ Deno.serve(async (req) => {
         return await errorRedirectAndNotify("no_email", undefined, name);
       }
 
+      // ===== STRICT MEMBERSHIP GATE =====
+      // Email MUST already exist on an investigator record (primary or secondary).
+      // If not, do NOT create an auth.users row. File an access_request and notify admins.
+      const emailLowerForGate = email.toLowerCase();
+      const { data: gateMatch } = await supabaseAdmin
+        .rpc("email_is_consortium_member", { _email: emailLowerForGate });
+
+      if (!gateMatch) {
+        // Upsert-style: only insert if no pending request already exists for this email
+        const { data: existingReq } = await supabaseAdmin
+          .from("access_requests")
+          .select("id, status")
+          .ilike("email", emailLowerForGate)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (!existingReq) {
+          await supabaseAdmin.from("access_requests").insert({
+            email: emailLowerForGate,
+            globus_name: name || null,
+            globus_subject: userinfo.sub || null,
+            status: "pending",
+          });
+        }
+
+        await logAndNotifyFailure(supabaseAdmin, {
+          email,
+          name,
+          errorReason: "not_a_member",
+          ipAddress: clientIp,
+          metadata: {
+            globus_username: userinfo.preferred_username,
+            request_recorded: !existingReq,
+          },
+        });
+
+        const errorRedirect = new URL(frontendRedirect);
+        errorRedirect.searchParams.set("globus_error", "not_a_member");
+        errorRedirect.searchParams.set("globus_email", email);
+        if (name) errorRedirect.searchParams.set("globus_name", name);
+        return Response.redirect(errorRedirect.toString(), 302);
+      }
+
       // Resolve the canonical email for this person.
       let canonicalEmail = email;
       const emailLower = email.toLowerCase();
