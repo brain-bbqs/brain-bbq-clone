@@ -10,6 +10,8 @@ import {
   Scale,
   Wrench,
   ChevronRight,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 
 interface NavCard {
@@ -108,6 +110,42 @@ const Index = () => {
         </div>
       </div>
 
+
+      {/* BBQS Assistant CTA */}
+      <section className="px-4 sm:px-6 mt-8">
+        <div className="max-w-5xl mx-auto">
+          <a
+            href="https://bbqs-assistant.lovable.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 hover:border-primary/60 hover:shadow-xl transition-all duration-200"
+          >
+            <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="p-4 rounded-2xl bg-primary/15 shrink-0">
+                <MessageSquare className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    New
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  Talk to the BBQS Assistant
+                </h2>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1 leading-relaxed">
+                  Ask questions about projects, publications, investigators, and workflows across the consortium.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary px-4 py-2 rounded-lg border border-primary/40 bg-background/60 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                Open Assistant
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
 
       {/* Navigation Cards */}
       <main className="px-4 sm:px-6 pb-16 mt-8">
