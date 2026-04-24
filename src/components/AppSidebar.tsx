@@ -86,7 +86,12 @@ export function AppSidebar() {
                   <span className="text-base">{item.title}</span>
                 </Link>
               ) : (
-                <a href={item.url}>
+                <a
+                  href={item.url}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noopener noreferrer" : undefined}
+                  onClick={handleNavClick}
+                >
                   <item.icon className="h-5 w-5" />
                   <span className="text-base">{item.title}</span>
                 </a>
