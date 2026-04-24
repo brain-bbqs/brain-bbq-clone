@@ -11,7 +11,6 @@ import {
   Wrench,
   ChevronRight,
   MessageSquare,
-  Sparkles,
 } from "lucide-react";
 
 interface NavCard {
