@@ -6,6 +6,7 @@ import { SummaryTabs } from "../SummaryTabs";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInvestigatorOwnership } from "@/hooks/useInvestigatorOwnership";
+import { useUserTier } from "@/hooks/useUserTier";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isOwner, isClaimed, claim, isClaiming } = useInvestigatorOwnership(id);
+  const { isCurator } = useUserTier(); // true for curator OR admin
 
   const { data, isLoading } = useQuery({
     queryKey: ["entity-investigator", id],
@@ -151,8 +153,12 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
-  // Can edit if: user owns this investigator (via user_id link) OR email matches (legacy)
-  const canEdit = isOwner || (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
+  // Can edit if: user owns this investigator (user_id link), email matches (legacy),
+  // OR user is a curator/admin (Tier 1 or Tier 2 — can edit any investigator)
+  const canEdit =
+    isOwner ||
+    isCurator ||
+    (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
   // Show claim button if: user is logged in, investigator is unclaimed, and user doesn't own it
   const canClaim = user && !isClaimed && !isOwner && !canEdit;
 
