@@ -20,7 +20,6 @@ import NeuroMCP from "./pages/NeuroMCP";
 import ConsortiaHistory from "./pages/ConsortiaHistory";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
-import MetadataAssistant from "./pages/MetadataAssistant";
 import DataProvenance from "./pages/DataProvenance";
 import PrincipalInvestigators from "./pages/PrincipalInvestigators";
 
@@ -77,7 +76,6 @@ const App = () => (
               <Route path="/mcp-tutorial" element={<McpTutorial />} />
               <Route path="/species" element={<Species />} />
               
-              <Route path="/metadata-assistant" element={<MetadataAssistant />} />
               <Route path="/dandi-assistant" element={<DandiAssistant />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
