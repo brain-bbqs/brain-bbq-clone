@@ -111,11 +111,11 @@ export default function AdminAccessRequests() {
       </TableCell>
       <TableCell>
         {r.status === "pending" ? (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
             Pending
           </Badge>
         ) : r.status === "approved" ? (
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+          <Badge variant="secondary">
             Approved
           </Badge>
         ) : (
