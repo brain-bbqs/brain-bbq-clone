@@ -1,0 +1,64 @@
+name: PR staging links
+
+# Posts (and keeps updated) a single sticky comment on every PR with quick
+# links to the staging mirror used for HexStrike pentesting, plus the
+# Lovable preview for this branch. Behaves like rossjrw/pr-preview-action's
+# comment, but for an externally hosted staging environment.
+#
+# Configure these repo variables (Settings → Secrets and variables → Actions
+# → Variables) so the links resolve correctly. Anything left unset is simply
+# omitted from the comment.
+#
+#   STAGING_APP_URL              e.g. https://bbqs-staging.lovable.app
+#   STAGING_SUPABASE_PROJECT_REF e.g. abcdwxyz1234 (used to build dashboard URL)
+#   LOVABLE_PROJECT_ID           e.g. 58213f9f-90d3-4c33-a079-dc28eec35ff7
+#                                (used to build the per-branch preview URL)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+concurrency:
+  group: pr-staging-links-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upsert sticky staging-links comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: staging-links
+          message: |
+            ### 🧪 Staging & preview links
+
+            | Environment | Link |
+            | --- | --- |
+            | 🚀 Lovable preview (this branch) | ${{ vars.LOVABLE_PROJECT_ID && format('https://id-preview--{0}.lovable.app', vars.LOVABLE_PROJECT_ID) || '_not configured — set `LOVABLE_PROJECT_ID` repo variable_' }} |
+            | 🧬 Staging app (HexStrike target) | ${{ vars.STAGING_APP_URL || '_not configured — set `STAGING_APP_URL` repo variable_' }} |
+            | 🗄️ Staging Supabase dashboard | ${{ vars.STAGING_SUPABASE_PROJECT_REF && format('https://supabase.com/dashboard/project/{0}', vars.STAGING_SUPABASE_PROJECT_REF) || '_not configured — set `STAGING_SUPABASE_PROJECT_REF` repo variable_' }} |
+            | 📖 Pentest runbook | [`docs/STAGING_RUNBOOK.md`](https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}/docs/STAGING_RUNBOOK.md) |
+            | 🎯 HexStrike targets | [`docs/HEXSTRIKE_TARGETS.md`](https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}/docs/HEXSTRIKE_TARGETS.md) |
+
+            > Staging is a **manual, one-shot** mirror — schema is applied via the SQL editor, not auto-synced. After merging schema changes to `main`, re-apply `bbqs_prod_schema.sql` to the staging project before re-running pentests.
+            >
+            > <sub>Updated automatically by `.github/workflows/pr-staging-links.yml` on every push to this PR.</sub>
+
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish staging deep-link as a status check
+        uses: Sibz/github-status-action@v1
+        continue-on-error: true
+        with:
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          context: 'staging / open app'
+          description: 'Click "Details" to open the staging mirror'
+          state: 'success'
+          sha: ${{ github.event.pull_request.head.sha }}
+          target_url: ${{ vars.STAGING_APP_URL || format('https://github.com/{0}/blob/{1}/docs/STAGING_RUNBOOK.md', github.repository, github.event.pull_request.head.sha) }}
