@@ -43,8 +43,6 @@ const navCards: NavCard[] = [
     color: "hsl(280 50% 60%)",
     links: [
       { label: "EMBER Assistant", to: "/dandi-assistant" },
-      { label: "Metadata Assistant (Beta)", to: "https://assistant.brain-bbqs.org/metadata-assistant" },
-      
     ],
   },
   {
@@ -63,7 +61,6 @@ const navCards: NavCard[] = [
     icon: FolderOpen,
     color: "hsl(140 60% 45%)",
     links: [
-      { label: "People", to: "/investigators" },
       { label: "Projects", to: "/projects" },
       { label: "Grants", to: "/grants" },
       { label: "RFA-NS-25-016 (NOFO)", to: "https://grants.nih.gov/grants/guide/rfa-files/RFA-NS-25-016.html" },
