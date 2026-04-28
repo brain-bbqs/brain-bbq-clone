@@ -266,88 +266,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_conversations: {
-        Row: {
-          created_at: string
-          id: string
-          organization_id: string | null
-          title: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          organization_id?: string | null
-          title?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          organization_id?: string | null
-          title?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_conversations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_messages: {
-        Row: {
-          content: string
-          context_sources: Json | null
-          conversation_id: string
-          created_at: string
-          id: string
-          latency_ms: number | null
-          model: string | null
-          role: string
-          tokens_used: number | null
-          user_id: string
-        }
-        Insert: {
-          content: string
-          context_sources?: Json | null
-          conversation_id: string
-          created_at?: string
-          id?: string
-          latency_ms?: number | null
-          model?: string | null
-          role: string
-          tokens_used?: number | null
-          user_id: string
-        }
-        Update: {
-          content?: string
-          context_sources?: Json | null
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          latency_ms?: number | null
-          model?: string | null
-          role?: string
-          tokens_used?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "chat_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]
@@ -421,48 +339,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      custom_field_usage: {
-        Row: {
-          category: string | null
-          closest_canonical: string | null
-          created_at: string
-          field_name: string
-          field_value: string
-          id: string
-          levenshtein_distance: number | null
-          promoted: boolean
-          promoted_at: string | null
-          updated_at: string
-          usage_count: number
-        }
-        Insert: {
-          category?: string | null
-          closest_canonical?: string | null
-          created_at?: string
-          field_name: string
-          field_value: string
-          id?: string
-          levenshtein_distance?: number | null
-          promoted?: boolean
-          promoted_at?: string | null
-          updated_at?: string
-          usage_count?: number
-        }
-        Update: {
-          category?: string | null
-          closest_canonical?: string | null
-          created_at?: string
-          field_name?: string
-          field_value?: string
-          id?: string
-          levenshtein_distance?: number | null
-          promoted?: boolean
-          promoted_at?: string | null
-          updated_at?: string
-          usage_count?: number
-        }
-        Relationships: []
       }
       edit_history: {
         Row: {
@@ -1062,71 +938,6 @@ export type Database = {
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "resources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pending_changes: {
-        Row: {
-          conversation_id: string | null
-          created_at: string
-          current_value: Json | null
-          field_name: string
-          grant_number: string
-          id: string
-          project_id: string | null
-          proposed_by: string | null
-          proposed_by_email: string | null
-          proposed_value: Json | null
-          rationale: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          source: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          conversation_id?: string | null
-          created_at?: string
-          current_value?: Json | null
-          field_name: string
-          grant_number: string
-          id?: string
-          project_id?: string | null
-          proposed_by?: string | null
-          proposed_by_email?: string | null
-          proposed_value?: Json | null
-          rationale?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          source?: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          conversation_id?: string | null
-          created_at?: string
-          current_value?: Json | null
-          field_name?: string
-          grant_number?: string
-          id?: string
-          project_id?: string | null
-          proposed_by?: string | null
-          proposed_by_email?: string | null
-          proposed_value?: Json | null
-          rationale?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          source?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pending_changes_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1842,9 +1653,6 @@ export type Database = {
       }
     }
     Functions: {
-      accept_pending_change: { Args: { _change_id: string }; Returns: Json }
-      backfill_chat_history_from_sources: { Args: never; Returns: Json }
-      chat_backfill_hash120: { Args: { _content: string }; Returns: string }
       decrement_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
