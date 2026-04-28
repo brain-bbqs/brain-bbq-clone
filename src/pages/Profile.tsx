@@ -201,21 +201,6 @@ export default function Profile() {
     },
   });
 
-  // Fetch recent chat conversations
-  const { data: chatHistory = [] } = useQuery({
-    queryKey: ["user-chats", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("chat_conversations")
-        .select("id, title, updated_at")
-        .eq("user_id", user!.id)
-        .order("updated_at", { ascending: false })
-        .limit(10);
-      return data || [];
-    },
-  });
-
   // Fetch recent edit history
   const { data: editHistory = [] } = useQuery({
     queryKey: ["user-edit-history", user?.email],
@@ -429,32 +414,6 @@ export default function Profile() {
                   </div>
                   <Badge variant="secondary" className="text-xs">Can Edit</Badge>
                 </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Chat history */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Chat History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chatHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No conversations yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {chatHistory.map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <p className="text-sm text-foreground">{c.title || "Untitled conversation"}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(c.updated_at), "MMM d, yyyy")}
-                  </span>
-                </div>
               ))}
             </div>
           )}

@@ -48,22 +48,12 @@ const mainItems: NavItem[] = [
   { title: "My Profile", url: "/profile", icon: Users, authRequired: true },
 ];
 
-const assistantsItems: NavItem[] = [
-  {
-    title: "Metadata Assistant (Beta)",
-    url: "https://assistant.brain-bbqs.org/metadata-assistant",
-    icon: Bot,
-    external: true,
-  },
-];
-
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
   { title: "State Privacy Map", url: "/state-privacy", icon: Shield },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
-  { title: "People", url: "/investigators", icon: Users },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Grants", url: "/grants", icon: Globe },
   { title: "Species", url: "/species", icon: Bug },
@@ -98,7 +88,6 @@ const legalItems: NavItem[] = [
 export const sidebarGroups: NavGroup[] = [
   { label: "Main", items: mainItems },
   { label: "Community", items: communityItems },
-  { label: "Assistants", items: assistantsItems },
   { label: "Tools", items: toolsItems },
   { label: "Knowledge Base", items: knowledgeBaseItems },
   { label: "Conferences", items: conferencesItems },
