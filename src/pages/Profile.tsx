@@ -201,21 +201,6 @@ export default function Profile() {
     },
   });
 
-  // Fetch recent chat conversations
-  const { data: chatHistory = [] } = useQuery({
-    queryKey: ["user-chats", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("chat_conversations")
-        .select("id, title, updated_at")
-        .eq("user_id", user!.id)
-        .order("updated_at", { ascending: false })
-        .limit(10);
-      return data || [];
-    },
-  });
-
   // Fetch recent edit history
   const { data: editHistory = [] } = useQuery({
     queryKey: ["user-edit-history", user?.email],
