@@ -1843,6 +1843,8 @@ export type Database = {
     }
     Functions: {
       accept_pending_change: { Args: { _change_id: string }; Returns: Json }
+      backfill_chat_history_from_sources: { Args: never; Returns: Json }
+      chat_backfill_hash120: { Args: { _content: string }; Returns: string }
       decrement_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
