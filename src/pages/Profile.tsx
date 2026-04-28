@@ -420,32 +420,6 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Chat history */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Chat History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chatHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No conversations yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {chatHistory.map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <p className="text-sm text-foreground">{c.title || "Untitled conversation"}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(c.updated_at), "MMM d, yyyy")}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Edit history / data provenance */}
       <Card>
         <CardHeader>
