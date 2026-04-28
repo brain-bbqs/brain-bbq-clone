@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Save, RotateCcw, Loader2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
