@@ -31,11 +31,11 @@ export function Layout({ children }: LayoutProps) {
   return (
     <EntitySummaryProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex w-full overflow-x-hidden">
           <AppSidebar />
           <FloatingTrigger />
-          <SidebarInset className="flex flex-col flex-1">
-            <main className="flex-1">
+          <SidebarInset className="flex flex-col flex-1 min-w-0">
+            <main className="flex-1 min-w-0">
               {children}
             </main>
           </SidebarInset>
