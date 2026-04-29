@@ -40,17 +40,7 @@ export default function SelfAutonomyDocs() {
     },
   });
 
-  const { data: customFields = [] } = useQuery<CustomFieldUsage[]>({
-    queryKey: ["custom-field-usage"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("custom_field_usage")
-        .select("*")
-        .order("usage_count", { ascending: false })
-        .limit(50);
-      return (data || []) as CustomFieldUsage[];
-    },
-  });
+  const customFields: CustomFieldUsage[] = [];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">

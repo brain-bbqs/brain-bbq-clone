@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     const wipeOrder = [
       "grant_investigators", "investigator_organizations",
       "project_publications", "project_resources",
-      "pending_changes", "edit_history", "announcements", "jobs",
+      "edit_history", "announcements", "jobs",
       "projects", "grants", "publications", "software_tools", "species",
       "investigators", "organizations", "allowed_domains", "funding_opportunities",
     ];

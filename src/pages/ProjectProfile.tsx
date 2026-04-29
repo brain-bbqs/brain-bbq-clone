@@ -11,12 +11,10 @@ import { toast } from "@/hooks/use-toast";
 import { PageMeta } from "@/components/PageMeta";
 import { AccessGate } from "@/components/project-profile/AccessGate";
 import { TeamRosterEditor } from "@/components/project-profile/TeamRosterEditor";
-import { PendingChangesPanel } from "@/components/project-profile/PendingChangesPanel";
 import { QuestionnaireSection } from "@/components/project-profile/QuestionnaireSection";
 import {
   QUESTIONNAIRE_SECTIONS, TOP_LEVEL_FIELDS, COMPLETENESS_FIELDS,
 } from "@/data/questionnaire-fields";
-import { usePendingChanges } from "@/hooks/usePendingChanges";
 
 export default function ProjectProfile() {
   const { grantNumber } = useParams<{ grantNumber: string }>();
@@ -40,8 +38,7 @@ export default function ProjectProfile() {
     },
   });
 
-  const { pending } = usePendingChanges(grantNumber || null);
-  const pendingKeys = useMemo(() => new Set(pending.map((p) => p.field_name)), [pending]);
+  const pendingKeys = useMemo(() => new Set<string>(), []);
 
   const original = useMemo(() => {
     if (!data?.project) return {} as Record<string, any>;
@@ -175,16 +172,6 @@ export default function ProjectProfile() {
           </div>
         </div>
 
-        {/* Helpful link to assistant */}
-        <div className="bg-muted/30 border border-border rounded-xl p-4 text-sm text-muted-foreground">
-          💡 Tip: Use the{" "}
-          <Link to={`/metadata-assistant?grant=${grantNumber}`} className="text-primary hover:underline font-medium">
-            BBQS Assistant
-          </Link>{" "}
-          to propose updates conversationally — its suggestions will appear in the pending panel
-          below for your team to review.
-        </div>
-
         {/* Sticky action bar */}
         {hasChanges && (
           <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border border-amber-500/30 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
@@ -203,9 +190,6 @@ export default function ProjectProfile() {
             </div>
           </div>
         )}
-
-        {/* Pending assistant suggestions */}
-        <PendingChangesPanel grantNumber={grantNumber} canReview={canEdit} />
 
         {/* Team roster */}
         <TeamRosterEditor grantId={data.grant.id} canEdit={canEdit} />
