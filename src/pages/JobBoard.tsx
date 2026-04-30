@@ -461,17 +461,46 @@ export default function JobBoard() {
                           Email
                         </a>
                       )}
-                      {job.application_url && (
-                        <a
-                          href={job.application_url}
-                          target="_blank"
-                          rel="noopener"
-                          className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
-                        >
-                          Apply
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                      {(() => {
+                        const urls = parseApplicationUrls(job.application_url);
+                        if (urls.length === 0) return null;
+                        if (urls.length === 1) {
+                          return (
+                            <a
+                              href={urls[0].href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
+                            >
+                              Apply
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          );
+                        }
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors">
+                              Apply ({urls.length})
+                              <ChevronDown className="h-3 w-3" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="max-w-xs">
+                              {urls.map((u, i) => (
+                                <DropdownMenuItem key={i} asChild>
+                                  <a
+                                    href={u.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between gap-2 cursor-pointer"
+                                  >
+                                    <span className="truncate">{u.label}</span>
+                                    <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  </a>
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
                     </div>
                   </div>
                 </CardContent>
