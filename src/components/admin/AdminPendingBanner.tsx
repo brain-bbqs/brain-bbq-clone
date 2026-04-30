@@ -63,7 +63,7 @@ export function AdminPendingBanner() {
   if (data.pendingRoles > 0)
     items.push({ label: "role request", count: data.pendingRoles, href: "/admin/users" });
   if (isAdmin && data.systemAlerts > 0)
-    items.push({ label: "system alert", count: data.systemAlerts, href: "/admin/dashboard" });
+    items.push({ label: "system alert", count: data.systemAlerts, href: "/admin/users" });
 
   if (items.length === 0) return null;
 
