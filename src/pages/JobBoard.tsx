@@ -318,15 +318,16 @@ export default function JobBoard() {
                 <Button
                   size="lg"
                   className="gap-2 shadow-lg shadow-primary/20"
-                  onClick={() => {
+                  onClick={(e) => {
                     if (!user) {
-                      toast.error("Please sign in to post a job");
+                      e.preventDefault();
+                      toast.info("Please sign in to post a position.");
+                      window.location.href = `/auth?redirect=${encodeURIComponent("/jobs")}`;
                       return;
                     }
                     setEditingId(null);
                     setForm(INITIAL_FORM);
                   }}
-                  disabled={!user}
                 >
                   <Plus className="h-4 w-4" />
                   Post a Position
