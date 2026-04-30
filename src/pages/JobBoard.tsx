@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles } from "lucide-react";
+import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -94,6 +94,41 @@ function renderDescriptionWithLinks(text: string) {
         {p.label}
       </a>
     )
+  );
+}
+
+/**
+ * Description with "Show more / Show less" toggle.
+ * The toggle only appears when the text is long enough to actually be clipped.
+ */
+function JobDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  // Heuristic: ~3 lines of card text ≈ 220 chars. Also expand if multiple line breaks.
+  const isLong = text.length > 220 || (text.match(/\n/g)?.length ?? 0) >= 3;
+
+  return (
+    <div className="space-y-1">
+      <p
+        className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${
+          !expanded && isLong ? "line-clamp-3" : ""
+        }`}
+      >
+        {renderDescriptionWithLinks(text)}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+        >
+          {expanded ? (
+            <>Show less <ChevronUp className="h-3 w-3" /></>
+          ) : (
+            <>Show more <ChevronDown className="h-3 w-3" /></>
+          )}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -365,11 +400,7 @@ export default function JobBoard() {
                     )}
                   </div>
 
-                  {job.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 whitespace-pre-wrap">
-                      {renderDescriptionWithLinks(job.description)}
-                    </p>
-                  )}
+                  {job.description && <JobDescription text={job.description} />}
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
