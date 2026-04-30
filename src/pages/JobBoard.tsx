@@ -242,6 +242,9 @@ export default function JobBoard() {
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea id="description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the position, requirements, and how to apply..." rows={4} />
+                    <p className="text-xs text-muted-foreground">
+                      Tip: paste any URL or email and it will become a clickable link automatically.
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
