@@ -304,7 +304,16 @@ export default function JobBoard() {
               </div>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setEditingId(null);
+                  setForm(INITIAL_FORM);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   size="lg"
@@ -314,6 +323,8 @@ export default function JobBoard() {
                       toast.error("Please sign in to post a job");
                       return;
                     }
+                    setEditingId(null);
+                    setForm(INITIAL_FORM);
                   }}
                   disabled={!user}
                 >
@@ -323,7 +334,7 @@ export default function JobBoard() {
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Post a New Position</DialogTitle>
+                  <DialogTitle>{editingId ? "Edit Position" : "Post a New Position"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
@@ -401,7 +412,9 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
-                    {postJob.isPending ? "Posting..." : "Post Position"}
+                    {postJob.isPending
+                      ? (editingId ? "Saving..." : "Posting...")
+                      : (editingId ? "Save Changes" : "Post Position")}
                   </Button>
                 </form>
               </DialogContent>
