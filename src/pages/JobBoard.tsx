@@ -326,8 +326,18 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="application_url">Application URL</Label>
-                    <Input id="application_url" type="url" value={form.application_url} onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))} placeholder="https://..." />
+                    <Label htmlFor="application_url">Application URL(s)</Label>
+                    <Textarea
+                      id="application_url"
+                      value={form.application_url}
+                      onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))}
+                      placeholder={"https://apply.example.edu/job1\nFaculty portal | https://hr.example.edu/123"}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Add one URL per line (or separate with commas). Optionally prefix with a label, e.g.{" "}
+                      <code className="text-foreground/80">Faculty portal | https://...</code>
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
                     {postJob.isPending ? "Posting..." : "Post Position"}
