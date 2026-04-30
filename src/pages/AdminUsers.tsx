@@ -295,11 +295,17 @@ export default function AdminUsers() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <PageMeta title="User Roles — Admin" description="Manage user access tiers" />
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
-        <p className="text-sm text-muted-foreground">
-          Assign access tiers across the consortium. Changes take effect immediately.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          <p className="text-sm text-muted-foreground">
+            Assign access tiers across the consortium. Changes take effect immediately.
+          </p>
+        </div>
+        <Button onClick={() => setAddOpen(true)} className="shrink-0">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add user
+        </Button>
       </div>
 
       <SystemAlertsBanner />
@@ -429,7 +435,9 @@ export default function AdminUsers() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                                    {canGrantAdmin && (
+                                      <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                                    )}
                                     <SelectItem value="curator">Tier 2 — Curator</SelectItem>
                                     <SelectItem value="member">Tier 3 — Member</SelectItem>
                                   </SelectContent>
