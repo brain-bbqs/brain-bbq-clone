@@ -67,6 +67,29 @@ export default function AdminAccessRequests() {
     },
   });
 
+  const sendApprovalEmail = async (to: string, name: string, note?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-access-approved-email",
+        { body: { to, name, note } },
+      );
+      if (error || (data && data.success === false)) {
+        console.error("Approval email failed:", error || data?.error);
+        toast.warning(
+          "Approved, but notification email failed to send. Please contact the requester manually.",
+        );
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Approval email exception:", err);
+      toast.warning(
+        "Approved, but notification email failed to send. Please contact the requester manually.",
+      );
+      return false;
+    }
+  };
+
   const setStatus = async (id: string, next: Status, notes?: string) => {
     setBusyId(id);
     try {
@@ -149,6 +172,11 @@ export default function AdminAccessRequests() {
           ? "Approved — already in investigators directory"
           : "Approved and invited. They can sign in via Globus now.",
       );
+      await sendApprovalEmail(
+        email,
+        name,
+        alreadyListed ? undefined : "You've been added to the investigators directory.",
+      );
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
       console.error(err);
@@ -183,6 +211,11 @@ export default function AdminAccessRequests() {
       if (error) throw error;
 
       toast.success(`Linked ${email} to "${existing.name}". They can sign in via Globus now.`);
+      await sendApprovalEmail(
+        email,
+        existing.name,
+        `Your email has been linked to the existing investigator profile "${existing.name}".`,
+      );
       setCollision(null);
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
@@ -218,6 +251,11 @@ export default function AdminAccessRequests() {
       if (error) throw error;
 
       toast.success(`Added as "${disambiguated}". They can sign in via Globus now.`);
+      await sendApprovalEmail(
+        email,
+        disambiguated,
+        `You've been added to the investigators directory as "${disambiguated}".`,
+      );
       setCollision(null);
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
