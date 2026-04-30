@@ -42,6 +42,7 @@ import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAccessRequests from "./pages/AdminAccessRequests";
+import RequestAccess from "./pages/RequestAccess";
 
 const queryClient = new QueryClient();
 
