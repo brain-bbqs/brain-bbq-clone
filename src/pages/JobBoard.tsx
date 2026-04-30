@@ -400,11 +400,7 @@ export default function JobBoard() {
                     )}
                   </div>
 
-                  {job.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 whitespace-pre-wrap">
-                      {renderDescriptionWithLinks(job.description)}
-                    </p>
-                  )}
+                  {job.description && <JobDescription text={job.description} />}
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
