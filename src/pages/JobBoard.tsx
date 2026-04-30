@@ -12,7 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -172,6 +183,7 @@ export default function JobBoard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<JobFormData>(INITIAL_FORM);
   const [filterType, setFilterType] = useState<string>("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Authenticated users see full jobs table (with contact info); anonymous users see the safe public_jobs view
   const { data: jobs, isLoading } = useQuery({
@@ -199,21 +211,58 @@ export default function JobBoard() {
   const postJob = useMutation({
     mutationFn: async (data: JobFormData) => {
       if (!user) throw new Error("Must be signed in");
-      const { error } = await (supabase as any).from("jobs").insert({
-        ...data,
-        posted_by: user.id,
-        posted_by_email: user.email,
-      });
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await (supabase as any)
+          .from("jobs")
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from("jobs").insert({
+          ...data,
+          posted_by: user.id,
+          posted_by_email: user.email,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       setDialogOpen(false);
       setForm(INITIAL_FORM);
-      toast.success("Job posted successfully!");
+      toast.success(editingId ? "Position updated!" : "Job posted successfully!");
+      setEditingId(null);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to post job"),
+    onError: (err: any) => toast.error(err.message || "Failed to save job"),
   });
+
+  const deleteJob = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("jobs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      toast.success("Position removed");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to delete job"),
+  });
+
+  const openEditDialog = (job: any) => {
+    setForm({
+      title: job.title ?? "",
+      institution: job.institution ?? "",
+      department: job.department ?? "",
+      location: job.location ?? "",
+      job_type: job.job_type ?? "postdoc",
+      description: job.description ?? "",
+      contact_name: job.contact_name ?? "",
+      contact_email: job.contact_email ?? "",
+      application_url: job.application_url ?? "",
+    });
+    setEditingId(job.id);
+    setDialogOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
