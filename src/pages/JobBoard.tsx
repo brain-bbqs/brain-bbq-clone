@@ -326,18 +326,30 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="application_url">Application URL(s)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="application_url">Application URL(s)</Label>
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Multiple links supported
+                      </span>
+                    </div>
                     <Textarea
                       id="application_url"
                       value={form.application_url}
                       onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))}
-                      placeholder={"https://apply.example.edu/job1\nFaculty portal | https://hr.example.edu/123"}
-                      rows={3}
+                      placeholder={"https://apply.example.edu/job1\nFaculty portal | https://hr.example.edu/123\nLab site | https://lab.example.edu/apply"}
+                      rows={4}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Add one URL per line (or separate with commas). Optionally prefix with a label, e.g.{" "}
-                      <code className="text-foreground/80">Faculty portal | https://...</code>
-                    </p>
+                    <div className="rounded-md border border-border bg-secondary/40 p-3 text-xs text-muted-foreground space-y-1.5">
+                      <p className="font-medium text-foreground">How to add multiple links</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Put <span className="text-foreground">one URL per line</span> (or separate them with commas).</li>
+                        <li>
+                          To give a link a custom label, write{" "}
+                          <code className="bg-background px-1 py-0.5 rounded text-foreground">Label | https://...</code>
+                        </li>
+                        <li>One URL shows an <span className="text-foreground">Apply</span> button; multiple show an <span className="text-foreground">Apply (N)</span> dropdown.</li>
+                      </ul>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
                     {postJob.isPending ? "Posting..." : "Post Position"}
