@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
@@ -130,6 +131,39 @@ function JobDescription({ text }: { text: string }) {
       )}
     </div>
   );
+}
+
+/**
+ * Parse one or more application URLs from a single text field.
+ * Accepts URLs separated by commas, newlines, semicolons, or whitespace.
+ * Each entry can also be in "Label | https://..." form to give the link a custom label.
+ */
+function parseApplicationUrls(raw: string | null | undefined): Array<{ href: string; label: string }> {
+  if (!raw) return [];
+  return raw
+    .split(/[\n,;]+|\s{2,}/g)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      // "Label | url" or "Label - url"
+      const sepMatch = entry.match(/^(.+?)\s*[|]\s*(https?:\/\/\S+)$/i);
+      if (sepMatch) {
+        return { label: sepMatch[1].trim(), href: sepMatch[2].trim() };
+      }
+      // Bare URL (allow www. by prefixing https://)
+      const urlMatch = entry.match(/(https?:\/\/\S+|www\.\S+)/i);
+      if (urlMatch) {
+        const href = urlMatch[1].startsWith("http") ? urlMatch[1] : `https://${urlMatch[1]}`;
+        try {
+          const u = new URL(href);
+          return { label: u.hostname.replace(/^www\./, ""), href };
+        } catch {
+          return { label: href, href };
+        }
+      }
+      return null;
+    })
+    .filter((v): v is { href: string; label: string } => !!v);
 }
 
 export default function JobBoard() {
@@ -292,8 +326,18 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="application_url">Application URL</Label>
-                    <Input id="application_url" type="url" value={form.application_url} onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))} placeholder="https://..." />
+                    <Label htmlFor="application_url">Application URL(s)</Label>
+                    <Textarea
+                      id="application_url"
+                      value={form.application_url}
+                      onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))}
+                      placeholder={"https://apply.example.edu/job1\nFaculty portal | https://hr.example.edu/123"}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Add one URL per line (or separate with commas). Optionally prefix with a label, e.g.{" "}
+                      <code className="text-foreground/80">Faculty portal | https://...</code>
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
                     {postJob.isPending ? "Posting..." : "Post Position"}
@@ -417,17 +461,46 @@ export default function JobBoard() {
                           Email
                         </a>
                       )}
-                      {job.application_url && (
-                        <a
-                          href={job.application_url}
-                          target="_blank"
-                          rel="noopener"
-                          className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
-                        >
-                          Apply
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                      {(() => {
+                        const urls = parseApplicationUrls(job.application_url);
+                        if (urls.length === 0) return null;
+                        if (urls.length === 1) {
+                          return (
+                            <a
+                              href={urls[0].href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
+                            >
+                              Apply
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          );
+                        }
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors">
+                              Apply ({urls.length})
+                              <ChevronDown className="h-3 w-3" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="max-w-xs">
+                              {urls.map((u, i) => (
+                                <DropdownMenuItem key={i} asChild>
+                                  <a
+                                    href={u.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between gap-2 cursor-pointer"
+                                  >
+                                    <span className="truncate">{u.label}</span>
+                                    <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  </a>
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
                     </div>
                   </div>
                 </CardContent>
