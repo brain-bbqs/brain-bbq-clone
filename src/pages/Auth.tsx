@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,13 @@ export default function Auth() {
         session_failed: "Failed to generate a session.",
       };
       if (globusError === "not_a_member") {
-        toast.info(errorMessages.not_a_member, { duration: 10000 });
+        toast.info(errorMessages.not_a_member, {
+          duration: 12000,
+          action: {
+            label: "Request access",
+            onClick: () => navigate("/request-access"),
+          },
+        });
       } else {
         toast.error(errorMessages[globusError] || "Globus sign-in failed.");
       }
@@ -134,6 +140,16 @@ export default function Auth() {
           <p className="text-xs text-center text-muted-foreground">
             Access is restricted to BBQS consortium affiliates. Sign in using your university identity through Globus.
           </p>
+
+          <div className="pt-2 text-center text-sm text-muted-foreground border-t border-border">
+            <span>Don't have access yet?</span>{" "}
+            <Link
+              to="/request-access"
+              className="text-primary hover:underline font-medium"
+            >
+              Request an account
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
