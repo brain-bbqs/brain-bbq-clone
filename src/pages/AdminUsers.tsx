@@ -61,10 +61,18 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addName, setAddName] = useState("");
+  const [addRole, setAddRole] = useState<AssignableRole>("member");
+  const [addSubmitting, setAddSubmitting] = useState(false);
+
+  const canManage = tierInfo.isCurator; // tier 1 and 2
+  const canGrantAdmin = tierInfo.isAdmin; // tier 1 only
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users-list-v2"],
-    enabled: tierInfo.isAdmin,
+    enabled: canManage,
     queryFn: async () => {
       const [profilesRes, rolesRes, investigatorsRes] = await Promise.all([
         supabase.from("profiles").select("id, email, full_name, created_at"),
@@ -169,6 +177,84 @@ export default function AdminUsers() {
     }
   };
 
+  const resetAddForm = () => {
+    setAddEmail("");
+    setAddName("");
+    setAddRole("member");
+  };
+
+  const handleAddUser = async () => {
+    const email = addEmail.trim().toLowerCase();
+    const name = addName.trim();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!name) {
+      toast.error("Please enter the person's name.");
+      return;
+    }
+    if (addRole === "admin" && !canGrantAdmin) {
+      toast.error("Only Tier 1 admins can assign the Admin tier.");
+      return;
+    }
+
+    setAddSubmitting(true);
+    try {
+      // 1) Check if user already signed in (profile exists for this email)
+      const { data: existingProfile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .ilike("email", email)
+        .maybeSingle();
+      if (profileErr && profileErr.code !== "PGRST116") throw profileErr;
+
+      if (existingProfile?.id) {
+        // Assign role immediately to existing user
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", existingProfile.id)
+          .in("role", ["admin", "curator"]);
+
+        await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: existingProfile.id, role: "member" },
+            { onConflict: "user_id,role" },
+          );
+
+        if (addRole !== "member") {
+          const { error } = await supabase
+            .from("user_roles")
+            .insert({ user_id: existingProfile.id, role: addRole });
+          if (error) throw error;
+        }
+        toast.success(`Assigned ${TIER_META[addRole].label} to ${email}.`);
+      } else {
+        // 2) Otherwise create an invited investigator with pending role
+        const { error } = await supabase.from("investigators").insert({
+          name,
+          email,
+          pending_role: addRole === "member" ? null : addRole,
+        });
+        if (error) throw error;
+        toast.success(
+          `Invited ${email}. Tier ${TIER_META[addRole].tier} will be applied on their first sign-in.`,
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+      setAddOpen(false);
+      resetAddForm();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to add user.");
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
   // ---- Access gate ----
   if (tierInfo.isLoading) {
     return (
@@ -178,7 +264,7 @@ export default function AdminUsers() {
     );
   }
 
-  if (!tierInfo.isAdmin) {
+  if (!canManage) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16">
         <Card>
@@ -188,7 +274,7 @@ export default function AdminUsers() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Admin access required</h1>
             <p className="text-sm text-muted-foreground mb-6">
-              This page is restricted to Tier 1 administrators.
+              This page is restricted to Tier 1 administrators and Tier 2 curators.
             </p>
             <Button asChild variant="outline">
               <Link to="/">Back to home</Link>
