@@ -18,9 +18,11 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          full_name: string | null
           globus_name: string | null
           globus_subject: string | null
           id: string
+          institution: string | null
           message: string | null
           requested_role: string | null
           review_notes: string | null
@@ -32,9 +34,11 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          full_name?: string | null
           globus_name?: string | null
           globus_subject?: string | null
           id?: string
+          institution?: string | null
           message?: string | null
           requested_role?: string | null
           review_notes?: string | null
@@ -46,9 +50,11 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          full_name?: string | null
           globus_name?: string | null
           globus_subject?: string | null
           id?: string
+          institution?: string | null
           message?: string | null
           requested_role?: string | null
           review_notes?: string | null

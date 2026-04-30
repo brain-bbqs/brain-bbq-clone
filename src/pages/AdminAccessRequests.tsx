@@ -25,6 +25,8 @@ interface AccessRequest {
   created_at: string;
   reviewed_at: string | null;
   review_notes: string | null;
+  full_name?: string | null;
+  institution?: string | null;
 }
 
 export default function AdminAccessRequests() {
@@ -34,7 +36,7 @@ export default function AdminAccessRequests() {
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["access-requests"],
-    enabled: tier.isAdmin,
+    enabled: tier.isCurator,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("access_requests")
@@ -66,6 +68,52 @@ export default function AdminAccessRequests() {
     }
   };
 
+  const approveAndInvite = async (r: AccessRequest) => {
+    setBusyId(r.id);
+    try {
+      const name = (r.full_name || r.globus_name || r.email.split("@")[0] || "Unknown").trim();
+      const email = r.email.toLowerCase();
+
+      // Only insert investigator if no row already matches this email
+      const { data: existing } = await supabase
+        .from("investigators")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+
+      if (!existing) {
+        const { error: invErr } = await supabase
+          .from("investigators")
+          .insert({ name, email });
+        if (invErr) throw invErr;
+      }
+
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          review_notes: existing
+            ? "Already in investigators directory"
+            : "Added to investigators directory",
+        })
+        .eq("id", r.id);
+      if (error) throw error;
+
+      toast.success(
+        existing
+          ? "Approved — already in investigators directory"
+          : "Approved and invited. They can sign in via Globus now.",
+      );
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to approve and invite");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (tier.isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -74,7 +122,7 @@ export default function AdminAccessRequests() {
     );
   }
 
-  if (!tier.isAdmin) {
+  if (!tier.isCurator) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16">
         <Card>
@@ -82,9 +130,9 @@ export default function AdminAccessRequests() {
             <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-5">
               <Lock className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Admin access required</h1>
+            <h1 className="text-2xl font-bold mb-2">Reviewer access required</h1>
             <p className="text-sm text-muted-foreground mb-6">
-              This page is restricted to Tier 1 administrators.
+              This page is restricted to Tier 1 admins and Tier 2 curators.
             </p>
             <Button asChild variant="outline">
               <Link to="/">Back to home</Link>
@@ -101,10 +149,20 @@ export default function AdminAccessRequests() {
   const renderRow = (r: AccessRequest, withActions: boolean) => (
     <TableRow key={r.id}>
       <TableCell>
-        <div className="font-medium text-foreground">{r.globus_name || "—"}</div>
+        <div className="font-medium text-foreground">
+          {r.full_name || r.globus_name || "—"}
+        </div>
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <Mail className="h-3 w-3" /> {r.email}
         </div>
+        {r.institution && (
+          <div className="text-xs text-muted-foreground mt-1">{r.institution}</div>
+        )}
+        {r.message && (
+          <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2 max-w-md">
+            "{r.message}"
+          </div>
+        )}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
         {format(new Date(r.created_at), "MMM d, yyyy h:mm a")}
@@ -133,12 +191,12 @@ export default function AdminAccessRequests() {
             <Button
               size="sm"
               variant="default"
-              onClick={() => setStatus(r.id, "approved", "Added to investigators roster")}
+              onClick={() => approveAndInvite(r)}
               disabled={busyId === r.id}
-              title="Mark as approved (add the person to the investigators table separately, then they can sign in)"
+              title="Adds the person to the investigators directory and marks the request approved. They can then sign in via Globus."
             >
               <Check className="h-3.5 w-3.5 mr-1" />
-              Approve
+              Approve & invite
             </Button>
             <Button
               size="sm"
@@ -162,9 +220,10 @@ export default function AdminAccessRequests() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
         <p className="text-sm text-muted-foreground">
-          Sign-in attempts from people whose email isn't on the consortium roster. To grant
-          access, add them to the investigators directory — the next time they sign in with
-          Globus they'll get in automatically.
+          Sign-up requests from the public form and Globus sign-in attempts from people whose
+          email isn't on the consortium roster. "Approve &amp; invite" adds them to the
+          investigators directory automatically — the next time they sign in via Globus, they'll
+          get in.
         </p>
       </div>
 
@@ -213,9 +272,9 @@ export default function AdminAccessRequests() {
                 Awaiting decision
               </CardTitle>
               <CardDescription>
-                Approving here only marks the request as handled. The person still needs to be
-                added to the <code className="font-mono">investigators</code> table before they
-                can sign in.
+                Click <strong>Approve &amp; invite</strong> to add the person to the{" "}
+                <code className="font-mono">investigators</code> directory and mark the request
+                approved. They can then sign in via Globus.
               </CardDescription>
             </CardHeader>
             <CardContent>
