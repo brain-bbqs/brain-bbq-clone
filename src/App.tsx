@@ -67,6 +67,7 @@ const App = () => (
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/neuromcp" element={<NeuroMCP />} />
               <Route path="/consortia-history" element={<ConsortiaHistory />} />
               <Route path="/publications" element={<Publications />} />
