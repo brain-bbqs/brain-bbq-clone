@@ -520,10 +520,54 @@ export default function JobBoard() {
 
                   {job.description && <JobDescription text={job.description} />}
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50 gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>{formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}</span>
+                      {user?.id && job.posted_by === user.id && (
+                        <>
+                          <span className="mx-1 text-border">·</span>
+                          <button
+                            type="button"
+                            onClick={() => openEditDialog(job)}
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                            aria-label="Edit position"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                                aria-label="Delete position"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this position?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove "{job.title}" from the job board.
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteJob.mutate(job.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {job.contact_email && (
