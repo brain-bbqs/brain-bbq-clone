@@ -133,6 +133,39 @@ function JobDescription({ text }: { text: string }) {
   );
 }
 
+/**
+ * Parse one or more application URLs from a single text field.
+ * Accepts URLs separated by commas, newlines, semicolons, or whitespace.
+ * Each entry can also be in "Label | https://..." form to give the link a custom label.
+ */
+function parseApplicationUrls(raw: string | null | undefined): Array<{ href: string; label: string }> {
+  if (!raw) return [];
+  return raw
+    .split(/[\n,;]+|\s{2,}/g)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      // "Label | url" or "Label - url"
+      const sepMatch = entry.match(/^(.+?)\s*[|]\s*(https?:\/\/\S+)$/i);
+      if (sepMatch) {
+        return { label: sepMatch[1].trim(), href: sepMatch[2].trim() };
+      }
+      // Bare URL (allow www. by prefixing https://)
+      const urlMatch = entry.match(/(https?:\/\/\S+|www\.\S+)/i);
+      if (urlMatch) {
+        const href = urlMatch[1].startsWith("http") ? urlMatch[1] : `https://${urlMatch[1]}`;
+        try {
+          const u = new URL(href);
+          return { label: u.hostname.replace(/^www\./, ""), href };
+        } catch {
+          return { label: href, href };
+        }
+      }
+      return null;
+    })
+    .filter((v): v is { href: string; label: string } => !!v);
+}
+
 export default function JobBoard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
