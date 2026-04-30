@@ -12,7 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -172,6 +183,7 @@ export default function JobBoard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<JobFormData>(INITIAL_FORM);
   const [filterType, setFilterType] = useState<string>("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Authenticated users see full jobs table (with contact info); anonymous users see the safe public_jobs view
   const { data: jobs, isLoading } = useQuery({
@@ -199,21 +211,58 @@ export default function JobBoard() {
   const postJob = useMutation({
     mutationFn: async (data: JobFormData) => {
       if (!user) throw new Error("Must be signed in");
-      const { error } = await (supabase as any).from("jobs").insert({
-        ...data,
-        posted_by: user.id,
-        posted_by_email: user.email,
-      });
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await (supabase as any)
+          .from("jobs")
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from("jobs").insert({
+          ...data,
+          posted_by: user.id,
+          posted_by_email: user.email,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       setDialogOpen(false);
       setForm(INITIAL_FORM);
-      toast.success("Job posted successfully!");
+      toast.success(editingId ? "Position updated!" : "Job posted successfully!");
+      setEditingId(null);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to post job"),
+    onError: (err: any) => toast.error(err.message || "Failed to save job"),
   });
+
+  const deleteJob = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("jobs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      toast.success("Position removed");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to delete job"),
+  });
+
+  const openEditDialog = (job: any) => {
+    setForm({
+      title: job.title ?? "",
+      institution: job.institution ?? "",
+      department: job.department ?? "",
+      location: job.location ?? "",
+      job_type: job.job_type ?? "postdoc",
+      description: job.description ?? "",
+      contact_name: job.contact_name ?? "",
+      contact_email: job.contact_email ?? "",
+      application_url: job.application_url ?? "",
+    });
+    setEditingId(job.id);
+    setDialogOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +304,16 @@ export default function JobBoard() {
               </div>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setEditingId(null);
+                  setForm(INITIAL_FORM);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   size="lg"
@@ -265,6 +323,8 @@ export default function JobBoard() {
                       toast.error("Please sign in to post a job");
                       return;
                     }
+                    setEditingId(null);
+                    setForm(INITIAL_FORM);
                   }}
                   disabled={!user}
                 >
@@ -274,7 +334,7 @@ export default function JobBoard() {
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Post a New Position</DialogTitle>
+                  <DialogTitle>{editingId ? "Edit Position" : "Post a New Position"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
@@ -352,7 +412,9 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
-                    {postJob.isPending ? "Posting..." : "Post Position"}
+                    {postJob.isPending
+                      ? (editingId ? "Saving..." : "Posting...")
+                      : (editingId ? "Save Changes" : "Post Position")}
                   </Button>
                 </form>
               </DialogContent>
@@ -458,10 +520,54 @@ export default function JobBoard() {
 
                   {job.description && <JobDescription text={job.description} />}
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50 gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>{formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}</span>
+                      {user?.id && job.posted_by === user.id && (
+                        <>
+                          <span className="mx-1 text-border">·</span>
+                          <button
+                            type="button"
+                            onClick={() => openEditDialog(job)}
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                            aria-label="Edit position"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                                aria-label="Delete position"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this position?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove "{job.title}" from the job board.
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteJob.mutate(job.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {job.contact_email && (
