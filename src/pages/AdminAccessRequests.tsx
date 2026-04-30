@@ -447,6 +447,83 @@ export default function AdminAccessRequests() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!collision} onOpenChange={(open) => !open && setCollision(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-accent-foreground" />
+              Name already exists in directory
+            </DialogTitle>
+            <DialogDescription>
+              An investigator with this name is already in the consortium roster. Choose how to
+              resolve this so the requester can sign in.
+            </DialogDescription>
+          </DialogHeader>
+
+          {collision && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md border border-border bg-muted/40 p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Existing investigator
+                </div>
+                <div className="font-medium text-foreground">{collision.existing.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  Primary: {collision.existing.email || "—"}
+                </div>
+                {collision.existing.secondary_emails &&
+                  collision.existing.secondary_emails.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Secondary: {collision.existing.secondary_emails.join(", ")}
+                    </div>
+                  )}
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/40 p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Requester
+                </div>
+                <div className="font-medium text-foreground">
+                  {collision.request.full_name || collision.request.globus_name || "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">{collision.email}</div>
+                {collision.request.institution && (
+                  <div className="text-xs text-muted-foreground">
+                    {collision.request.institution}
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground pt-1">
+                If this is the <strong>same person</strong> using a different email, link the
+                email as a secondary sign-in method. If they're a <strong>different person</strong>{" "}
+                who happens to share the name, create a separate row with a disambiguated name.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCollision(null)}
+              disabled={!!busyId}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={createWithDisambiguatedName}
+              disabled={!!busyId}
+            >
+              Different person — create new
+            </Button>
+            <Button onClick={linkAsSecondaryEmail} disabled={!!busyId}>
+              {busyId && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Same person — link email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
