@@ -516,6 +516,79 @@ export default function AdminUsers() {
         investigators appear here once added to the <code className="font-mono">investigators</code>{" "}
         directory and will be auto-linked to their auth account on their first Globus login.
       </p>
+
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add user</DialogTitle>
+            <DialogDescription>
+              If this email already belongs to a signed-in user, the tier is applied immediately.
+              Otherwise, they're added to the investigators directory and the tier is granted the
+              first time they sign in via Globus.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="add-name">Full name</Label>
+              <Input
+                id="add-name"
+                placeholder="Jane Doe"
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-email">Email</Label>
+              <Input
+                id="add-email"
+                type="email"
+                placeholder="jane@institution.edu"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                maxLength={255}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-tier">Tier</Label>
+              <Select value={addRole} onValueChange={(v) => setAddRole(v as AssignableRole)}>
+                <SelectTrigger id="add-tier">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {canGrantAdmin && (
+                    <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                  )}
+                  <SelectItem value="curator">Tier 2 — Curator</SelectItem>
+                  <SelectItem value="member">Tier 3 — Member</SelectItem>
+                </SelectContent>
+              </Select>
+              {!canGrantAdmin && (
+                <p className="text-xs text-muted-foreground">
+                  Only Tier 1 admins can grant the Admin tier.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser} disabled={addSubmitting}>
+              {addSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
