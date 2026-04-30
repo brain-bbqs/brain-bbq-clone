@@ -55,6 +55,48 @@ const INITIAL_FORM: JobFormData = {
   contact_email: "", application_url: "",
 };
 
+/**
+ * Render plain-text description with auto-linked URLs and emails.
+ * Safe: no HTML is interpreted — URLs are matched, then rendered as <a>.
+ */
+function renderDescriptionWithLinks(text: string) {
+  // Match http(s) URLs, www. URLs, and bare emails
+  const pattern = /((?:https?:\/\/|www\.)[^\s<>()]+[^\s<>().,;:!?'"])|([\w.+-]+@[\w-]+\.[\w.-]+)/gi;
+  const parts: Array<string | { href: string; label: string }> = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m.index > lastIndex) parts.push(text.slice(lastIndex, m.index));
+    const url = m[1];
+    const email = m[2];
+    if (url) {
+      const href = url.startsWith("http") ? url : `https://${url}`;
+      parts.push({ href, label: url });
+    } else if (email) {
+      parts.push({ href: `mailto:${email}`, label: email });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+
+  return parts.map((p, i) =>
+    typeof p === "string" ? (
+      <span key={i}>{p}</span>
+    ) : (
+      <a
+        key={i}
+        href={p.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline break-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {p.label}
+      </a>
+    )
+  );
+}
+
 export default function JobBoard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
