@@ -67,6 +67,29 @@ export default function AdminAccessRequests() {
     },
   });
 
+  const sendApprovalEmail = async (to: string, name: string, note?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-access-approved-email",
+        { body: { to, name, note } },
+      );
+      if (error || (data && data.success === false)) {
+        console.error("Approval email failed:", error || data?.error);
+        toast.warning(
+          "Approved, but notification email failed to send. Please contact the requester manually.",
+        );
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Approval email exception:", err);
+      toast.warning(
+        "Approved, but notification email failed to send. Please contact the requester manually.",
+      );
+      return false;
+    }
+  };
+
   const setStatus = async (id: string, next: Status, notes?: string) => {
     setBusyId(id);
     try {
