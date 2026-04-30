@@ -17,6 +17,15 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { PageMeta } from "@/components/PageMeta";
 import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
@@ -52,10 +61,18 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addName, setAddName] = useState("");
+  const [addRole, setAddRole] = useState<AssignableRole>("member");
+  const [addSubmitting, setAddSubmitting] = useState(false);
+
+  const canManage = tierInfo.isCurator; // tier 1 and 2
+  const canGrantAdmin = tierInfo.isAdmin; // tier 1 only
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users-list-v2"],
-    enabled: tierInfo.isAdmin,
+    enabled: canManage,
     queryFn: async () => {
       const [profilesRes, rolesRes, investigatorsRes] = await Promise.all([
         supabase.from("profiles").select("id, email, full_name, created_at"),
@@ -160,6 +177,84 @@ export default function AdminUsers() {
     }
   };
 
+  const resetAddForm = () => {
+    setAddEmail("");
+    setAddName("");
+    setAddRole("member");
+  };
+
+  const handleAddUser = async () => {
+    const email = addEmail.trim().toLowerCase();
+    const name = addName.trim();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!name) {
+      toast.error("Please enter the person's name.");
+      return;
+    }
+    if (addRole === "admin" && !canGrantAdmin) {
+      toast.error("Only Tier 1 admins can assign the Admin tier.");
+      return;
+    }
+
+    setAddSubmitting(true);
+    try {
+      // 1) Check if user already signed in (profile exists for this email)
+      const { data: existingProfile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .ilike("email", email)
+        .maybeSingle();
+      if (profileErr && profileErr.code !== "PGRST116") throw profileErr;
+
+      if (existingProfile?.id) {
+        // Assign role immediately to existing user
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", existingProfile.id)
+          .in("role", ["admin", "curator"]);
+
+        await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: existingProfile.id, role: "member" },
+            { onConflict: "user_id,role" },
+          );
+
+        if (addRole !== "member") {
+          const { error } = await supabase
+            .from("user_roles")
+            .insert({ user_id: existingProfile.id, role: addRole });
+          if (error) throw error;
+        }
+        toast.success(`Assigned ${TIER_META[addRole].label} to ${email}.`);
+      } else {
+        // 2) Otherwise create an invited investigator with pending role
+        const { error } = await supabase.from("investigators").insert({
+          name,
+          email,
+          pending_role: addRole === "member" ? null : addRole,
+        });
+        if (error) throw error;
+        toast.success(
+          `Invited ${email}. Tier ${TIER_META[addRole].tier} will be applied on their first sign-in.`,
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+      setAddOpen(false);
+      resetAddForm();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to add user.");
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
   // ---- Access gate ----
   if (tierInfo.isLoading) {
     return (
@@ -169,7 +264,7 @@ export default function AdminUsers() {
     );
   }
 
-  if (!tierInfo.isAdmin) {
+  if (!canManage) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16">
         <Card>
@@ -179,7 +274,7 @@ export default function AdminUsers() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Admin access required</h1>
             <p className="text-sm text-muted-foreground mb-6">
-              This page is restricted to Tier 1 administrators.
+              This page is restricted to Tier 1 administrators and Tier 2 curators.
             </p>
             <Button asChild variant="outline">
               <Link to="/">Back to home</Link>
@@ -200,11 +295,17 @@ export default function AdminUsers() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <PageMeta title="User Roles — Admin" description="Manage user access tiers" />
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
-        <p className="text-sm text-muted-foreground">
-          Assign access tiers across the consortium. Changes take effect immediately.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          <p className="text-sm text-muted-foreground">
+            Assign access tiers across the consortium. Changes take effect immediately.
+          </p>
+        </div>
+        <Button onClick={() => setAddOpen(true)} className="shrink-0">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add user
+        </Button>
       </div>
 
       <SystemAlertsBanner />
@@ -334,7 +435,9 @@ export default function AdminUsers() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                                    {canGrantAdmin && (
+                                      <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                                    )}
                                     <SelectItem value="curator">Tier 2 — Curator</SelectItem>
                                     <SelectItem value="member">Tier 3 — Member</SelectItem>
                                   </SelectContent>
@@ -413,6 +516,79 @@ export default function AdminUsers() {
         investigators appear here once added to the <code className="font-mono">investigators</code>{" "}
         directory and will be auto-linked to their auth account on their first Globus login.
       </p>
+
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add user</DialogTitle>
+            <DialogDescription>
+              If this email already belongs to a signed-in user, the tier is applied immediately.
+              Otherwise, they're added to the investigators directory and the tier is granted the
+              first time they sign in via Globus.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="add-name">Full name</Label>
+              <Input
+                id="add-name"
+                placeholder="Jane Doe"
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-email">Email</Label>
+              <Input
+                id="add-email"
+                type="email"
+                placeholder="jane@institution.edu"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                maxLength={255}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-tier">Tier</Label>
+              <Select value={addRole} onValueChange={(v) => setAddRole(v as AssignableRole)}>
+                <SelectTrigger id="add-tier">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {canGrantAdmin && (
+                    <SelectItem value="admin">Tier 1 — Admin</SelectItem>
+                  )}
+                  <SelectItem value="curator">Tier 2 — Curator</SelectItem>
+                  <SelectItem value="member">Tier 3 — Member</SelectItem>
+                </SelectContent>
+              </Select>
+              {!canGrantAdmin && (
+                <p className="text-xs text-muted-foreground">
+                  Only Tier 1 admins can grant the Admin tier.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addSubmitting}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser} disabled={addSubmitting}>
+              {addSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
