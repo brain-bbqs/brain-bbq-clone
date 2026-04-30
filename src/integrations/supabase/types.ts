@@ -774,6 +774,7 @@ export type Database = {
           id: string
           name: string
           orcid: string | null
+          pending_role: Database["public"]["Enums"]["app_role"] | null
           profile_url: string | null
           research_areas: string[] | null
           resource_id: string | null
@@ -791,6 +792,7 @@ export type Database = {
           id?: string
           name: string
           orcid?: string | null
+          pending_role?: Database["public"]["Enums"]["app_role"] | null
           profile_url?: string | null
           research_areas?: string[] | null
           resource_id?: string | null
@@ -808,6 +810,7 @@ export type Database = {
           id?: string
           name?: string
           orcid?: string | null
+          pending_role?: Database["public"]["Enums"]["app_role"] | null
           profile_url?: string | null
           research_areas?: string[] | null
           resource_id?: string | null
