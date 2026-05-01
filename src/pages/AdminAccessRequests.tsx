@@ -48,7 +48,11 @@ interface NameCollision {
   email: string;
 }
 
-export default function AdminAccessRequests() {
+interface AdminAccessRequestsProps {
+  embedded?: boolean;
+}
+
+export default function AdminAccessRequests({ embedded = false }: AdminAccessRequestsProps = {}) {
   const tier = useUserTier();
   const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -369,11 +373,15 @@ export default function AdminAccessRequests() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <PageMeta title="Access Requests — Admin" description="Review pending Globus sign-in attempts" />
+    <div className={embedded ? "" : "max-w-6xl mx-auto px-4 py-8"}>
+      {!embedded && (
+        <PageMeta title="Access Requests — Admin" description="Review pending Globus sign-in attempts" />
+      )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
+        {!embedded && (
+          <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
+        )}
         <p className="text-sm text-muted-foreground">
           Sign-up requests from the public form and Globus sign-in attempts from people whose
           email isn't on the consortium roster. "Approve &amp; invite" adds them to the
