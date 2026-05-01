@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { ExternalLink, FileText, User, Pencil, Check, X, UserCheck, UserPlus } from "lucide-react";
+import { ExternalLink, FileText, User, Pencil, Check, X, UserCheck, UserPlus, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Editable inline field
@@ -71,6 +71,163 @@ function EditableText({ value, onSave, placeholder, type = "text", href }: {
       <button onClick={() => setEditing(false)} className="text-muted-foreground hover:text-foreground">
         <X className="h-4 w-4" />
       </button>
+    </div>
+  );
+}
+
+// Editable list of string tags (skills / research areas)
+function EditableTagList({ items, onChange, placeholder }: {
+  items: string[];
+  onChange: (next: string[]) => void;
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+  const add = () => {
+    const v = draft.trim();
+    if (!v || items.includes(v)) { setDraft(""); setAdding(false); return; }
+    onChange([...items, v]);
+    setDraft("");
+    setAdding(false);
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {items.map((it) => (
+        <Badge key={it} variant="secondary" className="gap-1 pr-1">
+          {it}
+          <button onClick={() => onChange(items.filter((x) => x !== it))} className="hover:text-destructive">
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ))}
+      {adding ? (
+        <div className="flex items-center gap-1">
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            className="h-7 text-xs w-40"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") add();
+              if (e.key === "Escape") { setAdding(false); setDraft(""); }
+            }}
+          />
+          <button onClick={add} className="text-primary hover:text-primary/80"><Check className="h-4 w-4" /></button>
+          <button onClick={() => { setAdding(false); setDraft(""); }} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+      ) : (
+        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setAdding(true)}>
+          <Plus className="h-3 w-3 mr-1" /> Add
+        </Button>
+      )}
+      {items.length === 0 && !adding && (
+        <span className="text-muted-foreground italic text-xs">{placeholder}</span>
+      )}
+    </div>
+  );
+}
+
+// Editable institution picker (links/unlinks rows in investigator_organizations)
+function EditableInstitutions({ investigatorId, current, onChanged, openEntity }: {
+  investigatorId: string;
+  current: { id: string; name: string; resource_id?: string | null }[];
+  onChanged: () => void;
+  openEntity: (org: { id: string; name: string; resource_id?: string | null }) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const { toast } = useToast();
+
+  const { data: options = [] } = useQuery({
+    queryKey: ["org-search", search],
+    enabled: adding,
+    queryFn: async () => {
+      let q = supabase.from("organizations").select("id, name, resource_id").order("name").limit(30);
+      if (search.trim()) q = q.ilike("name", `%${search.trim()}%`);
+      const { data } = await q;
+      return data || [];
+    },
+  });
+
+  const addOrg = async (orgId: string) => {
+    const { error } = await supabase
+      .from("investigator_organizations")
+      .insert({ investigator_id: investigatorId, organization_id: orgId });
+    if (error) {
+      toast({ title: "Could not add", description: error.message, variant: "destructive" });
+    } else {
+      onChanged();
+      setAdding(false);
+      setSearch("");
+    }
+  };
+
+  const removeOrg = async (orgId: string) => {
+    const { error } = await supabase
+      .from("investigator_organizations")
+      .delete()
+      .eq("investigator_id", investigatorId)
+      .eq("organization_id", orgId);
+    if (error) {
+      toast({ title: "Could not remove", description: error.message, variant: "destructive" });
+    } else {
+      onChanged();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {current.map((org) => (
+          <Badge key={org.id} variant="outline" className="gap-1 pr-1">
+            <span className="cursor-pointer hover:underline" onClick={() => openEntity(org)}>{org.name}</span>
+            <button onClick={() => removeOrg(org.id)} className="hover:text-destructive">
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+        {!adding && (
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setAdding(true)}>
+            <Plus className="h-3 w-3 mr-1" /> Add
+          </Button>
+        )}
+        {current.length === 0 && !adding && (
+          <span className="text-muted-foreground italic text-xs">No institutions linked</span>
+        )}
+      </div>
+      {adding && (
+        <div className="border border-border rounded-md p-2 space-y-2 bg-muted/20">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search institutions…"
+            className="h-7 text-xs"
+            autoFocus
+          />
+          <div className="max-h-40 overflow-y-auto space-y-0.5">
+            {options
+              .filter((o) => !current.some((c) => c.id === o.id))
+              .map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => addOrg(o.id)}
+                  className="w-full text-left px-2 py-1 text-xs rounded hover:bg-accent"
+                >
+                  {o.name}
+                </button>
+              ))}
+            {options.length === 0 && (
+              <p className="text-xs text-muted-foreground italic px-2 py-1">No matches.</p>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => { setAdding(false); setSearch(""); }}>
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -291,7 +448,14 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Institutions */}
       <SummaryField label="University/Institution">
-        {data.organizations.length > 0 ? (
+        {canEdit ? (
+          <EditableInstitutions
+            investigatorId={id}
+            current={data.organizations}
+            onChanged={() => queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] })}
+            openEntity={(org) => open({ type: "organization", id: org.id, resourceId: org.resource_id || undefined, label: org.name })}
+          />
+        ) : data.organizations.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.organizations.map((org) => (
               <Badge
@@ -322,7 +486,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Skills */}
       <SummaryField label="Skills">
-        {data.skills && data.skills.length > 0 ? (
+        {canEdit ? (
+          <EditableTagList
+            items={data.skills || []}
+            onChange={(next) => updateField.mutate({ field: "skills", value: next })}
+            placeholder="Add a skill"
+          />
+        ) : data.skills && data.skills.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.skills.map((s: string) => <Badge key={s} variant="secondary">{s}</Badge>)}
           </div>
@@ -333,7 +503,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Research Areas */}
       <SummaryField label="Research Areas">
-        {data.research_areas && data.research_areas.length > 0 ? (
+        {canEdit ? (
+          <EditableTagList
+            items={data.research_areas || []}
+            onChange={(next) => updateField.mutate({ field: "research_areas", value: next })}
+            placeholder="Add a research area"
+          />
+        ) : data.research_areas && data.research_areas.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.research_areas.map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}
           </div>
