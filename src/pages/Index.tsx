@@ -117,7 +117,7 @@ const Index = () => {
             className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all duration-150 text-sm"
           >
             <MessageSquare className="h-4 w-4 text-primary" />
-            <span class="font-medium text-foreground">Talk to the BBQS Agent</span>
+            <span className="font-medium text-foreground">Talk to the BBQS Agent</span>
             <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">
               Beta
             </span>
