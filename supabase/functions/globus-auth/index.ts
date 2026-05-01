@@ -324,11 +324,14 @@ Deno.serve(async (req) => {
         "https://www.brain-bbqs.org",
         "https://brain-bbqs.github.io",
         "https://brain-bbq-clone.lovable.app",
+        // bbqs-agent (Cloudflare Workers) — add the deployed workers.dev URL here once known
+        // e.g. "https://tanstack-start-app.ACCOUNT.workers.dev",
         "http://localhost:",
       ];
       const isAllowedRedirect = redirect_uri && ALLOWED_REDIRECT_ORIGINS.some(
         (o: string) => redirect_uri.startsWith(o)
-      ) || (redirect_uri && /^https:\/\/[a-z0-9-]+\.lovable\.app\//.test(redirect_uri));
+      ) || (redirect_uri && /^https:\/\/[a-z0-9-]+\.lovable\.app\//.test(redirect_uri))
+        || (redirect_uri && /^https:\/\/[a-z0-9-]+\.workers\.dev\//.test(redirect_uri));
 
       if (!isAllowedRedirect) {
         return new Response(JSON.stringify({ error: "Invalid redirect_uri" }), {
