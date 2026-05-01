@@ -38,8 +38,7 @@ import FundingOpportunities from "./pages/FundingOpportunities";
 
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
-import AdminUsers from "./pages/AdminUsers";
-import AdminAccessRequests from "./pages/AdminAccessRequests";
+import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
 
 const queryClient = new QueryClient();
@@ -86,8 +85,9 @@ const App = () => (
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/state-privacy" element={<StatePrivacyMap />} />
               <Route path="/grants" element={<FundingOpportunities />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/access-requests" element={<AdminAccessRequests />} />
+              <Route path="/admin" element={<AdminConsole />} />
+              <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
+              <Route path="/admin/access-requests" element={<Navigate to="/admin?tab=access-requests" replace />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
               <Route path="/benchmarks" element={<Navigate to="/resources" replace />} />
               <Route path="/ml-models" element={<Navigate to="/resources" replace />} />
