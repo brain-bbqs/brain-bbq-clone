@@ -68,6 +68,31 @@ const INITIAL_FORM: JobFormData = {
 };
 
 /**
+ * Infer the job_type tag from the position title + description.
+ * Order matters: more specific patterns first.
+ * Returns null when no confident match — caller keeps the existing value.
+ */
+function inferJobType(title: string, description = ""): string | null {
+  const t = `${title} ${description}`.toLowerCase();
+  if (!t.trim()) return null;
+
+  // PhD / doctoral students
+  if (/\b(ph\.?\s*d|doctoral|graduate student|grad student)\b/.test(t)) return "phd";
+  // Postdoc
+  if (/\b(post[\s-]?doc(toral)?|postdoctoral fellow|post-doctoral)\b/.test(t)) return "postdoc";
+  // Faculty
+  if (/\b(faculty|assistant professor|associate professor|full professor|tenure[- ]track|professor|lecturer)\b/.test(t)) return "faculty";
+  // Research scientist
+  if (/\b(research scientist|staff scientist|principal scientist|senior scientist|investigator)\b/.test(t)) return "research_scientist";
+  // Engineer / data science / developer
+  if (/\b(engineer|engineering|developer|software|data scien(ce|tist)|ml engineer|machine learning engineer|programmer|devops|sre|technician)\b/.test(t)) return "engineer";
+  // Internship
+  if (/\b(intern(ship)?|summer (program|fellow))\b/.test(t)) return "internship";
+
+  return null;
+}
+
+/**
  * Render plain-text description with auto-linked URLs and emails.
  * Safe: no HTML is interpreted — URLs are matched, then rendered as <a>.
  */
@@ -270,7 +295,13 @@ export default function JobBoard() {
       toast.error("Title and institution are required");
       return;
     }
-    postJob.mutate(form);
+    // Safety net: if user kept the default "postdoc" but the title clearly
+    // says otherwise (e.g. "Engineer"), infer the correct tag at submit.
+    const inferred = inferJobType(form.title, form.description);
+    const finalForm = inferred && inferred !== form.job_type
+      ? { ...form, job_type: inferred }
+      : form;
+    postJob.mutate(finalForm);
   };
 
   const filteredJobs = filterType === "all"
@@ -340,7 +371,25 @@ export default function JobBoard() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Position Title *</Label>
-                    <Input id="title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience" required />
+                    <Input
+                      id="title"
+                      value={form.title}
+                      onChange={e => {
+                        const title = e.target.value;
+                        setForm(f => {
+                          const inferred = inferJobType(title, f.description);
+                          // Only auto-update job_type if we have a confident
+                          // inference; otherwise keep what the user has.
+                          return {
+                            ...f,
+                            title,
+                            job_type: inferred ?? f.job_type,
+                          };
+                        });
+                      }}
+                      placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience"
+                      required
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
