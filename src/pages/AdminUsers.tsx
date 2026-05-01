@@ -27,6 +27,16 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PageMeta } from "@/components/PageMeta";
 import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
 
@@ -84,6 +94,11 @@ export default function AdminUsers() {
   const [emailSaving, setEmailSaving] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { kind: "signed_in"; row: SignedInUserRow }
+    | { kind: "invited"; row: InvitedInvestigatorRow }
+    | null
+  >(null);
 
   const canManage = tierInfo.isCurator; // tier 1 and 2
   const canGrantAdmin = tierInfo.isAdmin; // tier 1 only
@@ -363,9 +378,6 @@ export default function AdminUsers() {
   };
 
   const handleDeleteSignedInUser = async (u: SignedInUserRow) => {
-    if (!confirm(`Revoke all access for ${u.full_name || u.email}?\n\nThe user's account stays in Globus, but they will no longer have any role on this site (not even Member). You can undo this for ~10 seconds.`)) {
-      return;
-    }
     setDeletingId(u.id);
     try {
       // Snapshot existing roles
@@ -387,7 +399,8 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["user-tier"] });
 
       toast.success(`Revoked all access for ${u.email}`, {
-        duration: 10_000,
+        duration: 30_000,
+        className: "border-2 border-primary",
         action: {
           label: "Undo",
           onClick: async () => {
@@ -411,9 +424,6 @@ export default function AdminUsers() {
   };
 
   const handleDeleteInvited = async (u: InvitedInvestigatorRow) => {
-    if (!confirm(`Remove invited investigator "${u.full_name}"?\n\nThis deletes their entry from the investigators directory. You can undo this for ~10 seconds.`)) {
-      return;
-    }
     setDeletingId(u.id);
     try {
       // Snapshot full row before delete
@@ -434,7 +444,8 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
 
       toast.success(`Removed ${u.full_name}`, {
-        duration: 10_000,
+        duration: 30_000,
+        className: "border-2 border-primary",
         action: {
           label: "Undo",
           onClick: async () => {
@@ -454,6 +465,17 @@ export default function AdminUsers() {
       toast.error(err.message ?? "Failed to delete investigator");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    if (target.kind === "signed_in") {
+      await handleDeleteSignedInUser(target.row);
+    } else {
+      await handleDeleteInvited(target.row);
     }
   };
 
@@ -685,7 +707,7 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteSignedInUser(u)}
+                                onClick={() => setDeleteTarget({ kind: "signed_in", row: u })}
                                 disabled={deletingId === u.id}
                                 title="Revoke all access"
                               >
@@ -780,7 +802,7 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteInvited(u)}
+                                onClick={() => setDeleteTarget({ kind: "invited", row: u })}
                                 disabled={deletingId === u.id}
                                 title="Remove invited investigator"
                               >
@@ -969,6 +991,54 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              {deleteTarget?.kind === "signed_in"
+                ? "Revoke all access?"
+                : "Remove invited investigator?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.kind === "signed_in" ? (
+                <>
+                  This will revoke <strong>all roles</strong> (including Member) for{" "}
+                  <strong>{deleteTarget.row.full_name || deleteTarget.row.email}</strong>.
+                  Their Globus account is not deleted, but they will lose all access on this site.
+                  <br />
+                  <br />
+                  You'll have <strong>30 seconds</strong> to undo this action from the toast notification.
+                </>
+              ) : deleteTarget?.kind === "invited" ? (
+                <>
+                  This will remove <strong>{deleteTarget.row.full_name}</strong> from the invited
+                  investigators directory. If they later sign in via Globus, they will not be
+                  auto-linked.
+                  <br />
+                  <br />
+                  You'll have <strong>30 seconds</strong> to undo this action from the toast notification.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTarget?.kind === "signed_in" ? "Revoke access" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
