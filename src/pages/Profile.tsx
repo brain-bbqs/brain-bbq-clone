@@ -394,29 +394,22 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           {editableProjects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No projects linked to your organization yet.</p>
+            <p className="text-sm text-muted-foreground">You're not listed on any grants yet.</p>
           ) : (
             <div className="space-y-2">
               {editableProjects.map((p: any) => (
                 <button
-                  key={p.grant_number}
-                  onClick={async () => {
-                    const { data: grant } = await supabase
-                      .from("grants")
-                      .select("id, resource_id")
-                      .eq("grant_number", p.grant_number)
-                      .maybeSingle();
-                    if (grant) {
-                      open({ type: "grant", id: grant.id, resourceId: grant.resource_id || undefined, label: p.title || p.grant_number });
-                    }
-                  }}
+                  key={p.id || p.grant_number}
+                  onClick={() =>
+                    open({ type: "grant", id: p.id, resourceId: p.resource_id || undefined, label: p.title || p.grant_number })
+                  }
                   className="w-full flex items-center justify-between py-2 border-b border-border last:border-0 text-left hover:bg-accent/50 rounded px-2 transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-primary hover:underline">{p.title}</p>
                     <p className="text-xs text-muted-foreground">{p.grant_number}</p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">Can Edit</Badge>
+                  <Badge variant="secondary" className="text-xs">{p.role === "pi" ? "PI" : "Co-PI"}</Badge>
                 </button>
               ))}
             </div>
