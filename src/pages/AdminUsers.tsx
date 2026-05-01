@@ -759,22 +759,38 @@ export default function AdminUsers() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-xs"
-                              onClick={() =>
-                                openEmailEditor({
-                                  investigator_id: u.id,
-                                  name: u.full_name,
-                                  primary: u.email,
-                                  secondaries: u.secondary_emails,
-                                })
-                              }
-                            >
-                              <Mail className="h-3 w-3 mr-1" />
-                              Manage emails
-                            </Button>
+                            <div className="inline-flex items-center gap-1 justify-end">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs"
+                                onClick={() =>
+                                  openEmailEditor({
+                                    investigator_id: u.id,
+                                    name: u.full_name,
+                                    primary: u.email,
+                                    secondaries: u.secondary_emails,
+                                  })
+                                }
+                              >
+                                <Mail className="h-3 w-3 mr-1" />
+                                Manage emails
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteInvited(u)}
+                                disabled={deletingId === u.id}
+                                title="Remove invited investigator"
+                              >
+                                {deletingId === u.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
