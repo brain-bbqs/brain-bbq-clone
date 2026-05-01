@@ -30,7 +30,9 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user, signOut, loading } = useAuth();
-  const { isAdmin } = useUserTier();
+  const { isAdmin, isCurator } = useUserTier();
+  // Admin section is visible to both admins (tier 1) and curators (tier 2)
+  const canSeeAdmin = isAdmin || isCurator;
 
   const isActive = (path: string) => currentPath === path;
 
@@ -40,7 +42,7 @@ export function AppSidebar() {
 
   const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
-      {items.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+      {items.filter((item) => !item.adminOnly || canSeeAdmin).map((item) => {
         const locked = item.authRequired && !user;
 
         if (item.disabled || locked) {
@@ -141,7 +143,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         {sidebarGroups.map((group) => {
-          const visible = group.items.filter((item) => !item.adminOnly || isAdmin);
+          const visible = group.items.filter((item) => !item.adminOnly || canSeeAdmin);
           if (visible.length === 0) return null;
           return (
             <SidebarGroup key={group.label}>
