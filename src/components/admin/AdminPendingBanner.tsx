@@ -59,11 +59,11 @@ export function AdminPendingBanner() {
 
   const items: { label: string; count: number; href: string }[] = [];
   if (data.accessRequests > 0)
-    items.push({ label: "access request", count: data.accessRequests, href: "/admin/access-requests" });
+    items.push({ label: "access request", count: data.accessRequests, href: "/admin?tab=access-requests" });
   if (data.pendingRoles > 0)
-    items.push({ label: "role request", count: data.pendingRoles, href: "/admin/users" });
+    items.push({ label: "role request", count: data.pendingRoles, href: "/admin?tab=users" });
   if (isAdmin && data.systemAlerts > 0)
-    items.push({ label: "system alert", count: data.systemAlerts, href: "/admin/users" });
+    items.push({ label: "system alert", count: data.systemAlerts, href: "/admin?tab=alerts" });
 
   if (items.length === 0) return null;
 

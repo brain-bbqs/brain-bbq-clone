@@ -38,7 +38,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageMeta } from "@/components/PageMeta";
-import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
 
 type AssignableRole = "admin" | "curator" | "member";
 
@@ -70,7 +69,11 @@ const TIER_META: Record<AssignableRole, { label: string; tier: number; color: st
   member:  { label: "Member",  tier: 3, color: "bg-muted text-muted-foreground border-border",             icon: UserIcon },
 };
 
-export default function AdminUsers() {
+interface AdminUsersProps {
+  embedded?: boolean;
+}
+
+export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
   const tierInfo = useUserTier();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -538,12 +541,14 @@ export default function AdminUsers() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <PageMeta title="User Roles — Admin" description="Manage user access tiers" />
+    <div className={embedded ? "" : "max-w-6xl mx-auto px-4 py-8"}>
+      {!embedded && <PageMeta title="User Roles — Admin" description="Manage user access tiers" />}
 
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          {!embedded && (
+            <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          )}
           <p className="text-sm text-muted-foreground">
             Assign access tiers across the consortium. Changes take effect immediately.
           </p>
@@ -553,8 +558,6 @@ export default function AdminUsers() {
           Add user
         </Button>
       </div>
-
-      <SystemAlertsBanner />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {(["admin", "curator", "member"] as AssignableRole[]).map((r) => {
