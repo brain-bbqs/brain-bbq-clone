@@ -120,11 +120,12 @@ export default function AdminAccessRequests() {
       // 1. Match by email (primary or secondary)
       const { data: existingByEmail } = await supabase
         .from("investigators")
-        .select("id")
+        .select("id, name")
         .or(`email.ilike.${email},secondary_emails.cs.{${email}}`)
         .maybeSingle();
 
       let alreadyListed = !!existingByEmail;
+      const existingName = existingByEmail?.name as string | undefined;
 
       if (!existingByEmail) {
         // 2. Try insert; on name collision, prompt curator
@@ -161,7 +162,7 @@ export default function AdminAccessRequests() {
           status: "approved",
           reviewed_at: new Date().toISOString(),
           review_notes: alreadyListed
-            ? "Already in investigators directory"
+            ? `Already listed as "${existingName}" in investigators directory`
             : "Added to investigators directory",
         })
         .eq("id", r.id);
@@ -169,13 +170,15 @@ export default function AdminAccessRequests() {
 
       toast.success(
         alreadyListed
-          ? "Approved — already in investigators directory"
+          ? `Approved — email already linked to "${existingName}"`
           : "Approved and invited. They can sign in via Globus now.",
       );
       await sendApprovalEmail(
         email,
-        name,
-        alreadyListed ? undefined : "You've been added to the investigators directory.",
+        alreadyListed ? (existingName || name) : name,
+        alreadyListed
+          ? `Your email is already linked to the investigator profile "${existingName}".`
+          : "You've been added to the investigators directory.",
       );
       queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
