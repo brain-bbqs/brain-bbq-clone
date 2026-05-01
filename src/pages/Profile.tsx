@@ -113,18 +113,27 @@ export default function Profile() {
   const saveName = async () => {
     if (!user) return;
     setSaving(true);
+    const trimmed = nameValue.trim();
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: nameValue.trim() || null })
+      .update({ full_name: trimmed || null })
       .eq("id", user.id);
-    setSaving(false);
     if (error) {
+      setSaving(false);
       toast.error("Failed to update name");
-    } else {
-      toast.success("Name updated");
-      setEditing(false);
-      refetch();
+      return;
     }
+    if (linkedInvestigator?.id && trimmed) {
+      await supabase
+        .from("investigators")
+        .update({ name: trimmed })
+        .eq("id", linkedInvestigator.id);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+    await refetch();
+    setSaving(false);
+    setEditing(false);
+    toast.success("Name updated");
   };
 
   // Fetch linked investigator for this user (by email match)
