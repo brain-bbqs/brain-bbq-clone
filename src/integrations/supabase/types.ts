@@ -963,36 +963,6 @@ export type Database = {
           },
         ]
       }
-      ontology_standards: {
-        Row: {
-          abbreviation: string | null
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          url: string | null
-        }
-        Insert: {
-          abbreviation?: string | null
-          category: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          url?: string | null
-        }
-        Update: {
-          abbreviation?: string | null
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          url?: string | null
-        }
-        Relationships: []
-      }
       organizations: {
         Row: {
           created_at: string
@@ -1089,42 +1059,6 @@ export type Database = {
             columns: ["publication_id"]
             isOneToOne: false
             referencedRelation: "publications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      project_resources: {
-        Row: {
-          created_at: string
-          project_id: string
-          relationship: string
-          resource_id: string
-        }
-        Insert: {
-          created_at?: string
-          project_id: string
-          relationship?: string
-          resource_id: string
-        }
-        Update: {
-          created_at?: string
-          project_id?: string
-          relationship?: string
-          resource_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_resources_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_resources_resource_id_fkey"
-            columns: ["resource_id"]
-            isOneToOne: false
-            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
@@ -1255,48 +1189,6 @@ export type Database = {
           {
             foreignKeyName: "publications_resource_id_fkey"
             columns: ["resource_id"]
-            isOneToOne: false
-            referencedRelation: "resources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      resource_links: {
-        Row: {
-          created_at: string
-          id: string
-          metadata: Json | null
-          relationship: string
-          source_id: string
-          target_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          relationship?: string
-          source_id: string
-          target_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          relationship?: string
-          source_id?: string
-          target_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "resource_links_source_id_fkey"
-            columns: ["source_id"]
-            isOneToOne: false
-            referencedRelation: "resources"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "resource_links_target_id_fkey"
-            columns: ["target_id"]
             isOneToOne: false
             referencedRelation: "resources"
             referencedColumns: ["id"]
@@ -1609,36 +1501,6 @@ export type Database = {
           severity?: string
           source?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      taxonomies: {
-        Row: {
-          category: string
-          created_at: string
-          id: string
-          label: string | null
-          metadata: Json | null
-          parent_value: string | null
-          value: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          id?: string
-          label?: string | null
-          metadata?: Json | null
-          parent_value?: string | null
-          value: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          id?: string
-          label?: string | null
-          metadata?: Json | null
-          parent_value?: string | null
-          value?: string
         }
         Relationships: []
       }
