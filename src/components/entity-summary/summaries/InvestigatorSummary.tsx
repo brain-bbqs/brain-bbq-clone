@@ -153,11 +153,38 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
+  // Detect whether the signed-in user shares any grant with this investigator
+  const { data: sharesGrant } = useQuery({
+    queryKey: ["investigator-shared-grant", id, user?.id],
+    enabled: !!user?.id && !!id,
+    queryFn: async () => {
+      // Find the editor's investigator record
+      const { data: editorInv } = await supabase
+        .from("investigators")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (!editorInv?.id) return false;
+      // Get grants for both
+      const { data: editorGrants } = await supabase
+        .from("grant_investigators")
+        .select("grant_id")
+        .eq("investigator_id", editorInv.id);
+      const { data: targetGrants } = await supabase
+        .from("grant_investigators")
+        .select("grant_id")
+        .eq("investigator_id", id);
+      const editorSet = new Set((editorGrants || []).map((g) => g.grant_id));
+      return (targetGrants || []).some((g) => editorSet.has(g.grant_id));
+    },
+  });
+
   // Can edit if: user owns this investigator (user_id link), email matches (legacy),
-  // OR user is a curator/admin (Tier 1 or Tier 2 — can edit any investigator)
+  // user is a curator/admin (Tier 1 or Tier 2), OR user shares a grant with this investigator
   const canEdit =
     isOwner ||
     isCurator ||
+    sharesGrant === true ||
     (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
   // Show claim button if: user is logged in, investigator is unclaimed, and user doesn't own it
   const canClaim = user && !isClaimed && !isOwner && !canEdit;
