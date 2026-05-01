@@ -183,30 +183,25 @@ export default function Profile() {
     },
   });
 
-  // Fetch editable projects (via org match)
+  // Fetch the user's own grants (via their linked investigator record)
   const { data: editableProjects = [] } = useQuery({
-    queryKey: ["editable-projects", profile?.organization_id],
-    enabled: !!profile?.organization_id,
+    queryKey: ["my-grants", linkedInvestigator?.id],
+    enabled: !!linkedInvestigator?.id,
     queryFn: async () => {
-      const { data: invOrgs } = await supabase
-        .from("investigator_organizations")
-        .select("investigator_id")
-        .eq("organization_id", profile!.organization_id!);
-      if (!invOrgs?.length) return [];
-
-      const invIds = invOrgs.map((io) => io.investigator_id);
       const { data: grantInvs } = await supabase
         .from("grant_investigators")
-        .select("grant_id")
-        .in("investigator_id", invIds);
+        .select("grant_id, role")
+        .eq("investigator_id", linkedInvestigator!.id);
       if (!grantInvs?.length) return [];
 
       const grantIds = [...new Set(grantInvs.map((gi) => gi.grant_id).filter(Boolean))];
+      if (!grantIds.length) return [];
       const { data: grants } = await supabase
         .from("grants")
-        .select("grant_number, title")
+        .select("id, grant_number, title, resource_id")
         .in("id", grantIds);
-      return grants || [];
+      const roleByGrant = new Map(grantInvs.map((gi) => [gi.grant_id, gi.role]));
+      return (grants || []).map((g) => ({ ...g, role: roleByGrant.get(g.id) }));
     },
   });
 
