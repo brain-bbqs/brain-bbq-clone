@@ -448,7 +448,14 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Institutions */}
       <SummaryField label="University/Institution">
-        {data.organizations.length > 0 ? (
+        {canEdit ? (
+          <EditableInstitutions
+            investigatorId={id}
+            current={data.organizations}
+            onChanged={() => queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] })}
+            openEntity={(org) => open({ type: "organization", id: org.id, resourceId: org.resource_id || undefined, label: org.name })}
+          />
+        ) : data.organizations.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.organizations.map((org) => (
               <Badge
@@ -479,7 +486,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Skills */}
       <SummaryField label="Skills">
-        {data.skills && data.skills.length > 0 ? (
+        {canEdit ? (
+          <EditableTagList
+            items={data.skills || []}
+            onChange={(next) => updateField.mutate({ field: "skills", value: next })}
+            placeholder="Add a skill"
+          />
+        ) : data.skills && data.skills.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.skills.map((s: string) => <Badge key={s} variant="secondary">{s}</Badge>)}
           </div>
@@ -490,7 +503,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
       {/* Research Areas */}
       <SummaryField label="Research Areas">
-        {data.research_areas && data.research_areas.length > 0 ? (
+        {canEdit ? (
+          <EditableTagList
+            items={data.research_areas || []}
+            onChange={(next) => updateField.mutate({ field: "research_areas", value: next })}
+            placeholder="Add a research area"
+          />
+        ) : data.research_areas && data.research_areas.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.research_areas.map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}
           </div>
