@@ -109,8 +109,13 @@ const Announcements = () => {
                 <Button
                   size="lg"
                   className="gap-2 shadow-lg shadow-primary/20"
-                  onClick={() => { if (!user) toast.error("Please sign in to post"); }}
-                  disabled={!user}
+                  onClick={(e) => {
+                    if (!user) {
+                      e.preventDefault();
+                      toast.info("Please sign in to post an announcement.");
+                      window.location.href = `/auth?redirect=${encodeURIComponent("/announcements")}`;
+                    }
+                  }}
                 >
                   <Plus className="h-4 w-4" />
                   Post Announcement

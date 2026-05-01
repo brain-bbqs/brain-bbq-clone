@@ -4,6 +4,7 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { PanelLeft } from "lucide-react";
 import { EntitySummaryProvider } from "@/contexts/EntitySummaryContext";
 import { EntitySummaryModal } from "@/components/entity-summary/EntitySummaryModal";
+import { AdminPendingBanner } from "@/components/admin/AdminPendingBanner";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export function Layout({ children }: LayoutProps) {
           <AppSidebar />
           <FloatingTrigger />
           <SidebarInset className="flex flex-col flex-1 min-w-0">
+            <AdminPendingBanner />
             <main className="flex-1 min-w-0">
               {children}
             </main>

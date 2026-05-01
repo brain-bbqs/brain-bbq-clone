@@ -16,8 +16,6 @@ import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
 import Roadmap from "./pages/Roadmap";
 import Auth from "./pages/Auth";
-import NeuroMCP from "./pages/NeuroMCP";
-import ConsortiaHistory from "./pages/ConsortiaHistory";
 import Publications from "./pages/Publications";
 import About from "./pages/About";
 import DataProvenance from "./pages/DataProvenance";
@@ -42,6 +40,7 @@ import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAccessRequests from "./pages/AdminAccessRequests";
+import RequestAccess from "./pages/RequestAccess";
 
 const queryClient = new QueryClient();
 
@@ -66,8 +65,7 @@ const App = () => (
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/neuromcp" element={<NeuroMCP />} />
-              <Route path="/consortia-history" element={<ConsortiaHistory />} />
+              <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/publications" element={<Publications />} />
               <Route path="/investigators" element={<PrincipalInvestigators />} />
               

@@ -1,5 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,14 +29,15 @@ const categoryLabel: Record<string, string> = {
   ethics_governance: "Ethics & Governance",
 };
 
+const ONTOLOGIES: OntologyStandard[] = [
+  { id: "bids", name: "Brain Imaging Data Structure", abbreviation: "BIDS", description: "Standard for organizing and describing neuroimaging and behavioral data.", category: "data_standard", url: "https://bids.neuroimaging.io/" },
+  { id: "nwb", name: "Neurodata Without Borders", abbreviation: "NWB", description: "Unified data format for cellular-based neurophysiology data.", category: "data_standard", url: "https://www.nwb.org/" },
+  { id: "nbo", name: "Neuro Behavior Ontology", abbreviation: "NBO", description: "Ontology of behavioral processes and phenotypes for neuroscience.", category: "ontology", url: "https://obofoundry.org/ontology/nbo.html" },
+  { id: "hed", name: "Hierarchical Event Descriptors", abbreviation: "HED", description: "Framework for annotating events in neuroimaging and behavioral experiments.", category: "ontology", url: "https://www.hedtags.org/" },
+];
+
 export default function SelfAutonomyDocs() {
-  const { data: ontologies = [] } = useQuery<OntologyStandard[]>({
-    queryKey: ["ontology-standards"],
-    queryFn: async () => {
-      const { data } = await supabase.from("ontology_standards").select("*").order("category");
-      return (data || []) as OntologyStandard[];
-    },
-  });
+  const ontologies = ONTOLOGIES;
 
   const customFields: CustomFieldUsage[] = [];
 

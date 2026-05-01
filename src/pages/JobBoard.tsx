@@ -9,9 +9,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles } from "lucide-react";
+import { Briefcase, Plus, MapPin, Building2, Mail, ExternalLink, Clock, User, Sparkles, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -55,12 +67,148 @@ const INITIAL_FORM: JobFormData = {
   contact_email: "", application_url: "",
 };
 
+/**
+ * Infer the job_type tag from the position title + description.
+ * Order matters: more specific patterns first.
+ * Returns null when no confident match — caller keeps the existing value.
+ */
+function inferJobType(title: string, description = ""): string | null {
+  const t = `${title} ${description}`.toLowerCase();
+  if (!t.trim()) return null;
+
+  // PhD / doctoral students
+  if (/\b(ph\.?\s*d|doctoral|graduate student|grad student)\b/.test(t)) return "phd";
+  // Postdoc
+  if (/\b(post[\s-]?doc(toral)?|postdoctoral fellow|post-doctoral)\b/.test(t)) return "postdoc";
+  // Faculty
+  if (/\b(faculty|assistant professor|associate professor|full professor|tenure[- ]track|professor|lecturer)\b/.test(t)) return "faculty";
+  // Research scientist
+  if (/\b(research scientist|staff scientist|principal scientist|senior scientist|investigator)\b/.test(t)) return "research_scientist";
+  // Engineer / data science / developer
+  if (/\b(engineer|engineering|developer|software|data scien(ce|tist)|ml engineer|machine learning engineer|programmer|devops|sre|technician)\b/.test(t)) return "engineer";
+  // Internship
+  if (/\b(intern(ship)?|summer (program|fellow))\b/.test(t)) return "internship";
+
+  return null;
+}
+
+/**
+ * Render plain-text description with auto-linked URLs and emails.
+ * Safe: no HTML is interpreted — URLs are matched, then rendered as <a>.
+ */
+function renderDescriptionWithLinks(text: string) {
+  // Match http(s) URLs, www. URLs, and bare emails
+  const pattern = /((?:https?:\/\/|www\.)[^\s<>()]+[^\s<>().,;:!?'"])|([\w.+-]+@[\w-]+\.[\w.-]+)/gi;
+  const parts: Array<string | { href: string; label: string }> = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m.index > lastIndex) parts.push(text.slice(lastIndex, m.index));
+    const url = m[1];
+    const email = m[2];
+    if (url) {
+      const href = url.startsWith("http") ? url : `https://${url}`;
+      parts.push({ href, label: url });
+    } else if (email) {
+      parts.push({ href: `mailto:${email}`, label: email });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+
+  return parts.map((p, i) =>
+    typeof p === "string" ? (
+      <span key={i}>{p}</span>
+    ) : (
+      <a
+        key={i}
+        href={p.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline break-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {p.label}
+      </a>
+    )
+  );
+}
+
+/**
+ * Description with "Show more / Show less" toggle.
+ * The toggle only appears when the text is long enough to actually be clipped.
+ */
+function JobDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  // Heuristic: ~3 lines of card text ≈ 220 chars. Also expand if multiple line breaks.
+  const isLong = text.length > 220 || (text.match(/\n/g)?.length ?? 0) >= 3;
+
+  return (
+    <div className="space-y-1">
+      <p
+        className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${
+          !expanded && isLong ? "line-clamp-3" : ""
+        }`}
+      >
+        {renderDescriptionWithLinks(text)}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+        >
+          {expanded ? (
+            <>Show less <ChevronUp className="h-3 w-3" /></>
+          ) : (
+            <>Show more <ChevronDown className="h-3 w-3" /></>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Parse one or more application URLs from a single text field.
+ * Accepts URLs separated by commas, newlines, semicolons, or whitespace.
+ * Each entry can also be in "Label | https://..." form to give the link a custom label.
+ */
+function parseApplicationUrls(raw: string | null | undefined): Array<{ href: string; label: string }> {
+  if (!raw) return [];
+  return raw
+    .split(/[\n,;]+|\s{2,}/g)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      // "Label | url" or "Label - url"
+      const sepMatch = entry.match(/^(.+?)\s*[|]\s*(https?:\/\/\S+)$/i);
+      if (sepMatch) {
+        return { label: sepMatch[1].trim(), href: sepMatch[2].trim() };
+      }
+      // Bare URL (allow www. by prefixing https://)
+      const urlMatch = entry.match(/(https?:\/\/\S+|www\.\S+)/i);
+      if (urlMatch) {
+        const href = urlMatch[1].startsWith("http") ? urlMatch[1] : `https://${urlMatch[1]}`;
+        try {
+          const u = new URL(href);
+          return { label: u.hostname.replace(/^www\./, ""), href };
+        } catch {
+          return { label: href, href };
+        }
+      }
+      return null;
+    })
+    .filter((v): v is { href: string; label: string } => !!v);
+}
+
 export default function JobBoard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<JobFormData>(INITIAL_FORM);
   const [filterType, setFilterType] = useState<string>("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Authenticated users see full jobs table (with contact info); anonymous users see the safe public_jobs view
   const { data: jobs, isLoading } = useQuery({
@@ -88,21 +236,58 @@ export default function JobBoard() {
   const postJob = useMutation({
     mutationFn: async (data: JobFormData) => {
       if (!user) throw new Error("Must be signed in");
-      const { error } = await (supabase as any).from("jobs").insert({
-        ...data,
-        posted_by: user.id,
-        posted_by_email: user.email,
-      });
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await (supabase as any)
+          .from("jobs")
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from("jobs").insert({
+          ...data,
+          posted_by: user.id,
+          posted_by_email: user.email,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       setDialogOpen(false);
       setForm(INITIAL_FORM);
-      toast.success("Job posted successfully!");
+      toast.success(editingId ? "Position updated!" : "Job posted successfully!");
+      setEditingId(null);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to post job"),
+    onError: (err: any) => toast.error(err.message || "Failed to save job"),
   });
+
+  const deleteJob = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("jobs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      toast.success("Position removed");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to delete job"),
+  });
+
+  const openEditDialog = (job: any) => {
+    setForm({
+      title: job.title ?? "",
+      institution: job.institution ?? "",
+      department: job.department ?? "",
+      location: job.location ?? "",
+      job_type: job.job_type ?? "postdoc",
+      description: job.description ?? "",
+      contact_name: job.contact_name ?? "",
+      contact_email: job.contact_email ?? "",
+      application_url: job.application_url ?? "",
+    });
+    setEditingId(job.id);
+    setDialogOpen(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +295,13 @@ export default function JobBoard() {
       toast.error("Title and institution are required");
       return;
     }
-    postJob.mutate(form);
+    // Safety net: if user kept the default "postdoc" but the title clearly
+    // says otherwise (e.g. "Engineer"), infer the correct tag at submit.
+    const inferred = inferJobType(form.title, form.description);
+    const finalForm = inferred && inferred !== form.job_type
+      ? { ...form, job_type: inferred }
+      : form;
+    postJob.mutate(finalForm);
   };
 
   const filteredJobs = filterType === "all"
@@ -144,18 +335,30 @@ export default function JobBoard() {
               </div>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setEditingId(null);
+                  setForm(INITIAL_FORM);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   size="lg"
                   className="gap-2 shadow-lg shadow-primary/20"
-                  onClick={() => {
+                  onClick={(e) => {
                     if (!user) {
-                      toast.error("Please sign in to post a job");
+                      e.preventDefault();
+                      toast.info("Please sign in to post a position.");
+                      window.location.href = `/auth?redirect=${encodeURIComponent("/jobs")}`;
                       return;
                     }
+                    setEditingId(null);
+                    setForm(INITIAL_FORM);
                   }}
-                  disabled={!user}
                 >
                   <Plus className="h-4 w-4" />
                   Post a Position
@@ -163,12 +366,30 @@ export default function JobBoard() {
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Post a New Position</DialogTitle>
+                  <DialogTitle>{editingId ? "Edit Position" : "Post a New Position"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Position Title *</Label>
-                    <Input id="title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience" required />
+                    <Input
+                      id="title"
+                      value={form.title}
+                      onChange={e => {
+                        const title = e.target.value;
+                        setForm(f => {
+                          const inferred = inferJobType(title, f.description);
+                          // Only auto-update job_type if we have a confident
+                          // inference; otherwise keep what the user has.
+                          return {
+                            ...f,
+                            title,
+                            job_type: inferred ?? f.job_type,
+                          };
+                        });
+                      }}
+                      placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience"
+                      required
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -200,6 +421,9 @@ export default function JobBoard() {
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea id="description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the position, requirements, and how to apply..." rows={4} />
+                    <p className="text-xs text-muted-foreground">
+                      Tip: paste any URL or email and it will become a clickable link automatically.
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -212,11 +436,35 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="application_url">Application URL</Label>
-                    <Input id="application_url" type="url" value={form.application_url} onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))} placeholder="https://..." />
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="application_url">Application URL(s)</Label>
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Multiple links supported
+                      </span>
+                    </div>
+                    <Textarea
+                      id="application_url"
+                      value={form.application_url}
+                      onChange={e => setForm(f => ({ ...f, application_url: e.target.value }))}
+                      placeholder={"https://apply.example.edu/job1\nFaculty portal | https://hr.example.edu/123\nLab site | https://lab.example.edu/apply"}
+                      rows={4}
+                    />
+                    <div className="rounded-md border border-border bg-secondary/40 p-3 text-xs text-muted-foreground space-y-1.5">
+                      <p className="font-medium text-foreground">How to add multiple links</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Put <span className="text-foreground">one URL per line</span> (or separate them with commas).</li>
+                        <li>
+                          To give a link a custom label, write{" "}
+                          <code className="bg-background px-1 py-0.5 rounded text-foreground">Label | https://...</code>
+                        </li>
+                        <li>One URL shows an <span className="text-foreground">Apply</span> button; multiple show an <span className="text-foreground">Apply (N)</span> dropdown.</li>
+                      </ul>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={postJob.isPending}>
-                    {postJob.isPending ? "Posting..." : "Post Position"}
+                    {postJob.isPending
+                      ? (editingId ? "Saving..." : "Posting...")
+                      : (editingId ? "Save Changes" : "Post Position")}
                   </Button>
                 </form>
               </DialogContent>
@@ -320,14 +568,56 @@ export default function JobBoard() {
                     )}
                   </div>
 
-                  {job.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{job.description}</p>
-                  )}
+                  {job.description && <JobDescription text={job.description} />}
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50 gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>{formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}</span>
+                      {user?.id && job.posted_by === user.id && (
+                        <>
+                          <span className="mx-1 text-border">·</span>
+                          <button
+                            type="button"
+                            onClick={() => openEditDialog(job)}
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                            aria-label="Edit position"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                                aria-label="Delete position"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this position?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove "{job.title}" from the job board.
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteJob.mutate(job.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {job.contact_email && (
@@ -339,17 +629,46 @@ export default function JobBoard() {
                           Email
                         </a>
                       )}
-                      {job.application_url && (
-                        <a
-                          href={job.application_url}
-                          target="_blank"
-                          rel="noopener"
-                          className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
-                        >
-                          Apply
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                      {(() => {
+                        const urls = parseApplicationUrls(job.application_url);
+                        if (urls.length === 0) return null;
+                        if (urls.length === 1) {
+                          return (
+                            <a
+                              href={urls[0].href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors"
+                            >
+                              Apply
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          );
+                        }
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="inline-flex items-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 rounded-md font-medium transition-colors">
+                              Apply ({urls.length})
+                              <ChevronDown className="h-3 w-3" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="max-w-xs">
+                              {urls.map((u, i) => (
+                                <DropdownMenuItem key={i} asChild>
+                                  <a
+                                    href={u.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between gap-2 cursor-pointer"
+                                  >
+                                    <span className="truncate">{u.label}</span>
+                                    <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  </a>
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
                     </div>
                   </div>
                 </CardContent>

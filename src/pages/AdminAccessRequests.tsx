@@ -8,10 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, Lock, Mail, Check, X, UserPlus } from "lucide-react";
+import { Loader2, Lock, Mail, Check, X, UserPlus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Status = "pending" | "approved" | "dismissed";
 
@@ -25,16 +33,30 @@ interface AccessRequest {
   created_at: string;
   reviewed_at: string | null;
   review_notes: string | null;
+  full_name?: string | null;
+  institution?: string | null;
+}
+
+interface NameCollision {
+  request: AccessRequest;
+  existing: {
+    id: string;
+    name: string;
+    email: string | null;
+    secondary_emails: string[] | null;
+  };
+  email: string;
 }
 
 export default function AdminAccessRequests() {
   const tier = useUserTier();
   const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [collision, setCollision] = useState<NameCollision | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["access-requests"],
-    enabled: tier.isAdmin,
+    enabled: tier.isCurator,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("access_requests")
@@ -44,6 +66,29 @@ export default function AdminAccessRequests() {
       return (data ?? []) as AccessRequest[];
     },
   });
+
+  const sendApprovalEmail = async (to: string, name: string, note?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "send-access-approved-email",
+        { body: { to, name, note } },
+      );
+      if (error || (data && data.success === false)) {
+        console.error("Approval email failed:", error || data?.error);
+        toast.warning(
+          "Approved, but notification email failed to send. Please contact the requester manually.",
+        );
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Approval email exception:", err);
+      toast.warning(
+        "Approved, but notification email failed to send. Please contact the requester manually.",
+      );
+      return false;
+    }
+  };
 
   const setStatus = async (id: string, next: Status, notes?: string) => {
     setBusyId(id);
@@ -66,6 +111,164 @@ export default function AdminAccessRequests() {
     }
   };
 
+  const approveAndInvite = async (r: AccessRequest) => {
+    setBusyId(r.id);
+    try {
+      const name = (r.full_name || r.globus_name || r.email.split("@")[0] || "Unknown").trim();
+      const email = r.email.toLowerCase();
+
+      // 1. Match by email (primary or secondary)
+      const { data: existingByEmail } = await supabase
+        .from("investigators")
+        .select("id, name")
+        .or(`email.ilike.${email},secondary_emails.cs.{${email}}`)
+        .maybeSingle();
+
+      let alreadyListed = !!existingByEmail;
+      const existingName = existingByEmail?.name as string | undefined;
+
+      if (!existingByEmail) {
+        // 2. Try insert; on name collision, prompt curator
+        const { error: invErr } = await supabase
+          .from("investigators")
+          .insert({ name, email });
+
+        if (invErr) {
+          const isNameDup =
+            invErr.code === "23505" &&
+            (invErr.message?.includes("investigators_name_key") ||
+              invErr.message?.toLowerCase().includes("name"));
+
+          if (isNameDup) {
+            const { data: nameMatch } = await supabase
+              .from("investigators")
+              .select("id, name, email, secondary_emails")
+              .ilike("name", name)
+              .maybeSingle();
+
+            if (nameMatch) {
+              setCollision({ request: r, existing: nameMatch, email });
+              setBusyId(null);
+              return;
+            }
+          }
+          throw invErr;
+        }
+      }
+
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          review_notes: alreadyListed
+            ? `Already listed as "${existingName}" in investigators directory`
+            : "Added to investigators directory",
+        })
+        .eq("id", r.id);
+      if (error) throw error;
+
+      toast.success(
+        alreadyListed
+          ? `Approved — email already linked to "${existingName}"`
+          : "Approved and invited. They can sign in via Globus now.",
+      );
+      await sendApprovalEmail(
+        email,
+        alreadyListed ? (existingName || name) : name,
+        alreadyListed
+          ? `Your email is already linked to the investigator profile "${existingName}".`
+          : "You've been added to the investigators directory.",
+      );
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to approve and invite");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const linkAsSecondaryEmail = async () => {
+    if (!collision) return;
+    const { request, existing, email } = collision;
+    setBusyId(request.id);
+    try {
+      const current = existing.secondary_emails ?? [];
+      const next = Array.from(new Set([...current.map((e) => e.toLowerCase()), email]));
+
+      const { error: updErr } = await supabase
+        .from("investigators")
+        .update({ secondary_emails: next })
+        .eq("id", existing.id);
+      if (updErr) throw updErr;
+
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          review_notes: `Linked ${email} as secondary email on existing investigator "${existing.name}"`,
+        })
+        .eq("id", request.id);
+      if (error) throw error;
+
+      toast.success(`Linked ${email} to "${existing.name}". They can sign in via Globus now.`);
+      await sendApprovalEmail(
+        email,
+        existing.name,
+        `Your email has been linked to the existing investigator profile "${existing.name}".`,
+      );
+      setCollision(null);
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to link secondary email");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const createWithDisambiguatedName = async () => {
+    if (!collision) return;
+    const { request, email } = collision;
+    setBusyId(request.id);
+    try {
+      const baseName = (request.full_name || request.globus_name || email.split("@")[0]).trim();
+      const institution = request.institution?.trim();
+      const disambiguated = institution ? `${baseName} (${institution})` : `${baseName} (${email})`;
+
+      const { error: invErr } = await supabase
+        .from("investigators")
+        .insert({ name: disambiguated, email });
+      if (invErr) throw invErr;
+
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          review_notes: `Added to investigators as "${disambiguated}" (name collision resolved)`,
+        })
+        .eq("id", request.id);
+      if (error) throw error;
+
+      toast.success(`Added as "${disambiguated}". They can sign in via Globus now.`);
+      await sendApprovalEmail(
+        email,
+        disambiguated,
+        `You've been added to the investigators directory as "${disambiguated}".`,
+      );
+      setCollision(null);
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to create investigator");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (tier.isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -74,7 +277,7 @@ export default function AdminAccessRequests() {
     );
   }
 
-  if (!tier.isAdmin) {
+  if (!tier.isCurator) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16">
         <Card>
@@ -82,9 +285,9 @@ export default function AdminAccessRequests() {
             <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-5">
               <Lock className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Admin access required</h1>
+            <h1 className="text-2xl font-bold mb-2">Reviewer access required</h1>
             <p className="text-sm text-muted-foreground mb-6">
-              This page is restricted to Tier 1 administrators.
+              This page is restricted to Tier 1 admins and Tier 2 curators.
             </p>
             <Button asChild variant="outline">
               <Link to="/">Back to home</Link>
@@ -101,10 +304,20 @@ export default function AdminAccessRequests() {
   const renderRow = (r: AccessRequest, withActions: boolean) => (
     <TableRow key={r.id}>
       <TableCell>
-        <div className="font-medium text-foreground">{r.globus_name || "—"}</div>
+        <div className="font-medium text-foreground">
+          {r.full_name || r.globus_name || "—"}
+        </div>
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <Mail className="h-3 w-3" /> {r.email}
         </div>
+        {r.institution && (
+          <div className="text-xs text-muted-foreground mt-1">{r.institution}</div>
+        )}
+        {r.message && (
+          <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2 max-w-md">
+            "{r.message}"
+          </div>
+        )}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
         {format(new Date(r.created_at), "MMM d, yyyy h:mm a")}
@@ -133,12 +346,12 @@ export default function AdminAccessRequests() {
             <Button
               size="sm"
               variant="default"
-              onClick={() => setStatus(r.id, "approved", "Added to investigators roster")}
+              onClick={() => approveAndInvite(r)}
               disabled={busyId === r.id}
-              title="Mark as approved (add the person to the investigators table separately, then they can sign in)"
+              title="Adds the person to the investigators directory and marks the request approved. They can then sign in via Globus."
             >
               <Check className="h-3.5 w-3.5 mr-1" />
-              Approve
+              Approve & invite
             </Button>
             <Button
               size="sm"
@@ -162,9 +375,10 @@ export default function AdminAccessRequests() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
         <p className="text-sm text-muted-foreground">
-          Sign-in attempts from people whose email isn't on the consortium roster. To grant
-          access, add them to the investigators directory — the next time they sign in with
-          Globus they'll get in automatically.
+          Sign-up requests from the public form and Globus sign-in attempts from people whose
+          email isn't on the consortium roster. "Approve &amp; invite" adds them to the
+          investigators directory automatically — the next time they sign in via Globus, they'll
+          get in.
         </p>
       </div>
 
@@ -213,9 +427,9 @@ export default function AdminAccessRequests() {
                 Awaiting decision
               </CardTitle>
               <CardDescription>
-                Approving here only marks the request as handled. The person still needs to be
-                added to the <code className="font-mono">investigators</code> table before they
-                can sign in.
+                Click <strong>Approve &amp; invite</strong> to add the person to the{" "}
+                <code className="font-mono">investigators</code> directory and mark the request
+                approved. They can then sign in via Globus.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -274,6 +488,83 @@ export default function AdminAccessRequests() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!collision} onOpenChange={(open) => !open && setCollision(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-accent-foreground" />
+              Name already exists in directory
+            </DialogTitle>
+            <DialogDescription>
+              An investigator with this name is already in the consortium roster. Choose how to
+              resolve this so the requester can sign in.
+            </DialogDescription>
+          </DialogHeader>
+
+          {collision && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md border border-border bg-muted/40 p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Existing investigator
+                </div>
+                <div className="font-medium text-foreground">{collision.existing.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  Primary: {collision.existing.email || "—"}
+                </div>
+                {collision.existing.secondary_emails &&
+                  collision.existing.secondary_emails.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Secondary: {collision.existing.secondary_emails.join(", ")}
+                    </div>
+                  )}
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/40 p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Requester
+                </div>
+                <div className="font-medium text-foreground">
+                  {collision.request.full_name || collision.request.globus_name || "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">{collision.email}</div>
+                {collision.request.institution && (
+                  <div className="text-xs text-muted-foreground">
+                    {collision.request.institution}
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground pt-1">
+                If this is the <strong>same person</strong> using a different email, link the
+                email as a secondary sign-in method. If they're a <strong>different person</strong>{" "}
+                who happens to share the name, create a separate row with a disambiguated name.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCollision(null)}
+              disabled={!!busyId}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={createWithDisambiguatedName}
+              disabled={!!busyId}
+            >
+              Different person — create new
+            </Button>
+            <Button onClick={linkAsSecondaryEmail} disabled={!!busyId}>
+              {busyId && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+              Same person — link email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

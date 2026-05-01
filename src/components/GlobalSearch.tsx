@@ -24,14 +24,10 @@ const PAGES: SearchablePage[] = [
   { title: "Protocols", path: "/protocols", keywords: ["protocols", "methods", "3d pose", "methodology"], section: "Tools" },
 
   { title: "Species", path: "/species", keywords: ["species", "mouse", "rat", "primate", "fish", "fly", "drosophila", "zebrafish", "bird"], section: "Science" },
-  
-
-  { title: "NeuroMCP (Hannah)", path: "/neuromcp", keywords: ["neuromcp", "hannah", "chat", "ai", "assistant", "ask"], section: "AI" },
 
   { title: "Principal Investigators", path: "/investigators", keywords: ["investigators", "pi", "principal", "researchers", "faculty", "people"], section: "Community" },
   { title: "Working Groups", path: "/working-groups", keywords: ["working", "groups", "committees", "teams"], section: "Community" },
   { title: "Announcements", path: "/announcements", keywords: ["announcements", "news", "updates"], section: "Community" },
-  { title: "Consortia History", path: "/consortia-history", keywords: ["consortia", "history", "timeline", "origins"], section: "Community" },
 
   { title: "SFN 2025", path: "/sfn-2025", keywords: ["sfn", "2025", "conference", "neuroscience", "poster"], section: "Conferences" },
 

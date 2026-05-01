@@ -9,21 +9,6 @@ verify_jwt = false
 [functions.nih-grants]
 verify_jwt = false
 
-[functions.neuromcp-chat]
-verify_jwt = false
-
-[functions.neuromcp-ingest]
-verify_jwt = false
-
-[functions.neuromcp-audio]
-verify_jwt = false
-
-[functions.neuromcp-ingest-workflows]
-verify_jwt = false
-
-[functions.neuromcp-history]
-verify_jwt = false
-
 [functions.bbqs-api]
 verify_jwt = false
 
