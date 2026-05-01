@@ -400,7 +400,6 @@ export default function AdminUsers() {
 
       toast.success(`Revoked all access for ${u.email}`, {
         duration: 30_000,
-        important: true,
         className: "border-2 border-primary",
         action: {
           label: "Undo",
@@ -446,7 +445,6 @@ export default function AdminUsers() {
 
       toast.success(`Removed ${u.full_name}`, {
         duration: 30_000,
-        important: true,
         className: "border-2 border-primary",
         action: {
           label: "Undo",
