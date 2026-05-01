@@ -707,7 +707,7 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteSignedInUser(u)}
+                                onClick={() => setDeleteTarget({ kind: "signed_in", row: u })}
                                 disabled={deletingId === u.id}
                                 title="Revoke all access"
                               >
@@ -802,7 +802,7 @@ export default function AdminUsers() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteInvited(u)}
+                                onClick={() => setDeleteTarget({ kind: "invited", row: u })}
                                 disabled={deletingId === u.id}
                                 title="Remove invited investigator"
                               >
