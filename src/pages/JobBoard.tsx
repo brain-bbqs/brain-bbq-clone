@@ -371,7 +371,25 @@ export default function JobBoard() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Position Title *</Label>
-                    <Input id="title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience" required />
+                    <Input
+                      id="title"
+                      value={form.title}
+                      onChange={e => {
+                        const title = e.target.value;
+                        setForm(f => {
+                          const inferred = inferJobType(title, f.description);
+                          // Only auto-update job_type if we have a confident
+                          // inference; otherwise keep what the user has.
+                          return {
+                            ...f,
+                            title,
+                            job_type: inferred ?? f.job_type,
+                          };
+                        });
+                      }}
+                      placeholder="e.g. Postdoctoral Researcher in Computational Neuroscience"
+                      required
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
