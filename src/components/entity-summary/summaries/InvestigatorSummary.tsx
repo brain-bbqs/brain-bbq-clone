@@ -80,7 +80,7 @@ const PROFILE_FIELDS = [
   { key: "email", label: "Email" },
   { key: "orcid", label: "ORCID" },
   { key: "scholar_id", label: "Google Scholar" },
-  { key: "organizations", label: "University" },
+  { key: "organizations", label: "University/Institution" },
   { key: "skills", label: "Skills" },
   { key: "research_areas", label: "Research Areas" },
 ] as const;
@@ -290,7 +290,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
       </SummaryField>
 
       {/* Institutions */}
-      <SummaryField label="University">
+      <SummaryField label="University/Institution">
         {data.organizations.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {data.organizations.map((org) => (
