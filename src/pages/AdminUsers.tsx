@@ -590,12 +590,13 @@ export default function AdminUsers() {
                         <TableHead>Investigator linked</TableHead>
                         <TableHead>Current tier</TableHead>
                         <TableHead className="text-right">Change role</TableHead>
+                        <TableHead className="text-right w-[80px]">Delete</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredSignedIn.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             No users found.
                           </TableCell>
                         </TableRow>
@@ -678,6 +679,22 @@ export default function AdminUsers() {
                                   </SelectContent>
                                 </Select>
                               </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteSignedInUser(u)}
+                                disabled={deletingId === u.id}
+                                title="Revoke all access"
+                              >
+                                {deletingId === u.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
