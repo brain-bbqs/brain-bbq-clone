@@ -1,0 +1,1 @@
+UPDATE public.jobs SET job_type = 'engineer', updated_at = now() WHERE id = 'f14579f1-2e78-491f-a957-7c91e4ac5da8';
