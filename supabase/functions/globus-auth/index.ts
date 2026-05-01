@@ -97,6 +97,20 @@ Deno.serve(async (req) => {
     if (req.method === "GET") {
       const code = url.searchParams.get("code");
       const stateParam = url.searchParams.get("state");
+      const oauthError = url.searchParams.get("error");
+
+      // Globus returns ?error=login_required when prompt=none and no active session.
+      // Decode state to get the frontend URL so we can redirect back gracefully.
+      if (oauthError && stateParam) {
+        try {
+          const stateData = JSON.parse(atob(stateParam));
+          const silentFailRedirect = new URL(stateData.redirect_uri);
+          silentFailRedirect.searchParams.set("globus_error", "silent_failed");
+          return Response.redirect(silentFailRedirect.toString(), 302);
+        } catch {
+          return new Response("OAuth error: " + oauthError, { status: 400 });
+        }
+      }
 
       if (!code || !stateParam) {
         return new Response("Missing code or state", { status: 400 });
@@ -315,9 +329,12 @@ Deno.serve(async (req) => {
     }
 
     // POST request = login action (initiate Globus OAuth)
-    const { action, redirect_uri } = await req.json();
+    const req_body = await req.json();
+    const { action, redirect_uri } = req_body;
 
     if (action === "login") {
+      const silent = req_body?.silent === true;
+
       // Validate redirect_uri against allowlist to prevent open redirect
       const ALLOWED_REDIRECT_ORIGINS = [
         "https://brain-bbqs.org",
@@ -349,7 +366,7 @@ Deno.serve(async (req) => {
       authUrl.searchParams.set("scope", "openid profile email");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("state", state);
-      authUrl.searchParams.set("prompt", "login");
+      authUrl.searchParams.set("prompt", silent ? "none" : "login");
 
       return new Response(JSON.stringify({ url: authUrl.toString() }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
