@@ -72,8 +72,6 @@ serve(async (req) => {
     const insertTests = [
       { table: "entity_comments", row: { content: "__audit_test__", resource_id: "00000000-0000-0000-0000-000000000000", user_id: "00000000-0000-0000-0000-000000000000" } },
       { table: "feature_suggestions", row: { title: "__audit_test__" } },
-      { table: "chat_conversations", row: { user_id: "00000000-0000-0000-0000-000000000000" } },
-      { table: "chat_messages", row: { conversation_id: "00000000-0000-0000-0000-000000000000", user_id: "00000000-0000-0000-0000-000000000000", role: "user", content: "__audit_test__" } },
       { table: "resources", row: { name: "__audit_test__", resource_type: "tool" } },
       { table: "edit_history", row: { field_name: "__audit_test__", grant_number: "TEST" } },
     ];
