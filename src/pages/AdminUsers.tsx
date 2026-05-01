@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Lock, Shield, ShieldCheck, User as UserIcon, Loader2, Search, UserPlus } from "lucide-react";
+import { Lock, Shield, ShieldCheck, User as UserIcon, Loader2, Search, UserPlus, Mail, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,9 @@ interface SignedInUserRow {
   created_at: string;
   role: AssignableRole;
   is_linked_investigator: boolean;
+  investigator_id: string | null;
+  investigator_primary_email: string | null;
+  investigator_secondary_emails: string[];
 }
 
 interface InvitedInvestigatorRow {
@@ -48,6 +51,7 @@ interface InvitedInvestigatorRow {
   email: string | null;
   full_name: string;
   research_areas: string[] | null;
+  secondary_emails: string[];
 }
 
 const TIER_META: Record<AssignableRole, { label: string; tier: number; color: string; icon: any }> = {
@@ -67,6 +71,18 @@ export default function AdminUsers() {
   const [addRole, setAddRole] = useState<AssignableRole>("member");
   const [addSubmitting, setAddSubmitting] = useState(false);
 
+  // Email management dialog state
+  const [emailEditTarget, setEmailEditTarget] = useState<{
+    investigator_id: string;
+    name: string;
+    primary: string | null;
+    secondaries: string[];
+  } | null>(null);
+  const [emailDraftPrimary, setEmailDraftPrimary] = useState("");
+  const [emailDraftSecondaries, setEmailDraftSecondaries] = useState<string[]>([]);
+  const [emailDraftNew, setEmailDraftNew] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+
   const canManage = tierInfo.isCurator; // tier 1 and 2
   const canGrantAdmin = tierInfo.isAdmin; // tier 1 only
 
@@ -77,7 +93,9 @@ export default function AdminUsers() {
       const [profilesRes, rolesRes, investigatorsRes] = await Promise.all([
         supabase.from("profiles").select("id, email, full_name, created_at"),
         supabase.from("user_roles").select("user_id, role"),
-        supabase.from("investigators").select("id, name, email, user_id, research_areas"),
+        supabase
+          .from("investigators")
+          .select("id, name, email, user_id, research_areas, secondary_emails"),
       ]);
       if (profilesRes.error) throw profilesRes.error;
       if (investigatorsRes.error) throw investigatorsRes.error;
@@ -90,21 +108,26 @@ export default function AdminUsers() {
         }
       });
 
-      const linkedUserIds = new Set(
-        (investigatorsRes.data ?? [])
-          .filter((i: any) => i.user_id)
-          .map((i: any) => i.user_id),
-      );
+      const investigatorByUserId = new Map<string, any>();
+      (investigatorsRes.data ?? []).forEach((i: any) => {
+        if (i.user_id) investigatorByUserId.set(i.user_id, i);
+      });
 
-      const signedIn: SignedInUserRow[] = (profilesRes.data ?? []).map((p: any) => ({
-        kind: "signed_in",
-        id: p.id,
-        email: p.email,
-        full_name: p.full_name,
-        created_at: p.created_at,
-        role: roleMap.get(p.id) ?? "member",
-        is_linked_investigator: linkedUserIds.has(p.id),
-      }));
+      const signedIn: SignedInUserRow[] = (profilesRes.data ?? []).map((p: any) => {
+        const inv = investigatorByUserId.get(p.id);
+        return {
+          kind: "signed_in",
+          id: p.id,
+          email: p.email,
+          full_name: p.full_name,
+          created_at: p.created_at,
+          role: roleMap.get(p.id) ?? "member",
+          is_linked_investigator: !!inv,
+          investigator_id: inv?.id ?? null,
+          investigator_primary_email: inv?.email ?? null,
+          investigator_secondary_emails: inv?.secondary_emails ?? [],
+        };
+      });
 
       const invited: InvitedInvestigatorRow[] = (investigatorsRes.data ?? [])
         .filter((i: any) => !i.user_id)
@@ -114,6 +137,7 @@ export default function AdminUsers() {
           email: i.email,
           full_name: i.name,
           research_areas: i.research_areas,
+          secondary_emails: i.secondary_emails ?? [],
         }));
 
       return { signedIn, invited };
@@ -255,6 +279,77 @@ export default function AdminUsers() {
     }
   };
 
+  const openEmailEditor = (target: {
+    investigator_id: string;
+    name: string;
+    primary: string | null;
+    secondaries: string[];
+  }) => {
+    setEmailEditTarget(target);
+    setEmailDraftPrimary(target.primary ?? "");
+    setEmailDraftSecondaries([...(target.secondaries ?? [])]);
+    setEmailDraftNew("");
+  };
+
+  const addSecondaryDraft = () => {
+    const e = emailDraftNew.trim().toLowerCase();
+    if (!e) return;
+    if (!/^\S+@\S+\.\S+$/.test(e)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (e === emailDraftPrimary.trim().toLowerCase()) {
+      toast.error("That's already the primary email.");
+      return;
+    }
+    if (emailDraftSecondaries.map((s) => s.toLowerCase()).includes(e)) {
+      toast.error("Email already in the list.");
+      return;
+    }
+    setEmailDraftSecondaries((prev) => [...prev, e]);
+    setEmailDraftNew("");
+  };
+
+  const removeSecondaryDraft = (email: string) => {
+    setEmailDraftSecondaries((prev) => prev.filter((e) => e !== email));
+  };
+
+  const saveEmails = async () => {
+    if (!emailEditTarget) return;
+    const primary = emailDraftPrimary.trim().toLowerCase();
+    if (primary && !/^\S+@\S+\.\S+$/.test(primary)) {
+      toast.error("Primary email is not a valid address.");
+      return;
+    }
+    const cleanedSecondaries = Array.from(
+      new Set(
+        emailDraftSecondaries
+          .map((e) => e.trim().toLowerCase())
+          .filter((e) => e && e !== primary),
+      ),
+    );
+
+    setEmailSaving(true);
+    try {
+      const { error } = await supabase
+        .from("investigators")
+        .update({
+          email: primary || null,
+          secondary_emails: cleanedSecondaries,
+        })
+        .eq("id", emailEditTarget.investigator_id);
+      if (error) throw error;
+      toast.success("Emails updated.");
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+      setEmailEditTarget(null);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to update emails.");
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
   // ---- Access gate ----
   if (tierInfo.isLoading) {
     return (
@@ -384,6 +479,7 @@ export default function AdminUsers() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>User</TableHead>
+                        <TableHead>Emails</TableHead>
                         <TableHead>Investigator linked</TableHead>
                         <TableHead>Current tier</TableHead>
                         <TableHead className="text-right">Change role</TableHead>
@@ -392,7 +488,7 @@ export default function AdminUsers() {
                     <TableBody>
                       {filteredSignedIn.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                             No users found.
                           </TableCell>
                         </TableRow>
@@ -406,6 +502,38 @@ export default function AdminUsers() {
                                 {u.full_name || "—"}
                               </div>
                               <div className="text-xs text-muted-foreground">{u.email}</div>
+                            </TableCell>
+                            <TableCell>
+                              {u.is_linked_investigator && u.investigator_id ? (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-foreground">
+                                    {u.investigator_primary_email || "(no primary)"}
+                                  </div>
+                                  {u.investigator_secondary_emails.length > 0 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      +{u.investigator_secondary_emails.length} secondary
+                                    </div>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-xs"
+                                    onClick={() =>
+                                      openEmailEditor({
+                                        investigator_id: u.investigator_id!,
+                                        name: u.full_name || u.email,
+                                        primary: u.investigator_primary_email,
+                                        secondaries: u.investigator_secondary_emails,
+                                      })
+                                    }
+                                  >
+                                    <Mail className="h-3 w-3 mr-1" />
+                                    Manage
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {u.is_linked_investigator ? (
@@ -475,14 +603,15 @@ export default function AdminUsers() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
+                        <TableHead>Emails</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredInvited.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                             No invited investigators found.
                           </TableCell>
                         </TableRow>
@@ -492,13 +621,36 @@ export default function AdminUsers() {
                           <TableCell className="font-medium text-foreground">
                             {u.full_name}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {u.email || "—"}
+                          <TableCell className="text-sm">
+                            <div className="text-foreground text-xs">{u.email || "(no primary)"}</div>
+                            {u.secondary_emails.length > 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                +{u.secondary_emails.length} secondary
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-muted-foreground">
                               Awaiting first sign-in
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() =>
+                                openEmailEditor({
+                                  investigator_id: u.id,
+                                  name: u.full_name,
+                                  primary: u.email,
+                                  secondaries: u.secondary_emails,
+                                })
+                              }
+                            >
+                              <Mail className="h-3 w-3 mr-1" />
+                              Manage emails
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -585,6 +737,94 @@ export default function AdminUsers() {
             <Button onClick={handleAddUser} disabled={addSubmitting}>
               {addSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add user
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!emailEditTarget}
+        onOpenChange={(open) => !open && setEmailEditTarget(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage emails</DialogTitle>
+            <DialogDescription>
+              {emailEditTarget?.name
+                ? `Update primary and linked sign-in emails for "${emailEditTarget.name}".`
+                : "Update primary and linked sign-in emails."}{" "}
+              Any listed email can be used to sign in via Globus and will be auto-linked to this
+              investigator profile.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="primary-email">Primary email</Label>
+              <Input
+                id="primary-email"
+                type="email"
+                value={emailDraftPrimary}
+                onChange={(e) => setEmailDraftPrimary(e.target.value)}
+                placeholder="jane@institution.edu"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Secondary emails</Label>
+              {emailDraftSecondaries.length === 0 && (
+                <p className="text-xs text-muted-foreground">No secondary emails.</p>
+              )}
+              <div className="space-y-1">
+                {emailDraftSecondaries.map((e) => (
+                  <div
+                    key={e}
+                    className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm"
+                  >
+                    <span className="font-mono text-xs text-foreground">{e}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => removeSecondaryDraft(e)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Input
+                  type="email"
+                  placeholder="add another email…"
+                  value={emailDraftNew}
+                  onChange={(e) => setEmailDraftNew(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSecondaryDraft();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addSecondaryDraft}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEmailEditTarget(null)}
+              disabled={emailSaving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveEmails} disabled={emailSaving}>
+              {emailSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save emails
             </Button>
           </DialogFooter>
         </DialogContent>
