@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Lock, Shield, ShieldCheck, User as UserIcon, Loader2, Search, UserPlus, Mail, Plus, X } from "lucide-react";
+import { Lock, Shield, ShieldCheck, User as UserIcon, Loader2, Search, UserPlus, Mail, Plus, X, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,8 @@ export default function AdminUsers() {
   const [emailDraftSecondaries, setEmailDraftSecondaries] = useState<string[]>([]);
   const [emailDraftNew, setEmailDraftNew] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const canManage = tierInfo.isCurator; // tier 1 and 2
   const canGrantAdmin = tierInfo.isAdmin; // tier 1 only
@@ -347,6 +349,111 @@ export default function AdminUsers() {
       toast.error(err.message ?? "Failed to update emails.");
     } finally {
       setEmailSaving(false);
+    }
+  };
+
+  // ---- Delete + undo ----
+  const restoreSignedInRoles = async (userId: string, roles: AssignableRole[]) => {
+    if (roles.length === 0) return;
+    const rows = roles.map((role) => ({ user_id: userId, role }));
+    const { error } = await supabase
+      .from("user_roles")
+      .upsert(rows, { onConflict: "user_id,role" });
+    if (error) throw error;
+  };
+
+  const handleDeleteSignedInUser = async (u: SignedInUserRow) => {
+    if (!confirm(`Revoke all access for ${u.full_name || u.email}?\n\nThe user's account stays in Globus, but they will no longer have any role on this site (not even Member). You can undo this for ~10 seconds.`)) {
+      return;
+    }
+    setDeletingId(u.id);
+    try {
+      // Snapshot existing roles
+      const { data: existing, error: fetchErr } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.id);
+      if (fetchErr) throw fetchErr;
+      const snapshotRoles: AssignableRole[] = (existing ?? []).map((r: any) => r.role);
+
+      // Remove all roles
+      const { error: delErr } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", u.id);
+      if (delErr) throw delErr;
+
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+      queryClient.invalidateQueries({ queryKey: ["user-tier"] });
+
+      toast.success(`Revoked all access for ${u.email}`, {
+        duration: 10_000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              await restoreSignedInRoles(u.id, snapshotRoles.length ? snapshotRoles : ["member"]);
+              toast.success("Access restored");
+              queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+              queryClient.invalidateQueries({ queryKey: ["user-tier"] });
+            } catch (e: any) {
+              toast.error(e.message ?? "Failed to restore access");
+            }
+          },
+        },
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to delete user");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeleteInvited = async (u: InvitedInvestigatorRow) => {
+    if (!confirm(`Remove invited investigator "${u.full_name}"?\n\nThis deletes their entry from the investigators directory. You can undo this for ~10 seconds.`)) {
+      return;
+    }
+    setDeletingId(u.id);
+    try {
+      // Snapshot full row before delete
+      const { data: existing, error: fetchErr } = await supabase
+        .from("investigators")
+        .select("*")
+        .eq("id", u.id)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!existing) throw new Error("Investigator not found");
+
+      const { error: delErr } = await supabase
+        .from("investigators")
+        .delete()
+        .eq("id", u.id);
+      if (delErr) throw delErr;
+
+      queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+
+      toast.success(`Removed ${u.full_name}`, {
+        duration: 10_000,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            try {
+              const { error } = await supabase.from("investigators").insert(existing as any);
+              if (error) throw error;
+              toast.success("Investigator restored");
+              queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
+            } catch (e: any) {
+              toast.error(e.message ?? "Failed to restore");
+            }
+          },
+        },
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to delete investigator");
+    } finally {
+      setDeletingId(null);
     }
   };
 
