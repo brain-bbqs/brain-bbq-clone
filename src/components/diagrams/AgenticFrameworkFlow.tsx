@@ -189,35 +189,6 @@ const initialNodes: Node[] = [
     },
   },
 
-  // NeuroMCP
-  {
-    id: 'neuromcp',
-    type: 'default',
-    position: { x: 520, y: 350 },
-    data: { label: '🧠 NeuroMCP' },
-    style: { 
-      background: 'linear-gradient(135deg, hsl(280 60% 35%), hsl(210 80% 35%))', 
-      color: 'white', 
-      border: '2px solid hsl(280 60% 55%)',
-      borderRadius: '8px',
-      padding: '10px 16px',
-      fontWeight: 600,
-    },
-  },
-  {
-    id: 'brainkb',
-    type: 'default',
-    position: { x: 620, y: 400 },
-    data: { label: '📊 BrainKB' },
-    style: { 
-      background: 'hsl(280 40% 25%)', 
-      color: 'hsl(280 30% 80%)', 
-      border: '1px solid hsl(280 30% 45%)',
-      borderRadius: '6px',
-      fontSize: '12px',
-      padding: '6px 12px',
-    },
-  },
 ];
 
 const initialEdges: Edge[] = [
@@ -243,10 +214,6 @@ const initialEdges: Edge[] = [
   { id: 'e11', source: 'detect', target: 'diagnose', animated: true, style: { stroke: 'hsl(38 80% 50%)', strokeWidth: 2 } },
   { id: 'e12', source: 'diagnose', target: 'fix', animated: true, style: { stroke: 'hsl(38 80% 50%)', strokeWidth: 2 } },
   { id: 'e13', source: 'fix', target: 'codebase', animated: true, style: { stroke: 'hsl(38 80% 50%)', strokeWidth: 2 } },
-  
-  // NeuroMCP
-  { id: 'e14', source: 'codebase', target: 'neuromcp', animated: true, style: { stroke: 'hsl(280 50% 50%)', strokeWidth: 2 } },
-  { id: 'e15', source: 'neuromcp', target: 'brainkb', animated: true, style: { stroke: 'hsl(280 40% 50%)' } },
 ];
 
 export default function AgenticFrameworkFlow() {
