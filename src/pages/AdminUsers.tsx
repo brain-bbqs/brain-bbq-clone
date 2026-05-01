@@ -818,7 +818,7 @@ export default function AdminUsers() {
                                 }
                               >
                                 <Mail className="h-3 w-3 mr-1" />
-                                Manage emails
+                                Manage
                               </Button>
                               <Button
                                 size="sm"
