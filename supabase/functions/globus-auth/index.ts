@@ -324,8 +324,7 @@ Deno.serve(async (req) => {
         "https://www.brain-bbqs.org",
         "https://brain-bbqs.github.io",
         "https://brain-bbq-clone.lovable.app",
-        // bbqs-agent (Cloudflare Workers) — add the deployed workers.dev URL here once known
-        // e.g. "https://tanstack-start-app.ACCOUNT.workers.dev",
+        "https://agent.brain-bbqs.org",
         "http://localhost:",
       ];
       const isAllowedRedirect = redirect_uri && ALLOWED_REDIRECT_ORIGINS.some(
