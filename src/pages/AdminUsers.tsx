@@ -991,6 +991,54 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              {deleteTarget?.kind === "signed_in"
+                ? "Revoke all access?"
+                : "Remove invited investigator?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.kind === "signed_in" ? (
+                <>
+                  This will revoke <strong>all roles</strong> (including Member) for{" "}
+                  <strong>{deleteTarget.row.full_name || deleteTarget.row.email}</strong>.
+                  Their Globus account is not deleted, but they will lose all access on this site.
+                  <br />
+                  <br />
+                  You'll have <strong>30 seconds</strong> to undo this action from the toast notification.
+                </>
+              ) : deleteTarget?.kind === "invited" ? (
+                <>
+                  This will remove <strong>{deleteTarget.row.full_name}</strong> from the invited
+                  investigators directory. If they later sign in via Globus, they will not be
+                  auto-linked.
+                  <br />
+                  <br />
+                  You'll have <strong>30 seconds</strong> to undo this action from the toast notification.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTarget?.kind === "signed_in" ? "Revoke access" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
