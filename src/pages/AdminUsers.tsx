@@ -38,7 +38,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageMeta } from "@/components/PageMeta";
-import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
 
 type AssignableRole = "admin" | "curator" | "member";
 
@@ -70,7 +69,11 @@ const TIER_META: Record<AssignableRole, { label: string; tier: number; color: st
   member:  { label: "Member",  tier: 3, color: "bg-muted text-muted-foreground border-border",             icon: UserIcon },
 };
 
-export default function AdminUsers() {
+interface AdminUsersProps {
+  embedded?: boolean;
+}
+
+export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
   const tierInfo = useUserTier();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -91,6 +94,7 @@ export default function AdminUsers() {
   const [emailDraftPrimary, setEmailDraftPrimary] = useState("");
   const [emailDraftSecondaries, setEmailDraftSecondaries] = useState<string[]>([]);
   const [emailDraftNew, setEmailDraftNew] = useState("");
+  const [nameDraft, setNameDraft] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -306,6 +310,7 @@ export default function AdminUsers() {
     setEmailDraftPrimary(target.primary ?? "");
     setEmailDraftSecondaries([...(target.secondaries ?? [])]);
     setEmailDraftNew("");
+    setNameDraft(target.name ?? "");
   };
 
   const addSecondaryDraft = () => {
@@ -338,6 +343,11 @@ export default function AdminUsers() {
       toast.error("Primary email is not a valid address.");
       return;
     }
+    const trimmedName = nameDraft.trim();
+    if (!trimmedName) {
+      toast.error("Name cannot be empty.");
+      return;
+    }
     const cleanedSecondaries = Array.from(
       new Set(
         emailDraftSecondaries
@@ -351,17 +361,32 @@ export default function AdminUsers() {
       const { error } = await supabase
         .from("investigators")
         .update({
+          name: trimmedName,
           email: primary || null,
           secondary_emails: cleanedSecondaries,
         })
         .eq("id", emailEditTarget.investigator_id);
       if (error) throw error;
-      toast.success("Emails updated.");
+
+      // Also sync full_name on the linked auth profile, if any.
+      const { data: linkedInv } = await supabase
+        .from("investigators")
+        .select("user_id")
+        .eq("id", emailEditTarget.investigator_id)
+        .maybeSingle();
+      if (linkedInv?.user_id) {
+        await supabase
+          .from("profiles")
+          .update({ full_name: trimmedName })
+          .eq("id", linkedInv.user_id);
+      }
+
+      toast.success("User updated.");
       queryClient.invalidateQueries({ queryKey: ["admin-users-list-v2"] });
       setEmailEditTarget(null);
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message ?? "Failed to update emails.");
+      toast.error(err.message ?? "Failed to update user.");
     } finally {
       setEmailSaving(false);
     }
@@ -516,12 +541,14 @@ export default function AdminUsers() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <PageMeta title="User Roles — Admin" description="Manage user access tiers" />
+    <div className={embedded ? "" : "max-w-6xl mx-auto px-4 py-8"}>
+      {!embedded && <PageMeta title="User Roles — Admin" description="Manage user access tiers" />}
 
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          {!embedded && (
+            <h1 className="text-3xl font-bold text-foreground mb-1">User Roles</h1>
+          )}
           <p className="text-sm text-muted-foreground">
             Assign access tiers across the consortium. Changes take effect immediately.
           </p>
@@ -531,8 +558,6 @@ export default function AdminUsers() {
           Add user
         </Button>
       </div>
-
-      <SystemAlertsBanner />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {(["admin", "curator", "member"] as AssignableRole[]).map((r) => {
@@ -796,7 +821,7 @@ export default function AdminUsers() {
                                 }
                               >
                                 <Mail className="h-3 w-3 mr-1" />
-                                Manage emails
+                                Manage
                               </Button>
                               <Button
                                 size="sm"
@@ -910,17 +935,28 @@ export default function AdminUsers() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage emails</DialogTitle>
+            <DialogTitle>Manage user</DialogTitle>
             <DialogDescription>
               {emailEditTarget?.name
-                ? `Update primary and linked sign-in emails for "${emailEditTarget.name}".`
-                : "Update primary and linked sign-in emails."}{" "}
+                ? `Update name and linked sign-in emails for "${emailEditTarget.name}".`
+                : "Update name and linked sign-in emails."}{" "}
               Any listed email can be used to sign in via Globus and will be auto-linked to this
               investigator profile.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Name</Label>
+              <Input
+                id="user-name"
+                type="text"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Jane Doe"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="primary-email">Primary email</Label>
               <Input
@@ -986,7 +1022,7 @@ export default function AdminUsers() {
             </Button>
             <Button onClick={saveEmails} disabled={emailSaving}>
               {emailSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save emails
+              Save changes
             </Button>
           </DialogFooter>
         </DialogContent>

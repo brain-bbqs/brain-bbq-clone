@@ -1578,6 +1578,10 @@ export type Database = {
         Args: { _resource_id: string; _user_id: string }
         Returns: boolean
       }
+      user_shares_grant_with_investigator: {
+        Args: { _editor_id: string; _target_investigator_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "member" | "curator"

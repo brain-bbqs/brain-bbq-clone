@@ -22,7 +22,6 @@ import {
   FlaskConical,
   Hotel,
   ShieldCheck,
-  UserPlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -78,7 +77,7 @@ const conferencesItems: NavItem[] = [
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
-  { title: "User Roles", url: "/admin/users", icon: ShieldCheck, adminOnly: true },
+  { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];
 
 const legalItems: NavItem[] = [
