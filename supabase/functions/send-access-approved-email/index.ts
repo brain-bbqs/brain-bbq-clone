@@ -6,7 +6,7 @@ const corsHeaders = {
 
 const FROM_ADDRESS =
   Deno.env.get("ACCESS_APPROVED_FROM") ||
-  "BBQS Admin <dcaic-admin@brain-bbqs.org>";
+  "BBQS <noreply@brain-bbqs.org>";
 const SIGN_IN_URL =
   Deno.env.get("ACCESS_APPROVED_SIGNIN_URL") ||
   "https://brain-bbq-clone.lovable.app/auth";

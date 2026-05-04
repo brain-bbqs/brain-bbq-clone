@@ -60,7 +60,7 @@ async function sendEmail(alert: AlertPayload, occurrenceCount: number): Promise<
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "BBQS Alerts <onboarding@resend.dev>",
+        from: "BBQS Alerts <noreply@brain-bbqs.org>",
         to: [ALERT_RECIPIENT],
         subject: `🚨 [BBQS] ${alert.source}: ${alert.errorCode}`,
         html,
