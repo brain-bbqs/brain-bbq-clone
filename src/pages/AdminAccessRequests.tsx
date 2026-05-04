@@ -517,12 +517,12 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
                   Existing investigator
                 </div>
                 <div className="font-medium text-foreground">{collision.existing.name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground break-all">
                   Primary: {collision.existing.email || "—"}
                 </div>
                 {collision.existing.secondary_emails &&
                   collision.existing.secondary_emails.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground break-all">
                       Secondary: {collision.existing.secondary_emails.join(", ")}
                     </div>
                   )}
@@ -535,9 +535,9 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
                 <div className="font-medium text-foreground">
                   {collision.request.full_name || collision.request.globus_name || "—"}
                 </div>
-                <div className="text-xs text-muted-foreground">{collision.email}</div>
+                <div className="text-xs text-muted-foreground break-all">{collision.email}</div>
                 {collision.request.institution && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground break-all">
                     {collision.request.institution}
                   </div>
                 )}
