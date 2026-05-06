@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, Lock, Mail, Check, X, UserPlus, AlertTriangle } from "lucide-react";
+import { Loader2, Lock, Mail, Check, X, UserPlus, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
@@ -48,11 +48,16 @@ interface NameCollision {
   email: string;
 }
 
-export default function AdminAccessRequests() {
+interface AdminAccessRequestsProps {
+  embedded?: boolean;
+}
+
+export default function AdminAccessRequests({ embedded = false }: AdminAccessRequestsProps = {}) {
   const tier = useUserTier();
   const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [collision, setCollision] = useState<NameCollision | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<AccessRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["access-requests"],
@@ -269,6 +274,72 @@ export default function AdminAccessRequests() {
     }
   };
 
+  const revokeAccess = async (r: AccessRequest) => {
+    setBusyId(r.id);
+    try {
+      const email = r.email.toLowerCase();
+
+      // Look up the investigator linked to this email (primary or secondary)
+      const { data: inv } = await supabase
+        .from("investigators")
+        .select("id, name, user_id, secondary_emails")
+        .or(`email.ilike.${email},secondary_emails.cs.{${email}}`)
+        .maybeSingle();
+
+      let note = "Access revoked by curator.";
+
+      if (inv) {
+        if (inv.user_id) {
+          // They've signed in — don't delete the investigator record, just note it.
+          note += ` Investigator "${inv.name}" remains in the directory (already signed in via Globus). Remove their user role separately if needed.`;
+        } else {
+          // Not yet linked to an auth user — safe to clean up.
+          const isPrimary = true; // we don't know which matched; check secondary
+          const secondaries = (inv.secondary_emails ?? []).map((e) => e.toLowerCase());
+          if (secondaries.includes(email)) {
+            // Remove just the secondary email
+            const next = secondaries.filter((e) => e !== email);
+            const { error: updErr } = await supabase
+              .from("investigators")
+              .update({ secondary_emails: next })
+              .eq("id", inv.id);
+            if (updErr) throw updErr;
+            note += ` Removed ${email} from secondary emails on "${inv.name}".`;
+          } else {
+            // Email is the primary — delete the investigator (only allowed if user_id is null)
+            const { error: delErr } = await supabase
+              .from("investigators")
+              .delete()
+              .eq("id", inv.id);
+            if (delErr) throw delErr;
+            note += ` Removed "${inv.name}" from the investigators directory.`;
+          }
+        }
+      } else {
+        note += " No matching investigator entry found.";
+      }
+
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "dismissed",
+          reviewed_at: new Date().toISOString(),
+          review_notes: note,
+        })
+        .eq("id", r.id);
+      if (error) throw error;
+
+      toast.success("Access revoked");
+      setRevokeTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to revoke access");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (tier.isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -369,11 +440,15 @@ export default function AdminAccessRequests() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <PageMeta title="Access Requests — Admin" description="Review pending Globus sign-in attempts" />
+    <div className={embedded ? "" : "max-w-6xl mx-auto px-4 py-8"}>
+      {!embedded && (
+        <PageMeta title="Access Requests — Admin" description="Review pending Globus sign-in attempts" />
+      )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
+        {!embedded && (
+          <h1 className="text-3xl font-bold text-foreground mb-1">Access Requests</h1>
+        )}
         <p className="text-sm text-muted-foreground">
           Sign-up requests from the public form and Globus sign-in attempts from people whose
           email isn't on the consortium roster. "Approve &amp; invite" adds them to the
@@ -478,9 +553,62 @@ export default function AdminAccessRequests() {
                         <TableHead>Person</TableHead>
                         <TableHead>Requested</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>{decided.map((r) => renderRow(r, false))}</TableBody>
+                    <TableBody>
+                      {decided.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell>
+                            <div className="font-medium text-foreground">
+                              {r.full_name || r.globus_name || "—"}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3" /> {r.email}
+                            </div>
+                            {r.institution && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {r.institution}
+                              </div>
+                            )}
+                            {r.review_notes && (
+                              <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2 max-w-md">
+                                {r.review_notes}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(r.created_at), "MMM d, yyyy h:mm a")}
+                          </TableCell>
+                          <TableCell>
+                            {r.status === "approved" ? (
+                              <Badge variant="secondary">Approved</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                Dismissed
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {r.status === "approved" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setRevokeTarget(r)}
+                                disabled={busyId === r.id}
+                              >
+                                {busyId === r.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                )}
+                                Revoke
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
                   </Table>
                 </div>
               )}
@@ -488,6 +616,44 @@ export default function AdminAccessRequests() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Revoke access?
+            </DialogTitle>
+            <DialogDescription className="space-y-2 pt-2">
+              <span className="block">
+                This will mark{" "}
+                <strong>{revokeTarget?.full_name || revokeTarget?.globus_name || revokeTarget?.email}</strong>{" "}
+                as dismissed and remove their invite from the investigators directory if they
+                haven't signed in yet.
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                If the user has already signed in via Globus, their investigator profile is kept
+                and you must remove their user role manually.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRevokeTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => revokeTarget && revokeAccess(revokeTarget)}
+              disabled={busyId === revokeTarget?.id}
+            >
+              {busyId === revokeTarget?.id && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Revoke access
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!collision} onOpenChange={(open) => !open && setCollision(null)}>
         <DialogContent className="max-w-lg">
@@ -509,12 +675,12 @@ export default function AdminAccessRequests() {
                   Existing investigator
                 </div>
                 <div className="font-medium text-foreground">{collision.existing.name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground break-all">
                   Primary: {collision.existing.email || "—"}
                 </div>
                 {collision.existing.secondary_emails &&
                   collision.existing.secondary_emails.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground break-all">
                       Secondary: {collision.existing.secondary_emails.join(", ")}
                     </div>
                   )}
@@ -527,9 +693,9 @@ export default function AdminAccessRequests() {
                 <div className="font-medium text-foreground">
                   {collision.request.full_name || collision.request.globus_name || "—"}
                 </div>
-                <div className="text-xs text-muted-foreground">{collision.email}</div>
+                <div className="text-xs text-muted-foreground break-all">{collision.email}</div>
                 {collision.request.institution && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground break-all">
                     {collision.request.institution}
                   </div>
                 )}
