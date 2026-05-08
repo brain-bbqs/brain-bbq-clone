@@ -58,7 +58,6 @@ const Announcements = () => {
         link_text: data.link_text || null,
         is_external_link: data.is_external_link,
         posted_by: user.id,
-        posted_by_email: user.email,
       });
       if (error) throw error;
     },
