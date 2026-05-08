@@ -255,6 +255,55 @@ function calcCompleteness(data: any): number {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
+// Editable role select for a single grant_investigators row
+function EditableGrantRole({
+  grantId,
+  investigatorId,
+  role,
+  onChanged,
+}: {
+  grantId: string;
+  investigatorId: string;
+  role: string;
+  onChanged: () => void;
+}) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const update = async (next: string) => {
+    if (next === role) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("grant_investigators")
+      .update({ role: next })
+      .eq("grant_id", grantId)
+      .eq("investigator_id", investigatorId);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Could not update role", description: error.message, variant: "destructive" });
+    } else {
+      onChanged();
+      toast({ title: "Role updated" });
+    }
+  };
+
+  return (
+    <select
+      value={role}
+      disabled={saving}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => { e.stopPropagation(); update(e.target.value); }}
+      className="text-[11px] bg-background border border-border rounded px-1.5 py-0.5 outline-none focus:border-primary/50"
+    >
+      <option value="pi">PI</option>
+      <option value="co_pi">Co-PI</option>
+      <option value="collaborator">Collaborator</option>
+      <option value="trainee">Trainee</option>
+      <option value="staff">Staff</option>
+    </select>
+  );
+}
+
 export function InvestigatorSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
   const { user } = useAuth();
@@ -446,6 +495,73 @@ export function InvestigatorSummary({ id }: { id: string }) {
         )}
       </SummaryField>
 
+      {/* Profile URL */}
+      <SummaryField label="Profile URL">
+        {canEdit ? (
+          <EditableText
+            value={data.profile_url || ""}
+            onSave={(v) => handleSave("profile_url", v)}
+            placeholder="https://lab.example.edu/your-page"
+            type="url"
+          />
+        ) : data.profile_url ? (
+          <a href={data.profile_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+            {data.profile_url} <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : (
+          <span className="text-muted-foreground italic text-xs">Not provided</span>
+        )}
+      </SummaryField>
+
+      {/* Consortium Role */}
+      <SummaryField label="Consortium Role">
+        {canEdit ? (
+          <EditableText
+            value={data.role || ""}
+            onSave={(v) => handleSave("role", v)}
+            placeholder="e.g. Working Group Chair, Trainee, Steering Committee"
+          />
+        ) : data.role ? (
+          <span>{data.role}</span>
+        ) : (
+          <span className="text-muted-foreground italic text-xs">Not specified</span>
+        )}
+      </SummaryField>
+
+      {/* Working Groups */}
+      <SummaryField label="Working Groups">
+        {canEdit ? (
+          <EditableTagList
+            items={data.working_groups || []}
+            onChange={(next) => updateField.mutate({ field: "working_groups", value: next })}
+            placeholder="Add a working group"
+          />
+        ) : data.working_groups && data.working_groups.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {data.working_groups.map((wg: string) => <Badge key={wg} variant="secondary">{wg}</Badge>)}
+          </div>
+        ) : (
+          <span className="text-muted-foreground italic text-xs">No working groups</span>
+        )}
+      </SummaryField>
+
+      {/* Secondary Emails */}
+      <SummaryField label="Secondary Emails">
+        {canEdit ? (
+          <EditableTagList
+            items={data.secondary_emails || []}
+            onChange={(next) => updateField.mutate({ field: "secondary_emails", value: next })}
+            placeholder="Add an alternate email"
+          />
+        ) : data.secondary_emails && data.secondary_emails.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {data.secondary_emails.map((e: string) => <Badge key={e} variant="secondary">{e}</Badge>)}
+          </div>
+        ) : (
+          <span className="text-muted-foreground italic text-xs">None</span>
+        )}
+      </SummaryField>
+
       {/* Institutions */}
       <SummaryField label="University/Institution">
         {canEdit ? (
@@ -532,7 +648,18 @@ export function InvestigatorSummary({ id }: { id: string }) {
                   onClick={() => open({ type: "grant", id: g.id, resourceId: g.resource_id || undefined, label: g.grant_number })}
                 >
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{link?.role === "pi" ? "PI" : "Co-PI"}</Badge>
+                    {canEdit ? (
+                      <EditableGrantRole
+                        grantId={g.id}
+                        investigatorId={id}
+                        role={link?.role || "co_pi"}
+                        onChanged={() => queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] })}
+                      />
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        {link?.role === "pi" ? "PI" : link?.role === "co_pi" ? "Co-PI" : (link?.role || "Co-PI")}
+                      </Badge>
+                    )}
                     <span className="font-mono text-xs text-muted-foreground">{g.grant_number}</span>
                   </div>
                   <p className="text-sm font-medium mt-1 line-clamp-2">{g.title}</p>
