@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { syncReporterPis, type ReporterPi } from "../_shared/grant-sync.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -327,37 +328,20 @@ async function seedGrantEntities(supabase: any, grantNumber: string, projectData
       }
     }
 
-    // Link investigator to grant. RePORTER is the canonical source for PI
-    // status, so we always upsert the PI role here. Curator-added non-PI
-    // team members (staff/trainee/etc) for people NOT on RePORTER are left
-    // untouched by this loop.
-    const role = pi.isContactPi ? "contact_pi" : "co_pi";
-    const { data: existingGi } = await supabase
-      .from("grant_investigators")
-      .select("role")
-      .eq("investigator_id", invId)
-      .eq("grant_id", grantId)
-      .maybeSingle();
-
-    if (!existingGi) {
-      await supabase
-        .from("grant_investigators")
-        .insert({ investigator_id: invId, grant_id: grantId, role });
-      console.log(`Linked PI ${piName} -> grant ${grantNumber} as ${role}`);
-    } else if (existingGi.role !== role) {
-      // Ensure RePORTER PIs are tagged as PIs even if a prior curation
-      // demoted them. Promote co_pi -> contact_pi when applicable.
-      const PI_LIKE = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
-      if (!PI_LIKE.has(existingGi.role) || pi.isContactPi) {
-        await supabase
-          .from("grant_investigators")
-          .update({ role })
-          .eq("investigator_id", invId)
-          .eq("grant_id", grantId);
-        console.log(`Updated ${piName} role on ${grantNumber} -> ${role}`);
-      }
-    }
+    // Stash the resolved investigator id on the PI record for the
+    // shared sync pass below.
+    pi.__invId = invId;
   }
+
+  // Centralised PI reconciliation (curator entries are preserved).
+  const reporterPis: ReporterPi[] = piDetails
+    .filter((pi: any) => pi.__invId)
+    .map((pi: any) => ({
+      investigatorId: pi.__invId,
+      name: pi.fullName || "",
+      isContactPi: !!pi.isContactPi,
+    }));
+  await syncReporterPis(supabase, grantId, grantNumber, reporterPis);
 
   // 5. Ensure project metadata row exists
   const { data: existingProject } = await supabase
@@ -391,6 +375,68 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
+
+    // ACTION: reconcile — fast PI-only sync from RePORTER. Skips publication
+    // fetches so it's safe to run on a cron without overrunning function
+    // time limits. Used by the weekly pg_cron job.
+    if (action === "reconcile") {
+      console.log(`Reconciling PIs for ${GRANT_NUMBERS.length} grants...`);
+      let synced = 0;
+      const errors: string[] = [];
+
+      for (const grantNumber of GRANT_NUMBERS) {
+        try {
+          // Light fetch: project + PI list only
+          const res = await fetch("https://api.reporter.nih.gov/v2/projects/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              criteria: { project_nums: [grantNumber] },
+              include_fields: ["ProjectNum", "PrincipalInvestigators"],
+              offset: 0,
+              limit: 1,
+            }),
+          });
+          if (!res.ok) {
+            errors.push(`${grantNumber}: HTTP ${res.status}`);
+            continue;
+          }
+          const json = await res.json();
+          const project = json?.results?.[0];
+          if (!project) continue;
+
+          const { data: grantRow } = await supabase
+            .from("grants").select("id").eq("grant_number", grantNumber).maybeSingle();
+          if (!grantRow) continue;
+
+          const pis = project.principal_investigators || [];
+          const reporterPis: ReporterPi[] = [];
+          for (const pi of pis) {
+            const piName = (pi.full_name || "").trim();
+            if (!piName) continue;
+            const { data: inv } = await supabase
+              .from("investigators").select("id").ilike("name", piName).maybeSingle();
+            if (!inv) continue; // don't auto-create here; refresh handles that
+            reporterPis.push({
+              investigatorId: inv.id,
+              name: piName,
+              isContactPi: !!pi.is_contact_pi,
+            });
+          }
+          await syncReporterPis(supabase, grantRow.id, grantNumber, reporterPis);
+          synced++;
+          await new Promise((r) => setTimeout(r, 100));
+        } catch (err) {
+          errors.push(`${grantNumber}: ${err instanceof Error ? err.message : "unknown"}`);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, reconciled: synced, errors: errors.length, errorDetails: errors }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
 
     // ACTION: refresh — full pipeline: fetch from NIH APIs, seed all entities
     if (action === "refresh") {
