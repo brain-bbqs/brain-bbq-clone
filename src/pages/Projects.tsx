@@ -16,13 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown, Network, Grid3X3 } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown, Grid3X3 } from "lucide-react";
 import { normalizePiName } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
 import { FundingCharts } from "@/components/projects/FundingCharts";
-import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
@@ -748,10 +747,6 @@ const Projects = () => {
               Table
             </TabsTrigger>
             {/* Explorer tab hidden until feature is ready */}
-            <TabsTrigger value="synergy" className="gap-1.5">
-              <Network className="h-4 w-4" />
-              Cross-Project Synergy
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="table">
@@ -828,17 +823,6 @@ const Projects = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="synergy">
-            <Card className="border-border">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-1">Cross-Project Synergy Network</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Interactive network showing how the 26 BBQS projects relate through shared algorithmic approaches, hardware, data pipelines, and theoretical frameworks. Hover over links for details. Drag nodes to rearrange. Scroll to zoom.
-                </p>
-                <SynergyNetwork />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Hover Detail Card */}
