@@ -197,10 +197,10 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
 
   const openInvestigator = async (name: string) => {
     const { data: inv } = await supabase
-      .from("investigators")
+      .from("investigators_public" as any)
       .select("id, resource_id")
       .ilike("name", `%${name.split(" ").pop()}%`)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string; resource_id: string | null } | null };
     if (inv) {
       open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: name });
     }
