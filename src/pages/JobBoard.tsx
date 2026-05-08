@@ -246,7 +246,6 @@ export default function JobBoard() {
         const { error } = await (supabase as any).from("jobs").insert({
           ...data,
           posted_by: user.id,
-          posted_by_email: user.email,
         });
         if (error) throw error;
       }

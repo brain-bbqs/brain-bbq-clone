@@ -192,7 +192,6 @@ export type Database = {
           link_text: string | null
           organization_id: string | null
           posted_by: string | null
-          posted_by_email: string | null
           resource_id: string | null
           title: string
           updated_at: string
@@ -206,7 +205,6 @@ export type Database = {
           link_text?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title: string
           updated_at?: string
@@ -220,7 +218,6 @@ export type Database = {
           link_text?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title?: string
           updated_at?: string
@@ -783,7 +780,6 @@ export type Database = {
           location: string | null
           organization_id: string | null
           posted_by: string | null
-          posted_by_email: string | null
           resource_id: string | null
           title: string
           updated_at: string
@@ -803,7 +799,6 @@ export type Database = {
           location?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title: string
           updated_at?: string
@@ -823,7 +818,6 @@ export type Database = {
           location?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title?: string
           updated_at?: string
