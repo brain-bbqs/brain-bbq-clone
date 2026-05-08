@@ -373,7 +373,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
   if (invResult.error) throw new Error(invResult.error.message);
 
-  const investigators = invResult.data || [];
+  const investigators = (invResult.data || []) as any[];
   const grants = grantsResult.data || [];
   const grantInvLinks = giResult.data || [];
   const invOrgLinks = ioResult.data || [];
