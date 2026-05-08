@@ -23,7 +23,7 @@ export function OrganizationSummary({ id }: { id: string }) {
         .eq("organization_id", id);
       const invIds = invLinks?.map((i) => i.investigator_id) || [];
       const { data: investigators } = invIds.length
-        ? await supabase.from("investigators").select("id, name, resource_id").in("id", invIds)
+        ? await supabase.from("investigators_public" as any).select("id, name, resource_id").in("id", invIds) as { data: { id: string; name: string; resource_id: string | null }[] | null }
         : { data: [] };
 
       // Get allowed domains for this org

@@ -364,7 +364,7 @@ const ResearchAreasCell = ({ data }: { data: PIRow }) => {
 /* ── Data fetching ── */
 const fetchPIs = async (): Promise<PIRow[]> => {
   const [invResult, grantsResult, giResult, ioResult, orgResult] = await Promise.all([
-    supabase.from("investigators").select("*"),
+    supabase.from("investigators_public" as any).select("*"),
     supabase.from("grants").select("*"),
     supabase.from("grant_investigators").select("*"),
     supabase.from("investigator_organizations").select("investigator_id, organization_id"),
@@ -373,7 +373,7 @@ const fetchPIs = async (): Promise<PIRow[]> => {
 
   if (invResult.error) throw new Error(invResult.error.message);
 
-  const investigators = invResult.data || [];
+  const investigators = (invResult.data || []) as any[];
   const grants = grantsResult.data || [];
   const grantInvLinks = giResult.data || [];
   const invOrgLinks = ioResult.data || [];
