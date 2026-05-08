@@ -316,10 +316,10 @@ export function InvestigatorSummary({ id }: { id: string }) {
     queryKey: ["entity-investigator", id],
     queryFn: async () => {
       const { data: inv, error } = await supabase
-        .from("investigators")
-        .select("*, resource_id, user_id")
+        .from("investigators_public" as any)
+        .select("*")
         .eq("id", id)
-        .single();
+        .single() as { data: any; error: any };
       if (error) throw error;
 
       // Get organizations
@@ -387,11 +387,9 @@ export function InvestigatorSummary({ id }: { id: string }) {
 
   // Can edit if: user owns this investigator (user_id link), email matches (legacy),
   // user is a curator/admin (Tier 1 or Tier 2), OR user shares a grant with this investigator
-  const canEdit =
-    isOwner ||
-    isCurator ||
-    sharesGrant === true ||
-    (user && data?.email && user.email?.toLowerCase() === data.email.toLowerCase());
+  // Editability is determined by ownership / role / shared-grant — email-match
+  // is no longer used (email is no longer fetched into the public summary).
+  const canEdit = isOwner || isCurator || sharesGrant === true;
   // Show claim button if: user is logged in, investigator is unclaimed, and user doesn't own it
   const canClaim = user && !isClaimed && !isOwner && !canEdit;
 
