@@ -409,7 +409,20 @@ export default function Profile() {
                     <p className="text-sm font-medium text-primary hover:underline">{p.title}</p>
                     <p className="text-xs text-muted-foreground">{p.grant_number}</p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">{p.role === "pi" ? "PI" : "Co-PI"}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {(() => {
+                      switch (p.role) {
+                        case "pi":
+                        case "contact_pi": return "PI";
+                        case "co_pi": return "Co-PI";
+                        case "mpi": return "MPI";
+                        case "collaborator": return "Collaborator";
+                        case "trainee": return "Trainee";
+                        case "staff": return "Staff";
+                        default: return p.role || "Member";
+                      }
+                    })()}
+                  </Badge>
                 </button>
               ))}
             </div>
