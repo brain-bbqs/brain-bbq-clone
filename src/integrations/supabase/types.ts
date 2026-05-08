@@ -594,16 +594,19 @@ export type Database = {
           grant_id: string | null
           investigator_id: string
           role: string
+          role_source: string
         }
         Insert: {
           grant_id?: string | null
           investigator_id: string
           role?: string
+          role_source?: string
         }
         Update: {
           grant_id?: string | null
           investigator_id?: string
           role?: string
+          role_source?: string
         }
         Relationships: [
           {

@@ -12,6 +12,18 @@ import { Button } from "@/components/ui/button";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
 import { GrantMarrSection } from "./GrantMarrSection";
 
+const PI_ROLES = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
+
+function roleLabel(role: string | null | undefined): string {
+  switch ((role || "").toLowerCase()) {
+    case "contact_pi": return "Contact PI";
+    case "pi": return "PI";
+    case "co_pi": return "Co-PI";
+    case "mpi": return "MPI";
+    default: return "Co-PI";
+  }
+}
+
 export function GrantSummary({ id }: { id: string }) {
   const { open, close } = useEntitySummary();
   const grantNumberQ = useQuery({
@@ -29,12 +41,18 @@ export function GrantSummary({ id }: { id: string }) {
       const { data: grant, error } = await supabase.from("grants").select("*").eq("id", id).single();
       if (error) throw error;
 
-      // Get investigators
+      // Get investigators — only PI-like roles are shown in the grant
+      // summary's "Investigators" badge row, matching the Projects page
+      // PI column. Staff/trainees added by curators live in the project
+      // profile's team roster instead.
       const { data: invLinks } = await supabase
         .from("grant_investigators")
         .select("investigator_id, role, grant_id")
         .eq("grant_id", id);
-      const invIds = invLinks?.map((i) => i.investigator_id) || [];
+      const piLinks = (invLinks || []).filter((l: any) =>
+        PI_ROLES.has((l.role || "").toLowerCase())
+      );
+      const invIds = piLinks.map((i) => i.investigator_id);
       const { data: investigators } = invIds.length
         ? await supabase.from("investigators").select("id, name, resource_id").in("id", invIds)
         : { data: [] };
@@ -68,7 +86,7 @@ export function GrantSummary({ id }: { id: string }) {
 
       return {
         ...grant,
-        invLinks: invLinks || [],
+        invLinks: piLinks,
         investigators: investigators || [],
         project,
         publications,
@@ -122,7 +140,7 @@ export function GrantSummary({ id }: { id: string }) {
                   className="cursor-pointer hover:bg-accent"
                   onClick={() => open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: inv.name })}
                 >
-                  {inv.name} ({link?.role === "pi" ? "PI" : "Co-PI"})
+                  {inv.name} ({roleLabel(link?.role)})
                 </Badge>
               );
             })}
