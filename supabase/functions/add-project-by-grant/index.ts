@@ -10,6 +10,7 @@
 //   }
 
 import { createClient } from "npm:@supabase/supabase-js@2.39.3";
+import { syncReporterPis, type ReporterPi } from "../_shared/grant-sync.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -254,7 +255,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Investigators + grant_investigators links
+  // Investigators (ensure they exist + are linked to org). Then defer the
+  // grant_investigators link creation to the shared syncReporterPis helper
+  // so behaviour matches the bulk nih-grants refresh exactly.
+  const reporterPis: ReporterPi[] = [];
   for (const pi of reporter.piDetails) {
     const piName = (pi.fullName || "").trim();
     if (!piName) continue;
@@ -284,15 +288,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    const role = pi.isContactPi ? "contact_pi" : "co_pi";
-    const { data: existingGi } = await admin
-      .from("grant_investigators")
-      .select("investigator_id").eq("investigator_id", invId).eq("grant_id", grantRow.id)
-      .maybeSingle();
-    if (!existingGi) {
-      await admin.from("grant_investigators").insert({ investigator_id: invId, grant_id: grantRow.id, role });
-    }
+    reporterPis.push({
+      investigatorId: invId,
+      name: piName,
+      isContactPi: !!pi.isContactPi,
+    });
   }
+  await syncReporterPis(admin, grantRow.id, grantNumber, reporterPis);
 
   // Project row
   await admin.from("projects").insert({
