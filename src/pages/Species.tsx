@@ -188,22 +188,7 @@ export default function Species() {
           <p className="text-muted-foreground mb-4">
             Overview of species studied across BBQS consortium projects and the behaviors being investigated.
           </p>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
-              <button
-                onClick={() => setView("table")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <Table className="h-4 w-4" /> Table
-              </button>
-              <button
-                onClick={() => setView("heatmap")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === "heatmap" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <Grid3X3 className="h-4 w-4" /> Explorer
-              </button>
-            </div>
-          </div>
+          {/* Explorer tab hidden */}
           {view === "table" && (
           <div className="flex items-center gap-4 mb-4">
             <input
