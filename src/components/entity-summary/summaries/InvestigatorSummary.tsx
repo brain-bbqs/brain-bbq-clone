@@ -648,7 +648,18 @@ export function InvestigatorSummary({ id }: { id: string }) {
                   onClick={() => open({ type: "grant", id: g.id, resourceId: g.resource_id || undefined, label: g.grant_number })}
                 >
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{link?.role === "pi" ? "PI" : "Co-PI"}</Badge>
+                    {canEdit ? (
+                      <EditableGrantRole
+                        grantId={g.id}
+                        investigatorId={id}
+                        role={link?.role || "co_pi"}
+                        onChanged={() => queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] })}
+                      />
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        {link?.role === "pi" ? "PI" : link?.role === "co_pi" ? "Co-PI" : (link?.role || "Co-PI")}
+                      </Badge>
+                    )}
                     <span className="font-mono text-xs text-muted-foreground">{g.grant_number}</span>
                   </div>
                   <p className="text-sm font-medium mt-1 line-clamp-2">{g.title}</p>
