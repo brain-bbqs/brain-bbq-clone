@@ -477,8 +477,12 @@ Deno.serve(async (req) => {
     const pubResults = await Promise.all(pubPromises);
     const grantPubMap = new Map(pubResults.map(r => [r.grantNumber, r.publications]));
 
+    // Only roles considered PIs for the Projects page PI column.
+    const PI_ROLES = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
+
     const results = grants.map(g => {
-      const gis = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
+      const gisAll = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
+      const gis = gisAll.filter(gi => PI_ROLES.has((gi.role || "").toLowerCase()));
       const piDetails = gis.map(gi => {
         const inv = invMap.get(gi.investigator_id);
         return {
@@ -494,7 +498,7 @@ Deno.serve(async (req) => {
       const allPiNames = piDetails.map(pi => pi.fullName).join(", ");
 
       let institution = "Unknown";
-      const contactPiGi = gis.find(gi => gi.role === "contact_pi") || gis[0];
+      const contactPiGi = gisAll.find(gi => gi.role === "contact_pi") || gis[0] || gisAll[0];
       if (contactPiGi) {
         const piOrgIds = invOrgMap.get(contactPiGi.investigator_id) || [];
         if (piOrgIds.length > 0) {
