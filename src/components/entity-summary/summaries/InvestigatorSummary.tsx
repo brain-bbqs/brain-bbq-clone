@@ -255,6 +255,55 @@ function calcCompleteness(data: any): number {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
+// Editable role select for a single grant_investigators row
+function EditableGrantRole({
+  grantId,
+  investigatorId,
+  role,
+  onChanged,
+}: {
+  grantId: string;
+  investigatorId: string;
+  role: string;
+  onChanged: () => void;
+}) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const update = async (next: string) => {
+    if (next === role) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("grant_investigators")
+      .update({ role: next })
+      .eq("grant_id", grantId)
+      .eq("investigator_id", investigatorId);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Could not update role", description: error.message, variant: "destructive" });
+    } else {
+      onChanged();
+      toast({ title: "Role updated" });
+    }
+  };
+
+  return (
+    <select
+      value={role}
+      disabled={saving}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => { e.stopPropagation(); update(e.target.value); }}
+      className="text-[11px] bg-background border border-border rounded px-1.5 py-0.5 outline-none focus:border-primary/50"
+    >
+      <option value="pi">PI</option>
+      <option value="co_pi">Co-PI</option>
+      <option value="collaborator">Collaborator</option>
+      <option value="trainee">Trainee</option>
+      <option value="staff">Staff</option>
+    </select>
+  );
+}
+
 export function InvestigatorSummary({ id }: { id: string }) {
   const { open } = useEntitySummary();
   const { user } = useAuth();
