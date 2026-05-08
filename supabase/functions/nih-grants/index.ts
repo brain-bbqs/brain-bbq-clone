@@ -327,11 +327,14 @@ async function seedGrantEntities(supabase: any, grantNumber: string, projectData
       }
     }
 
-    // Link investigator to grant
+    // Link investigator to grant. RePORTER is the canonical source for PI
+    // status, so we always upsert the PI role here. Curator-added non-PI
+    // team members (staff/trainee/etc) for people NOT on RePORTER are left
+    // untouched by this loop.
     const role = pi.isContactPi ? "contact_pi" : "co_pi";
     const { data: existingGi } = await supabase
       .from("grant_investigators")
-      .select("investigator_id")
+      .select("role")
       .eq("investigator_id", invId)
       .eq("grant_id", grantId)
       .maybeSingle();
@@ -340,6 +343,19 @@ async function seedGrantEntities(supabase: any, grantNumber: string, projectData
       await supabase
         .from("grant_investigators")
         .insert({ investigator_id: invId, grant_id: grantId, role });
+      console.log(`Linked PI ${piName} -> grant ${grantNumber} as ${role}`);
+    } else if (existingGi.role !== role) {
+      // Ensure RePORTER PIs are tagged as PIs even if a prior curation
+      // demoted them. Promote co_pi -> contact_pi when applicable.
+      const PI_LIKE = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
+      if (!PI_LIKE.has(existingGi.role) || pi.isContactPi) {
+        await supabase
+          .from("grant_investigators")
+          .update({ role })
+          .eq("investigator_id", invId)
+          .eq("grant_id", grantId);
+        console.log(`Updated ${piName} role on ${grantNumber} -> ${role}`);
+      }
     }
   }
 
