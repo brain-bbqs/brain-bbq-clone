@@ -340,6 +340,7 @@ const Projects = () => {
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("q") || "";
   const [quickFilterText, setQuickFilterText] = useState(initialFilter);
+  const [projectsTab, setProjectsTab] = useHashState<"table">("table", ["table"] as const);
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
