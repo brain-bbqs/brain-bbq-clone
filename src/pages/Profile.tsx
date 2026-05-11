@@ -220,6 +220,17 @@ export default function Profile() {
     },
   });
 
+  // Deep-link: scroll to #section once the page is rendered
+  useEffect(() => {
+    if (!user) return;
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id) return;
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [user, editableProjects.length, editHistory.length]);
+
   // Loading state
   if (authLoading) {
     return (
