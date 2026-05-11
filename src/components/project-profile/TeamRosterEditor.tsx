@@ -97,7 +97,6 @@ export function TeamRosterEditor({ grantId, canEdit }: Props) {
                   >
                     <span>
                       <span className="font-medium">{r.name}</span>
-                      {r.email && <span className="text-muted-foreground ml-2 text-xs">{r.email}</span>}
                     </span>
                     <UserPlus className="h-3.5 w-3.5 text-primary" />
                   </button>
