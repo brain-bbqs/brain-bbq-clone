@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
+import { useHashState } from "@/hooks/useHashState";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
@@ -740,7 +741,7 @@ const Projects = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="table" className="w-full">
+        <Tabs value={projectsTab} onValueChange={(v) => setProjectsTab(v as "table")} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="table" className="gap-1.5">
               <FolderOpen className="h-4 w-4" />
