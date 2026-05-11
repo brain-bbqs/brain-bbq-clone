@@ -192,7 +192,6 @@ export type Database = {
           link_text: string | null
           organization_id: string | null
           posted_by: string | null
-          posted_by_email: string | null
           resource_id: string | null
           title: string
           updated_at: string
@@ -206,7 +205,6 @@ export type Database = {
           link_text?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title: string
           updated_at?: string
@@ -220,7 +218,6 @@ export type Database = {
           link_text?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title?: string
           updated_at?: string
@@ -275,7 +272,6 @@ export type Database = {
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]
-          actor_email: string | null
           actor_id: string | null
           after_value: Json | null
           before_value: Json | null
@@ -296,7 +292,6 @@ export type Database = {
         }
         Insert: {
           action: Database["public"]["Enums"]["curation_action"]
-          actor_email?: string | null
           actor_id?: string | null
           after_value?: Json | null
           before_value?: Json | null
@@ -317,7 +312,6 @@ export type Database = {
         }
         Update: {
           action?: Database["public"]["Enums"]["curation_action"]
-          actor_email?: string | null
           actor_id?: string | null
           after_value?: Json | null
           before_value?: Json | null
@@ -451,7 +445,7 @@ export type Database = {
           organization_id: string | null
           status: string
           submitted_by: string | null
-          submitted_by_email: string | null
+          submitter_name: string | null
           title: string
           updated_at: string
           votes: number
@@ -465,7 +459,7 @@ export type Database = {
           organization_id?: string | null
           status?: string
           submitted_by?: string | null
-          submitted_by_email?: string | null
+          submitter_name?: string | null
           title: string
           updated_at?: string
           votes?: number
@@ -479,7 +473,7 @@ export type Database = {
           organization_id?: string | null
           status?: string
           submitted_by?: string | null
-          submitted_by_email?: string | null
+          submitter_name?: string | null
           title?: string
           updated_at?: string
           votes?: number
@@ -594,16 +588,19 @@ export type Database = {
           grant_id: string | null
           investigator_id: string
           role: string
+          role_source: string
         }
         Insert: {
           grant_id?: string | null
           investigator_id: string
           role?: string
+          role_source?: string
         }
         Update: {
           grant_id?: string | null
           investigator_id?: string
           role?: string
+          role_source?: string
         }
         Relationships: [
           {
@@ -618,6 +615,13 @@ export type Database = {
             columns: ["investigator_id"]
             isOneToOne: false
             referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators_public"
             referencedColumns: ["id"]
           },
         ]
@@ -688,6 +692,13 @@ export type Database = {
             columns: ["investigator_id"]
             isOneToOne: false
             referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigator_organizations_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators_public"
             referencedColumns: ["id"]
           },
           {
@@ -780,7 +791,6 @@ export type Database = {
           location: string | null
           organization_id: string | null
           posted_by: string | null
-          posted_by_email: string | null
           resource_id: string | null
           title: string
           updated_at: string
@@ -800,7 +810,6 @@ export type Database = {
           location?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title: string
           updated_at?: string
@@ -820,7 +829,6 @@ export type Database = {
           location?: string | null
           organization_id?: string | null
           posted_by?: string | null
-          posted_by_email?: string | null
           resource_id?: string | null
           title?: string
           updated_at?: string
@@ -1456,6 +1464,65 @@ export type Database = {
       }
     }
     Views: {
+      investigators_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          orcid: string | null
+          pending_role: Database["public"]["Enums"]["app_role"] | null
+          profile_url: string | null
+          research_areas: string[] | null
+          resource_id: string | null
+          role: string | null
+          scholar_id: string | null
+          skills: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          working_groups: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          orcid?: string | null
+          pending_role?: Database["public"]["Enums"]["app_role"] | null
+          profile_url?: string | null
+          research_areas?: string[] | null
+          resource_id?: string | null
+          role?: string | null
+          scholar_id?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          working_groups?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          orcid?: string | null
+          pending_role?: Database["public"]["Enums"]["app_role"] | null
+          profile_url?: string | null
+          research_areas?: string[] | null
+          resource_id?: string | null
+          role?: string | null
+          scholar_id?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          working_groups?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigators_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_jobs: {
         Row: {
           application_url: string | null

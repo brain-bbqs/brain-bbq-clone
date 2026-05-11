@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -220,6 +220,17 @@ export default function Profile() {
     },
   });
 
+  // Deep-link: scroll to #section once the page is rendered
+  useEffect(() => {
+    if (!user) return;
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id) return;
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [user, editableProjects.length, editHistory.length]);
+
   // Loading state
   if (authLoading) {
     return (
@@ -280,7 +291,7 @@ export default function Profile() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Profile header */}
-      <Card>
+      <Card id="overview" className="scroll-mt-20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -360,7 +371,7 @@ export default function Profile() {
 
       {/* Skills & Research Areas */}
       {linkedInvestigator && (
-        <Card>
+        <Card id="skills" className="scroll-mt-20">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Tag className="h-4 w-4" />
@@ -385,7 +396,7 @@ export default function Profile() {
       )}
 
       {/* Editable projects */}
-      <Card>
+      <Card id="projects" className="scroll-mt-20">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <FolderOpen className="h-4 w-4" />
@@ -409,7 +420,20 @@ export default function Profile() {
                     <p className="text-sm font-medium text-primary hover:underline">{p.title}</p>
                     <p className="text-xs text-muted-foreground">{p.grant_number}</p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">{p.role === "pi" ? "PI" : "Co-PI"}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {(() => {
+                      switch (p.role) {
+                        case "pi":
+                        case "contact_pi": return "PI";
+                        case "co_pi": return "Co-PI";
+                        case "mpi": return "MPI";
+                        case "collaborator": return "Collaborator";
+                        case "trainee": return "Trainee";
+                        case "staff": return "Staff";
+                        default: return p.role || "Member";
+                      }
+                    })()}
+                  </Badge>
                 </button>
               ))}
             </div>
@@ -418,7 +442,7 @@ export default function Profile() {
       </Card>
 
       {/* Edit history / data provenance */}
-      <Card>
+      <Card id="edits" className="scroll-mt-20">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <History className="h-4 w-4" />

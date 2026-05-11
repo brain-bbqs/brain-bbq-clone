@@ -20,7 +20,7 @@ interface Suggestion {
   id: string;
   title: string;
   description: string | null;
-  submitted_by_email: string | null;
+  submitter_name: string | null;
   github_issue_number: number | null;
   github_issue_url: string | null;
   status: string;
@@ -81,7 +81,10 @@ export default function FeatureSuggestions() {
         title: title.trim(),
         description: description.trim() || null,
         submitted_by: user?.id || null,
-        submitted_by_email: user?.email || null,
+        submitter_name:
+          (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+          user?.email?.split("@")[0] ||
+          null,
         github_issue_number: ghData?.issue?.number || null,
         github_issue_url: ghData?.issue?.url || null,
       });
@@ -179,7 +182,7 @@ export default function FeatureSuggestions() {
     },
     {
       headerName: "By",
-      field: "submitted_by_email",
+      field: "submitter_name",
       flex: 1,
       sortable: true,
       unSortIcon: true,

@@ -43,13 +43,11 @@ export interface NavGroup {
 const mainItems: NavItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "About", url: "/about", icon: Info },
-  { title: "Tutorials", url: "/tutorials", icon: BookOpen },
   { title: "My Profile", url: "/profile", icon: Users, authRequired: true },
 ];
 
 const toolsItems: NavItem[] = [
   { title: "Resources", url: "/resources", icon: Database },
-  { title: "State Privacy Map", url: "/state-privacy", icon: Shield },
 ];
 
 const knowledgeBaseItems: NavItem[] = [

@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
+import { useHashState } from "@/hooks/useHashState";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
@@ -16,13 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown, Network, Grid3X3 } from "lucide-react";
+import { ExternalLink, Download, Loader2, RefreshCw, FileText, DollarSign, FolderOpen, Users, FileDown } from "lucide-react";
 import { normalizePiName } from "@/lib/pi-utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAuthors } from "@/components/projects/PublicationsGrid";
 import { FundingCharts } from "@/components/projects/FundingCharts";
-import { SynergyNetwork } from "@/components/diagrams/SynergyNetwork";
 import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
@@ -197,10 +197,10 @@ const PiCell = ({ data }: { value: string; data: ProjectRow }) => {
 
   const openInvestigator = async (name: string) => {
     const { data: inv } = await supabase
-      .from("investigators")
+      .from("investigators_public" as any)
       .select("id, resource_id")
       .ilike("name", `%${name.split(" ").pop()}%`)
-      .maybeSingle();
+      .maybeSingle() as { data: { id: string; resource_id: string | null } | null };
     if (inv) {
       open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: name });
     }
@@ -340,6 +340,7 @@ const Projects = () => {
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("q") || "";
   const [quickFilterText, setQuickFilterText] = useState(initialFilter);
+  const [projectsTab, setProjectsTab] = useHashState<"table">("table", ["table"] as const);
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
@@ -741,17 +742,13 @@ const Projects = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="table" className="w-full">
+        <Tabs value={projectsTab} onValueChange={(v) => setProjectsTab(v as "table")} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="table" className="gap-1.5">
               <FolderOpen className="h-4 w-4" />
               Table
             </TabsTrigger>
             {/* Explorer tab hidden until feature is ready */}
-            <TabsTrigger value="synergy" className="gap-1.5">
-              <Network className="h-4 w-4" />
-              Cross-Project Synergy
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="table">
@@ -828,17 +825,6 @@ const Projects = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="synergy">
-            <Card className="border-border">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-1">Cross-Project Synergy Network</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Interactive network showing how the 26 BBQS projects relate through shared algorithmic approaches, hardware, data pipelines, and theoretical frameworks. Hover over links for details. Drag nodes to rearrange. Scroll to zoom.
-                </p>
-                <SynergyNetwork />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Hover Detail Card */}

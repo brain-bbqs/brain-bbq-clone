@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Save, RotateCcw, Loader2, FileText } from "lucide-react";
@@ -23,6 +23,25 @@ export default function ProjectProfile() {
   const queryClient = useQueryClient();
   const [changes, setChanges] = useState<Record<string, any>>({});
   const [isCommitting, setIsCommitting] = useState(false);
+
+  // Read URL hash for deep-linking to a specific questionnaire section
+  const [hashSection, setHashSection] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : ""
+  );
+  useEffect(() => {
+    const onHash = () => setHashSection(window.location.hash.replace(/^#/, ""));
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  // After data renders, scroll to the targeted section once
+  useEffect(() => {
+    if (!hashSection) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(hashSection);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [hashSection]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["project-profile", grantNumber],
@@ -92,7 +111,7 @@ export default function ProjectProfile() {
       const row: Record<string, any> = {
         grant_number: data.grant.grant_number,
         grant_id: data.grant.id,
-        last_edited_by: user?.email || "unknown",
+        last_edited_by: user?.id ?? null,
         metadata_completeness: completeness,
         ...topLevel,
       };
@@ -210,7 +229,7 @@ export default function ProjectProfile() {
               onSave={setFieldValue}
               changedKeys={changedKeys}
               pendingKeys={pendingKeys}
-              defaultOpen={idx < 2}
+              defaultOpen={hashSection === section.id || idx < 2}
             />
           ))}
         </div>
