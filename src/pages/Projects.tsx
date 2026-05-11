@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
+import { useHashState } from "@/hooks/useHashState";
 import { AgGridReact } from "ag-grid-react";
 import type { ColDef, CellMouseOverEvent, CellMouseOutEvent } from "ag-grid-community";
 import { useQuery } from "@tanstack/react-query";
@@ -339,6 +340,7 @@ const Projects = () => {
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("q") || "";
   const [quickFilterText, setQuickFilterText] = useState(initialFilter);
+  const [projectsTab, setProjectsTab] = useHashState<"table">("table", ["table"] as const);
   const [hoveredRow, setHoveredRow] = useState<ProjectRow | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
@@ -740,7 +742,7 @@ const Projects = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="table" className="w-full">
+        <Tabs value={projectsTab} onValueChange={(v) => setProjectsTab(v as "table")} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="table" className="gap-1.5">
               <FolderOpen className="h-4 w-4" />
