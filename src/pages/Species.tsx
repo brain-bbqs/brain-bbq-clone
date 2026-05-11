@@ -107,7 +107,7 @@ const BehaviorBadges = ({ data }: { value: any; data: SpeciesRow }) => {
 export default function Species() {
   const { projects, loading } = useMarrYaml();
   const [quickFilterText, setQuickFilterText] = useState("");
-  const [view, setView] = useHashState<"table" | "heatmap">("table", ["table", "heatmap"] as const);
+  const [view] = useHashState<"table" | "heatmap">("table", ["table", "heatmap"] as const);
 
   const rows: SpeciesRow[] = useMemo(() => {
     const grouped = new Map<string, { commonName: string; projects: ProjectInfo[]; behaviors: Set<string>; color: string }>();
