@@ -32,7 +32,7 @@ export function QuestionnaireSection({
   }).length;
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div id={section.id} className="bg-card border border-border rounded-xl overflow-hidden scroll-mt-20">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors text-left"
