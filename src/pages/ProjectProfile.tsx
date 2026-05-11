@@ -111,7 +111,7 @@ export default function ProjectProfile() {
       const row: Record<string, any> = {
         grant_number: data.grant.grant_number,
         grant_id: data.grant.id,
-        last_edited_by: user?.email || "unknown",
+        last_edited_by: user?.id ?? null,
         metadata_completeness: completeness,
         ...topLevel,
       };
