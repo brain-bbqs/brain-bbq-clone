@@ -39,7 +39,6 @@ export async function recordCurationAudit(input: AuditWriteInput): Promise<strin
       .insert({
         ...input,
         actor_id: user.id,
-        actor_email: user.email ?? null,
         source: input.source ?? "manual",
       })
       .select("id")

@@ -272,7 +272,6 @@ export type Database = {
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]
-          actor_email: string | null
           actor_id: string | null
           after_value: Json | null
           before_value: Json | null
@@ -293,7 +292,6 @@ export type Database = {
         }
         Insert: {
           action: Database["public"]["Enums"]["curation_action"]
-          actor_email?: string | null
           actor_id?: string | null
           after_value?: Json | null
           before_value?: Json | null
@@ -314,7 +312,6 @@ export type Database = {
         }
         Update: {
           action?: Database["public"]["Enums"]["curation_action"]
-          actor_email?: string | null
           actor_id?: string | null
           after_value?: Json | null
           before_value?: Json | null
