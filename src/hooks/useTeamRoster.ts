@@ -32,11 +32,22 @@ export function useTeamRoster(grantId: string | null) {
       if (!links?.length) return [];
 
       const ids = links.map((l) => l.investigator_id);
-      const { data: invs, error: invErr } = await supabase
-        .from("investigators")
-        .select("id, name, email, resource_id")
-        .in("id", ids);
+      // Names/resource_id come from the PII-free public view (visible to any
+      // authenticated user). Emails are pulled from the restricted base table
+      // and will only return rows the viewer is allowed to see (curator/admin,
+      // self, or grant-mate) — others simply won't have an email shown.
+      const [{ data: invs, error: invErr }, { data: emails }] = await Promise.all([
+        supabase
+          .from("investigators_public" as any)
+          .select("id, name, resource_id")
+          .in("id", ids) as unknown as Promise<{ data: { id: string; name: string; resource_id: string | null }[] | null; error: any }>,
+        supabase
+          .from("investigators")
+          .select("id, email")
+          .in("id", ids) as unknown as Promise<{ data: { id: string; email: string | null }[] | null }>,
+      ]);
       if (invErr) throw invErr;
+      const emailById = new Map((emails || []).map((e) => [e.id, e.email]));
 
       return links.map((l) => {
         const inv = invs?.find((i) => i.id === l.investigator_id);
@@ -45,7 +56,7 @@ export function useTeamRoster(grantId: string | null) {
           grant_id: l.grant_id || grantId!,
           role: l.role,
           name: inv?.name || "Unknown",
-          email: inv?.email || null,
+          email: emailById.get(l.investigator_id) ?? null,
           resource_id: inv?.resource_id || null,
         };
       });
@@ -195,10 +206,10 @@ export function useInvestigatorSearch(query: string) {
     enabled: query.trim().length >= 2,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("investigators")
-        .select("id, name, email")
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
-        .limit(10);
+        .from("investigators_public" as any)
+        .select("id, name")
+        .ilike("name", `%${query}%`)
+        .limit(10) as unknown as { data: { id: string; name: string }[] | null; error: any };
       if (error) throw error;
       return data || [];
     },
