@@ -84,7 +84,7 @@ const CrossSpeciesSynchronization = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight">
               Cross-Species <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Synchronization</span>
             </h1>
-            <p className="mt-5 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-5 text-lg text-foreground/85 max-w-2xl mx-auto leading-relaxed font-medium [text-shadow:0_1px_2px_hsl(var(--background)/0.9)]">
               Toward a shared language for brains and behavior — uniting flies, fish, rodents, primates, and humans
               through quantification, synchronization, and open computational tools.
             </p>
