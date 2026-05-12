@@ -6,6 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
+import heroBg from "@/assets/cross-species-hero-bg.jpg";
+import speciesSpectrum from "@/assets/cross-species-spectrum.jpg";
+import synergyImage from "@/assets/cross-project-synergy.jpg";
 
 type AgendaRow = [string, string, string, string];
 
@@ -57,13 +60,21 @@ const CrossSpeciesSynchronization = () => {
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-background" />
           <div
-            className="absolute inset-0 opacity-[0.07] pointer-events-none"
+            className="absolute inset-0 opacity-40 pointer-events-none animate-[heroDrift_40s_ease-in-out_infinite]"
             style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 30%, hsl(var(--primary)) 1px, transparent 1.5px), radial-gradient(circle at 70% 60%, hsl(var(--accent)) 1px, transparent 1.5px), radial-gradient(circle at 45% 80%, hsl(var(--primary)) 1px, transparent 1.5px)",
-              backgroundSize: "120px 120px, 90px 90px, 150px 150px",
+              backgroundImage: `url(${heroBg})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             }}
+            aria-hidden="true"
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background pointer-events-none" />
+          <style>{`
+            @keyframes heroDrift {
+              0%, 100% { transform: scale(1.05) translate3d(0,0,0); }
+              50% { transform: scale(1.12) translate3d(-2%, -1%, 0); }
+            }
+          `}</style>
           <div className="relative max-w-5xl mx-auto px-6 py-16 text-center">
             <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-24 w-24 mb-6 mx-auto rounded-full shadow-lg" />
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -100,6 +111,26 @@ const CrossSpeciesSynchronization = () => {
 
         {/* Content */}
         <div className="max-w-5xl mx-auto px-6 py-12 space-y-6">
+          {/* Species Spectrum visual */}
+          <Card className="overflow-hidden border-primary/20">
+            <div className="relative bg-[hsl(var(--background))]">
+              <img
+                src={speciesSpectrum}
+                alt="Species spectrum — fly, fish, mouse, macaque, human connected by neural waveforms"
+                width={1920}
+                height={1080}
+                loading="lazy"
+                className="w-full h-auto block"
+              />
+            </div>
+            <CardContent className="pt-5 text-center">
+              <p className="text-sm text-muted-foreground italic max-w-2xl mx-auto">
+                From a fly's escape to a human's conversation — different bodies, shared signals.
+                Cross-species synchronization is the search for the principles that hold across them all.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Theme */}
           <Card className="border-primary/20">
             <CardHeader>
@@ -134,6 +165,38 @@ const CrossSpeciesSynchronization = () => {
                 />
               </div>
             </CardContent>
+          </Card>
+
+          {/* Cross-project synergy */}
+          <Card className="overflow-hidden">
+            <div className="grid md:grid-cols-5 gap-0">
+              <div className="md:col-span-2 bg-muted/30 flex items-center justify-center p-6">
+                <img
+                  src={synergyImage}
+                  alt="Abstract network of connected nodes representing cross-project synergy"
+                  width={1024}
+                  height={1024}
+                  loading="lazy"
+                  className="w-full h-auto max-w-xs"
+                />
+              </div>
+              <div className="md:col-span-3 p-6 md:p-8 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Network className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold text-foreground">Cross-Project Synergy</h2>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  No single project sees the whole picture. The BBQS Consortium is a network — methods
+                  developed for one species feed pipelines used by another; benchmarks built for one task
+                  reshape how a different team frames theirs.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  This event exists to make those connections visible: pairing experimentalists with
+                  theorists, data with models, and individual deliverables with the shared infrastructure
+                  that lets the whole consortium move forward together.
+                </p>
+              </div>
+            </div>
           </Card>
 
           {/* About */}
