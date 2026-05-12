@@ -1,0 +1,1 @@
+GRANT SELECT ON public.investigators_public TO anon;
