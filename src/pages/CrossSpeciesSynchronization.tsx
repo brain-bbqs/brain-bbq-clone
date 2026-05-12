@@ -6,6 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
+import heroBg from "@/assets/cross-species-hero-bg.jpg";
+import heroVideo from "@/assets/cross-species-hero.mp4.asset.json";
+import speciesSpectrum from "@/assets/cross-species-spectrum.jpg";
+import synergyImage from "@/assets/cross-project-synergy.jpg";
 
 type AgendaRow = [string, string, string, string];
 
@@ -56,14 +60,17 @@ const CrossSpeciesSynchronization = () => {
         {/* Themed hero */}
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-background" />
-          <div
-            className="absolute inset-0 opacity-[0.07] pointer-events-none"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 30%, hsl(var(--primary)) 1px, transparent 1.5px), radial-gradient(circle at 70% 60%, hsl(var(--accent)) 1px, transparent 1.5px), radial-gradient(circle at 45% 80%, hsl(var(--primary)) 1px, transparent 1.5px)",
-              backgroundSize: "120px 120px, 90px 90px, 150px 150px",
-            }}
+          <video
+            src={heroVideo.url}
+            poster={heroBg}
+            autoPlay
+            loop
+            muted
+            playsInline
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background pointer-events-none" />
           <div className="relative max-w-5xl mx-auto px-6 py-16 text-center">
             <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-24 w-24 mb-6 mx-auto rounded-full shadow-lg" />
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -77,7 +84,7 @@ const CrossSpeciesSynchronization = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight">
               Cross-Species <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Synchronization</span>
             </h1>
-            <p className="mt-5 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-5 text-lg text-foreground/85 max-w-2xl mx-auto leading-relaxed font-medium [text-shadow:0_1px_2px_hsl(var(--background)/0.9)]">
               Toward a shared language for brains and behavior — uniting flies, fish, rodents, primates, and humans
               through quantification, synchronization, and open computational tools.
             </p>
@@ -100,6 +107,26 @@ const CrossSpeciesSynchronization = () => {
 
         {/* Content */}
         <div className="max-w-5xl mx-auto px-6 py-12 space-y-6">
+          {/* Species Spectrum visual */}
+          <Card className="overflow-hidden border-primary/20">
+            <div className="relative bg-[hsl(var(--background))]">
+              <img
+                src={speciesSpectrum}
+                alt="Species spectrum — fly, fish, mouse, macaque, human connected by neural waveforms"
+                width={1920}
+                height={1080}
+                loading="lazy"
+                className="w-full h-auto block"
+              />
+            </div>
+            <CardContent className="pt-5 text-center">
+              <p className="text-sm text-muted-foreground italic max-w-2xl mx-auto">
+                From a fly's escape to a human's conversation — different bodies, shared signals.
+                Cross-species synchronization is the search for the principles that hold across them all.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Theme */}
           <Card className="border-primary/20">
             <CardHeader>
@@ -134,6 +161,38 @@ const CrossSpeciesSynchronization = () => {
                 />
               </div>
             </CardContent>
+          </Card>
+
+          {/* Cross-project synergy */}
+          <Card className="overflow-hidden">
+            <div className="grid md:grid-cols-5 gap-0">
+              <div className="md:col-span-2 bg-muted/30 flex items-center justify-center p-6">
+                <img
+                  src={synergyImage}
+                  alt="Abstract network of connected nodes representing cross-project synergy"
+                  width={1024}
+                  height={1024}
+                  loading="lazy"
+                  className="w-full h-auto max-w-xs"
+                />
+              </div>
+              <div className="md:col-span-3 p-6 md:p-8 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Network className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold text-foreground">Cross-Project Synergy</h2>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  No single project sees the whole picture. The BBQS Consortium is a network — methods
+                  developed for one species feed pipelines used by another; benchmarks built for one task
+                  reshape how a different team frames theirs.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  This event exists to make those connections visible: pairing experimentalists with
+                  theorists, data with models, and individual deliverables with the shared infrastructure
+                  that lets the whole consortium move forward together.
+                </p>
+              </div>
+            </div>
           </Card>
 
           {/* About */}
@@ -185,23 +244,27 @@ const CrossSpeciesSynchronization = () => {
           </Card>
 
           {/* Agenda */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Clock className="h-5 w-5 text-primary" />
-                Agenda
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
-                <span className="font-semibold">Note:</span>{" "}
-                <span className="text-muted-foreground">
-                  Draft, working agenda — sessions will evolve as the event approaches and as community input shapes the program.
-                </span>
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-md">
+                  <Clock className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-primary font-semibold">Three days at MIT</p>
+                  <CardTitle className="text-2xl">Program Agenda</CardTitle>
+                </div>
               </div>
-              <AgendaDay title="Day 1 — Wednesday, July 15, 2026" rows={day1} />
-              <AgendaDay title="Day 2 — Thursday, July 16, 2026" rows={day2} />
-              <AgendaDay title="Day 3 — Friday, July 17, 2026" rows={day3} />
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground italic">
+                <span className="font-semibold not-italic">Draft agenda</span>{" "}
+                <span className="text-muted-foreground">— sessions will evolve as the event approaches and as community input shapes the program.</span>
+              </div>
+              <AgendaDay dayLabel="Day 01" date="Wed · Jul 15, 2026" subtitle="Convene & Connect" rows={day1} />
+              <AgendaDay dayLabel="Day 02" date="Thu · Jul 16, 2026" subtitle="Build & Hack" rows={day2} />
+              <AgendaDay dayLabel="Day 03" date="Fri · Jul 17, 2026" subtitle="Synthesize & Send Off" rows={day3} />
             </CardContent>
           </Card>
 
@@ -267,32 +330,58 @@ function ThemePillar({ icon, title, body }: { icon: React.ReactNode; title: stri
   );
 }
 
-function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
+function AgendaDay({
+  dayLabel,
+  date,
+  subtitle,
+  rows,
+}: {
+  dayLabel: string;
+  date: string;
+  subtitle: string;
+  rows: AgendaRow[];
+}) {
   return (
-    <div>
-      <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-foreground">
-            <tr>
-              <th className="text-left font-semibold px-3 py-2 w-[80px]">Start</th>
-              <th className="text-left font-semibold px-3 py-2 w-[80px]">End</th>
-              <th className="text-left font-semibold px-3 py-2">Session</th>
-              <th className="text-left font-semibold px-3 py-2 w-[200px]">Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(([start, end, session, location], i) => (
-              <tr key={i} className="border-t border-border align-top">
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{start}</td>
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{end}</td>
-                <td className="px-3 py-2 text-foreground">{session}</td>
-                <td className="px-3 py-2 text-muted-foreground">{location}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="relative">
+      {/* Day banner */}
+      <div className="relative mb-5 overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-accent/5 to-transparent px-5 py-4">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl" aria-hidden="true" />
+        <div className="relative flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="text-xs font-bold uppercase tracking-[0.22em] text-primary">{dayLabel}</span>
+          <span className="text-base font-semibold text-foreground">{date}</span>
+          <span className="text-sm italic text-muted-foreground">{subtitle}</span>
+        </div>
       </div>
+
+      {/* Timeline */}
+      <ol className="relative space-y-3 border-l-2 border-dashed border-primary/20 pl-5 ml-2">
+        {rows.map(([start, end, session, location], i) => (
+          <li key={i} className="group relative">
+            {/* Dot */}
+            <span
+              className="absolute -left-[27px] top-4 h-3 w-3 rounded-full bg-gradient-to-br from-primary to-accent ring-4 ring-background shadow"
+              aria-hidden="true"
+            />
+            <div className="rounded-xl border border-border bg-card/80 backdrop-blur-sm px-4 py-3 shadow-sm hover:shadow-md hover:border-primary/30 transition-shadow">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                {/* Time chip */}
+                <div className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/15 px-2.5 py-1 text-xs font-mono font-semibold text-foreground tabular-nums w-fit">
+                  <Clock className="h-3 w-3 text-primary" />
+                  {start}<span className="text-muted-foreground">—</span>{end}
+                </div>
+                {/* Body */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground leading-relaxed">{session}</p>
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    {location}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
