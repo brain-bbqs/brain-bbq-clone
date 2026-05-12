@@ -62,15 +62,30 @@ jobs:
             curl -sf http://localhost:8080 > /dev/null && break || sleep 2
           done
 
-      - name: Generate baseline snapshots if missing
-        run: npx playwright test --project=chromium --update-snapshots
+      # Run non-visual specs first — these MUST pass on every PR.
+      # (api-health, data-integrity, console-errors, navigation, smoke)
+      - name: Run functional & API health tests
+        run: npx playwright test --project=chromium --ignore-snapshots
+          e2e/api-health.spec.ts
+          e2e/data-integrity.spec.ts
+          e2e/console-errors.spec.ts
+          e2e/navigation.spec.ts
+          e2e/smoke.spec.ts
         env:
           BASE_URL: http://localhost:8080
           CI: true
           CI_AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
 
-      - name: Run Playwright tests
-        run: npx playwright test --project=chromium
+      # Visual regression — auto-create baselines on first run, then enforce.
+      - name: Generate visual baselines if missing
+        run: npx playwright test --project=chromium e2e/visual-regression.spec.ts --update-snapshots
+        env:
+          BASE_URL: http://localhost:8080
+          CI: true
+          CI_AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+
+      - name: Run visual regression tests
+        run: npx playwright test --project=chromium e2e/visual-regression.spec.ts
         env:
           BASE_URL: http://localhost:8080
           CI: true
