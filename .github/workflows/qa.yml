@@ -65,12 +65,13 @@ jobs:
       # Run non-visual specs first — these MUST pass on every PR.
       # (api-health, data-integrity, console-errors, navigation, smoke)
       - name: Run functional & API health tests
-        run: npx playwright test --project=chromium --ignore-snapshots
-          e2e/api-health.spec.ts
-          e2e/data-integrity.spec.ts
-          e2e/console-errors.spec.ts
-          e2e/navigation.spec.ts
-          e2e/smoke.spec.ts
+        run: |
+          npx playwright test --project=chromium --ignore-snapshots \
+            e2e/api-health.spec.ts \
+            e2e/data-integrity.spec.ts \
+            e2e/console-errors.spec.ts \
+            e2e/navigation.spec.ts \
+            e2e/smoke.spec.ts
         env:
           BASE_URL: http://localhost:8080
           CI: true
