@@ -7,6 +7,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import heroBg from "@/assets/cross-species-hero-bg.jpg";
+import heroVideo from "@/assets/cross-species-hero.mp4.asset.json";
 import speciesSpectrum from "@/assets/cross-species-spectrum.jpg";
 import synergyImage from "@/assets/cross-project-synergy.jpg";
 
@@ -59,22 +60,17 @@ const CrossSpeciesSynchronization = () => {
         {/* Themed hero */}
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-background" />
-          <div
-            className="absolute inset-0 opacity-40 pointer-events-none animate-[heroDrift_40s_ease-in-out_infinite]"
-            style={{
-              backgroundImage: `url(${heroBg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
+          <video
+            src={heroVideo.url}
+            poster={heroBg}
+            autoPlay
+            loop
+            muted
+            playsInline
             aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background pointer-events-none" />
-          <style>{`
-            @keyframes heroDrift {
-              0%, 100% { transform: scale(1.05) translate3d(0,0,0); }
-              50% { transform: scale(1.12) translate3d(-2%, -1%, 0); }
-            }
-          `}</style>
           <div className="relative max-w-5xl mx-auto px-6 py-16 text-center">
             <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-24 w-24 mb-6 mx-auto rounded-full shadow-lg" />
             <div className="flex items-center justify-center gap-2 mb-4">
