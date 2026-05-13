@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, MapPin, Clock, Users, Target, Video, ExternalLink, Sparkles, Network, LogIn, Plane } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Clock, Users, Target, Video, ExternalLink, Sparkles, Network, LogIn, Plane, HeartPulse, Microscope, Bird } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -67,10 +67,20 @@ const CrossSpeciesSynchronization = () => {
             loop
             muted
             playsInline
+            preload="auto"
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background pointer-events-none" />
+          {/* Glossy sheen overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-60 mix-blend-overlay"
+            style={{
+              background:
+                "radial-gradient(120% 80% at 20% 0%, hsl(var(--background) / 0.8) 0%, transparent 50%), radial-gradient(80% 60% at 80% 100%, hsl(var(--accent) / 0.25) 0%, transparent 60%)",
+            }}
+            aria-hidden="true"
+          />
           <div className="relative max-w-5xl mx-auto px-6 py-16 text-center">
             <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-24 w-24 mb-6 mx-auto rounded-full shadow-lg" />
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -196,7 +206,13 @@ const CrossSpeciesSynchronization = () => {
           </Card>
 
           {/* About */}
-          <Card>
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <div
+              className="absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-40 blur-3xl pointer-events-none"
+              style={{ background: "radial-gradient(circle, hsl(var(--accent) / 0.4), transparent 70%)" }}
+              aria-hidden="true"
+            />
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Users className="h-5 w-5 text-primary" />
@@ -214,6 +230,62 @@ const CrossSpeciesSynchronization = () => {
                 updates across projects, address scientific and operational barriers, and shape future
                 directions for BBQS research, coordination, and community building.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* A first: mixing fields */}
+          <Card className="relative overflow-hidden border-accent/30 bg-gradient-to-br from-card via-card to-accent/5 shadow-lg">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+            <div
+              className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full opacity-40 blur-3xl pointer-events-none"
+              style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.35), transparent 70%)" }}
+              aria-hidden="true"
+            />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Sparkles className="h-5 w-5 text-accent" />
+                A First — Bringing These Fields Together
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground leading-relaxed space-y-5">
+              <p>
+                BBQS is, in many ways, the first time these communities have sat at the same table.
+                Neuroscientists who record from single neurons, computational modelers who simulate
+                circuits, machine-learning researchers who build pose-tracking pipelines, and{" "}
+                <span className="font-medium text-foreground">ethologists</span> — the scientists who
+                study animal behavior in its natural form — have historically worked in parallel,
+                speaking different languages.
+              </p>
+              <div className="grid sm:grid-cols-3 gap-4 pt-1">
+                <ThemePillar
+                  icon={<Microscope className="h-5 w-5 text-primary" />}
+                  title="Neuroscience & ML"
+                  body="Neural recordings, computational models, and modern machine-learning pipelines for behavior."
+                />
+                <ThemePillar
+                  icon={<Bird className="h-5 w-5 text-primary" />}
+                  title="Ethology"
+                  body="Decades of careful observation of how animals actually behave — in the wild, in groups, over time."
+                />
+                <ThemePillar
+                  icon={<Network className="h-5 w-5 text-primary" />}
+                  title="Shared language"
+                  body="A common vocabulary so a fly's escape, a mouse's bout, and a human's gesture can be compared."
+                />
+              </div>
+              <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex gap-3 items-start">
+                <HeartPulse className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Why this matters for human health</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Many of the conditions we care most about — autism, Parkinson's, depression, ADHD,
+                    addiction — are first and most clearly visible in <em>behavior</em>. If we can quantify
+                    behavior precisely across species and link it to brain activity, animal models stop
+                    being rough analogies and start being measurable, translatable evidence. That is the
+                    bridge from a fly's circuit to a person's clinic.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
