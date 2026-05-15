@@ -18,10 +18,15 @@ jobs:
     # 1. Issue is labeled with 'claude'
     # 2. Issue is opened with 'claude' label
     # 3. Someone comments '@claude' on an issue (not a PR)
+    # 4. Issue is labeled 'feature-request' (from website)
+    # 5. Issue is opened with 'feature-request' label, or its title starts with "Feature request"
     if: |
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
       (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'claude')) ||
-      (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.comment.body, '@claude'))
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'feature-request') ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'feature-request')) ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && startsWith(github.event.issue.title, 'Feature request'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -106,7 +111,7 @@ jobs:
         if: steps.check-existing.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           base_branch: "dev"
           prompt: |
             You are an AI assistant that handles GitHub issues for this repository.
