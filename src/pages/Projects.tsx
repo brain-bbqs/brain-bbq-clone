@@ -27,6 +27,9 @@ import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useMarrYaml } from "@/hooks/useMarrYaml";
+import { useUserTier } from "@/hooks/useUserTier";
+import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Publication {
   pmid: string;
