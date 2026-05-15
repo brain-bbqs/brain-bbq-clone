@@ -142,7 +142,7 @@ jobs:
             - Do not introduce new dependencies unless absolutely necessary
             - Follow the existing code style and patterns
             - If the issue is unclear or requires more information, comment asking for clarification instead of making changes
-          claude_args: "--max-turns 50"
+          claude_args: '--max-turns 50 --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(bun:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*)"'
 
       - name: Remove working label
         if: always() && steps.check-existing.outputs.skip != 'true'
