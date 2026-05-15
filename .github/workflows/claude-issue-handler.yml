@@ -113,6 +113,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           base_branch: "dev"
+          show_full_output: true
           prompt: |
             You are an AI assistant that handles GitHub issues for this repository.
 
@@ -142,7 +143,15 @@ jobs:
             - Do not introduce new dependencies unless absolutely necessary
             - Follow the existing code style and patterns
             - If the issue is unclear or requires more information, comment asking for clarification instead of making changes
-          claude_args: '--max-turns 50 --allowedTools "Edit,Write,Read,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(bun:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*)"'
+          claude_args: '--debug --max-turns 50 --allowedTools "Edit,Write,Read,Glob,Grep,LS,NotebookEdit,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(bun:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*)"'
+
+      - name: Upload Claude log artifact
+        if: always() && steps.check-existing.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-log
+          path: /home/runner/work/_temp/claude-execution-output.json
+          if-no-files-found: ignore
 
       - name: Remove working label
         if: always() && steps.check-existing.outputs.skip != 'true'
