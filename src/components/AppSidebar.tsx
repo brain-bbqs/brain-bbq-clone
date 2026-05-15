@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { sidebarGroups } from "@/data/sidebar-config";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import {
   Sidebar,
@@ -129,14 +130,17 @@ export function AppSidebar() {
               <span className="text-xs font-semibold">Close</span>
             </button>
           ) : !collapsed && (
-            <button
-              onClick={toggleSidebar}
-              className="flex items-center justify-center w-10 h-10 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors shrink-0"
-              title="Close sidebar"
-              aria-label="Close sidebar"
-            >
-              <PanelLeftClose className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <ThemeToggle className="h-10 w-10 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-foreground" />
+              <button
+                onClick={toggleSidebar}
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                title="Close sidebar"
+                aria-label="Close sidebar"
+              >
+                <PanelLeftClose className="h-5 w-5" />
+              </button>
+            </div>
           )}
         </div>
       </SidebarHeader>
