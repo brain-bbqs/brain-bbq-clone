@@ -744,6 +744,12 @@ const Projects = () => {
               <FileDown className="mr-2 h-4 w-4" />
               YAML
             </Button>
+
+            {isCurator && (
+              <AddProjectByGrantDialog
+                onAdded={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}
+              />
+            )}
           </div>
         </div>
 
