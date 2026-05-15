@@ -349,6 +349,8 @@ const Projects = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { projects: marrProjects } = useMarrYaml();
+  const { isCurator } = useUserTier();
+  const queryClient = useQueryClient();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
   const { data: rawRowData = [], isLoading: loading, refetch } = useQuery({
