@@ -55,7 +55,7 @@ const knowledgeBaseItems: NavItem[] = [
   { title: "Grants", url: "/grants", icon: Globe },
   { title: "Species", url: "/species", icon: Bug },
   { title: "Publications", url: "/publications", icon: FileText },
-  { title: "Data Provenance", url: "/data-provenance", icon: History },
+  { title: "Data Provenance", url: "/data-provenance", icon: History, disabled: true },
 ];
 
 const communityItems: NavItem[] = [
@@ -63,7 +63,7 @@ const communityItems: NavItem[] = [
   { title: "Working Groups", url: "/working-groups", icon: Users },
   { title: "Announcements", url: "/announcements", icon: Bell },
   { title: "Job Board", url: "/jobs", icon: Briefcase },
-  { title: "Calendar", url: "/calendar", icon: CalendarDays },
+  { title: "Calendar", url: "/calendar", icon: CalendarDays, authRequired: true },
 ];
 
 const conferencesItems: NavItem[] = [

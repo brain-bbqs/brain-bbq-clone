@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "react-router-dom";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 import { AgGridReact } from "ag-grid-react";
@@ -623,18 +623,37 @@ const WG_FILTERS: { id: WgFilter; label: string }[] = [
 export default function PrincipalInvestigators() {
   const [searchParams] = useSearchParams();
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
+  const qParam = useMemo(() => searchParams.get("q"), []); // stable: read once on mount
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [wgFilter, setWgFilter] = useState<WgFilter>("all");
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(
     () => new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
 
+  const { open } = useEntitySummary();
   const { data: rawRowData = [], isLoading } = useQuery({
     queryKey: ["principal-investigators"],
     queryFn: fetchPIs,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+
+  // Auto-open entity summary when page is opened via a ?q=Name deep link
+  // (e.g. from an agent investigator chip). Fires once after data loads.
+  const autoOpenFired = useRef(false);
+  useEffect(() => {
+    if (!qParam || rawRowData.length === 0 || autoOpenFired.current) return;
+    autoOpenFired.current = true;
+    const qNorm = nameKey(qParam);
+    const match = rawRowData.find(
+      (pi) =>
+        nameKey(pi.displayName).includes(qNorm) ||
+        nameKey(pi.name).includes(qNorm),
+    );
+    if (match) {
+      open({ type: "investigator", id: match.id, resourceId: match.resourceId, label: match.displayName });
+    }
+  }, [rawRowData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rowData = useMemo(() => {
     let filtered = rawRowData;
