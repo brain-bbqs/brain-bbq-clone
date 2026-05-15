@@ -220,8 +220,7 @@ export default function Publications() {
           <div className="ag-theme-alpine relative" style={{ width: "100%" }}>
             <AgGridReact ref={gridRef} rowData={displayedPubs} columnDefs={columnDefs} defaultColDef={defaultColDef}
               onGridReady={onGridReady} quickFilterText={quickFilterText} rowHeight={44} headerHeight={40}
-              animateRows pagination paginationPageSize={100} paginationPageSizeSelector={[25, 50, 100, 200]}
-              domLayout="autoHeight" suppressCellFocus={true} enableCellTextSelection={true} />
+              animateRows domLayout="autoHeight" suppressCellFocus={true} enableCellTextSelection={true} />
           </div>
         )}
       </div>

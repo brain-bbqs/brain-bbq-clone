@@ -15,15 +15,23 @@ import { MobileCardList } from "@/components/MobileCardList";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import "@/styles/ag-grid-theme.css";
 
-const CATEGORIES = ["All", "Software", "Datasets", "Benchmarks", "ML Models", "Protocols"] as const;
+// Top-level filter categories.
+// Software group: Software (tools/apps), Libraries (code libs), ML Models
+// Data group: Datasets
+// Methods group: Benchmarks, Protocols
+const CATEGORIES = ["All", "Software", "Libraries", "ML Models", "Datasets", "Benchmarks", "Protocols"] as const;
 type Category = typeof CATEGORIES[number];
 
+// Which categories belong to the Software group (share a blue palette)
+const SOFTWARE_GROUP = new Set(["Software", "Libraries", "ML Models"]);
+
 const categoryColors: Record<string, string> = {
-  Software: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  Datasets: "bg-green-500/20 text-green-400 border-green-500/30",
-  Benchmarks: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  Software:    "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  Libraries:   "bg-sky-500/20 text-sky-400 border-sky-500/30",
   "ML Models": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  Protocols: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+  Datasets:    "bg-green-500/20 text-green-400 border-green-500/30",
+  Benchmarks:  "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  Protocols:   "bg-pink-500/20 text-pink-400 border-pink-500/30",
 };
 
 const CategoryBadge = ({ value }: { value: string }) => (
@@ -86,17 +94,42 @@ const Resources = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Resources</h1>
           <p className="text-muted-foreground mb-4">
-            Browse software, datasets, benchmarks, ML models, and protocols. Click any resource to view its full details.
+            Browse software, libraries, ML models, datasets, benchmarks, and protocols. Click any resource to view its full details.
           </p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            {CATEGORIES.map((cat) => (
+            {/* "All" filter */}
+            <button
+              key="All"
+              onClick={() => setActiveCategory("All")}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                activeCategory === "All"
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
+              }`}
+            >
+              All
+            </button>
+            {/* Software group divider */}
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider px-1">Software</span>
+            {(["Software", "Libraries", "ML Models"] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  activeCategory === cat
-                    ? (cat === "All" ? "bg-primary/20 text-primary border-primary/30" : categoryColors[cat])
-                    : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
+                  activeCategory === cat ? categoryColors[cat] : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+            {/* Data / methods divider */}
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider px-1">Data &amp; Methods</span>
+            {(["Datasets", "Benchmarks", "Protocols"] as const).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  activeCategory === cat ? categoryColors[cat] : "bg-muted/30 text-muted-foreground border-border hover:bg-muted/50"
                 }`}
               >
                 {cat}
@@ -136,9 +169,6 @@ const Resources = () => {
               defaultColDef={defaultColDef}
               quickFilterText={quickFilterText}
               animateRows={true}
-              pagination={true}
-              paginationPageSize={100}
-              paginationPageSizeSelector={[25, 50, 100, 200]}
               suppressCellFocus={true}
               enableCellTextSelection={true}
               headerHeight={40}
