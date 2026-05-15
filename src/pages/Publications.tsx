@@ -5,19 +5,36 @@ import { useSearchParams } from "react-router-dom";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, GridReadyEvent, CellMouseOverEvent } from "ag-grid-community";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download, RefreshCw, Plus } from "lucide-react";
 import { piProfileUrl } from "@/lib/pi-utils";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { toast } from "sonner";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
 interface AuthorOrcid { name: string; orcid: string; }
+
+interface PubFormData {
+  title: string;
+  authors: string;
+  year: string;
+  journal: string;
+  doi: string;
+}
+
+const INITIAL_PUB_FORM: PubFormData = {
+  title: "", authors: "", year: String(new Date().getFullYear()), journal: "", doi: "",
+};
 
 interface Publication {
   id: string; pmid: string; title: string; year: number; journal: string; authors: string;
@@ -143,10 +160,52 @@ export default function Publications() {
   const [searchParams, setSearchParams] = useSearchParams();
   const grantFilter = searchParams.get("grant");
   const [quickFilterText, setQuickFilterText] = useState(searchParams.get("q") || "");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pubForm, setPubForm] = useState<PubFormData>(INITIAL_PUB_FORM);
 
   const { data: publications = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["publications"], queryFn: fetchPublications, staleTime: 5 * 60 * 1000, gcTime: 30 * 60 * 1000,
   });
+
+  const addPublication = useMutation({
+    mutationFn: async (data: PubFormData) => {
+      if (!user) throw new Error("Must be signed in");
+      const { error } = await supabase.from("publications").insert({
+        title: data.title.trim(),
+        authors: data.authors.trim() || null,
+        year: data.year ? Number(data.year) : null,
+        journal: data.journal.trim() || null,
+        doi: data.doi.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["publications"] });
+      setDialogOpen(false);
+      setPubForm(INITIAL_PUB_FORM);
+      toast.success("Publication added successfully!");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to add publication"),
+  });
+
+  const handlePubSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pubForm.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    if (!pubForm.authors.trim()) {
+      toast.error("Authors are required");
+      return;
+    }
+    if (!pubForm.year) {
+      toast.error("Year is required");
+      return;
+    }
+    addPublication.mutate(pubForm);
+  };
 
   const displayedPubs = useMemo(() => {
     if (!grantFilter) return publications;
@@ -182,6 +241,89 @@ export default function Publications() {
           <Button variant="outline" size="sm" onClick={exportToCSV}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>
+          {user && (
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) setPubForm(INITIAL_PUB_FORM);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Publication
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add a Publication</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handlePubSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pub-title">Title *</Label>
+                    <Input
+                      id="pub-title"
+                      value={pubForm.title}
+                      onChange={e => setPubForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="Full publication title"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pub-authors">Authors *</Label>
+                    <Input
+                      id="pub-authors"
+                      value={pubForm.authors}
+                      onChange={e => setPubForm(f => ({ ...f, authors: e.target.value }))}
+                      placeholder="Smith J, Doe A, ..."
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="pub-year">Year *</Label>
+                      <Input
+                        id="pub-year"
+                        type="number"
+                        value={pubForm.year}
+                        onChange={e => setPubForm(f => ({ ...f, year: e.target.value }))}
+                        min={1900}
+                        max={new Date().getFullYear()}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pub-journal">Journal</Label>
+                      <Input
+                        id="pub-journal"
+                        value={pubForm.journal}
+                        onChange={e => setPubForm(f => ({ ...f, journal: e.target.value }))}
+                        placeholder="e.g. Nature Neuroscience"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pub-doi">DOI</Label>
+                    <Input
+                      id="pub-doi"
+                      value={pubForm.doi}
+                      onChange={e => setPubForm(f => ({ ...f, doi: e.target.value }))}
+                      placeholder="10.xxxx/..."
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button type="submit" className="flex-1" disabled={addPublication.isPending}>
+                      {addPublication.isPending ? "Adding..." : "Add Publication"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
