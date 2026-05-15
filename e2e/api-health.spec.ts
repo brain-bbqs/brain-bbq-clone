@@ -23,11 +23,9 @@ const PUBLIC_READS: { name: string; minRows?: number }[] = [
   { name: "resources", minRows: 1 },
   { name: "species", minRows: 1 },
   { name: "organizations", minRows: 1 },
-  { name: "working_groups" },
   { name: "announcements" },
   { name: "feature_suggestions" },
   { name: "grant_investigators" },
-  { name: "resource_links" },
 ];
 
 for (const { name, minRows } of PUBLIC_READS) {

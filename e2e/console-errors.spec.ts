@@ -39,7 +39,10 @@ const IGNORED_CONSOLE = [
   "Download the React DevTools",
   "[vite]",
   "Failed to load resource: the server responded with a status of 404", // favicons etc
+  "Failed to load resource: the server responded with a status of 401", // unauthenticated optional calls
   "validateDOMNesting",
+  "X-Frame-Options may only be set via an HTTP header", // meta tag warning from third-party content
+  "data:font/", // base64-embedded font CSP noise
 ];
 
 for (const route of ROUTES) {
