@@ -5,6 +5,7 @@ import { PanelLeft } from "lucide-react";
 import { EntitySummaryProvider } from "@/contexts/EntitySummaryContext";
 import { EntitySummaryModal } from "@/components/entity-summary/EntitySummaryModal";
 import { AdminPendingBanner } from "@/components/admin/AdminPendingBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="min-h-screen flex w-full overflow-x-hidden">
           <AppSidebar />
           <FloatingTrigger />
+          <ThemeToggle className="fixed top-3 right-3 z-50 bg-card/80 backdrop-blur border border-border shadow-md hover:bg-accent hover:text-accent-foreground" />
           <SidebarInset className="flex flex-col flex-1 min-w-0">
             <AdminPendingBanner />
             <main className="flex-1 min-w-0">
