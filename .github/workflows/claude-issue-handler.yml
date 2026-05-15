@@ -18,10 +18,15 @@ jobs:
     # 1. Issue is labeled with 'claude'
     # 2. Issue is opened with 'claude' label
     # 3. Someone comments '@claude' on an issue (not a PR)
+    # 4. Issue is labeled 'feature-request' (from website)
+    # 5. Issue is opened with 'feature-request' label, or its title starts with "Feature request"
     if: |
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
       (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'claude')) ||
-      (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.comment.body, '@claude'))
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'feature-request') ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'feature-request')) ||
+      (github.event_name == 'issues' && github.event.action == 'opened' && startsWith(github.event.issue.title, 'Feature request'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
