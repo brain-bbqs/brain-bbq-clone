@@ -512,6 +512,13 @@ export type Database = {
             referencedRelation: "feature_suggestions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "feature_votes_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "feature_suggestions_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       funding_opportunities: {
@@ -1464,6 +1471,42 @@ export type Database = {
       }
     }
     Views: {
+      feature_suggestions_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          github_issue_number: number | null
+          github_issue_url: string | null
+          id: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          github_issue_number?: number | null
+          github_issue_url?: string | null
+          id?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Relationships: []
+      }
       investigators_public: {
         Row: {
           created_at: string | null
