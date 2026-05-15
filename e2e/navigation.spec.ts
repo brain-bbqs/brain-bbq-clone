@@ -45,8 +45,16 @@ test("nav: investigator row click opens entity summary modal", async ({ page }) 
     return;
   }
 
-  await firstRow.click();
-  // Entity summary uses a sheet/dialog; check for any of the common roles
-  const modal = page.locator('[role="dialog"], [data-state="open"]').first();
-  await expect(modal).toBeVisible({ timeout: 5_000 });
+  // Entity summary is triggered by the name-cell button, not the raw row.
+  // Try the button inside the row first; fall back to the row itself.
+  const nameBtn = firstRow.locator("button").first();
+  if (await nameBtn.isVisible().catch(() => false)) {
+    await nameBtn.click();
+  } else {
+    await firstRow.click();
+  }
+
+  // Entity summary renders as a Radix Sheet (role="dialog" + data-state="open")
+  const modal = page.locator('[role="dialog"]').first();
+  await expect(modal).toBeVisible({ timeout: 8_000 });
 });

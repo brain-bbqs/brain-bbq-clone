@@ -28,6 +28,11 @@ for (const { path, emptyMessage } of DATA_PAGES) {
       if (msg.type() === "error") consoleErrors.push(msg.text());
     });
 
+    // Supabase endpoints that intentionally return 4xx for anon users (not regressions).
+    const IGNORED_API_URL_PATTERNS = [
+      "analytics_pageviews", // auth-gated analytics table; 401 for anon is by design
+    ];
+
     page.on("response", (res: Response) => {
       const url = res.url();
       const status = res.status();
@@ -36,7 +41,7 @@ for (const { path, emptyMessage } of DATA_PAGES) {
         url.includes("/rest/v1/") ||
         url.includes("/functions/v1/") ||
         url.includes("/rpc/");
-      if (isSupabase && status >= 400) {
+      if (isSupabase && status >= 400 && !IGNORED_API_URL_PATTERNS.some((p) => url.includes(p))) {
         failedRequests.push({ url, status });
       }
     });
