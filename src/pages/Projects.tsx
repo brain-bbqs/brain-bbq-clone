@@ -27,6 +27,9 @@ import { SpeciesHeatmap } from "@/components/diagrams/SpeciesHeatmap";
 import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useMarrYaml } from "@/hooks/useMarrYaml";
+import { useUserTier } from "@/hooks/useUserTier";
+import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Publication {
   pmid: string;
@@ -346,6 +349,8 @@ const Projects = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { projects: marrProjects } = useMarrYaml();
+  const { isCurator } = useUserTier();
+  const queryClient = useQueryClient();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
   const { data: rawRowData = [], isLoading: loading, refetch } = useQuery({
@@ -739,6 +744,12 @@ const Projects = () => {
               <FileDown className="mr-2 h-4 w-4" />
               YAML
             </Button>
+
+            {isCurator && (
+              <AddProjectByGrantDialog
+                onAdded={() => queryClient.invalidateQueries({ queryKey: ["projects"] })}
+              />
+            )}
           </div>
         </div>
 

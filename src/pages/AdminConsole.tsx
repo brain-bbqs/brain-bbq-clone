@@ -2,11 +2,14 @@ import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageMeta } from "@/components/PageMeta";
 import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
-import { ShieldCheck, UserPlus, AlertTriangle } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, FolderPlus } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AdminAccessRequests from "./AdminAccessRequests";
+import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-const VALID_TABS = ["alerts", "users", "access-requests"] as const;
+const VALID_TABS = ["alerts", "users", "access-requests", "add-project"] as const;
 type TabKey = (typeof VALID_TABS)[number];
 
 export default function AdminConsole() {
@@ -45,6 +48,10 @@ export default function AdminConsole() {
             <UserPlus className="h-4 w-4" />
             Access Requests
           </TabsTrigger>
+          <TabsTrigger value="add-project" className="gap-1.5">
+            <FolderPlus className="h-4 w-4" />
+            Add Project
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="alerts" className="mt-0">
@@ -60,6 +67,25 @@ export default function AdminConsole() {
 
         <TabsContent value="access-requests" className="mt-0">
           <AdminAccessRequests embedded />
+        </TabsContent>
+
+        <TabsContent value="add-project" className="mt-0">
+          <div className="rounded-lg border border-border bg-card p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-1">Add a project by NIH award ID</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Look up an NIH RePORTER award number (e.g. <code className="text-xs">R34DA059510</code>)
+              and seed the grant, contact PI, and institution into BBQS. Project questionnaire fields
+              remain empty for the team to complete.
+            </p>
+            <AddProjectByGrantDialog
+              trigger={
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add project from RePORTER
+                </Button>
+              }
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
