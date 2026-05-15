@@ -148,3 +148,42 @@
     padding: 6px 8px;
   }
 }
+
+/* ── Dark mode overrides ── */
+.dark .ag-theme-alpine {
+  --ag-background-color: hsl(229 40% 12%);
+  --ag-foreground-color: hsl(220 20% 90%);
+  --ag-header-background-color: hsl(229 50% 8%);
+  --ag-header-foreground-color: hsl(220 20% 95%);
+  --ag-odd-row-background-color: hsl(229 35% 15%);
+  --ag-row-hover-color: hsl(229 35% 20%);
+  --ag-selected-row-background-color: hsla(38, 90%, 50%, 0.18);
+  --ag-border-color: hsl(229 30% 22%);
+  --ag-secondary-border-color: hsl(229 30% 18%);
+  --ag-header-cell-hover-background-color: hsl(229 45% 14%);
+  --ag-header-cell-moving-background-color: hsl(229 45% 18%);
+  --ag-control-panel-background-color: hsl(229 40% 12%);
+  --ag-subheader-background-color: hsl(229 40% 14%);
+  --ag-disabled-foreground-color: hsl(220 10% 55%);
+  --ag-input-border-color: hsl(229 30% 25%);
+  --ag-input-background-color: hsl(229 35% 16%);
+}
+
+.dark .ag-theme-alpine .ag-row {
+  border-bottom-color: hsl(229 30% 20%);
+}
+
+.dark .ag-theme-alpine .ag-paging-panel,
+.dark .ag-theme-alpine .ag-filter-toolpanel-header,
+.dark .ag-theme-alpine .ag-filter-toolpanel-search {
+  background-color: hsl(229 40% 12%);
+  color: hsl(220 20% 90%);
+  border-top-color: hsl(229 30% 22%);
+}
+
+.dark .ag-theme-alpine .ag-menu {
+  background-color: hsl(229 40% 14%);
+  border-color: hsl(229 30% 22%);
+  color: hsl(220 20% 90%);
+  box-shadow: 0 4px 12px hsla(0, 0%, 0%, 0.5);
+}
