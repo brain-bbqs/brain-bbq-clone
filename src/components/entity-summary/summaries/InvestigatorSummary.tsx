@@ -407,7 +407,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
     mutationFn: async ({ field, value }: { field: string; value: any }) => {
       const { error } = await supabase
         .from("investigators")
-        .update({ [field]: value })
+        .update({ [field]: value } as any)
         .eq("id", id);
       if (error) throw error;
     },
