@@ -40,9 +40,16 @@ const IGNORED_CONSOLE = [
   "[vite]",
   "Failed to load resource: the server responded with a status of 404", // favicons etc
   "Failed to load resource: the server responded with a status of 401", // unauthenticated optional calls
+  "Failed to load resource: net::ERR_NAME_NOT_RESOLVED", // external URLs unreachable in CI sandbox
   "validateDOMNesting",
   "X-Frame-Options may only be set via an HTTP header", // meta tag warning from third-party content
   "data:font/", // base64-embedded font CSP noise
+];
+
+// Supabase API URLs that are intentionally auth-gated and will 401 for anon users.
+// These are not regressions — they're expected behaviour.
+const IGNORED_API_URL_PATTERNS = [
+  "analytics_pageviews", // write-only analytics table; 401 for anon is by design
 ];
 
 for (const route of ROUTES) {
@@ -65,7 +72,8 @@ for (const route of ROUTES) {
         status >= 400 &&
         (url.includes("/rest/v1/") ||
           url.includes("/functions/v1/") ||
-          url.includes("/rpc/"))
+          url.includes("/rpc/")) &&
+        !IGNORED_API_URL_PATTERNS.some((p) => url.includes(p))
       ) {
         apiFailures.push({ url, status });
       }
