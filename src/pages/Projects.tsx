@@ -785,9 +785,6 @@ const Projects = () => {
                   onCellMouseOver={onCellMouseOver}
                   onCellMouseOut={onCellMouseOut}
                   animateRows={true}
-                  pagination={true}
-                  paginationPageSize={100}
-                  paginationPageSizeSelector={[25, 50, 100, 200]}
                   suppressCellFocus={true}
                   enableCellTextSelection={true}
                   domLayout="autoHeight"

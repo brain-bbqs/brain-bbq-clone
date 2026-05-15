@@ -885,9 +885,6 @@ export default function PrincipalInvestigators() {
             quickFilterText={quickFilterText}
             animateRows={true}
             domLayout="autoHeight"
-            pagination={true}
-            paginationPageSize={100}
-            paginationPageSizeSelector={[25, 50, 100, 200]}
             suppressCellFocus={true}
             enableCellTextSelection={true}
             rowHeight={64}

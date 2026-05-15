@@ -250,9 +250,6 @@ export default function FundingOpportunities() {
             rowData={opportunities}
             columnDefs={columnDefs}
             domLayout="autoHeight"
-            pagination
-            paginationPageSize={25}
-            paginationPageSizeSelector={[10, 25, 50, 100]}
             animateRows
             suppressCellFocus
             loading={dataLoading}
