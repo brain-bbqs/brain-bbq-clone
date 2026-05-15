@@ -72,7 +72,7 @@ export function EntitySummaryModal() {
       />
 
       {/* Panel */}
-      <div className="relative ml-auto w-full max-w-4xl bg-background border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div data-testid="entity-summary-panel" className="relative ml-auto w-full max-w-4xl bg-background border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         {/* Header */}
         <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-muted/30">
           {stack.length > 1 && (

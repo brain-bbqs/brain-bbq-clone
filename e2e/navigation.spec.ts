@@ -54,7 +54,8 @@ test("nav: investigator row click opens entity summary modal", async ({ page }) 
     await firstRow.click();
   }
 
-  // Entity summary renders as a Radix Sheet (role="dialog" + data-state="open")
-  const modal = page.locator('[role="dialog"]').first();
+  // EntitySummaryModal is a custom panel (not Radix Dialog); it renders
+  // data-testid="entity-summary-panel" when open.
+  const modal = page.locator('[data-testid="entity-summary-panel"]').first();
   await expect(modal).toBeVisible({ timeout: 8_000 });
 });

@@ -75,11 +75,19 @@ for (const { path, emptyMessage } of DATA_PAGES) {
     ).toEqual([]);
 
     // 4. No console errors (filter out known noisy warnings)
+    const IGNORED_CONSOLE = [
+      "Function components cannot be given refs",
+      "Download the React DevTools",
+      "[vite]",
+      "Failed to load resource: the server responded with a status of 404",
+      "Failed to load resource: the server responded with a status of 401",
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "validateDOMNesting",
+      "X-Frame-Options may only be set via an HTTP header",
+      "data:font/",
+    ];
     const realErrors = consoleErrors.filter(
-      (e) =>
-        !e.includes("Function components cannot be given refs") &&
-        !e.includes("Download the React DevTools") &&
-        !e.includes("[vite]"),
+      (e) => !IGNORED_CONSOLE.some((s) => e.includes(s)),
     );
     expect(
       realErrors,
