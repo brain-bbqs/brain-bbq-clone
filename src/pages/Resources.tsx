@@ -46,9 +46,6 @@ const INITIAL_RESOURCE_FORM: ResourceForm = {
 const CATEGORIES = ["All", "Software", "Libraries", "ML Models", "Datasets", "Benchmarks", "Protocols"] as const;
 type Category = typeof CATEGORIES[number];
 
-// Which categories belong to the Software group (share a blue palette)
-const SOFTWARE_GROUP = new Set(["Software", "Libraries", "ML Models"]);
-
 const categoryColors: Record<string, string> = {
   Software:    "bg-blue-500/20 text-blue-400 border-blue-500/30",
   Libraries:   "bg-sky-500/20 text-sky-400 border-sky-500/30",
