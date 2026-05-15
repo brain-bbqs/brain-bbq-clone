@@ -1,0 +1,75 @@
+name: Preview Deploy (Cloudflare Pages)
+
+# Deploys every branch push and every PR to Cloudflare Pages.
+# Production (main) → https://brain-bbq-clone.pages.dev (or your custom domain)
+# Dev / feature branches → https://{hash}.brain-bbq-clone.pages.dev
+#
+# ONE-TIME SETUP (5 minutes):
+#   1. Go to https://dash.cloudflare.com → Workers & Pages → Create → Pages → Connect to Git
+#   2. Select brain-bbqs/brain-bbq-clone
+#   3. Build command: npm run build
+#      Build output: dist
+#      Environment variable: NODE_ENV = production
+#   4. After first deploy, go to Settings → API Tokens → create a token with Pages:Edit permission
+#   5. Add two GitHub repo secrets (Settings → Secrets → Actions):
+#        CLOUDFLARE_API_TOKEN  ← the token you just created
+#        CLOUDFLARE_ACCOUNT_ID ← your Cloudflare account ID (found in the right sidebar on any CF page)
+#   6. Add one GitHub repo variable:
+#        CLOUDFLARE_PROJECT_NAME ← the project name you chose in step 2 (e.g. brain-bbq-clone)
+#
+# After setup, every push to any branch shows a preview URL in the Actions summary.
+
+on:
+  push:
+    branches-ignore:
+      - main          # main is deployed by Cloudflare Pages natively (no workflow needed)
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Publish to Cloudflare Pages
+        id: cf
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME }} --branch=${{ github.head_ref || github.ref_name }}
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: cf-preview
+          message: |
+            ### ☁️ Cloudflare Pages preview
+
+            **${{ github.head_ref }}** → ${{ steps.cf.outputs.deployment-url }}
+
+            <sub>Updated on every push · `.github/workflows/preview.yml`</sub>
