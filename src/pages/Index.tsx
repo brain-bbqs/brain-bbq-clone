@@ -33,7 +33,6 @@ const navCards: NavCard[] = [
       { label: "Announcements", to: "/announcements" },
       { label: "Job Board", to: "/jobs" },
       { label: "Calendar", to: "/calendar" },
-      { label: "Cross-Species Synchronization (2026)", to: "/cross-species-synchronization" },
       { label: "SFN 2025", to: "/sfn-2025" },
     ],
   },
