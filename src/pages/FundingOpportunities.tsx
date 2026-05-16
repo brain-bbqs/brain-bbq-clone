@@ -4,10 +4,13 @@ import { ColDef, RowClickedEvent } from "ag-grid-community";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, DollarSign, Calendar, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, DollarSign, Calendar, AlertCircle, Plus } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
 import { FundingDetailPanel } from "@/components/funding/FundingDetailPanel";
+import { AddFundingOpportunityDialog } from "@/components/funding/AddFundingOpportunityDialog";
+import { useUserTier } from "@/hooks/useUserTier";
 
 interface FundingOpportunity {
   id: string;
@@ -112,6 +115,7 @@ export default function FundingOpportunities() {
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedOpp, setSelectedOpp] = useState<FundingOpportunity | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const { isCurator } = useUserTier();
 
   const onRowClicked = useCallback((event: RowClickedEvent<FundingOpportunity>) => {
     if (event.data) {
@@ -120,19 +124,21 @@ export default function FundingOpportunities() {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data, error } = await supabase
-        .from("funding_opportunities")
-        .select("*")
-        .order("expiration_date", { ascending: true });
-      if (!error && data) {
-        setOpportunities(data as unknown as FundingOpportunity[]);
-      }
-      setDataLoading(false);
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    setDataLoading(true);
+    const { data, error } = await supabase
+      .from("funding_opportunities")
+      .select("*")
+      .order("expiration_date", { ascending: true });
+    if (!error && data) {
+      setOpportunities(data as unknown as FundingOpportunity[]);
+    }
+    setDataLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const columnDefs = useMemo<ColDef[]>(
     () => [
@@ -225,9 +231,22 @@ export default function FundingOpportunities() {
 
       <div className="max-w-[1600px] mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Grants & Funding Opportunities
-          </h1>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">
+              Grants & Funding Opportunities
+            </h1>
+            {isCurator && (
+              <AddFundingOpportunityDialog
+                onCreated={fetchData}
+                trigger={
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Opportunity
+                  </Button>
+                }
+              />
+            )}
+          </div>
           <p className="text-muted-foreground max-w-3xl">
             Active and upcoming NIH funding opportunities relevant to BBQS consortium members.
             Discover RFAs, PAs, and NOFOs that align with your research — filtered by activity code,
