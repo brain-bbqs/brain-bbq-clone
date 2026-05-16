@@ -7,32 +7,38 @@ import { EntityComments } from "../EntityComments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { FileText, MessageSquare, Bug, FlaskConical } from "lucide-react";
+import { useMarrYaml } from "@/hooks/useMarrYaml";
 
 function RelatedProjects({ speciesName, commonName }: { speciesName: string; commonName?: string | null }) {
   const { open } = useEntitySummary();
+  // Use YAML as the single source of truth so the count here always matches
+  // the Species directory table (which is also derived from YAML).
+  const { projects: yamlProjects, loading: isLoading } = useMarrYaml();
 
-  const { data: projects, isLoading } = useQuery({
-    queryKey: ["species-projects", speciesName, commonName],
-    queryFn: async () => {
-      // Search projects where study_species contains this species name or common name
-      const searchTerms = [speciesName];
-      if (commonName) searchTerms.push(commonName);
+  const norm = (s: string) => s.trim().toLowerCase();
+  const terms = new Set<string>();
+  if (speciesName) terms.add(norm(speciesName));
+  if (commonName) terms.add(norm(commonName));
 
-      const { data: projectRows } = await supabase
-        .from("projects")
-        .select("id, grant_number, grant_id, study_species, keywords");
-
-      if (!projectRows) return [];
-
-      // Filter projects that study this species
-      return projectRows.filter((p) => {
-        const species = p.study_species || [];
-        return species.some((s: string) =>
-          searchTerms.some((term) => s.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(s.toLowerCase()))
-        );
-      });
-    },
-  });
+  const projects = yamlProjects
+    .filter((p) => {
+      const candidates = [
+        ...(p.speciesList || []),
+        p.species,
+        p.speciesCommonName,
+        ...Object.values(p.speciesCommonNames || {}),
+      ]
+        .filter(Boolean)
+        .map((s) => norm(s as string));
+      return candidates.some((c) =>
+        Array.from(terms).some((t) => c === t || c.includes(t) || t.includes(c)),
+      );
+    })
+    .map((p) => ({
+      id: p.id,
+      grant_number: p.id,
+      keywords: p.keywords,
+    }));
 
   const openGrant = async (grantNumber: string) => {
     const cleanId = grantNumber.replace(/^\d(?=[A-Z])/, "");
