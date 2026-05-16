@@ -286,7 +286,7 @@ export default function FeatureSuggestions() {
                 suppressCellFocus={true}
                 pagination={true}
                 paginationPageSize={25}
-                defaultColDef={{ resizable: true }}
+                defaultColDef={{ resizable: true, sortable: true, unSortIcon: true }}
               />
             </div>
             </div>
