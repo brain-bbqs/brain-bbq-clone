@@ -156,7 +156,7 @@ export default function Profile() {
       if (!linkedInvestigator) throw new Error("No linked investigator");
       const { error } = await supabase
         .from("investigators")
-        .update({ [field]: value })
+        .update({ [field]: value } as any)
         .eq("id", linkedInvestigator.id);
       if (error) throw error;
     },

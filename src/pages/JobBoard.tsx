@@ -210,26 +210,17 @@ export default function JobBoard() {
   const [filterType, setFilterType] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Authenticated users see full jobs table (with contact info); anonymous users see the safe public_jobs view
+  // Both anonymous and authenticated users read from the sanitized public_jobs view (no contact info).
+  // Admins and the original poster can fetch contact details on demand from the base table.
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ["jobs", !!user],
+    queryKey: ["jobs"],
     queryFn: async () => {
-      if (user) {
-        const { data, error } = await (supabase as any)
-          .from("jobs")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
-        if (error) throw error;
-        return data as any[];
-      } else {
-        const { data, error } = await (supabase as any)
-          .from("public_jobs")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (error) throw error;
-        return data as any[];
-      }
+      const { data, error } = await (supabase as any)
+        .from("public_jobs")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
     },
   });
 
@@ -272,17 +263,25 @@ export default function JobBoard() {
     onError: (err: any) => toast.error(err.message || "Failed to delete job"),
   });
 
-  const openEditDialog = (job: any) => {
+  const openEditDialog = async (job: any) => {
+    // Fetch the full row (including contact fields) from the base table.
+    // RLS allows admins and the original poster to read these fields.
+    const { data: full } = await (supabase as any)
+      .from("jobs")
+      .select("*")
+      .eq("id", job.id)
+      .maybeSingle();
+    const source = full ?? job;
     setForm({
-      title: job.title ?? "",
-      institution: job.institution ?? "",
-      department: job.department ?? "",
-      location: job.location ?? "",
-      job_type: job.job_type ?? "postdoc",
-      description: job.description ?? "",
-      contact_name: job.contact_name ?? "",
-      contact_email: job.contact_email ?? "",
-      application_url: job.application_url ?? "",
+      title: source.title ?? "",
+      institution: source.institution ?? "",
+      department: source.department ?? "",
+      location: source.location ?? "",
+      job_type: source.job_type ?? "postdoc",
+      description: source.description ?? "",
+      contact_name: source.contact_name ?? "",
+      contact_email: source.contact_email ?? "",
+      application_url: source.application_url ?? "",
     });
     setEditingId(job.id);
     setDialogOpen(true);

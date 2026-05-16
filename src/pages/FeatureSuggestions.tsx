@@ -42,12 +42,15 @@ export default function FeatureSuggestions() {
     queryKey: ["feature-suggestions"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("feature_suggestions")
+        .from("feature_suggestions_public" as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return (data || []) as Suggestion[];
+      return ((data || []) as any[]).map((r) => ({
+        ...r,
+        submitter_name: null,
+      })) as Suggestion[];
     },
   });
 
