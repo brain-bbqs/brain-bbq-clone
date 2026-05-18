@@ -30,8 +30,8 @@ const ROUTES = [
   "/sfn-2025",
   "/mit-workshop-2026",
   // "/mit-workshop-2026/travel" — sub-page with no h1; excluded until page adds one
-  "/cross-species-synchronization",
-  // "/data-provenance" — page currently has no h1 element; excluded until fixed
+  // "/cross-species-synchronization" — hidden in v1.0.0 (renders NotFound); excluded
+  // "/data-provenance" — disabled in v1.0.0 (no h1); excluded until fixed
 ];
 
 const IGNORED_CONSOLE = [

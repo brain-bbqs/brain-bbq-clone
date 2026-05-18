@@ -19,7 +19,9 @@ for (const { path, heading } of CRITICAL_PAGES) {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
 
-    await page.goto(path, { waitUntil: "networkidle" });
+    // Use "domcontentloaded" — continuous-scroll pages fetch all rows asynchronously
+    // and never reach networkidle within the default 30s timeout.
+    await page.goto(path, { waitUntil: "domcontentloaded" });
 
     // Should have an h1
     const h1 = page.locator("h1").first();
@@ -32,7 +34,7 @@ for (const { path, heading } of CRITICAL_PAGES) {
 }
 
 test("smoke: sidebar navigation works", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   // Open sidebar if collapsed (mobile)
   const trigger = page.locator("[data-sidebar='trigger']").first();
