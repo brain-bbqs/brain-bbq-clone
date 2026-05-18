@@ -85,7 +85,6 @@ const navCards: NavCard[] = [
     color: "hsl(200 60% 50%)",
     links: [
       { label: "Roadmap", to: "/roadmap" },
-      { label: "Suggest a Feature", to: "/feature-suggestions" },
     ],
   },
 ];
