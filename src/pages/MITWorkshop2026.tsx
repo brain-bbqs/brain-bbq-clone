@@ -215,6 +215,17 @@ const MITWorkshop2026 = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
+              {!user ? (
+                <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-muted-foreground">
+                    Sign in with Globus to reveal Wi-Fi, Zoom, and venue links for the workshop.
+                  </p>
+                  <Button onClick={() => navigate("/auth")} size="sm" className="gap-2 shrink-0">
+                    <LogIn className="h-4 w-4" />
+                    Sign in to view
+                  </Button>
+                </div>
+              ) : (
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
                   <Wifi className="h-4 w-4 text-primary mt-0.5 shrink-0" />
@@ -244,6 +255,7 @@ const MITWorkshop2026 = () => {
                   </span>
                 </li>
               </ul>
+              )}
             </CardContent>
           </Card>
 

@@ -41,7 +41,6 @@ import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
-import CrossSpeciesSynchronization from "./pages/CrossSpeciesSynchronization";
 
 const queryClient = new QueryClient();
 
@@ -62,7 +61,6 @@ const App = () => (
               <Route path="/sfn-2025" element={<SFN2025 />} />
               <Route path="/mit-workshop-2026" element={<MITWorkshop2026 />} />
               <Route path="/mit-workshop-2026/travel" element={<MITWorkshopTravel />} />
-              <Route path="/cross-species-synchronization" element={<CrossSpeciesSynchronization />} />
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/announcements" element={<Announcements />} />
