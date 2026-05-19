@@ -13,4 +13,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - run: git push --mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
+      - run: |
+          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
+          git push mirror --force --all
+          git push mirror --force --tags
