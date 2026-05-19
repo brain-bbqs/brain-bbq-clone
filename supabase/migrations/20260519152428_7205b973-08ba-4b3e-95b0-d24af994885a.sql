@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.data_policy_quiz_responses CASCADE;
