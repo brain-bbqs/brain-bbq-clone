@@ -340,6 +340,33 @@ export type Database = {
           },
         ]
       }
+      data_policy_quiz_responses: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       edit_history: {
         Row: {
           chat_context: Json | null
@@ -943,6 +970,7 @@ export type Database = {
           full_name: string | null
           id: string
           organization_id: string | null
+          theme_preference: string
           updated_at: string
         }
         Insert: {
@@ -951,6 +979,7 @@ export type Database = {
           full_name?: string | null
           id: string
           organization_id?: string | null
+          theme_preference?: string
           updated_at?: string
         }
         Update: {
@@ -959,6 +988,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           organization_id?: string | null
+          theme_preference?: string
           updated_at?: string
         }
         Relationships: [

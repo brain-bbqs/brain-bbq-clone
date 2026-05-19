@@ -30,7 +30,8 @@ const ROUTES = [
   "/sfn-2025",
   "/mit-workshop-2026",
   // "/mit-workshop-2026/travel" — sub-page with no h1; excluded until page adds one
-  // "/cross-species-synchronization" — hidden in v1.0.0 (renders NotFound); excluded
+  // "/cross-species-synchronization" — temporarily hidden in v1.0.0; Sully will restore it.
+  //   When it comes back, re-add this route and remove this comment.
   // "/data-provenance" — disabled in v1.0.0 (no h1); excluded until fixed
 ];
 
