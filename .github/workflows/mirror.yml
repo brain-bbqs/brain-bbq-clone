@@ -9,11 +9,9 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - run: |
-          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
-          git push mirror --force --all
-          git push mirror --force --tags
+      - name: Mirror
+        run: |
+          git clone --bare https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/brain-bbqs/brain-bbq-clone.git repo
+          cd repo
+          git push --force --all https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
+          git push --force --tags https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
