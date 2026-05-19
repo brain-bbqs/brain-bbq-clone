@@ -477,9 +477,6 @@ export default function Profile() {
       </Card>
 
       {/* Edit history / data provenance */}
-      <DataPolicyQuiz userId={user.id} />
-
-      {/* Edit history / data provenance */}
       <Card id="edits" className="scroll-mt-20">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
