@@ -1,25 +1,67 @@
-# BBQS QA Checklist — v1.0.0
+# BBQS QA Checklist — v1.1.0
 
-Hands-on QA walkthrough for the BBQS app. Work through it top-to-bottom,
-ticking each `[ ]` checkbox as you go. Every item has a matching automated
-Playwright test in `e2e/qa-checklist.spec.ts` so you can cross-check your
-manual result against CI.
+Hands-on QA walkthrough for the BBQS app **plus** the source of truth for
+the Playwright suite in `e2e/qa-checklist.spec.ts`. Every section here has
+a matching `test.describe("§N ...")` block in that spec file. Most of those
+blocks ship as a **skeleton with `test.todo(...)` placeholders** — your job
+is to fill them in as you QA.
 
 ## How to work this document
 
-1. **Open two windows:** the BBQS preview (or `https://brain-bbq-clone.lovable.app`)
-   and this file in your editor.
-2. For each section, perform the click/interaction described, then tick the box.
-3. If something is broken, **do not edit the test** — file a GitHub issue using the
-   template in §99 and link it from the checkbox like `[x] (bug #149)`.
-4. When the whole section is green, run the matching Playwright test:
+For **each section** below, do the following loop:
+
+1. **Manual pass.** Open the BBQS preview (or staging URL) and the section
+   in your editor side-by-side. Click through every checkbox item and tick
+   `[ ]` → `[x]` as you confirm it.
+2. **Write the Playwright test.** Open `e2e/qa-checklist.spec.ts`, find the
+   matching `test.describe("§N ...")` block, and convert every `test.todo`
+   into a real `test(...)` that asserts the same thing your manual click
+   just confirmed. **One checkbox = one `test()`** (or one `expect` inside
+   a grouped test — see §2 for the pattern).
+3. **Run just that section** while iterating:
    ```bash
    npx playwright test e2e/qa-checklist.spec.ts -g "§<section-number>"
    ```
-5. When the entire document is green, run the whole suite:
+4. **Bug? Don't make the test pass anyway.** File a GitHub issue using the
+   template in §99, link it from the checkbox like `[x] (bug #149)`, and
+   leave the failing test in place with a `test.fail(...)` annotation and
+   a `// bug #149` comment so CI tracks the regression.
+5. **Whole section green?** Move to the next one. When everything is green,
+   run the full suite:
    ```bash
    npx playwright test e2e/qa-checklist.spec.ts
    ```
+
+## How to add a Playwright test for a checkbox
+
+The spec file's header has the full helper reference. Quick version:
+
+```ts
+// 1. find the section block
+test.describe("§4 investigators", () => {
+  // 2. replace a `test.todo("...")` with a real test
+  test("grid renders at least one row", async ({ page }) => {
+    await gotoOk(page, "/investigators");
+    await expect(page.locator(".ag-row").first()).toBeVisible();
+  });
+});
+```
+
+Rules of thumb:
+
+- Use the `gotoOk(page, path)` helper — it waits for `networkidle` and fails
+  on console errors automatically.
+- Prefer role-based locators (`getByRole`, `getByText`) over CSS selectors.
+  Only fall back to `data-testid` when the role/text isn't unique. New
+  `data-testid` hooks belong on the component, not invented in the test.
+- Auth-gated routes (§13, §14, §17, §18) are **anon-only** in this suite:
+  assert the redirect to `/auth`. Member/admin coverage lives in the
+  fixture suites — out of scope for this pass.
+- External links: assert both `href` matches and `target="_blank"` +
+  `rel="noopener"`.
+- If a check needs new test infra (fixtures, network mocks, seeded data),
+  leave the `test.todo` in place and add a `// needs: <thing>` comment.
+  Flag it in standup rather than building infra solo.
 
 ## Environments
 
@@ -54,7 +96,9 @@ Issues `#81`–`#148` are in scope for this round. Highlights:
 - [ ] Theme respects `prefers-color-scheme` before any user choice
 - [ ] No console errors on initial load of `/`
 
-Test: `§1 chrome`
+Playwright: `test.describe("§1 chrome", ...)` in `e2e/qa-checklist.spec.ts`.
+One `test(...)` per checkbox above. The `theme toggle` test already exists
+as a working reference — model the rest on it.
 
 ## §2 Home page (`/`)
 
@@ -67,7 +111,8 @@ Test: `§1 chrome`
 - [ ] Engineering card does **not** show "Suggest a Feature" (removed)
 - [ ] Engineering card shows "Roadmap" only
 
-Test: `§2 home`
+Playwright: `§2 home`. The first three tests are filled in as a reference
+pattern; convert the remaining `test.todo` items.
 
 ## §3 Navigation — sidebar links
 
@@ -96,7 +141,8 @@ visible `<h1>`. Auth-required items should redirect anon to `/auth`.
 - [ ] Admin Console (admin only) → `/admin`; hidden for members
 - [ ] Data Sharing Policy → `/data-sharing-policy`
 
-Test: `§3 nav`
+Playwright: `§3 nav`. Drive this as a `for (const route of ROUTES) { test(...) }`
+loop — see the skeleton's `ANON_ROUTES` / `AUTH_GATED_ROUTES` arrays.
 
 ## §4 People / Investigators (`/investigators`)
 
@@ -111,7 +157,7 @@ Test: `§3 nav`
 - [ ] Every sortable column header sorts ascending then descending
 - [ ] Search/filter input filters rows live
 
-Test: `§4 investigators`
+Playwright: `§4 investigators`.
 
 ## §5 Projects (`/projects`)
 
@@ -123,7 +169,7 @@ Test: `§4 investigators`
 - [ ] Add Project by Grant: lookup pre-fills the form
 - [ ] Curation undo restores the previous value
 
-Test: `§5 projects`
+Playwright: `§5 projects`.
 
 ## §6 Publications (`/publications`)
 
@@ -137,7 +183,7 @@ Test: `§5 projects`
 - [ ] DOI / PubMed chip opens external link in a new tab
 - [ ] All column headers sort
 
-Test: `§6 publications`
+Playwright: `§6 publications`.
 
 ## §7 Resources (`/resources`)
 
@@ -148,7 +194,7 @@ Test: `§6 publications`
 - [ ] External URL chip opens new tab with `rel="noopener"`
 - [ ] All column headers sort
 
-Test: `§7 resources`
+Playwright: `§7 resources`.
 
 ## §8 Species (`/species`)
 
@@ -157,7 +203,7 @@ Test: `§7 resources`
 - [ ] Species chip → EntitySummaryModal
 - [ ] Sortable columns work
 
-Test: `§8 species`
+Playwright: `§8 species`.
 
 ## §9 Grants / Funding Opportunities (`/grants`)
 
@@ -168,7 +214,7 @@ Test: `§8 species`
       `pending_writes`
 - [ ] External NIH link opens in new tab
 
-Test: `§9 grants`
+Playwright: `§9 grants`.
 
 ## §10 Job Board (`/jobs`)
 
@@ -178,7 +224,7 @@ Test: `§9 grants`
 - [ ] External "Apply" button opens in new tab
 - [ ] Expired postings are filtered out
 
-Test: `§10 jobs`
+Playwright: `§10 jobs`.
 
 ## §11 Announcements (`/announcements`)
 
@@ -186,7 +232,7 @@ Test: `§10 jobs`
 - [ ] Card click opens detail
 - [ ] Drafts are invisible to anon
 
-Test: `§11 announcements`
+Playwright: `§11 announcements`.
 
 ## §12 Working Groups (`/working-groups`)
 
@@ -194,7 +240,7 @@ Test: `§11 announcements`
 - [ ] Each chair chip opens InvestigatorSummary modal
 - [ ] External meeting links open in new tab
 
-Test: `§12 working-groups`
+Playwright: `§12 working-groups`.
 
 ## §13 Calendar (`/calendar`) — auth required
 
@@ -202,7 +248,7 @@ Test: `§12 working-groups`
 - [ ] Member sees events on month/week views
 - [ ] Event click opens detail
 
-Test: `§13 calendar`
+Playwright: `§13 calendar` (anon-redirect only).
 
 ## §14 Roadmap (`/roadmap`) — auth required
 
@@ -210,7 +256,7 @@ Test: `§13 calendar`
 - [ ] Authed user sees milestones from `github-roadmap` edge function
 - [ ] Each milestone card links to its GitHub issue in a new tab
 
-Test: `§14 roadmap`
+Playwright: `§14 roadmap` (anon-redirect only).
 
 ## §15 MIT Workshop 2026 (`/mit-workshop-2026` + `/travel`)
 
@@ -220,14 +266,14 @@ Test: `§14 roadmap`
 - [ ] Hotel map (`HotelLocationMap`) renders all hotel pins
 - [ ] Date warnings (see memory: `mit-workshop-travel`) render correctly
 
-Test: `§15 mit-workshop`
+Playwright: `§15 mit-workshop`.
 
 ## §16 SFN 2025 (`/sfn-2025`)
 
 - [ ] Page renders agenda + speaker list
 - [ ] All speaker chips open `InvestigatorSummary`
 
-Test: `§16 sfn`
+Playwright: `§16 sfn`.
 
 ## §17 Profile (`/profile`) — auth required
 
@@ -236,7 +282,7 @@ Test: `§16 sfn`
 - [ ] Linked-email member can edit their own grants; not others
 - [ ] Onboarding modal shows for first-time user; dismiss persists in localStorage
 
-Test: `§17 profile`
+Playwright: `§17 profile` (anon-redirect only).
 
 ## §18 Admin Console (`/admin`) — admin only
 
@@ -245,7 +291,7 @@ Test: `§17 profile`
 - [ ] Admin sees: Access Requests tab, Users tab, System Alerts banner
 - [ ] Approving an access request mutates `user_roles`
 
-Test: `§18 admin`
+Playwright: `§18 admin` (anon-redirect only).
 
 ## §19 Give Feedback (`/suggest-feature`)
 
@@ -254,7 +300,7 @@ Test: `§18 admin`
 - [ ] Valid submission shows success toast
 - [ ] `#82` Auto-feedback submission posts under the bot account, not the user
 
-Test: `§19 feedback`
+Playwright: `§19 feedback`.
 
 ## §20 Auth (`/auth`, `/auth/callback`)
 
@@ -263,14 +309,14 @@ Test: `§19 feedback`
 - [ ] `/auth/callback?error=...` renders an error state, no crash
 - [ ] `/auth/callback` with valid code redirects home and creates a session
 
-Test: `§20 auth`
+Playwright: `§20 auth`.
 
 ## §21 404 / catch-all
 
 - [ ] `/this-does-not-exist` renders the NotFound page
 - [ ] NotFound has a single `<h1>` and a "Back to home" link
 
-Test: `§21 not-found`
+Playwright: `§21 not-found`.
 
 ## §22 Cross-cutting checks
 
@@ -281,7 +327,9 @@ Test: `§21 not-found`
 - [ ] All external `<a>` tags use `rel="noopener noreferrer"`
 - [ ] Sign-out from any page returns you to a public state
 
-Test: `§22 cross-cutting`
+Playwright: `§22 cross-cutting`. Drive these from a route loop — assert
+`<title>` length, single `<h1>`, and `rel="noopener"` on every external
+`<a>` for every route in `ANON_ROUTES`.
 
 ---
 
@@ -310,5 +358,7 @@ Link the issue back into this file as `[x] (bug #<n>)` so we can track coverage.
 ## Done definition
 
 - Every checkbox above is `[x]` or annotated with a linked bug.
+- Every `test.todo` in `e2e/qa-checklist.spec.ts` is either implemented or
+  replaced with a `test.fail(...)` that references a tracked bug.
 - `npx playwright test e2e/qa-checklist.spec.ts` passes on chromium **and** mobile.
 - `docs/QA_PLAN.md` §2 is updated to flip the corresponding 🔴 → ✅ rows.
