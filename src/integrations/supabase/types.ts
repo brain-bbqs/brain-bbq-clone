@@ -340,33 +340,6 @@ export type Database = {
           },
         ]
       }
-      data_policy_quiz_responses: {
-        Row: {
-          answer: string
-          created_at: string
-          id: string
-          question_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          answer: string
-          created_at?: string
-          id?: string
-          question_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          answer?: string
-          created_at?: string
-          id?: string
-          question_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       edit_history: {
         Row: {
           chat_context: Json | null
