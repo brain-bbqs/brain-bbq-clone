@@ -1,0 +1,15 @@
+name: Mirror to nadernik/brain-bbq-clone-mirror
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git push --mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/nadernik/brain-bbq-clone-mirror.git
