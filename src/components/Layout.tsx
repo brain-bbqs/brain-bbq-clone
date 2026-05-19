@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useThemeSync } from "@/hooks/useThemeSync";
 import { PanelLeft } from "lucide-react";
 import { EntitySummaryProvider } from "@/contexts/EntitySummaryContext";
 import { EntitySummaryModal } from "@/components/entity-summary/EntitySummaryModal";
@@ -28,6 +29,7 @@ function FloatingTrigger() {
 
 export function Layout({ children }: LayoutProps) {
   useAnalytics();
+  useThemeSync();
 
   return (
     <EntitySummaryProvider>
