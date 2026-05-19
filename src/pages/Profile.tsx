@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { DataPolicyQuiz } from "@/components/profile/DataPolicyQuiz";
 
 // Editable tag list component for skills / research areas
 function EditableTagList({
@@ -475,6 +476,9 @@ export default function Profile() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit history / data provenance */}
+      <DataPolicyQuiz userId={user.id} />
 
       {/* Edit history / data provenance */}
       <Card id="edits" className="scroll-mt-20">
