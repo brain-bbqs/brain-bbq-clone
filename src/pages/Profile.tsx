@@ -479,6 +479,8 @@ export default function Profile() {
 
       {/* Edit history / data provenance */}
       <Card id="edits" className="scroll-mt-20">
+        {null}
+      </Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <History className="h-4 w-4" />
