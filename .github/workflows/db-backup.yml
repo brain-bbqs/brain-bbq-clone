@@ -1,26 +1,22 @@
 # Scheduled full-database backup for the BBQS Knowledge Graph (Supabase project vpexxhfpvghlejljwpvt).
 #
 # Runs every Sunday at 02:00 UTC and can be triggered manually at any time.
-# Produces two artifacts per run:
-#   - bbqs-kg-schema-<date>.sql.gz   — schema only (DDL, RLS, functions, triggers)
-#   - bbqs-kg-data-<date>.sql.gz     — full data dump (schema + all table rows)
+# Dumps are pushed as compressed files to the private brain-bbqs/bbqs-backups repo:
+#   kg/YYYY-MM-DD-schema.sql.gz   — schema only (DDL, RLS, functions, triggers)
+#   kg/YYYY-MM-DD-data.sql.gz     — full data dump (schema + all table rows)
 #
-# Artifacts are retained for 90 days (GitHub free-tier limit).
-#
-# ── Required secrets (add at Settings → Secrets → Actions) ──────────────────
+# ── Required secrets (Settings → Secrets → Actions) ─────────────────────────
 #   SUPABASE_KG_DB_URL
-#     Direct Postgres connection string for the KG project.
-#     Find it at: Supabase dashboard → Project Settings → Database →
-#                 Connection string → URI (use the "Session mode" / port 5432 URL)
-#     Format: postgresql://postgres:[PASSWORD]@db.vpexxhfpvghlejljwpvt.supabase.co:5432/postgres
+#     postgresql://postgres:[PASSWORD]@db.vpexxhfpvghlejljwpvt.supabase.co:5432/postgres
+#   BACKUP_REPO_TOKEN
+#     GitHub PAT with `repo` scope — used to push to brain-bbqs/bbqs-backups
 # ────────────────────────────────────────────────────────────────────────────
 
 name: Database Backup — BBQS Knowledge Graph
 
 on:
   schedule:
-    # Every Sunday at 02:00 UTC
-    - cron: "0 2 * * 0"
+    - cron: "0 2 * * 0"   # Every Sunday at 02:00 UTC
   workflow_dispatch:
     inputs:
       reason:
@@ -30,7 +26,7 @@ on:
 
 jobs:
   backup:
-    name: pg_dump → upload artifacts
+    name: pg_dump → bbqs-backups
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -44,10 +40,7 @@ jobs:
         id: ts
         run: echo "DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      # ── Schema-only dump ────────────────────────────────────────────────────
       - name: Dump schema
-        env:
-          PGPASSWORD: ""   # password is embedded in the URL
         run: |
           pg_dump \
             "${{ secrets.SUPABASE_KG_DB_URL }}" \
@@ -55,9 +48,8 @@ jobs:
             --no-owner \
             --no-acl \
             --format=plain \
-            | gzip > bbqs-kg-schema-${{ steps.ts.outputs.DATE }}.sql.gz
+            | gzip > kg-${{ steps.ts.outputs.DATE }}-schema.sql.gz
 
-      # ── Full data dump ──────────────────────────────────────────────────────
       - name: Dump full data
         run: |
           pg_dump \
@@ -65,35 +57,33 @@ jobs:
             --no-owner \
             --no-acl \
             --format=plain \
-            | gzip > bbqs-kg-data-${{ steps.ts.outputs.DATE }}.sql.gz
+            | gzip > kg-${{ steps.ts.outputs.DATE }}-data.sql.gz
 
-      - name: Report dump sizes
+      - name: Report sizes
         run: |
-          echo "Schema dump: $(du -sh bbqs-kg-schema-${{ steps.ts.outputs.DATE }}.sql.gz | cut -f1)"
-          echo "Data dump:   $(du -sh bbqs-kg-data-${{ steps.ts.outputs.DATE }}.sql.gz | cut -f1)"
+          echo "Schema: $(du -sh kg-${{ steps.ts.outputs.DATE }}-schema.sql.gz | cut -f1)"
+          echo "Data:   $(du -sh kg-${{ steps.ts.outputs.DATE }}-data.sql.gz | cut -f1)"
 
-      # ── Upload artifacts (retained 90 days) ────────────────────────────────
-      - name: Upload schema artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: bbqs-kg-schema-${{ steps.ts.outputs.DATE }}
-          path: bbqs-kg-schema-${{ steps.ts.outputs.DATE }}.sql.gz
-          retention-days: 90
-
-      - name: Upload data artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: bbqs-kg-data-${{ steps.ts.outputs.DATE }}
-          path: bbqs-kg-data-${{ steps.ts.outputs.DATE }}.sql.gz
-          retention-days: 90
+      - name: Push to bbqs-backups
+        run: |
+          git clone https://x-access-token:${{ secrets.BACKUP_REPO_TOKEN }}@github.com/brain-bbqs/bbqs-backups.git backup-repo
+          mkdir -p backup-repo/kg
+          cp kg-${{ steps.ts.outputs.DATE }}-schema.sql.gz backup-repo/kg/
+          cp kg-${{ steps.ts.outputs.DATE }}-data.sql.gz backup-repo/kg/
+          cd backup-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kg/
+          git commit -m "backup: KG ${{ steps.ts.outputs.DATE }}"
+          git push
 
       - name: Summary
         run: |
-          echo "## Backup complete — ${{ steps.ts.outputs.DATE }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## KG Backup — ${{ steps.ts.outputs.DATE }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Artifact | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Schema | $(du -sh bbqs-kg-schema-${{ steps.ts.outputs.DATE }}.sql.gz | cut -f1) |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Full data | $(du -sh bbqs-kg-data-${{ steps.ts.outputs.DATE }}.sql.gz | cut -f1) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| kg/${{ steps.ts.outputs.DATE }}-schema.sql.gz | $(du -sh kg-${{ steps.ts.outputs.DATE }}-schema.sql.gz | cut -f1) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| kg/${{ steps.ts.outputs.DATE }}-data.sql.gz | $(du -sh kg-${{ steps.ts.outputs.DATE }}-data.sql.gz | cut -f1) |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Download from the [Actions artifacts tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})." >> "$GITHUB_STEP_SUMMARY"
+          echo "Stored in [brain-bbqs/bbqs-backups](https://github.com/brain-bbqs/bbqs-backups/tree/main/kg)." >> "$GITHUB_STEP_SUMMARY"
