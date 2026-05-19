@@ -1,15 +1,15 @@
 import { test, expect, Page } from "@playwright/test";
 
 /**
- * Brian's QA suite — mirrors docs/QA_BRIAN.md section-for-section.
+ * Standard QA suite — mirrors docs/QA_CHECKLIST.md section-for-section.
  *
- * Each test title starts with the section tag (e.g. "§2 home") so Brian can
- * run a single section with:
- *   npx playwright test e2e/brian-qa.spec.ts -g "§2"
+ * Each test title starts with the section tag (e.g. "§2 home") so a single
+ * section can be run with:
+ *   npx playwright test e2e/qa-checklist.spec.ts -g "§2"
  *
- * These tests are anon-only (no Globus login). Auth-gated checks assert the
- * redirect to /auth rather than the gated content. Member/admin coverage
- * lives in the auth-fixture suites tracked in docs/QA_PLAN.md §4.
+ * Anon-only (no Globus login). Auth-gated checks assert the redirect to
+ * /auth rather than the gated content. Member/admin coverage lives in the
+ * auth-fixture suites tracked in docs/QA_PLAN.md §4.
  */
 
 const PUBLIC_ROUTES = [

@@ -1,8 +1,8 @@
-# Brian's QA Walkthrough — BBQS v1.0.0
+# BBQS QA Checklist — v1.0.0
 
-Welcome, Brian. This document is your hands-on QA checklist. Work through it
-top-to-bottom, ticking each `[ ]` checkbox as you go. Every item has a matching
-automated Playwright test in `e2e/brian-qa.spec.ts` so you can cross-check your
+Hands-on QA walkthrough for the BBQS app. Work through it top-to-bottom,
+ticking each `[ ]` checkbox as you go. Every item has a matching automated
+Playwright test in `e2e/qa-checklist.spec.ts` so you can cross-check your
 manual result against CI.
 
 ## How to work this document
@@ -14,11 +14,11 @@ manual result against CI.
    template in §99 and link it from the checkbox like `[x] (bug #149)`.
 4. When the whole section is green, run the matching Playwright test:
    ```bash
-   npx playwright test e2e/brian-qa.spec.ts -g "§<section-number>"
+   npx playwright test e2e/qa-checklist.spec.ts -g "§<section-number>"
    ```
 5. When the entire document is green, run the whole suite:
    ```bash
-   npx playwright test e2e/brian-qa.spec.ts
+   npx playwright test e2e/qa-checklist.spec.ts
    ```
 
 ## Environments
@@ -291,7 +291,7 @@ When you find a defect, open a GitHub issue with:
 
 ```
 Title:    [QA] <section> — <one-line summary>
-Labels:   bug, qa-brian
+Labels:   bug, qa
 
 Environment:  staging | local | prod
 Route:        /<path>
@@ -310,5 +310,5 @@ Link the issue back into this file as `[x] (bug #<n>)` so we can track coverage.
 ## Done definition
 
 - Every checkbox above is `[x]` or annotated with a linked bug.
-- `npx playwright test e2e/brian-qa.spec.ts` passes on chromium **and** mobile.
+- `npx playwright test e2e/qa-checklist.spec.ts` passes on chromium **and** mobile.
 - `docs/QA_PLAN.md` §2 is updated to flip the corresponding 🔴 → ✅ rows.
