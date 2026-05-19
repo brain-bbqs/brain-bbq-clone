@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Building2, FolderOpen, MessageSquare, History, LogOut, LogIn, Pencil, Check, X, Plus, Tag, FlaskConical } from "lucide-react";
+import { User, Building2, FolderOpen, MessageSquare, History, LogOut, LogIn, Pencil, Check, X, Plus, Tag, FlaskConical, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { format } from "date-fns";
@@ -101,6 +102,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { open } = useEntitySummary();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -370,6 +372,39 @@ export default function Profile() {
       </Card>
 
       {/* Skills & Research Areas */}
+      {/* Appearance */}
+      <Card id="appearance" className="scroll-mt-20">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sun className="h-4 w-4" />
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            Choose your preferred color theme. Your choice is saved to your account and applied on every device.
+          </p>
+          <div className="grid grid-cols-3 gap-2 max-w-md">
+            {([
+              { key: "light", label: "Light", icon: Sun },
+              { key: "dark", label: "Dark", icon: Moon },
+              { key: "system", label: "System", icon: Monitor },
+            ] as const).map(({ key, label, icon: Icon }) => (
+              <Button
+                key={key}
+                variant={theme === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTheme(key)}
+                className="justify-start gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {linkedInvestigator && (
         <Card id="skills" className="scroll-mt-20">
           <CardHeader>
