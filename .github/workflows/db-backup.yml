@@ -16,7 +16,7 @@ name: Database Backup — BBQS Knowledge Graph
 
 on:
   schedule:
-    - cron: "0 2 * * 0"   # Every Sunday at 02:00 UTC
+    - cron: "0 7 * * *"   # Every night at 07:00 UTC = 02:00 AM ET (03:00 during EDT)
   workflow_dispatch:
     inputs:
       reason:
