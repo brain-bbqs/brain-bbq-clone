@@ -31,7 +31,6 @@ import { useUserTier } from "@/hooks/useUserTier";
 import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { normalizePiName as _normalizePiName } from "@/lib/pi-utils";
 
 interface Publication {
   pmid: string;
