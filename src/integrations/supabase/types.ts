@@ -723,6 +723,8 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          onboarding_checklist: Json | null
+          onboarding_completed_at: string | null
           orcid: string | null
           pending_role: Database["public"]["Enums"]["app_role"] | null
           profile_url: string | null
@@ -741,6 +743,8 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          onboarding_checklist?: Json | null
+          onboarding_completed_at?: string | null
           orcid?: string | null
           pending_role?: Database["public"]["Enums"]["app_role"] | null
           profile_url?: string | null
@@ -759,6 +763,8 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          onboarding_checklist?: Json | null
+          onboarding_completed_at?: string | null
           orcid?: string | null
           pending_role?: Database["public"]["Enums"]["app_role"] | null
           profile_url?: string | null
@@ -1017,6 +1023,7 @@ export type Database = {
           last_edited_by: string | null
           metadata: Json | null
           metadata_completeness: number | null
+          onboarding_status: string | null
           organization_id: string | null
           resource_id: string | null
           study_human: boolean | null
@@ -1033,6 +1040,7 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
+          onboarding_status?: string | null
           organization_id?: string | null
           resource_id?: string | null
           study_human?: boolean | null
@@ -1049,6 +1057,7 @@ export type Database = {
           last_edited_by?: string | null
           metadata?: Json | null
           metadata_completeness?: number | null
+          onboarding_status?: string | null
           organization_id?: string | null
           resource_id?: string | null
           study_human?: boolean | null
