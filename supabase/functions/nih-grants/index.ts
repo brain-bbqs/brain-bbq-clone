@@ -276,12 +276,38 @@ async function seedGrantEntities(supabase: any, grantNumber: string, projectData
     const piName = (pi.fullName || "").trim();
     if (!piName) continue;
 
-    // Find or create investigator by name
-    const { data: existingInv } = await supabase
+    // Find existing investigator: try exact match first, then fuzzy
+    // first+last token match so RePORTER variants like "Patrick T McGrath"
+    // resolve to a curated "Patrick McGrath" row (preserving its email).
+    const normalized = piName.replace(/\s+/g, " ").trim();
+    const tokens = normalized.split(" ").filter(Boolean);
+    const firstTok = tokens[0]?.toLowerCase() || "";
+    const lastTok = tokens[tokens.length - 1]?.toLowerCase() || "";
+
+    let existingInv: { id: string; resource_id: string | null } | null = null;
+    const { data: exact } = await supabase
       .from("investigators")
       .select("id, resource_id")
-      .ilike("name", piName)
+      .ilike("name", normalized)
       .maybeSingle();
+    existingInv = exact || null;
+
+    if (!existingInv && firstTok && lastTok) {
+      const { data: candidates } = await supabase
+        .from("investigators")
+        .select("id, resource_id, name, email")
+        .ilike("name", `${firstTok}%${lastTok}`);
+      const match = (candidates || []).find((c: any) => {
+        const t = (c.name || "").replace(/\s+/g, " ").trim().toLowerCase().split(" ");
+        return t[0] === firstTok && t[t.length - 1] === lastTok;
+      });
+      // Prefer the variant that already has an email
+      const withEmail = (candidates || []).find((c: any) => {
+        const t = (c.name || "").replace(/\s+/g, " ").trim().toLowerCase().split(" ");
+        return t[0] === firstTok && t[t.length - 1] === lastTok && c.email;
+      });
+      existingInv = (withEmail || match) ? { id: (withEmail || match).id, resource_id: (withEmail || match).resource_id } : null;
+    }
 
     let invId: string;
     if (existingInv) {
