@@ -541,11 +541,18 @@ Deno.serve(async (req) => {
 
     // Only roles considered PIs for the Projects page PI column.
     const PI_ROLES = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
+    // Collapse whitespace + lowercase for dedupe (handles "Sima  Mofakham" double-space twins).
+    const piKey = (name: string) => (name || "").trim().replace(/\s+/g, " ").toLowerCase();
 
     const results = grants.map(g => {
       const gisAll = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
-      const gis = gisAll.filter(gi => PI_ROLES.has((gi.role || "").toLowerCase()));
-      const piDetails = gis.map(gi => {
+      // Project page PIs must come exclusively from NIH RePORTER — exclude
+      // curator-added roster entries so they don't appear as extra PIs.
+      const gis = gisAll.filter(gi =>
+        PI_ROLES.has((gi.role || "").toLowerCase()) &&
+        (gi.role_source || "reporter") === "reporter"
+      );
+      const rawPiDetails = gis.map(gi => {
         const inv = invMap.get(gi.investigator_id);
         return {
           fullName: inv?.name || "Unknown",
@@ -555,6 +562,17 @@ Deno.serve(async (req) => {
           isContactPi: gi.role === "contact_pi",
         };
       });
+      // Dedupe by normalized name, preferring the contact_pi variant if present.
+      const byKey = new Map<string, typeof rawPiDetails[number]>();
+      for (const pi of rawPiDetails) {
+        const k = piKey(pi.fullName);
+        if (!k) continue;
+        const prev = byKey.get(k);
+        if (!prev || (pi.isContactPi && !prev.isContactPi)) {
+          byKey.set(k, { ...pi, fullName: pi.fullName.replace(/\s+/g, " ").trim() });
+        }
+      }
+      const piDetails = Array.from(byKey.values());
 
       const contactPi = piDetails.find(pi => pi.isContactPi);
       const allPiNames = piDetails.map(pi => pi.fullName).join(", ");
