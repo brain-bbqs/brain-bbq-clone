@@ -30,6 +30,7 @@ import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { useUserTier } from "@/hooks/useUserTier";
 import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Publication {
   pmid: string;
@@ -351,6 +352,7 @@ const Projects = () => {
   const { projects: marrProjects } = useMarrYaml();
   const { isCurator } = useUserTier();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch grants from server cache (data refreshed via cron/admin)
   const { data: rawRowData = [], isLoading: loading, refetch } = useQuery({
@@ -502,21 +504,62 @@ const Projects = () => {
     });
   }, [refetch, rowData.length, toast]);
 
-  const exportToCSV = useCallback(() => {
+  const exportToCSV = useCallback(async () => {
     if (rowData.length === 0) return;
 
-    const grantHeaders = ["Grant Number", "Title", "Contact PI", "All PIs", "Institution", "Fiscal Year", "Award Amount", "Publications", "NIH Link"];
-    const grantRows = rowData.map(row => [
-      row.grantNumber,
-      row.title,
-      row.contactPi,
-      row.allPis,
-      row.institution,
-      row.fiscalYear.toString(),
-      row.awardAmount.toString(),
-      row.publicationCount.toString(),
-      row.nihLink
-    ]);
+    // When signed in, attempt to enrich with Contact PI emails. RLS on the
+    // `investigators` table will only return rows the viewer is allowed to
+    // see (curators/admins see all; collaborators see grant-mates; others
+    // see only their own). Missing emails are left blank.
+    const emailByNormalizedName = new Map<string, string>();
+    if (user) {
+      const { data: invs } = await supabase
+        .from("investigators")
+        .select("name, email, secondary_emails")
+        .not("email", "is", null);
+      for (const inv of invs || []) {
+        const key = normalizePiName(inv.name || "").toLowerCase();
+        if (!key) continue;
+        const primary = (inv.email || "").trim();
+        const secondary = Array.isArray(inv.secondary_emails)
+          ? inv.secondary_emails.filter(Boolean).join("; ")
+          : "";
+        const combined = [primary, secondary].filter(Boolean).join("; ");
+        if (combined && !emailByNormalizedName.has(key)) {
+          emailByNormalizedName.set(key, combined);
+        }
+      }
+    }
+
+    const includeEmail = !!user;
+    const grantHeaders = [
+      "Grant Number",
+      "Title",
+      "Contact PI",
+      ...(includeEmail ? ["Contact PI Email"] : []),
+      "All PIs",
+      "Institution",
+      "Fiscal Year",
+      "Award Amount",
+      "Publications",
+      "NIH Link",
+    ];
+    const grantRows = rowData.map(row => {
+      const piKey = normalizePiName(row.contactPi || "").toLowerCase();
+      const email = includeEmail ? (emailByNormalizedName.get(piKey) || "") : null;
+      return [
+        row.grantNumber,
+        row.title,
+        row.contactPi,
+        ...(includeEmail ? [email ?? ""] : []),
+        row.allPis,
+        row.institution,
+        row.fiscalYear.toString(),
+        row.awardAmount.toString(),
+        row.publicationCount.toString(),
+        row.nihLink,
+      ];
+    });
 
     const grantCSV = [
       grantHeaders.join(","),
@@ -558,9 +601,11 @@ const Projects = () => {
 
     toast({
       title: "Export complete",
-      description: `Exported ${rowData.length} grants and ${pubRows.length} publications.`,
+      description: includeEmail
+        ? `Exported ${rowData.length} grants (with PI emails where available) and ${pubRows.length} publications.`
+        : `Exported ${rowData.length} grants and ${pubRows.length} publications. Sign in to include PI emails.`,
     });
-  }, [rowData, toast]);
+  }, [rowData, toast, user]);
 
   const exportToYAML = useCallback(() => {
     if (rowData.length === 0) return;
