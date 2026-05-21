@@ -513,20 +513,25 @@ const Projects = () => {
     // see only their own). Missing emails are left blank.
     const emailByNormalizedName = new Map<string, string>();
     if (user) {
+      // Pull all investigator rows the viewer is allowed to see (RLS-gated).
+      // We must NOT filter out rows whose primary `email` is null — many PIs
+      // only have a secondary email recorded.
       const { data: invs } = await supabase
         .from("investigators")
-        .select("name, email, secondary_emails")
-        .not("email", "is", null);
+        .select("name, email, secondary_emails");
       for (const inv of invs || []) {
-        const key = normalizePiName(inv.name || "").toLowerCase();
-        if (!key) continue;
+        const rawKey = normalizePiName(inv.name || "").toLowerCase().replace(/\s+/g, " ").trim();
+        if (!rawKey) continue;
         const primary = (inv.email || "").trim();
         const secondary = Array.isArray(inv.secondary_emails)
           ? inv.secondary_emails.filter(Boolean).join("; ")
           : "";
         const combined = [primary, secondary].filter(Boolean).join("; ");
-        if (combined && !emailByNormalizedName.has(key)) {
-          emailByNormalizedName.set(key, combined);
+        if (!combined) continue;
+        // Prefer a row that has a primary email over one with only secondaries.
+        const existing = emailByNormalizedName.get(rawKey);
+        if (!existing || (!existing.includes("@") && combined.includes("@")) || (primary && !existing.split(";")[0].trim().includes("@"))) {
+          emailByNormalizedName.set(rawKey, combined);
         }
       }
     }
@@ -545,7 +550,7 @@ const Projects = () => {
       "NIH Link",
     ];
     const grantRows = rowData.map(row => {
-      const piKey = normalizePiName(row.contactPi || "").toLowerCase();
+      const piKey = normalizePiName(row.contactPi || "").toLowerCase().replace(/\s+/g, " ").trim();
       const email = includeEmail ? (emailByNormalizedName.get(piKey) || "") : null;
       return [
         row.grantNumber,
