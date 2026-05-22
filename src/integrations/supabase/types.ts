@@ -269,6 +269,93 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_config: {
+        Row: {
+          alert_threshold_pct: number
+          config: Json
+          created_at: string
+          id: string
+          last_sync_error: string | null
+          last_sync_status: string | null
+          last_synced_at: string | null
+          manual_notes: string | null
+          manual_usage_usd: number | null
+          monthly_limit_usd: number
+          provider: Database["public"]["Enums"]["budget_provider"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alert_threshold_pct?: number
+          config?: Json
+          created_at?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          manual_notes?: string | null
+          manual_usage_usd?: number | null
+          monthly_limit_usd?: number
+          provider: Database["public"]["Enums"]["budget_provider"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alert_threshold_pct?: number
+          config?: Json
+          created_at?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          manual_notes?: string | null
+          manual_usage_usd?: number | null
+          monthly_limit_usd?: number
+          provider?: Database["public"]["Enums"]["budget_provider"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      budget_snapshots: {
+        Row: {
+          captured_at: string
+          id: string
+          metric_key: string
+          metric_label: string | null
+          period_end: string | null
+          period_start: string | null
+          provider: Database["public"]["Enums"]["budget_provider"]
+          raw: Json
+          unit: string | null
+          value_numeric: number | null
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          metric_key: string
+          metric_label?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider: Database["public"]["Enums"]["budget_provider"]
+          raw?: Json
+          unit?: string | null
+          value_numeric?: number | null
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          metric_key?: string
+          metric_label?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider?: Database["public"]["Enums"]["budget_provider"]
+          raw?: Json
+          unit?: string | null
+          value_numeric?: number | null
+        }
+        Relationships: []
+      }
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]
@@ -1707,6 +1794,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "curator"
+      budget_provider: "github" | "supabase" | "lovable"
       curation_action: "create" | "update" | "delete"
       curation_entity_type:
         | "project_metadata"
@@ -1855,6 +1943,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "curator"],
+      budget_provider: ["github", "supabase", "lovable"],
       curation_action: ["create", "update", "delete"],
       curation_entity_type: [
         "project_metadata",
