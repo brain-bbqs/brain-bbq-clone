@@ -276,12 +276,38 @@ async function seedGrantEntities(supabase: any, grantNumber: string, projectData
     const piName = (pi.fullName || "").trim();
     if (!piName) continue;
 
-    // Find or create investigator by name
-    const { data: existingInv } = await supabase
+    // Find existing investigator: try exact match first, then fuzzy
+    // first+last token match so RePORTER variants like "Patrick T McGrath"
+    // resolve to a curated "Patrick McGrath" row (preserving its email).
+    const normalized = piName.replace(/\s+/g, " ").trim();
+    const tokens = normalized.split(" ").filter(Boolean);
+    const firstTok = tokens[0]?.toLowerCase() || "";
+    const lastTok = tokens[tokens.length - 1]?.toLowerCase() || "";
+
+    let existingInv: { id: string; resource_id: string | null } | null = null;
+    const { data: exact } = await supabase
       .from("investigators")
       .select("id, resource_id")
-      .ilike("name", piName)
+      .ilike("name", normalized)
       .maybeSingle();
+    existingInv = exact || null;
+
+    if (!existingInv && firstTok && lastTok) {
+      const { data: candidates } = await supabase
+        .from("investigators")
+        .select("id, resource_id, name, email")
+        .ilike("name", `${firstTok}%${lastTok}`);
+      const match = (candidates || []).find((c: any) => {
+        const t = (c.name || "").replace(/\s+/g, " ").trim().toLowerCase().split(" ");
+        return t[0] === firstTok && t[t.length - 1] === lastTok;
+      });
+      // Prefer the variant that already has an email
+      const withEmail = (candidates || []).find((c: any) => {
+        const t = (c.name || "").replace(/\s+/g, " ").trim().toLowerCase().split(" ");
+        return t[0] === firstTok && t[t.length - 1] === lastTok && c.email;
+      });
+      existingInv = (withEmail || match) ? { id: (withEmail || match).id, resource_id: (withEmail || match).resource_id } : null;
+    }
 
     let invId: string;
     if (existingInv) {
@@ -541,11 +567,18 @@ Deno.serve(async (req) => {
 
     // Only roles considered PIs for the Projects page PI column.
     const PI_ROLES = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
+    // Collapse whitespace + lowercase for dedupe (handles "Sima  Mofakham" double-space twins).
+    const piKey = (name: string) => (name || "").trim().replace(/\s+/g, " ").toLowerCase();
 
     const results = grants.map(g => {
       const gisAll = (grantInvestigators || []).filter(gi => gi.grant_id === g.id);
-      const gis = gisAll.filter(gi => PI_ROLES.has((gi.role || "").toLowerCase()));
-      const piDetails = gis.map(gi => {
+      // Project page PIs must come exclusively from NIH RePORTER — exclude
+      // curator-added roster entries so they don't appear as extra PIs.
+      const gis = gisAll.filter(gi =>
+        PI_ROLES.has((gi.role || "").toLowerCase()) &&
+        (gi.role_source || "reporter") === "reporter"
+      );
+      const rawPiDetails = gis.map(gi => {
         const inv = invMap.get(gi.investigator_id);
         return {
           fullName: inv?.name || "Unknown",
@@ -555,6 +588,17 @@ Deno.serve(async (req) => {
           isContactPi: gi.role === "contact_pi",
         };
       });
+      // Dedupe by normalized name, preferring the contact_pi variant if present.
+      const byKey = new Map<string, typeof rawPiDetails[number]>();
+      for (const pi of rawPiDetails) {
+        const k = piKey(pi.fullName);
+        if (!k) continue;
+        const prev = byKey.get(k);
+        if (!prev || (pi.isContactPi && !prev.isContactPi)) {
+          byKey.set(k, { ...pi, fullName: pi.fullName.replace(/\s+/g, " ").trim() });
+        }
+      }
+      const piDetails = Array.from(byKey.values());
 
       const contactPi = piDetails.find(pi => pi.isContactPi);
       const allPiNames = piDetails.map(pi => pi.fullName).join(", ");

@@ -39,7 +39,8 @@ export function AdminPendingBanner() {
         supabase
           .from("investigators")
           .select("id", { count: "exact", head: true })
-          .not("pending_role", "is", null),
+          .not("pending_role", "is", null)
+          .neq("pending_role", "member"),
         isAdmin
           ? supabase
               .from("system_alerts")
