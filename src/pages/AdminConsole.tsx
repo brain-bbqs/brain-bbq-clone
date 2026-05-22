@@ -2,14 +2,15 @@ import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageMeta } from "@/components/PageMeta";
 import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
-import { ShieldCheck, UserPlus, AlertTriangle, FolderPlus } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, FolderPlus, Wallet } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AdminAccessRequests from "./AdminAccessRequests";
 import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
+import { BudgetsPanel } from "@/components/admin/BudgetsPanel";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-const VALID_TABS = ["alerts", "users", "access-requests", "add-project"] as const;
+const VALID_TABS = ["alerts", "budgets", "users", "access-requests", "add-project"] as const;
 type TabKey = (typeof VALID_TABS)[number];
 
 export default function AdminConsole() {
@@ -40,6 +41,10 @@ export default function AdminConsole() {
             <AlertTriangle className="h-4 w-4" />
             System Alerts
           </TabsTrigger>
+          <TabsTrigger value="budgets" className="gap-1.5">
+            <Wallet className="h-4 w-4" />
+            Budgets
+          </TabsTrigger>
           <TabsTrigger value="users" className="gap-1.5">
             <ShieldCheck className="h-4 w-4" />
             User Roles
@@ -59,6 +64,10 @@ export default function AdminConsole() {
           <p className="text-sm text-muted-foreground mt-4">
             Active alerts are shown above. When there are no unresolved alerts, this section is empty.
           </p>
+        </TabsContent>
+
+        <TabsContent value="budgets" className="mt-0">
+          <BudgetsPanel />
         </TabsContent>
 
         <TabsContent value="users" className="mt-0">
