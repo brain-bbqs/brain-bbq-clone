@@ -12,6 +12,7 @@ import { PageMeta } from "@/components/PageMeta";
 import { AccessGate } from "@/components/project-profile/AccessGate";
 import { TeamRosterEditor } from "@/components/project-profile/TeamRosterEditor";
 import { QuestionnaireSection } from "@/components/project-profile/QuestionnaireSection";
+import { EmberDandisetsPanel } from "@/components/project-profile/EmberDandisetsPanel";
 import {
   QUESTIONNAIRE_SECTIONS, TOP_LEVEL_FIELDS, COMPLETENESS_FIELDS,
 } from "@/data/questionnaire-fields";
@@ -212,6 +213,9 @@ export default function ProjectProfile() {
 
         {/* Team roster */}
         <TeamRosterEditor grantId={data.grant.id} canEdit={canEdit} />
+
+        {/* EMBER datasets linked by award number */}
+        <EmberDandisetsPanel grantId={data.grant.id} canSync={canEdit} />
 
         {/* Questionnaire sections */}
         <div className="space-y-3">
