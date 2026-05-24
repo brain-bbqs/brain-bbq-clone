@@ -12,10 +12,18 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(url, serviceKey);
 
-    // Allow internal/cron callers via shared secret, otherwise require admin user.
+    // Allow internal/cron callers via service-role JWT (Authorization header),
+    // shared-secret header, otherwise require an admin user.
     const internalToken = req.headers.get("x-internal-token");
     const cronSecret = Deno.env.get("CI_AUTH_SECRET");
-    const isInternal = !!cronSecret && internalToken === cronSecret;
+    const authHeader = req.headers.get("Authorization") ?? "";
+    let isInternal = !!cronSecret && internalToken === cronSecret;
+    if (!isInternal && authHeader.startsWith("Bearer ")) {
+      try {
+        const payload = JSON.parse(atob(authHeader.slice(7).split(".")[1]));
+        if (payload?.role === "service_role") isInternal = true;
+      } catch { /* ignore */ }
+    }
 
     if (!isInternal) {
       const { user, error } = await requireAuth(req, cors);
