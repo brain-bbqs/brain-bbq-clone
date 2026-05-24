@@ -60,12 +60,16 @@ export function BudgetsPanel() {
 
   useEffect(() => {
     load();
+    // Kick off an initial sync so values appear without manual click.
+    sync();
+    // Refresh every 5 min as a fallback to realtime push.
+    const t = setInterval(() => sync(), 5 * 60 * 1000);
     const channel = supabase
       .channel("budget-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "budget_snapshots" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "budget_config" }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { clearInterval(t); supabase.removeChannel(channel); };
   }, []);
 
   const sync = async (provider?: Provider) => {
@@ -145,15 +149,27 @@ function ProviderCard({
     setManual(cfg?.manual_usage_usd?.toString() ?? "");
   }, [cfg?.id]);
 
-  const totalUsd = useMemo(() =>
-    recent
-      .filter((s) => s.unit === "USD" && typeof s.value_numeric === "number"
-        && s.captured_at >= new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString())
-      .reduce((max, s) => {
-        // Use the most recent value per metric_key
-        return max + (s.value_numeric ?? 0);
-      }, 0),
-    [recent]);
+  // Use only the latest snapshot per metric_key for the current month,
+  // then sum USD (preferring enhanced_total if present to avoid double-counting).
+  const { totalUsd, latestByKey } = useMemo(() => {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+    const latest = new Map<string, Snapshot>();
+    for (const s of recent) {
+      if (s.captured_at < monthStart) continue;
+      const prev = latest.get(s.metric_key);
+      if (!prev || s.captured_at > prev.captured_at) latest.set(s.metric_key, s);
+    }
+    const usd = Array.from(latest.values()).filter(
+      (s) => s.unit === "USD" && typeof s.value_numeric === "number",
+    );
+    const enhanced = usd.find((s) => s.metric_key === "enhanced_total");
+    const total = enhanced
+      ? Number(enhanced.value_numeric)
+      : usd
+          .filter((s) => !s.metric_key.startsWith("enhanced_"))
+          .reduce((sum, s) => sum + (s.value_numeric ?? 0), 0);
+    return { totalUsd: total, latestByKey: latest };
+  }, [recent]);
 
   const cap = Number(cfg?.monthly_limit_usd ?? 0);
   const pct = cap > 0 ? Math.min(200, (totalUsd / cap) * 100) : 0;
@@ -248,16 +264,19 @@ function ProviderCard({
 
         {recent.length > 0 && (
           <div className="pt-2 border-t border-border">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Latest snapshots</p>
-            <div className="space-y-0.5 max-h-32 overflow-y-auto">
-              {recent.slice(0, 6).map((s) => (
-                <div key={s.id} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground truncate mr-2">{s.metric_label ?? s.metric_key}</span>
-                  <span className="font-mono text-foreground">
-                    {s.value_numeric != null ? `${s.value_numeric.toFixed(2)} ${s.unit ?? ""}` : "—"}
-                  </span>
-                </div>
-              ))}
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Current metrics</p>
+            <div className="space-y-0.5 max-h-48 overflow-y-auto">
+              {Array.from(latestByKey.values())
+                .filter((s) => !s.metric_key.startsWith("_"))
+                .sort((a, b) => (a.metric_label ?? a.metric_key).localeCompare(b.metric_label ?? b.metric_key))
+                .map((s) => (
+                  <div key={s.id} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground truncate mr-2">{s.metric_label ?? s.metric_key}</span>
+                    <span className="font-mono text-foreground">
+                      {s.value_numeric != null ? `${s.value_numeric.toFixed(2)} ${s.unit ?? ""}` : "—"}
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
         )}
