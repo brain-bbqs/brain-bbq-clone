@@ -427,6 +427,83 @@ export type Database = {
           },
         ]
       }
+      dandisets: {
+        Row: {
+          access: string | null
+          api_url: string | null
+          award_numbers: string[] | null
+          contact_name: string | null
+          created_at: string
+          dandiset_id: string
+          description: string | null
+          draft_url: string | null
+          file_count: number | null
+          id: string
+          instance: string
+          last_synced_at: string
+          license: string | null
+          name: string
+          neurosift_url: string | null
+          raw: Json
+          resource_id: string | null
+          size_bytes: number | null
+          species: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          access?: string | null
+          api_url?: string | null
+          award_numbers?: string[] | null
+          contact_name?: string | null
+          created_at?: string
+          dandiset_id: string
+          description?: string | null
+          draft_url?: string | null
+          file_count?: number | null
+          id?: string
+          instance?: string
+          last_synced_at?: string
+          license?: string | null
+          name: string
+          neurosift_url?: string | null
+          raw?: Json
+          resource_id?: string | null
+          size_bytes?: number | null
+          species?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          access?: string | null
+          api_url?: string | null
+          award_numbers?: string[] | null
+          contact_name?: string | null
+          created_at?: string
+          dandiset_id?: string
+          description?: string | null
+          draft_url?: string | null
+          file_count?: number | null
+          id?: string
+          instance?: string
+          last_synced_at?: string
+          license?: string | null
+          name?: string
+          neurosift_url?: string | null
+          raw?: Json
+          resource_id?: string | null
+          size_bytes?: number | null
+          species?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dandisets_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edit_history: {
         Row: {
           chat_context: Json | null
@@ -676,6 +753,45 @@ export type Database = {
           url?: string | null
         }
         Relationships: []
+      }
+      grant_dandisets: {
+        Row: {
+          created_at: string
+          dandiset_id: string
+          grant_id: string
+          match_source: string
+          matched_award: string | null
+        }
+        Insert: {
+          created_at?: string
+          dandiset_id: string
+          grant_id: string
+          match_source?: string
+          matched_award?: string | null
+        }
+        Update: {
+          created_at?: string
+          dandiset_id?: string
+          grant_id?: string
+          match_source?: string
+          matched_award?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_dandisets_dandiset_id_fkey"
+            columns: ["dandiset_id"]
+            isOneToOne: false
+            referencedRelation: "dandisets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_dandisets_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grant_investigators: {
         Row: {
