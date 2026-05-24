@@ -187,15 +187,28 @@ export function GrantSummary({ id }: { id: string }) {
         </div>
       )}
 
-      {/* EMBER datasets (read-only) */}
-      {data.dandisets && data.dandisets.length > 0 && (
-        <div className="pt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Database className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              EMBER Datasets ({data.dandisets.length})
-            </h3>
-          </div>
+      {/* EMBER datasets (read-only) — always rendered so users know when nothing is linked */}
+      <div className="pt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Database className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            EMBER Datasets{data.dandisets?.length ? ` (${data.dandisets.length})` : ""}
+          </h3>
+        </div>
+        {!data.dandisets || data.dandisets.length === 0 ? (
+          <p className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-3">
+            No EMBER datasets are linked to this award. Datasets auto-link when their
+            DANDI <code className="text-xs">contributor.awardNumber</code> matches this grant.{" "}
+            <a
+              href="https://dandi.emberarchive.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline"
+            >
+              Browse EMBER archive →
+            </a>
+          </p>
+        ) : (
           <ul className="divide-y divide-border border border-border rounded-lg">
             {data.dandisets.map((row: any) => {
               const d = row.dandiset;
@@ -237,8 +250,8 @@ export function GrantSummary({ id }: { id: string }) {
               );
             })}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 
