@@ -11,6 +11,16 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCanEditProject } from "@/hooks/useCanEditProject";
 import { GrantMarrSection } from "./GrantMarrSection";
+import { Database } from "lucide-react";
+
+function formatBytes(bytes: number | null | undefined): string {
+  if (!bytes) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  let i = 0;
+  let v = bytes;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`;
+}
 
 const PI_ROLES = new Set(["pi", "contact_pi", "co_pi", "mpi"]);
 
@@ -64,6 +74,13 @@ export function GrantSummary({ id }: { id: string }) {
         .eq("grant_number", grant.grant_number)
         .maybeSingle();
 
+      // Get linked EMBER dandisets (read-only, public)
+      const { data: dsLinks } = await supabase
+        .from("grant_dandisets")
+        .select("matched_award, dandiset:dandisets(id, dandiset_id, name, contact_name, file_count, size_bytes, species, draft_url, neurosift_url)")
+        .eq("grant_id", id);
+      const dandisets = (dsLinks || []).filter((r: any) => r.dandiset);
+
       // Get publications - try project_publications join first, then fall back to nih_grants_cache
       let publications: any[] = [];
       if (project?.id) {
@@ -90,6 +107,7 @@ export function GrantSummary({ id }: { id: string }) {
         investigators: investigators || [],
         project,
         publications,
+        dandisets,
       };
     },
   });
@@ -166,6 +184,59 @@ export function GrantSummary({ id }: { id: string }) {
               <div className="flex flex-wrap gap-1.5">{((data.project.metadata as any).use_approaches as string[]).map((a: string) => <Badge key={a} variant="secondary">{a}</Badge>)}</div>
             </SummaryField>
           )}
+        </div>
+      )}
+
+      {/* EMBER datasets (read-only) */}
+      {data.dandisets && data.dandisets.length > 0 && (
+        <div className="pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Database className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              EMBER Datasets ({data.dandisets.length})
+            </h3>
+          </div>
+          <ul className="divide-y divide-border border border-border rounded-lg">
+            {data.dandisets.map((row: any) => {
+              const d = row.dandiset;
+              return (
+                <li key={d.id} className="p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <a
+                        href={d.draft_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-medium text-foreground hover:text-primary inline-flex items-center gap-1"
+                      >
+                        {d.name}
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </a>
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                        DANDI:{d.dandiset_id}
+                        {row.matched_award ? ` · matched ${row.matched_award}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {d.contact_name ? `${d.contact_name} · ` : ""}
+                        {d.file_count?.toLocaleString() || "—"} files · {formatBytes(d.size_bytes)}
+                        {d.species?.length ? ` · ${d.species.join(", ")}` : ""}
+                      </p>
+                    </div>
+                    {d.neurosift_url && (
+                      <a
+                        href={d.neurosift_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline whitespace-nowrap shrink-0"
+                      >
+                        Neurosift →
+                      </a>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

@@ -28,6 +28,7 @@ import "@/styles/ag-grid-theme.css";
 import { useEntitySummary } from "@/contexts/EntitySummaryContext";
 import { useMarrYaml } from "@/hooks/useMarrYaml";
 import { useUserTier } from "@/hooks/useUserTier";
+import { useGrantsWithDandisets } from "@/hooks/useGrantsWithDandisets";
 import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -143,11 +144,15 @@ const normalizeProjectRow = (row: RawProjectRow): ProjectRow | null => {
 
 const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
   const { open } = useEntitySummary();
+  const { data: emberSet } = useGrantsWithDandisets();
+  const noSuffix = data.grantNumber.replace(/-\d+$/, "");
+  const noPrefix = noSuffix.replace(/^\d+/, "");
+  const hasEmber =
+    !!emberSet &&
+    (emberSet.has(data.grantNumber) || emberSet.has(noSuffix) || emberSet.has(noPrefix));
   
   const handleClick = async () => {
     // API returns "1U01DA063534-01", DB may store "1U01DA063534" or "U01DA063534"
-    const noSuffix = data.grantNumber.replace(/-\d+$/, "");
-    const noPrefix = noSuffix.replace(/^\d+/, "");
     const candidates = [...new Set([data.grantNumber, noSuffix, noPrefix])];
     const { data: grant } = await supabase
       .from("grants")
@@ -163,12 +168,23 @@ const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
-            onClick={handleClick}
-            className="font-medium text-foreground hover:text-primary hover:underline truncate block max-w-full text-left"
-          >
-            {value}
-          </button>
+          <span className="flex items-center gap-1.5 min-w-0">
+            <button
+              onClick={handleClick}
+              className="font-medium text-foreground hover:text-primary hover:underline truncate block max-w-full text-left"
+            >
+              {value}
+            </button>
+            {hasEmber && (
+              <Badge
+                variant="outline"
+                className="shrink-0 bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] px-1.5 py-0 h-4 font-semibold"
+                title="This grant has linked EMBER dataset(s)"
+              >
+                EMBER
+              </Badge>
+            )}
+          </span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-md">
           <p className="font-medium">{value}</p>
