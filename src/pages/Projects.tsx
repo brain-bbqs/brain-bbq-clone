@@ -176,13 +176,16 @@ const TitleCell = ({ value, data }: { value: string; data: ProjectRow }) => {
               {value}
             </button>
             {hasEmber && (
-              <Badge
-                variant="outline"
-                className="shrink-0 bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] px-1.5 py-0 h-4 font-semibold"
-                title="This grant has linked EMBER dataset(s)"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick();
+                }}
+                title="View linked EMBER dataset(s) for this grant"
+                className="shrink-0 inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 text-[10px] px-1.5 h-4 font-semibold hover:bg-emerald-500/25 hover:underline"
               >
-                EMBER
-              </Badge>
+                EMBER data →
+              </button>
             )}
           </span>
         </TooltipTrigger>
