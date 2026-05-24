@@ -276,9 +276,16 @@ async function checkThreshold(
   admin: any, provider: Provider, cfg: any, snapshots: Array<Record<string, unknown>>,
 ) {
   if (!cfg.monthly_limit_usd || cfg.monthly_limit_usd <= 0) return;
-  const totalUsd = snapshots
-    .filter((s) => s.unit === "USD" && typeof s.value_numeric === "number")
-    .reduce((sum, s) => sum + (s.value_numeric as number), 0);
+  // Avoid double-counting: prefer enhanced_total when present; otherwise sum the per-product USD lines.
+  const usdSnaps = snapshots.filter(
+    (s) => s.unit === "USD" && typeof s.value_numeric === "number",
+  );
+  const enhanced = usdSnaps.find((s) => s.metric_key === "enhanced_total");
+  const totalUsd = enhanced
+    ? Number(enhanced.value_numeric)
+    : usdSnaps
+        .filter((s) => !String(s.metric_key).startsWith("enhanced_"))
+        .reduce((sum, s) => sum + (s.value_numeric as number), 0);
   if (totalUsd <= 0) return;
 
   const pct = (totalUsd / Number(cfg.monthly_limit_usd)) * 100;
