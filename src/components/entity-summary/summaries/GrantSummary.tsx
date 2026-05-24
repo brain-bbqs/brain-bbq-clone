@@ -187,72 +187,66 @@ export function GrantSummary({ id }: { id: string }) {
         </div>
       )}
 
-      {/* EMBER datasets (read-only) — always rendered so users know when nothing is linked */}
-      <div className="pt-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Database className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            EMBER Datasets{data.dandisets?.length ? ` (${data.dandisets.length})` : ""}
-          </h3>
-        </div>
-        {!data.dandisets || data.dandisets.length === 0 ? (
-          <p className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-3">
-            No EMBER datasets are linked to this award. Datasets auto-link when their
-            DANDI <code className="text-xs">contributor.awardNumber</code> matches this grant.{" "}
-            <a
-              href="https://dandi.emberarchive.org/"
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary hover:underline"
-            >
-              Browse EMBER archive →
-            </a>
-          </p>
-        ) : (
-          <ul className="divide-y divide-border border border-border rounded-lg">
-            {data.dandisets.map((row: any) => {
-              const d = row.dandiset;
-              return (
-                <li key={d.id} className="p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <a
-                        href={d.draft_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm font-medium text-foreground hover:text-primary inline-flex items-center gap-1"
-                      >
-                        {d.name}
-                        <ExternalLink className="h-3 w-3 opacity-60" />
-                      </a>
-                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                        DANDI:{d.dandiset_id}
-                        {row.matched_award ? ` · matched ${row.matched_award}` : ""}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {d.contact_name ? `${d.contact_name} · ` : ""}
-                        {d.file_count?.toLocaleString() || "—"} files · {formatBytes(d.size_bytes)}
-                        {d.species?.length ? ` · ${d.species.join(", ")}` : ""}
-                      </p>
-                    </div>
-                    {d.neurosift_url && (
-                      <a
-                        href={d.neurosift_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline whitespace-nowrap shrink-0"
-                      >
-                        Neurosift →
-                      </a>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
     </div>
+  );
+
+  const emberContent = (
+    !data.dandisets || data.dandisets.length === 0 ? (
+      <p className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-4">
+        No EMBER datasets are linked to this award. Datasets auto-link when their
+        DANDI <code className="text-xs">contributor.awardNumber</code> matches this grant.{" "}
+        <a
+          href="https://dandi.emberarchive.org/"
+          target="_blank"
+          rel="noreferrer"
+          className="text-primary hover:underline"
+        >
+          Browse EMBER archive →
+        </a>
+      </p>
+    ) : (
+      <ul className="divide-y divide-border border border-border rounded-lg">
+        {data.dandisets.map((row: any) => {
+          const d = row.dandiset;
+          return (
+            <li key={d.id} className="p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <a
+                    href={d.draft_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-foreground hover:text-primary inline-flex items-center gap-1"
+                  >
+                    {d.name}
+                    <ExternalLink className="h-3 w-3 opacity-60" />
+                  </a>
+                  <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                    DANDI:{d.dandiset_id}
+                    {row.matched_award ? ` · matched ${row.matched_award}` : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {d.contact_name ? `${d.contact_name} · ` : ""}
+                    {d.file_count?.toLocaleString() || "—"} files · {formatBytes(d.size_bytes)}
+                    {d.species?.length ? ` · ${d.species.join(", ")}` : ""}
+                  </p>
+                </div>
+                {d.neurosift_url && (
+                  <a
+                    href={d.neurosift_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-primary hover:underline whitespace-nowrap shrink-0"
+                  >
+                    Neurosift →
+                  </a>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    )
   );
 
   const publicationsContent = (
@@ -320,6 +314,7 @@ export function GrantSummary({ id }: { id: string }) {
           )
         )},
         { id: "publications", label: `Publications (${data.publications.length})`, icon: <FileText className="h-3.5 w-3.5" />, content: publicationsContent },
+        { id: "ember", label: `EMBER Data${data.dandisets?.length ? ` (${data.dandisets.length})` : ""}`, icon: <Database className="h-3.5 w-3.5" />, content: emberContent },
         { id: "comments", label: "Comments", icon: <MessageSquare className="h-3.5 w-3.5" />, content: data.resource_id ? <EntityComments resourceId={data.resource_id} /> : <p className="text-sm text-muted-foreground italic">Comments not available.</p> },
       ]} />
     </div>
