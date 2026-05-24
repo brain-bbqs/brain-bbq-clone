@@ -997,6 +997,78 @@ export type Database = {
           },
         ]
       }
+      lovable_credit_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credits: number
+          event_type: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          usd_amount: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credits?: number
+          event_type: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          usd_amount?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credits?: number
+          event_type?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          usd_amount?: number
+        }
+        Relationships: []
+      }
+      lovable_user_usage: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credits_used: number
+          id: string
+          notes: string | null
+          period_month: string
+          updated_at: string
+          usd_equivalent: number
+          user_id: string | null
+          user_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credits_used?: number
+          id?: string
+          notes?: string | null
+          period_month: string
+          updated_at?: string
+          usd_equivalent?: number
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credits_used?: number
+          id?: string
+          notes?: string | null
+          period_month?: string
+          updated_at?: string
+          usd_equivalent?: number
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
