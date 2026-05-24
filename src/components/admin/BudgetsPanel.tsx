@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { RefreshCw, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { LovableCreditsPanel } from "./LovableCreditsPanel";
 
 type Provider = "github" | "supabase" | "lovable";
 
@@ -121,6 +122,10 @@ export function BudgetsPanel() {
             />
           );
         })}
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <LovableCreditsPanel />
       </div>
     </div>
   );
