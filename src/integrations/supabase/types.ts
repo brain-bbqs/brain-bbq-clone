@@ -1146,6 +1146,42 @@ export type Database = {
         }
         Relationships: []
       }
+      lovable_invoices: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          description: string
+          external_invoice_id: string | null
+          id: string
+          invoice_date: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          description: string
+          external_invoice_id?: string | null
+          id?: string
+          invoice_date: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          description?: string
+          external_invoice_id?: string | null
+          id?: string
+          invoice_date?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lovable_user_usage: {
         Row: {
           created_at: string
