@@ -100,8 +100,9 @@ Deno.serve(async (req) => {
 // Uses GITHUB_TOKEN. Pulls enhanced billing (line items in USD) + legacy
 // minutes/storage endpoints. Auto-detects owner (org first, then user) if missing.
 async function syncGithub(cfg: any): Promise<Array<Record<string, unknown>>> {
-  const token = Deno.env.get("GITHUB_TOKEN");
-  if (!token) throw new Error("GITHUB_TOKEN secret missing");
+  // Prefer the dedicated billing-scoped token; fall back to the general one.
+  const token = Deno.env.get("GITHUB_BILLING_TOKEN") ?? Deno.env.get("GITHUB_TOKEN");
+  if (!token) throw new Error("GITHUB_BILLING_TOKEN (or GITHUB_TOKEN) secret missing");
 
   const headers = {
     Authorization: `Bearer ${token}`,
