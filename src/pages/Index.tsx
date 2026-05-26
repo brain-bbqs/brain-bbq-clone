@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import { PageMeta } from "@/components/PageMeta";
+import BBQSChatWidget from "@/components/BBQSChatWidget";
 import {
   Users,
   Bot,
@@ -10,7 +11,6 @@ import {
   Scale,
   Wrench,
   ChevronRight,
-  MessageSquare,
 } from "lucide-react";
 
 interface NavCard {
@@ -106,22 +106,21 @@ const Index = () => {
       </div>
 
 
-      {/* BBQS Assistant CTA */}
+      {/* BBQS Assistant chat */}
       <section className="px-4 sm:px-6 mt-6">
-        <div className="max-w-5xl mx-auto flex justify-center">
-          <a
-            href="https://agent.brain-bbqs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all duration-150 text-sm"
-          >
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <span className="font-medium text-foreground">Talk to the BBQS Agent</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-              Beta
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 text-primary opacity-70 group-hover:translate-x-0.5 transition-transform" />
-          </a>
+        <div className="max-w-3xl mx-auto">
+          <BBQSChatWidget />
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Prefer the full agent?{" "}
+            <a
+              href="https://agent.brain-bbqs.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Open the BBQS Agent
+            </a>
+          </p>
         </div>
       </section>
 
