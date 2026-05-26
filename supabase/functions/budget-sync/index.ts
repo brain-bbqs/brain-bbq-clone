@@ -258,7 +258,7 @@ function syncLovableManual(cfg: any): Array<Record<string, unknown>> {
 
 // ---- Supabase (placeholder until Management token is added) ----
 function syncSupabasePlaceholder(cfg: any): Array<Record<string, unknown>> {
-  const token = Deno.env.get("SUPABASE_MANAGEMENT_TOKEN");
+  const token = Deno.env.get("SB_MANAGEMENT_TOKEN");
   if (!token) {
     // Allow manual fallback identical to Lovable
     if (cfg.manual_usage_usd == null) return [];
