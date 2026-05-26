@@ -113,11 +113,9 @@ async function syncGithub(cfg: any): Promise<Array<Record<string, unknown>>> {
   let owner: string | undefined = cfg.config?.org ?? cfg.config?.user;
   let ownerType: "orgs" | "users" = cfg.config?.user ? "users" : "orgs";
   if (!owner) {
-    const me = await fetch("https://api.github.com/user", { headers });
-    if (!me.ok) throw new Error(`GitHub /user failed: ${me.status} ${await me.text()}`);
-    const u = await me.json();
-    owner = u.login;
-    ownerType = "users";
+    // Default to the brain-bbqs org so billing endpoints hit /orgs/brain-bbqs/...
+    owner = "brain-bbqs";
+    ownerType = "orgs";
   }
 
   const today = new Date();
