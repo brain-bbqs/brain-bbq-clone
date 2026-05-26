@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
         let snapshots: Array<Record<string, unknown>> = [];
         if (provider === "github") snapshots = await syncGithub(cfg);
         else if (provider === "lovable") snapshots = syncLovableManual(cfg);
-        else if (provider === "supabase") snapshots = syncSupabasePlaceholder(cfg);
+        else if (provider === "supabase") snapshots = await syncSupabase(cfg);
 
         if (snapshots.length) {
           const { error: insertErr } = await admin
@@ -256,25 +256,86 @@ function syncLovableManual(cfg: any): Array<Record<string, unknown>> {
   }];
 }
 
-// ---- Supabase (placeholder until Management token is added) ----
-function syncSupabasePlaceholder(cfg: any): Array<Record<string, unknown>> {
+// ---- Supabase (Management API) ----
+async function syncSupabase(cfg: any): Promise<Array<Record<string, unknown>>> {
   const token = Deno.env.get("SB_MANAGEMENT_TOKEN");
-  if (!token) {
-    // Allow manual fallback identical to Lovable
-    if (cfg.manual_usage_usd == null) return [];
-    const today = new Date();
-    return [{
-      provider: "supabase",
-      metric_key: "manual_total",
-      metric_label: "Manual Supabase total",
-      value_numeric: cfg.manual_usage_usd,
-      unit: "USD",
-      period_start: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10),
-      period_end: new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10),
-      raw: { source: "manual" },
-    }];
+  const today = new Date();
+  const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+  const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+  // Always emit a manual line if the user set one (acts as override / floor).
+  const out: Array<Record<string, unknown>> = [];
+  if (cfg.manual_usage_usd != null) {
+    out.push({
+      provider: "supabase", metric_key: "manual_total", metric_label: "Manual Supabase total",
+      value_numeric: cfg.manual_usage_usd, unit: "USD",
+      period_start: periodStart, period_end: periodEnd, raw: { source: "manual" },
+    });
   }
-  return []; // Real Management API wiring lands when token is added.
+  if (!token) return out;
+
+  const h = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  // 1. List orgs the token can see.
+  const orgsRes = await fetch("https://api.supabase.com/v1/organizations", { headers: h });
+  if (!orgsRes.ok) {
+    throw new Error(`Management /organizations failed: ${orgsRes.status} ${(await orgsRes.text()).slice(0, 300)}`);
+  }
+  const orgs: Array<{ id: string; slug: string; name: string }> = await orgsRes.json();
+
+  // 2. For each org, pull current-period usage. Endpoint returns metric line items with
+  //    `usage` numbers; we sum any explicit USD costs and surface per-metric usage.
+  let usdTotal = 0;
+  for (const org of orgs) {
+    const usageUrl = `https://api.supabase.com/v1/organizations/${org.slug}/usage`;
+    const u = await fetch(usageUrl, { headers: h });
+    if (!u.ok) {
+      out.push({
+        provider: "supabase", metric_key: `org_${org.slug}_error`,
+        metric_label: `${org.name} (usage error)`, value_numeric: null, unit: null,
+        period_start: periodStart, period_end: periodEnd,
+        raw: { status: u.status, error: (await u.text()).slice(0, 500) },
+      });
+      continue;
+    }
+    const data = await u.json();
+    const usages: any[] = data.usages ?? data.usage ?? [];
+    for (const m of usages) {
+      const metricKey = `${org.slug}_${(m.metric ?? "unknown").toLowerCase()}`;
+      const usage = Number(m.usage ?? 0);
+      const cost = Number(m.cost ?? 0);
+      if (cost > 0) usdTotal += cost;
+      out.push({
+        provider: "supabase",
+        metric_key: metricKey,
+        metric_label: `${org.name}: ${m.metric ?? "unknown"}`,
+        value_numeric: cost > 0 ? Number(cost.toFixed(4)) : usage,
+        unit: cost > 0 ? "USD" : (m.unit ?? "count"),
+        period_start: periodStart, period_end: periodEnd,
+        raw: m,
+      });
+    }
+  }
+
+  if (usdTotal > 0) {
+    out.push({
+      provider: "supabase", metric_key: "management_total",
+      metric_label: "Management API billed total",
+      value_numeric: Number(usdTotal.toFixed(2)), unit: "USD",
+      period_start: periodStart, period_end: periodEnd,
+      raw: { source: "management-api", orgs: orgs.map((o) => o.slug) },
+    });
+  }
+
+  out.push({
+    provider: "supabase", metric_key: "_orgs",
+    metric_label: `Orgs: ${orgs.map((o) => o.slug).join(", ") || "none"}`,
+    value_numeric: null, unit: null,
+    period_start: periodStart, period_end: periodEnd,
+    raw: { orgs },
+  });
+
+  return out;
 }
 
 // ---- Threshold → system_alerts ----
