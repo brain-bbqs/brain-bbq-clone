@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { RefreshCw, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { LovableCreditsPanel } from "./LovableCreditsPanel";
+import { LovableInvoicesPanel } from "./LovableInvoicesPanel";
 
 type Provider = "github" | "supabase" | "lovable";
 
@@ -126,6 +127,10 @@ export function BudgetsPanel() {
 
       <div className="pt-2 border-t border-border">
         <LovableCreditsPanel />
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <LovableInvoicesPanel />
       </div>
     </div>
   );
