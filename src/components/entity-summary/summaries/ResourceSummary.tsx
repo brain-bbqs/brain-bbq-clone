@@ -76,6 +76,13 @@ export function ResourceSummary({ id }: { id: string }) {
 
   const summaryContent = (
     <div className="space-y-1">
+      {meta.source === "ember" && (
+        <SummaryField label="Archive">
+          <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-xs">
+            EMBER {meta.dandiset_id ? `· DANDI:${meta.dandiset_id}` : ""}
+          </Badge>
+        </SummaryField>
+      )}
       {data.description && <SummaryField label="Description">{data.description}</SummaryField>}
       {version && <SummaryField label="Version">{version}</SummaryField>}
       {language && <SummaryField label="Language / Format">{language}</SummaryField>}

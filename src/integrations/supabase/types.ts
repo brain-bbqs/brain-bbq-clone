@@ -269,6 +269,93 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_config: {
+        Row: {
+          alert_threshold_pct: number
+          config: Json
+          created_at: string
+          id: string
+          last_sync_error: string | null
+          last_sync_status: string | null
+          last_synced_at: string | null
+          manual_notes: string | null
+          manual_usage_usd: number | null
+          monthly_limit_usd: number
+          provider: Database["public"]["Enums"]["budget_provider"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alert_threshold_pct?: number
+          config?: Json
+          created_at?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          manual_notes?: string | null
+          manual_usage_usd?: number | null
+          monthly_limit_usd?: number
+          provider: Database["public"]["Enums"]["budget_provider"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alert_threshold_pct?: number
+          config?: Json
+          created_at?: string
+          id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          manual_notes?: string | null
+          manual_usage_usd?: number | null
+          monthly_limit_usd?: number
+          provider?: Database["public"]["Enums"]["budget_provider"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      budget_snapshots: {
+        Row: {
+          captured_at: string
+          id: string
+          metric_key: string
+          metric_label: string | null
+          period_end: string | null
+          period_start: string | null
+          provider: Database["public"]["Enums"]["budget_provider"]
+          raw: Json
+          unit: string | null
+          value_numeric: number | null
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          metric_key: string
+          metric_label?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider: Database["public"]["Enums"]["budget_provider"]
+          raw?: Json
+          unit?: string | null
+          value_numeric?: number | null
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          metric_key?: string
+          metric_label?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          provider?: Database["public"]["Enums"]["budget_provider"]
+          raw?: Json
+          unit?: string | null
+          value_numeric?: number | null
+        }
+        Relationships: []
+      }
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]
@@ -336,6 +423,83 @@ export type Database = {
             columns: ["reverted_from_audit_id"]
             isOneToOne: false
             referencedRelation: "curation_audit_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dandisets: {
+        Row: {
+          access: string | null
+          api_url: string | null
+          award_numbers: string[] | null
+          contact_name: string | null
+          created_at: string
+          dandiset_id: string
+          description: string | null
+          draft_url: string | null
+          file_count: number | null
+          id: string
+          instance: string
+          last_synced_at: string
+          license: string | null
+          name: string
+          neurosift_url: string | null
+          raw: Json
+          resource_id: string | null
+          size_bytes: number | null
+          species: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          access?: string | null
+          api_url?: string | null
+          award_numbers?: string[] | null
+          contact_name?: string | null
+          created_at?: string
+          dandiset_id: string
+          description?: string | null
+          draft_url?: string | null
+          file_count?: number | null
+          id?: string
+          instance?: string
+          last_synced_at?: string
+          license?: string | null
+          name: string
+          neurosift_url?: string | null
+          raw?: Json
+          resource_id?: string | null
+          size_bytes?: number | null
+          species?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          access?: string | null
+          api_url?: string | null
+          award_numbers?: string[] | null
+          contact_name?: string | null
+          created_at?: string
+          dandiset_id?: string
+          description?: string | null
+          draft_url?: string | null
+          file_count?: number | null
+          id?: string
+          instance?: string
+          last_synced_at?: string
+          license?: string | null
+          name?: string
+          neurosift_url?: string | null
+          raw?: Json
+          resource_id?: string | null
+          size_bytes?: number | null
+          species?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dandisets_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
             referencedColumns: ["id"]
           },
         ]
@@ -589,6 +753,45 @@ export type Database = {
           url?: string | null
         }
         Relationships: []
+      }
+      grant_dandisets: {
+        Row: {
+          created_at: string
+          dandiset_id: string
+          grant_id: string
+          match_source: string
+          matched_award: string | null
+        }
+        Insert: {
+          created_at?: string
+          dandiset_id: string
+          grant_id: string
+          match_source?: string
+          matched_award?: string | null
+        }
+        Update: {
+          created_at?: string
+          dandiset_id?: string
+          grant_id?: string
+          match_source?: string
+          matched_award?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_dandisets_dandiset_id_fkey"
+            columns: ["dandiset_id"]
+            isOneToOne: false
+            referencedRelation: "dandisets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_dandisets_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "grants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grant_investigators: {
         Row: {
@@ -909,6 +1112,114 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lovable_credit_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credits: number
+          event_type: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          usd_amount: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credits?: number
+          event_type: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          usd_amount?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credits?: number
+          event_type?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          usd_amount?: number
+        }
+        Relationships: []
+      }
+      lovable_invoices: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          description: string
+          external_invoice_id: string | null
+          id: string
+          invoice_date: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          description: string
+          external_invoice_id?: string | null
+          id?: string
+          invoice_date: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          description?: string
+          external_invoice_id?: string | null
+          id?: string
+          invoice_date?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lovable_user_usage: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credits_used: number
+          id: string
+          notes: string | null
+          period_month: string
+          updated_at: string
+          usd_equivalent: number
+          user_id: string | null
+          user_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credits_used?: number
+          id?: string
+          notes?: string | null
+          period_month: string
+          updated_at?: string
+          usd_equivalent?: number
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credits_used?: number
+          id?: string
+          notes?: string | null
+          period_month?: string
+          updated_at?: string
+          usd_equivalent?: number
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Relationships: []
       }
       organizations: {
         Row: {
@@ -1707,6 +2018,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "curator"
+      budget_provider: "github" | "supabase" | "lovable"
       curation_action: "create" | "update" | "delete"
       curation_entity_type:
         | "project_metadata"
@@ -1855,6 +2167,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "curator"],
+      budget_provider: ["github", "supabase", "lovable"],
       curation_action: ["create", "update", "delete"],
       curation_entity_type: [
         "project_metadata",
