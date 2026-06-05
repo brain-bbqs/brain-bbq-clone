@@ -76,12 +76,13 @@ Deno.serve(async (req) => {
         results[provider] = { ok: true, count: snapshots.length };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        console.error(`budget-sync provider "${provider}" failed:`, e);
         await admin.from("budget_config").update({
           last_synced_at: new Date().toISOString(),
           last_sync_status: "error",
           last_sync_error: msg,
         }).eq("provider", provider);
-        results[provider] = { ok: false, error: msg };
+        results[provider] = { ok: false, error: "Sync failed" };
       }
     }
 
@@ -89,8 +90,8 @@ Deno.serve(async (req) => {
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: msg }), {
+    console.error("budget-sync request failed:", e);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...cors, "Content-Type": "application/json" },
     });
   }
