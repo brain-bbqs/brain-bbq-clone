@@ -10,9 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { PageMeta } from "@/components/PageMeta";
+import { Loader2, Play } from "lucide-react";
 
 export default function AdminHarvester() {
   const { isAdmin, isCurator, isLoading } = useUserTier();
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchPattern, setBatchPattern] = useState("(R61|R34)");
 
   const { data: settings, refetch: refetchSettings } = useQuery({
     queryKey: ["harvester-settings"],
@@ -37,6 +40,21 @@ export default function AdminHarvester() {
 
   if (isLoading) return <div className="container mx-auto px-4 py-8">Loading…</div>;
   if (!isCurator) return <div className="container mx-auto px-4 py-8">Admins only.</div>;
+
+  const runBatch = async () => {
+    setBatchRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("harvest-grants-batch", {
+        body: { pattern: batchPattern, mode: "multihop" },
+      });
+      if (error) throw error;
+      toast.success(`Queued ${data?.queued ?? 0} grants for multi-hop harvest. Running in background — check back in a few minutes.`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Batch failed to start");
+    } finally {
+      setBatchRunning(false);
+    }
+  };
 
   const saveSettings = async () => {
     const { error } = await supabase.from("harvester_settings").update({
@@ -76,6 +94,23 @@ export default function AdminHarvester() {
     <div className="container mx-auto px-4 py-8 space-y-6">
       <PageMeta title="Harvester Admin" description="Configure the multi-hop methods harvester" />
       <h1 className="text-3xl font-bold">Harvester Admin</h1>
+
+      <Card className="p-6 space-y-3">
+        <h2 className="text-xl font-semibold">Batch run multi-hop harvest</h2>
+        <p className="text-sm text-muted-foreground">
+          Run the multi-hop reasoning harvester across every grant matching the regex below. Each seed takes ~60–90 s and writes to <code className="font-mono">grant_methods_evidence</code> + <code className="font-mono">grant_methods_traversal_paths</code>. Watch the Edge Function logs for progress.
+        </p>
+        <div className="flex gap-2 items-end max-w-md">
+          <div className="flex-1">
+            <Label>Grant-number regex</Label>
+            <Input value={batchPattern} onChange={(e) => setBatchPattern(e.target.value)} className="font-mono" />
+          </div>
+          <Button onClick={runBatch} disabled={batchRunning}>
+            {batchRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+            Start batch
+          </Button>
+        </div>
+      </Card>
 
       <Card className="p-6 space-y-4">
         <h2 className="text-xl font-semibold">Settings</h2>
