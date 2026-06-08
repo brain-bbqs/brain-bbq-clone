@@ -37,6 +37,7 @@ import DandiAssistant from "./pages/DandiAssistant";
 import StatePrivacyMap from "./pages/StatePrivacyMap";
 import FundingOpportunities from "./pages/FundingOpportunities";
 import CrossSpeciesSynchronization from "./pages/CrossSpeciesSynchronization";
+import GrantMethodsEvidence from "./pages/GrantMethodsEvidence";
 
 import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/state-privacy" element={<StatePrivacyMap />} />
               <Route path="/grants" element={<FundingOpportunities />} />
               <Route path="/cross-species-synchronization" element={<CrossSpeciesSynchronization />} />
+              <Route path="/grants/:grantNumber/methods-evidence" element={<GrantMethodsEvidence />} />
               <Route path="/admin" element={<AdminConsole />} />
               <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
               <Route path="/admin/access-requests" element={<Navigate to="/admin?tab=access-requests" replace />} />

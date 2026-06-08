@@ -836,6 +836,84 @@ export type Database = {
           },
         ]
       }
+      grant_methods_evidence: {
+        Row: {
+          analysis_metrics: Json | null
+          confidence: number | null
+          created_at: string
+          depth: number
+          device_hardware: Json | null
+          extracted_at: string
+          id: string
+          irb_or_population: string | null
+          match_score: number | null
+          methods_snippet: string | null
+          pmid: string | null
+          publication_title: string | null
+          publication_year: number | null
+          quote: string | null
+          recording_params: Json | null
+          seed_grant_number: string
+          setting: string | null
+          source_grant_number: string
+          source_grant_title: string | null
+          source_org: string | null
+          source_org_type: string | null
+          source_url: string | null
+          stimulation_params: Json | null
+        }
+        Insert: {
+          analysis_metrics?: Json | null
+          confidence?: number | null
+          created_at?: string
+          depth?: number
+          device_hardware?: Json | null
+          extracted_at?: string
+          id?: string
+          irb_or_population?: string | null
+          match_score?: number | null
+          methods_snippet?: string | null
+          pmid?: string | null
+          publication_title?: string | null
+          publication_year?: number | null
+          quote?: string | null
+          recording_params?: Json | null
+          seed_grant_number: string
+          setting?: string | null
+          source_grant_number: string
+          source_grant_title?: string | null
+          source_org?: string | null
+          source_org_type?: string | null
+          source_url?: string | null
+          stimulation_params?: Json | null
+        }
+        Update: {
+          analysis_metrics?: Json | null
+          confidence?: number | null
+          created_at?: string
+          depth?: number
+          device_hardware?: Json | null
+          extracted_at?: string
+          id?: string
+          irb_or_population?: string | null
+          match_score?: number | null
+          methods_snippet?: string | null
+          pmid?: string | null
+          publication_title?: string | null
+          publication_year?: number | null
+          quote?: string | null
+          recording_params?: Json | null
+          seed_grant_number?: string
+          setting?: string | null
+          source_grant_number?: string
+          source_grant_title?: string | null
+          source_org?: string | null
+          source_org_type?: string | null
+          source_url?: string | null
+          stimulation_params?: Json | null
+        }
+        Relationships: []
+      }
       grants: {
         Row: {
           abstract: string | null
