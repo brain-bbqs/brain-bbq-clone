@@ -65,11 +65,11 @@ Rules of thumb:
 
 ## Environments
 
-| Env | URL | Auth |
-|---|---|---|
-| Local preview | `http://localhost:8080` | preview-mode bypass, you are signed in as `Preview User` |
-| Staging | `https://staging.brain-bbqs.org` | `staging-fake-login` edge function (admin/member fixtures) |
-| Prod | `https://brain-bbqs.org` | Globus OAuth — **DO NOT submit test data here** |
+| Env           | URL                              | Auth                                                       |
+| ------------- | -------------------------------- | ---------------------------------------------------------- |
+| Local preview | `http://localhost:8080`          | preview-mode bypass, you are signed in as `Preview User`   |
+| Staging       | `https://staging.brain-bbqs.org` | `staging-fake-login` edge function (admin/member fixtures) |
+| Prod          | `https://brain-bbqs.org`         | Globus OAuth — **DO NOT submit test data here**            |
 
 Run all manual + automated QA against **staging** unless told otherwise.
 
@@ -244,7 +244,7 @@ Playwright: `§12 working-groups`.
 
 ## §13 Calendar (`/calendar`) — auth required
 
-- [ ] Anon hitting `/calendar` is redirected to `/auth`
+- [x] Anon hitting `/calendar` is redirected to `/auth`
 - [ ] Member sees events on month/week views
 - [ ] Event click opens detail
 
@@ -252,7 +252,7 @@ Playwright: `§13 calendar` (anon-redirect only).
 
 ## §14 Roadmap (`/roadmap`) — auth required
 
-- [ ] Anon hitting `/roadmap` is redirected to `/auth`
+- [x] Anon hitting `/roadmap` is redirected to `/auth`
 - [ ] Authed user sees milestones from `github-roadmap` edge function
 - [ ] Each milestone card links to its GitHub issue in a new tab
 
@@ -262,7 +262,7 @@ Playwright: `§14 roadmap` (anon-redirect only).
 
 - [ ] Landing page renders agenda, speakers, register CTA
 - [ ] Register CTA opens correct form / new tab
-- [ ] Travel page is auth-gated (anon → `/auth`)
+- [x] Travel page is auth-gated (anon → `/auth`)
 - [ ] Hotel map (`HotelLocationMap`) renders all hotel pins
 - [ ] Date warnings (see memory: `mit-workshop-travel`) render correctly
 
@@ -277,7 +277,7 @@ Playwright: `§16 sfn`.
 
 ## §17 Profile (`/profile`) — auth required
 
-- [ ] Anon → `/auth`
+- [x] Anon → `/auth`
 - [ ] Member sees own profile only
 - [ ] Linked-email member can edit their own grants; not others
 - [ ] Onboarding modal shows for first-time user; dismiss persists in localStorage
@@ -286,7 +286,7 @@ Playwright: `§17 profile` (anon-redirect only).
 
 ## §18 Admin Console (`/admin`) — admin only
 
-- [ ] Anon → `/auth`
+- [x] Anon → `/auth`
 - [ ] Member → redirected away / 403
 - [ ] Admin sees: Access Requests tab, Users tab, System Alerts banner
 - [ ] Approving an access request mutates `user_roles`
