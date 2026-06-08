@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import PageMeta from "@/components/PageMeta";
+import { PageMeta } from "@/components/PageMeta";
 
 export default function GrantMethodsEvidence() {
   const { grantNumber = "" } = useParams();
