@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { PageMeta } from "@/components/PageMeta";
 import { Loader2, Play } from "lucide-react";
-import { useState } from "react";
 
 export default function AdminHarvester() {
   const { isAdmin, isCurator, isLoading } = useUserTier();
