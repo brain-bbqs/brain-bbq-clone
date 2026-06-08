@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const fnName = mode === "multihop" ? "harvest-grant-methods-multihop" : "harvest-grant-methods";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const userAuthHeader = req.headers.get("Authorization")!; // forward caller's JWT
 
   // Background runner
   const run = async () => {
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${serviceKey}`,
+            "Authorization": userAuthHeader,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ seedGrantNumber: g }),
