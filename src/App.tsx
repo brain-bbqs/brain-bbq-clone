@@ -42,6 +42,7 @@ import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -61,11 +62,11 @@ const App = () => (
               <Route path="/projects/:grantNumber/profile" element={<ProjectProfile />} />
               <Route path="/sfn-2025" element={<SFN2025 />} />
               <Route path="/mit-workshop-2026" element={<MITWorkshop2026 />} />
-              <Route path="/mit-workshop-2026/travel" element={<MITWorkshopTravel />} />
+              <Route path="/mit-workshop-2026/travel" element={<ProtectedRoute><MITWorkshopTravel /></ProtectedRoute>} />
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/announcements" element={<Announcements />} />
-              <Route path="/roadmap" element={<Roadmap />} />
+              <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/publications" element={<Publications />} />
@@ -79,17 +80,17 @@ const App = () => (
               <Route path="/dandi-assistant" element={<DandiAssistant />} />
               <Route path="/tutorials" element={<Tutorials />} />
               <Route path="/data-provenance" element={<DataProvenance />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               {/* Data Provenance Docs and Self-Autonomy Docs removed */}
               <Route path="/suggest-feature" element={<FeatureSuggestions />} />
               
               
               <Route path="/jobs" element={<JobBoard />} />
-              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
               <Route path="/state-privacy" element={<StatePrivacyMap />} />
               <Route path="/grants" element={<FundingOpportunities />} />
               <Route path="/cross-species-synchronization" element={<CrossSpeciesSynchronization />} />
-              <Route path="/admin" element={<AdminConsole />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminConsole /></ProtectedRoute>} />
               <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
               <Route path="/admin/access-requests" element={<Navigate to="/admin?tab=access-requests" replace />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
