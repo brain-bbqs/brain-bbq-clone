@@ -44,6 +44,7 @@ import Calendar from "./pages/Calendar";
 import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
 import AdminHarvester from "./pages/AdminHarvester";
+import AdminKgHeatmap from "./pages/AdminKgHeatmap";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/grants/:grantNumber/methods-evidence" element={<GrantMethodsEvidence />} />
               <Route path="/admin" element={<AdminConsole />} />
               <Route path="/admin/harvester" element={<AdminHarvester />} />
+              <Route path="/admin/kg-heatmap" element={<AdminKgHeatmap />} />
               <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
               <Route path="/admin/access-requests" element={<Navigate to="/admin?tab=access-requests" replace />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />
