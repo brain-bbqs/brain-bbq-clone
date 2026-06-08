@@ -843,6 +843,7 @@ export type Database = {
           created_at: string
           depth: number
           device_hardware: Json | null
+          discovery_path_id: string | null
           extracted_at: string
           id: string
           irb_or_population: string | null
@@ -868,6 +869,7 @@ export type Database = {
           created_at?: string
           depth?: number
           device_hardware?: Json | null
+          discovery_path_id?: string | null
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
@@ -893,6 +895,7 @@ export type Database = {
           created_at?: string
           depth?: number
           device_hardware?: Json | null
+          discovery_path_id?: string | null
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
@@ -912,7 +915,56 @@ export type Database = {
           source_url?: string | null
           stimulation_params?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "grant_methods_evidence_discovery_path_id_fkey"
+            columns: ["discovery_path_id"]
+            isOneToOne: false
+            referencedRelation: "grant_methods_traversal_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grant_methods_traversal_paths: {
+        Row: {
+          chain_score: number
+          created_at: string
+          id: string
+          path: Json
+          planner_model: string | null
+          replan_count: number
+          seed_grant_number: string
+          terminal_evidence_id: string | null
+        }
+        Insert: {
+          chain_score?: number
+          created_at?: string
+          id?: string
+          path: Json
+          planner_model?: string | null
+          replan_count?: number
+          seed_grant_number: string
+          terminal_evidence_id?: string | null
+        }
+        Update: {
+          chain_score?: number
+          created_at?: string
+          id?: string
+          path?: Json
+          planner_model?: string | null
+          replan_count?: number
+          seed_grant_number?: string
+          terminal_evidence_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_methods_traversal_paths_terminal_evidence_id_fkey"
+            columns: ["terminal_evidence_id"]
+            isOneToOne: false
+            referencedRelation: "grant_methods_evidence"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       grants: {
         Row: {
@@ -960,6 +1012,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      harvester_relations: {
+        Row: {
+          approved_at: string
+          approved_by: string | null
+          created_at: string
+          description: string | null
+          dst_node_type: string
+          enabled: boolean
+          fetcher_key: string
+          id: string
+          name: string
+          src_node_type: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          dst_node_type: string
+          enabled?: boolean
+          fetcher_key: string
+          id?: string
+          name: string
+          src_node_type: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          dst_node_type?: string
+          enabled?: boolean
+          fetcher_key?: string
+          id?: string
+          name?: string
+          src_node_type?: string
+        }
+        Relationships: []
+      }
+      harvester_settings: {
+        Row: {
+          beam_width: number
+          chain_score_threshold: number
+          id: number
+          max_hops: number
+          max_publications_per_seed: number
+          max_replans: number
+          targets_per_relation: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          beam_width?: number
+          chain_score_threshold?: number
+          id?: number
+          max_hops?: number
+          max_publications_per_seed?: number
+          max_replans?: number
+          targets_per_relation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          beam_width?: number
+          chain_score_threshold?: number
+          id?: number
+          max_hops?: number
+          max_publications_per_seed?: number
+          max_replans?: number
+          targets_per_relation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       investigator_organizations: {
         Row: {
@@ -1477,6 +1604,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      proposed_relations: {
+        Row: {
+          created_at: string
+          dst_node_type: string | null
+          example_edge: Json | null
+          id: string
+          planner_rationale: string | null
+          relation_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          seed_grant_number: string | null
+          src_node_type: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dst_node_type?: string | null
+          example_edge?: Json | null
+          id?: string
+          planner_rationale?: string | null
+          relation_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seed_grant_number?: string | null
+          src_node_type?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          dst_node_type?: string | null
+          example_edge?: Json | null
+          id?: string
+          planner_rationale?: string | null
+          relation_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seed_grant_number?: string | null
+          src_node_type?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       publications: {
         Row: {
