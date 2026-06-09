@@ -309,7 +309,15 @@ function Heatmap({
                   style={{ transform: "rotate(-55deg)", transformOrigin: "left bottom" }}
                   title={c.label}
                 >
-                  <span className={c.kind === "device" ? "text-[hsl(265_60%_45%)]" : "text-[hsl(174_50%_30%)]"}>
+                  <span
+                    className={
+                      c.kind === "device"
+                        ? "text-[hsl(265_60%_45%)]"
+                        : c.kind === "org"
+                          ? "text-[hsl(174_50%_30%)]"
+                          : "text-[hsl(38_70%_38%)]"
+                    }
+                  >
                     {c.label.length > 28 ? c.label.slice(0, 26) + "…" : c.label}
                   </span>
                 </div>
@@ -364,6 +372,9 @@ function Heatmap({
       <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
         <span>Cell color = evidence count (log scale, teal → orange)</span>
         <span>· Flash = new hit</span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(38_90%_55%)]" /> publication
+        </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-2 h-2 rounded-full bg-[hsl(174_62%_47%)]" /> org column
         </span>
