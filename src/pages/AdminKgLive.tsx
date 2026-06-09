@@ -611,6 +611,8 @@ export default function AdminKgLive() {
         (p) => { ingestEvidence(p.new as any); setVersion((v) => v + 1); })
       .on("postgres_changes", { event: "*", schema: "public", table: "harvester_runs" },
         () => refetchRuns())
+      .on("postgres_changes", { event: "*", schema: "public", table: "proposed_relations" },
+        () => refetchProposed())
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
