@@ -53,6 +53,65 @@ const NODE_R: Record<Kind, number> = {
 const VIEW_W = 1100;
 const VIEW_H = 620;
 
+// Compress any string to a 1-2 word summary chip.
+const STOPWORDS = new Set([
+  "a","an","the","of","for","and","or","to","in","on","with","by","via","from",
+  "is","are","using","use","based","novel","new","high","low","study","studies",
+  "approach","approaches","analysis","system","systems","model","models","method","methods",
+  "investigation","investigations","research","towards","toward","into","at","as",
+]);
+function shortLabel(s: string | null | undefined, max = 2): string {
+  if (!s) return "—";
+  // PMID columns: "PMID 12345" → "Paper 12345" (no shrink needed)
+  const pmid = s.match(/^PMID\s+(\d+)/i);
+  if (pmid) return `Paper ${pmid[1].slice(-5)}`;
+  const tokens = s
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  const picked: string[] = [];
+  for (const t of tokens) {
+    const lower = t.toLowerCase();
+    if (STOPWORDS.has(lower)) continue;
+    if (t.length < 3) continue;
+    picked.push(t[0].toUpperCase() + t.slice(1));
+    if (picked.length >= max) break;
+  }
+  if (picked.length === 0) picked.push(tokens[0] ?? s);
+  return picked.join(" ");
+}
+
+// Verdict for a single grant→thing relationship, based on evidence count.
+function assessRelation(count: number): {
+  level: "strong" | "moderate" | "weak";
+  label: string;
+  blurb: string;
+  badgeClass: string;
+} {
+  if (count >= 4) {
+    return {
+      level: "strong",
+      label: "Solid lead",
+      blurb: "Multiple evidence rows back this up — worth following.",
+      badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    };
+  }
+  if (count >= 2) {
+    return {
+      level: "moderate",
+      label: "Plausible",
+      blurb: "Limited evidence so far. Watch as more lands.",
+      badgeClass: "bg-amber-100 text-amber-800 border-amber-300",
+    };
+  }
+  return {
+    level: "weak",
+    label: "Speculative",
+    blurb: "Single mention — may be noise.",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+  };
+}
+
 function Bunny({ scale = 1 }: { scale?: number }) {
   // Side-view full-body bunny, drawn in SVG. Centered at (0,0).
   return (
