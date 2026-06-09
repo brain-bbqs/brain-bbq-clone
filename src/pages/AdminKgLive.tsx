@@ -288,10 +288,12 @@ function Heatmap({
   heatRef,
   version,
   grantTitles,
+  pubTitles,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   version: number;
   grantTitles: Record<string, string>;
+  pubTitles: Record<string, string>;
 }) {
   // Tick to animate flash decay
   const [, force] = useState(0);
@@ -458,7 +460,7 @@ function Heatmap({
         <span>· cells breathe with strength · ripple = new evidence · {rows.length}×{cols.length}</span>
       </div>
 
-      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} version={version} />
+      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} pubTitles={pubTitles} version={version} />
     </div>
   );
 }
@@ -466,10 +468,12 @@ function Heatmap({
 function RelationshipAssessment({
   heatRef,
   grantTitles,
+  pubTitles,
   version,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   grantTitles: Record<string, string>;
+  pubTitles: Record<string, string>;
   version: number;
 }) {
   const rels = useMemo(() => {
@@ -485,12 +489,19 @@ function RelationshipAssessment({
     for (const [g, m] of heatRef.current) {
       for (const [k, cell] of m) {
         const label = k.split("\u0001")[1];
+        // For pub columns, prefer the real publication title (looked up by PMID)
+        // over the "PMID 12345" placeholder we get from traversal paths.
+        let display = label;
+        if (cell.colKind === "pub") {
+          const pm = label.match(/^PMID\s+(\d+)/i);
+          if (pm && pubTitles[pm[1]]) display = pubTitles[pm[1]];
+        }
         out.push({
           grant: g,
           grantShort: shortLabel(grantTitles[g] ?? g, 2),
           kind: cell.colKind,
-          thingShort: shortLabel(label),
-          thingFull: label,
+          thingShort: shortLabel(display, 2),
+          thingFull: display,
           count: cell.count,
           lastT: cell.lastT,
         });
@@ -500,7 +511,7 @@ function RelationshipAssessment({
     out.sort((a, b) => b.count - a.count || b.lastT - a.lastT);
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, grantTitles]);
+  }, [version, grantTitles, pubTitles]);
 
   if (rels.length === 0) return null;
 
@@ -677,6 +688,29 @@ export default function AdminKgLive() {
     for (const g of grantTitleRows) if (g.grant_number && g.title) m[g.grant_number] = g.title;
     return m;
   }, [grantTitleRows]);
+
+  // PMID → publication title lookup so the relationship list can show a
+  // 1-2 word summary of the actual paper instead of "Paper 12345".
+  const { data: pubTitleRows = [] } = useQuery({
+    queryKey: ["kg-live-pub-titles"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("publications")
+        .select("pmid,title")
+        .not("pmid", "is", null)
+        .limit(5000);
+      return (data ?? []) as { pmid: string | number; title: string | null }[];
+    },
+    refetchInterval: 60000,
+  });
+  const pubTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of pubTitleRows) {
+      if (p.pmid && p.title) m[String(p.pmid)] = p.title;
+    }
+    return m;
+  }, [pubTitleRows]);
 
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
@@ -884,7 +918,7 @@ export default function AdminKgLive() {
             </p>
           </div>
           <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} />
+            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} pubTitles={pubTitles} />
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
