@@ -72,12 +72,13 @@ function r61pair(grantNumber: string): string | null {
   return null;
 }
 
-async function expandNeighbors(node: NodeRef, relation: string, settings: any): Promise<NodeRef[]> {
+async function expandNeighbors(node: NodeRef, relation: string, settings: any, onCall?: (msg: string) => Promise<void>): Promise<NodeRef[]> {
   const M = settings.targets_per_relation ?? 20;
   switch (relation) {
     case "similar_to": {
       if (node.type !== "grant") return [];
       const core = node.payload?.core_project_num ?? node.id;
+      await onCall?.(`RePORTER: similar_to ${core}`);
       const sims = await reporterSimilar(core, M);
       return sims.map((p: any) => ({
         type: "grant", id: p.project_num,
@@ -89,6 +90,7 @@ async function expandNeighbors(node: NodeRef, relation: string, settings: any): 
     case "produced": {
       if (node.type !== "grant") return [];
       const core = node.payload?.core_project_num ?? node.id;
+      await onCall?.(`RePORTER: publications for ${core}`);
       const pubs = await reporterPubs(core, M);
       return pubs.map((p: any) => ({
         type: "publication", id: String(p.pmid ?? ""),
@@ -100,6 +102,7 @@ async function expandNeighbors(node: NodeRef, relation: string, settings: any): 
     case "cites":
     case "cited_by": {
       if (node.type !== "publication") return [];
+      await onCall?.(`iCite: ${relation} PMID ${node.id}`);
       const data = await icitePubs([node.id]);
       const ids: number[] = data?.[0]?.[relation === "cites" ? "references" : "cited_by"] ?? [];
       return ids.slice(0, M).map((pmid) => ({
@@ -112,6 +115,7 @@ async function expandNeighbors(node: NodeRef, relation: string, settings: any): 
       if (node.type !== "grant") return [];
       const pair = r61pair(node.id);
       if (!pair) return [];
+      await onCall?.(`RePORTER: r61_pair ${pair}`);
       const p = await reporterProject(pair);
       if (!p) return [];
       return [{
@@ -305,7 +309,9 @@ Deno.serve(async (req) => {
 
       for (const f of frontier) {
         for (const rel of relations) {
-          const neighbors = await expandNeighbors(f.node, rel, settings);
+          const neighbors = await expandNeighbors(f.node, rel, settings, async (msg) => {
+            await tick({ phase: "hopping", current_target: msg, last_message: msg });
+          });
           // Score by embedding similarity
           const scored: { n: NodeRef; s: number }[] = [];
           for (const n of neighbors) {
@@ -322,6 +328,17 @@ Deno.serve(async (req) => {
             visited.add(`${n.type}:${n.id}`);
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
+            // Write traversal path immediately so KG Live populates (bunny hops here)
+            // even before/independent of Firecrawl extraction success.
+            await supabase.from("grant_methods_traversal_paths").insert({
+              seed_grant_number: seedGrantNumber,
+              path: newPath.map(s => ({
+                node_type: s.node.type, node_id: s.node.id, label: s.node.label,
+                relation_in: s.relation_in, hop: s.hop, score: s.score,
+              })),
+              chain_score: chain,
+              planner_model: "google/gemini-3-flash-preview",
+            });
           }
         }
       }
