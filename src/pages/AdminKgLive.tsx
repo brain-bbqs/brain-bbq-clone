@@ -505,24 +505,13 @@ export default function AdminKgLive() {
   const ingestPath = (row: any) => {
     const path = Array.isArray(row?.path) ? row.path : [];
     let prevId: string | null = null;
-    const seed: string | undefined = row?.seed_grant_number
-      ?? path.find((s: any) => s?.node_type === "grant")?.node_id;
-    const now = performance.now() / 1000;
-    const heatRow = seed ? (heatRef.current.get(seed) ?? new Map<string, CellHit>()) : null;
     for (const step of path) {
       const id = `${step.node_type}:${step.node_id}`;
       const kind: Kind = step.node_type === "grant" ? "grant" : "publication";
       upsertNode(id, kind, step.label || step.node_id, step.hop ?? 0);
       if (prevId && step.relation_in) addLink(prevId, id, step.relation_in);
       prevId = id;
-      if (heatRow && step.node_type !== "grant") {
-        const label = step.label || step.node_id;
-        const k = `pub\u0001${label}`;
-        const c = heatRow.get(k) ?? { count: 0, lastT: 0, colKind: "pub" as const };
-        c.count++; c.lastT = now; heatRow.set(k, c);
-      }
     }
-    if (seed && heatRow && heatRow.size > 0) heatRef.current.set(seed, heatRow);
   };
 
   const ingestEvidence = (row: any, opts?: { trace?: boolean }) => {
