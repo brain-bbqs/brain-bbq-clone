@@ -418,7 +418,7 @@ export default function AdminKgLive() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
-      <PageMeta title="KG Live 3D — Admin" description="Real-time 3D view of the multi-hop harvester running" />
+      <PageMeta title="KG Live — Admin" description="Real-time 2D view of the multi-hop harvester running" />
       <div className="flex items-center gap-3">
         <Activity className="w-6 h-6 text-primary" />
         <div>
