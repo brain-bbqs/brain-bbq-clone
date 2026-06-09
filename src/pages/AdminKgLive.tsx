@@ -631,33 +631,17 @@ export default function AdminKgLive() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <Card className="p-0 overflow-hidden bg-background">
-          <Tabs value={view} onValueChange={(v) => setView(v as "heatmap" | "graph")}>
-            <div className="flex items-center justify-between px-3 pt-3">
-              <TabsList>
-                <TabsTrigger value="heatmap" className="text-xs gap-1">
-                  <Flame className="w-3 h-3" /> Relationship heatmap
-                </TabsTrigger>
-                <TabsTrigger value="graph" className="text-xs gap-1">
-                  <Network className="w-3 h-3" /> Force graph
-                </TabsTrigger>
-              </TabsList>
-              <span className="text-[10px] text-muted-foreground">
-                {view === "heatmap"
-                  ? "Grants × Orgs+Devices — cells flash as evidence lands."
-                  : "Bunny hops along newly discovered edges."}
-              </span>
-            </div>
-            <TabsContent value="heatmap" className="m-0">
-              <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-                <Heatmap heatRef={heatRef} version={version} />
-              </div>
-            </TabsContent>
-            <TabsContent value="graph" className="m-0">
-              <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-                <Graph2D nodesRef={nodesRef} linksRef={linksRef} pulsesRef={pulsesRef} />
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="flex items-center justify-between px-3 pt-3">
+            <h2 className="text-xs font-semibold flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-primary" /> Relationship heatmap
+            </h2>
+            <span className="text-[10px] text-muted-foreground">
+              Grants × Pubs/Orgs/Devices — cells flash as evidence lands.
+            </span>
+          </div>
+          <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
+            <Heatmap heatRef={heatRef} version={version} />
+          </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.publication }} /> Pubs ({stats.pubs})</span>
