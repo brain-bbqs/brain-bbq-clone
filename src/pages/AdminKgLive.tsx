@@ -39,6 +39,7 @@ type N2 = {
 };
 type L2 = { source: string; target: string; relation: string };
 type Pulse = { from: string; to: string; id: number; t0: number };
+type CellHit = { count: number; lastT: number; colKind: "org" | "device" };
 
 const NODE_COLOR: Record<Kind, string> = {
   grant: "hsl(229, 50%, 32%)",
@@ -231,7 +232,10 @@ export default function AdminKgLive() {
   const linksRef = useRef<L2[]>([]);
   const pulsesRef = useRef<Pulse[]>([]);
   const pulseIdRef = useRef(0);
+  // Heatmap accumulator: Map<grant, Map<col, CellHit>>
+  const heatRef = useRef<Map<string, Map<string, CellHit>>>(new Map());
   const [version, setVersion] = useState(0);
+  const [view, setView] = useState<"heatmap" | "graph">("heatmap");
   const [continuous, setContinuous] = useState(true);
   const [tickIntervalSec, setTickIntervalSec] = useState(25);
   const [pings, setPings] = useState<{ at: string; ok: boolean; msg: string }[]>([]);
@@ -336,6 +340,23 @@ export default function AdminKgLive() {
         org: row.source_org,
         devices: row.device_class ?? [],
       }, ...t].slice(0, 40));
+    }
+    // Heatmap accumulator
+    const grant = row.source_grant_number;
+    if (grant) {
+      const r = heatRef.current.get(grant) ?? new Map<string, CellHit>();
+      const now = performance.now() / 1000;
+      if (row.source_org) {
+        const k = `org\u0001${row.source_org}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "org" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
+      for (const d of (row.device_class ?? []) as string[]) {
+        const k = `device\u0001${d}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "device" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
+      if (r.size > 0) heatRef.current.set(grant, r);
     }
     if (row.source_org) {
       const orgId = `org:${row.source_org}`;
