@@ -72,20 +72,21 @@ export default function AdminKgLive() {
     if (!isCurator) return;
     let cancelled = false;
     (async () => {
-      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      // Pull last 7 days so the graph isn't empty between runs.
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("grant_methods_traversal_paths")
         .select("id,seed_grant_number,chain_score,path,created_at")
         .gte("created_at", since)
         .order("created_at", { ascending: true })
-        .limit(200);
+        .limit(500);
       if (cancelled) return;
       for (const row of data ?? []) ingestPath(row);
       const { data: ev } = await supabase
         .from("grant_methods_evidence")
         .select("source_grant_number,source_org,device_class,extracted_at")
         .gte("extracted_at", since)
-        .limit(500);
+        .limit(1000);
       if (cancelled) return;
       for (const r of ev ?? []) ingestEvidence(r);
       setTick((t) => t + 1);
