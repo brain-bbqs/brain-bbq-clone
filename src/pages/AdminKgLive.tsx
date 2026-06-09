@@ -446,6 +446,32 @@ export default function AdminKgLive() {
     refetchInterval: 5000,
   });
 
+  const { data: activeRelations = [] } = useQuery({
+    queryKey: ["kg-live-active-relations"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("harvester_relations")
+        .select("name,src_node_type,dst_node_type,enabled,approved_at")
+        .order("approved_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const { data: proposedRelations = [], refetch: refetchProposed } = useQuery({
+    queryKey: ["kg-live-proposed-relations"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("proposed_relations")
+        .select("id,relation_name,src_node_type,dst_node_type,seed_grant_number,planner_rationale,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      return data ?? [];
+    },
+    refetchInterval: 10000,
+  });
+
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
     if (!isCurator || !continuous) return;
@@ -585,6 +611,8 @@ export default function AdminKgLive() {
         (p) => { ingestEvidence(p.new as any); setVersion((v) => v + 1); })
       .on("postgres_changes", { event: "*", schema: "public", table: "harvester_runs" },
         () => refetchRuns())
+      .on("postgres_changes", { event: "*", schema: "public", table: "proposed_relations" },
+        () => refetchProposed())
       .subscribe();
     return () => { cancelled = true; supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -752,6 +780,68 @@ export default function AdminKgLive() {
                       ))}
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center justify-between">
+              <span>Proposed relations</span>
+              <Badge variant="secondary">{proposedRelations.length} pending</Badge>
+            </h2>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              New edge types the planner wants to add. Pending ones land here first; approved ones move into the active taxonomy below.
+            </p>
+            <div className="space-y-1.5 max-h-[220px] overflow-y-auto text-[11px] border-t pt-2">
+              {proposedRelations.length === 0 && (
+                <div className="text-muted-foreground italic">
+                  No proposed relations yet. The planner only proposes a new edge type when current evidence doesn't fit an existing relation.
+                </div>
+              )}
+              {proposedRelations.map((p: any) => (
+                <div key={p.id} className="border rounded p-1.5 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px]">
+                      <span className="text-[hsl(229_50%_25%)]">{p.src_node_type}</span>
+                      <span className="mx-1 text-muted-foreground">—{p.relation_name}→</span>
+                      <span className="text-[hsl(38_70%_38%)]">{p.dst_node_type}</span>
+                    </span>
+                    <Badge
+                      variant={p.status === "approved" ? "default" : p.status === "rejected" ? "destructive" : "outline"}
+                      className="text-[9px] py-0"
+                    >
+                      {p.status ?? "pending"}
+                    </Badge>
+                  </div>
+                  {p.planner_rationale && (
+                    <div className="text-muted-foreground italic line-clamp-2">{p.planner_rationale}</div>
+                  )}
+                  {p.seed_grant_number && (
+                    <div className="text-[10px] text-muted-foreground font-mono">seed {p.seed_grant_number}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center justify-between">
+              <span>Active relation taxonomy</span>
+              <Badge variant="secondary">{activeRelations.length}</Badge>
+            </h2>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              Edge types the harvester is currently allowed to draw.
+            </p>
+            <div className="space-y-1 max-h-[180px] overflow-y-auto text-[10px] border-t pt-2 font-mono">
+              {activeRelations.map((r: any, i: number) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span>
+                    <span className="text-[hsl(229_50%_25%)]">{r.src_node_type}</span>
+                    <span className="mx-1 text-muted-foreground">—{r.name}→</span>
+                    <span className="text-[hsl(38_70%_38%)]">{r.dst_node_type}</span>
+                  </span>
+                  {!r.enabled && <Badge variant="outline" className="text-[9px] py-0">off</Badge>}
                 </div>
               ))}
             </div>
