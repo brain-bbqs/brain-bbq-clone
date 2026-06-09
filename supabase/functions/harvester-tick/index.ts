@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     }).eq("id", runRow.id);
     if (next.id) await supabase.from("harvester_queue").update({ last_run_at: null }).eq("id", next.id);
   });
-  EdgeRuntime.waitUntil(invoke);
+  (globalThis as any).EdgeRuntime?.waitUntil?.(invoke);
 
   return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant, forced: force, run_id: runRow.id }), {
     headers: jsonHeaders,
