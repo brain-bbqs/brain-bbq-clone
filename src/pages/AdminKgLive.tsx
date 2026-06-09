@@ -250,9 +250,9 @@ export default function AdminKgLive() {
       const msg = error
         ? `error: ${error.message}`
         : data?.kicked
-          ? `${data.forced ? "forced" : "kicked"} ${data.kicked}`
+          ? `${data.forced ? "forced" : "kicked"} ${data.kicked}${data.run_id ? ` · run ${String(data.run_id).slice(0, 8)}` : ""}`
           : data?.skipped
-            ? `skipped: ${data.skipped}${data.active ? ` (${data.active} active)` : ""}`
+            ? `skipped: ${data.skipped}${data.active ? ` (${data.active} active)` : ""}${data.reason ? ` — ${data.reason}` : ""}`
             : JSON.stringify(data ?? {});
       setPings((p) => [{ at, ok: !error, msg }, ...p].slice(0, 30));
     } catch (e: any) {
@@ -418,7 +418,7 @@ export default function AdminKgLive() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
-      <PageMeta title="KG Live 3D — Admin" description="Real-time 3D view of the multi-hop harvester running" />
+      <PageMeta title="KG Live — Admin" description="Real-time 2D view of the multi-hop harvester running" />
       <div className="flex items-center gap-3">
         <Activity className="w-6 h-6 text-primary" />
         <div>
@@ -461,7 +461,7 @@ export default function AdminKgLive() {
               </span>
               <div className="flex gap-1">
                 <Button size="sm" variant="outline" onClick={() => fireTick("manual")} disabled={pinging}>
-                  Ping
+                  Check next
                 </Button>
                 <Button size="sm" variant="default" onClick={() => fireTickInternal("manual-force", true)} disabled={pinging}>
                   <Zap className="w-3 h-3 mr-1" /> Force run

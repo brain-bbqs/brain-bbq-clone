@@ -17,6 +17,14 @@ type NodeRef = {
 type PathStep = { node: NodeRef; relation_in: string | null; hop: number; score: number };
 type Path = PathStep[];
 
+function isInternalServiceCall(req: Request): boolean {
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceKey) return false;
+  const bearer = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  const apikey = req.headers.get("apikey");
+  return bearer === serviceKey || apikey === serviceKey;
+}
+
 // ─────────────────────── Embeddings ───────────────────────
 async function embed(text: string, key: string): Promise<number[] | null> {
   if (!text) return null;
@@ -224,11 +232,15 @@ async function extractStructured(methods: string, title: string, key: string) {
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const auth = await requireAuth(req, cors);
-  if (auth.error) return auth.error;
+  const internalServiceCall = isInternalServiceCall(req);
+  const auth = internalServiceCall ? { user: { id: "service_role" } } : await requireAuth(req, cors);
+  if ("error" in auth && auth.error) return auth.error;
+
+  let requestBody: any = {};
+  try { requestBody = await req.json(); } catch { requestBody = {}; }
 
   try {
-    const { seedGrantNumber } = await req.json();
+    const { seedGrantNumber } = requestBody;
     if (!seedGrantNumber) return new Response(JSON.stringify({ error: "seedGrantNumber required" }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
 
@@ -238,10 +250,20 @@ Deno.serve(async (req) => {
     const WALL_MS = 90_000;
 
     // Create a live run row so the UI can subscribe
-    const { data: runRow } = await supabase.from("harvester_runs").insert({
-      seed_grant: seedGrantNumber, phase: "scraping", last_message: "Loading seed",
-    }).select("id").single();
-    const runId = runRow?.id as string | undefined;
+    let runId = internalServiceCall && typeof requestBody?.runId === "string" ? requestBody.runId : undefined;
+    if (runId) {
+      await supabase.from("harvester_runs").update({
+        phase: "scraping",
+        current_target: null,
+        last_message: "Loading seed",
+        updated_at: new Date().toISOString(),
+      }).eq("id", runId);
+    } else {
+      const { data: runRow } = await supabase.from("harvester_runs").insert({
+        seed_grant: seedGrantNumber, phase: "scraping", last_message: "Loading seed",
+      }).select("id").single();
+      runId = runRow?.id as string | undefined;
+    }
     const tick = async (patch: Record<string, any>) => {
       if (!runId) return;
       await supabase.from("harvester_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);

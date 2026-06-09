@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { /* GET / cron has no body */ }
   const force: boolean = !!body?.force;
   const explicitSeed: string | undefined = body?.seedGrantNumber;
+  const source: string = String(body?.source ?? body?.trigger ?? "tick");
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -63,25 +64,73 @@ Deno.serve(async (req) => {
   }
 
   if (!next) {
-    return new Response(JSON.stringify({ ok: true, skipped: "no_eligible_seed" }), { headers: jsonHeaders });
+    return new Response(JSON.stringify({
+      ok: true,
+      skipped: "no_eligible_seed",
+      reason: "All enabled seeds are inside their cooldown window. Use Force run for setup, or wait for the daily refresh.",
+    }), { headers: jsonHeaders });
   }
 
-  // Mark last_run_at immediately (optimistic — prevents re-fire on next tick if invoke is slow)
   if (next.id) {
-    await supabase.from("harvester_queue").update({ last_run_at: new Date().toISOString() }).eq("id", next.id);
+    const claimPatch = { last_run_at: new Date().toISOString(), last_run_id: null };
+    const claimQuery = supabase.from("harvester_queue").update(claimPatch).eq("id", next.id).select("id");
+    const { data: claimed, error: claimError } = next.last_run_at
+      ? await claimQuery.eq("last_run_at", next.last_run_at)
+      : await claimQuery.is("last_run_at", null);
+    if (claimError || !claimed?.length) {
+      return new Response(JSON.stringify({ ok: true, skipped: "seed_claimed_by_another_tick", seed: next.seed_grant }), { headers: jsonHeaders });
+    }
+  }
+
+  const { data: runRow, error: runError } = await supabase.from("harvester_runs").insert({
+    seed_grant: next.seed_grant,
+    phase: "queued",
+    last_message: `Queued by ${source}${force ? " (forced)" : ""}`,
+  }).select("id").single();
+  if (runError || !runRow?.id) {
+    return new Response(JSON.stringify({ ok: false, error: runError?.message ?? "failed to create run" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+
+  if (next.id) {
+    await supabase.from("harvester_queue").update({ last_run_id: runRow.id }).eq("id", next.id);
   }
 
   // Fire and forget — call the multihop function
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/harvest-grant-methods-multihop`;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  // Don't await: long-running, this tick just kicks it off.
-  fetch(url, {
+  const invoke = fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ seedGrantNumber: next.seed_grant }),
-  }).catch((e) => console.error("[tick] invoke failed", e));
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
+    body: JSON.stringify({ seedGrantNumber: next.seed_grant, runId: runRow.id, source }),
+  }).then(async (res) => {
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      await supabase.from("harvester_runs").update({
+        phase: "error",
+        errors: 1,
+        last_message: `Harvest invoke failed ${res.status}: ${text.slice(0, 220)}`,
+        finished_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", runRow.id);
+      if (next.id) await supabase.from("harvester_queue").update({ last_run_at: null }).eq("id", next.id);
+    }
+  }).catch(async (e) => {
+    console.error("[tick] invoke failed", e);
+    await supabase.from("harvester_runs").update({
+      phase: "error",
+      errors: 1,
+      last_message: `Harvest invoke failed: ${String(e).slice(0, 220)}`,
+      finished_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", runRow.id);
+    if (next.id) await supabase.from("harvester_queue").update({ last_run_at: null }).eq("id", next.id);
+  });
+  (globalThis as any).EdgeRuntime?.waitUntil?.(invoke);
 
-  return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant, forced: force }), {
+  return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant, forced: force, run_id: runRow.id }), {
     headers: jsonHeaders,
   });
 });
