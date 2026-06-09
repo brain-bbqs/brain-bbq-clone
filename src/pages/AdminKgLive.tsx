@@ -465,6 +465,120 @@ function Heatmap({
         </span>
         <span>· {rows.length} grants × {cols.length} columns</span>
       </div>
+
+      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} version={version} />
+    </div>
+  );
+}
+
+function RelationshipAssessment({
+  heatRef,
+  grantTitles,
+  version,
+}: {
+  heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
+  grantTitles: Record<string, string>;
+  version: number;
+}) {
+  const rels = useMemo(() => {
+    const out: Array<{
+      grant: string;
+      grantShort: string;
+      kind: "pub" | "org" | "device";
+      thingShort: string;
+      thingFull: string;
+      count: number;
+      lastT: number;
+    }> = [];
+    for (const [g, m] of heatRef.current) {
+      for (const [k, cell] of m) {
+        const label = k.split("\u0001")[1];
+        out.push({
+          grant: g,
+          grantShort: shortLabel(grantTitles[g] ?? g, 2),
+          kind: cell.colKind,
+          thingShort: shortLabel(label),
+          thingFull: label,
+          count: cell.count,
+          lastT: cell.lastT,
+        });
+      }
+    }
+    // Sort: strongest first, then most recent
+    out.sort((a, b) => b.count - a.count || b.lastT - a.lastT);
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, grantTitles]);
+
+  if (rels.length === 0) return null;
+
+  const verbFor = (kind: "pub" | "org" | "device") =>
+    kind === "pub" ? "linked to paper" : kind === "org" ? "based at" : "uses device";
+  const dotColor = (kind: "pub" | "org" | "device") =>
+    kind === "pub" ? "hsl(38 90% 55%)" : kind === "org" ? "hsl(174 62% 47%)" : "hsl(265 84% 70%)";
+
+  const counts = {
+    strong: rels.filter((r) => r.count >= 4).length,
+    moderate: rels.filter((r) => r.count >= 2 && r.count < 4).length,
+    weak: rels.filter((r) => r.count < 2).length,
+  };
+
+  return (
+    <div className="mt-6 border-t pt-4">
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="text-sm font-semibold">Relationships found · with verdict</h3>
+        <div className="flex gap-2 text-[10px]">
+          <span className="px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300">
+            {counts.strong} solid
+          </span>
+          <span className="px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300">
+            {counts.moderate} plausible
+          </span>
+          <span className="px-1.5 py-0.5 rounded border bg-muted text-muted-foreground border-border">
+            {counts.weak} speculative
+          </span>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3">
+        Each row is one (grant → thing) link the harvester pulled out. The verdict tells you
+        whether it's worth acting on: <strong>Solid lead</strong> = repeated across evidence,{" "}
+        <strong>Plausible</strong> = a few hits, <strong>Speculative</strong> = single mention.
+      </p>
+      <div className="space-y-1 max-h-[320px] overflow-y-auto">
+        {rels.slice(0, 80).map((r, i) => {
+          const v = assessRelation(r.count);
+          return (
+            <div
+              key={i}
+              className="flex items-center gap-2 text-[11px] py-1.5 px-2 rounded hover:bg-muted/40 border border-transparent hover:border-border"
+              title={`Grant ${r.grant} ${verbFor(r.kind)} "${r.thingFull}" — ${r.count} evidence row${r.count === 1 ? "" : "s"}. ${v.blurb}`}
+            >
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: NODE_COLOR.grant }}
+              />
+              <span className="font-medium min-w-[110px] truncate">{r.grantShort}</span>
+              <span className="text-muted-foreground">{verbFor(r.kind)}</span>
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: dotColor(r.kind) }}
+              />
+              <span className="font-medium truncate flex-1">{r.thingShort}</span>
+              <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                ×{r.count}
+              </span>
+              <span className={`px-1.5 py-0.5 rounded border text-[10px] flex-shrink-0 ${v.badgeClass}`}>
+                {v.label}
+              </span>
+            </div>
+          );
+        })}
+        {rels.length > 80 && (
+          <div className="text-[10px] text-muted-foreground text-center pt-1">
+            + {rels.length - 80} more relationships
+          </div>
+        )}
+      </div>
     </div>
   );
 }
