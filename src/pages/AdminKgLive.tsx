@@ -47,6 +47,8 @@ export default function AdminKgLive() {
   const linksRef = useRef<GraphLink[]>([]);
   const simRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
   const [tick, setTick] = useState(0);
+  // Queue of "hop events" — bunnies to animate from one node to another
+  const bunnyQueueRef = useRef<{ from: string; to: string; ts: number }[]>([]);
 
   // Initial pull of recent runs
   const { data: runs = [], refetch: refetchRuns } = useQuery({
@@ -141,6 +143,7 @@ export default function AdminKgLive() {
       });
       if (prevId && step.relation_in) {
         linksRef.current.push({ source: prevId, target: id, relation: step.relation_in });
+        bunnyQueueRef.current.push({ from: prevId, to: id, ts: Date.now() });
       }
       prevId = id;
     }
@@ -151,13 +154,19 @@ export default function AdminKgLive() {
       const orgId = `org:${row.source_org}`;
       upsertNode({ id: orgId, kind: "org", label: row.source_org, hop: 2, ts: Date.now() });
       if (row.source_grant_number) {
-        linksRef.current.push({ source: `grant:${row.source_grant_number}`, target: orgId, relation: "at_org" });
+        const from = `grant:${row.source_grant_number}`;
+        linksRef.current.push({ source: from, target: orgId, relation: "at_org" });
+        bunnyQueueRef.current.push({ from, to: orgId, ts: Date.now() });
       }
     }
     for (const d of (row.device_class ?? []) as string[]) {
       const id = `device:${d}`;
       upsertNode({ id, kind: "device", label: d, hop: 3, ts: Date.now() });
-      if (row.source_org) linksRef.current.push({ source: `org:${row.source_org}`, target: id, relation: "uses" });
+      if (row.source_org) {
+        const from = `org:${row.source_org}`;
+        linksRef.current.push({ source: from, target: id, relation: "uses" });
+        bunnyQueueRef.current.push({ from, to: id, ts: Date.now() });
+      }
     }
   }
 
@@ -211,6 +220,9 @@ export default function AdminKgLive() {
       .attr("font-size", 9).attr("fill", "hsl(229 50% 25%)")
       .text((d) => (d.label && d.label.length > 30 ? d.label.slice(0, 28) + "…" : d.label));
 
+    // Bunny layer — emoji bunnies that hop along edges as discovery happens
+    const bunnyLayer = sel.append("g").attr("class", "bunnies");
+
     sim.on("tick", () => {
       linkSel
         .attr("x1", (d: any) => (d.source as GraphNode).x ?? 0)
@@ -219,6 +231,42 @@ export default function AdminKgLive() {
         .attr("y2", (d: any) => (d.target as GraphNode).y ?? 0);
       g.attr("transform", (d: any) => `translate(${d.x ?? 0},${d.y ?? 0})`);
     });
+
+    // Drain the bunny queue every 400ms — launch one hopping bunny per event
+    const launchBunny = (ev: { from: string; to: string }) => {
+      const a = nodesRef.current.get(ev.from);
+      const b = nodesRef.current.get(ev.to);
+      if (!a || !b || a.x == null || b.x == null) return;
+      const bunny = bunnyLayer.append("text")
+        .attr("font-size", 22)
+        .attr("text-anchor", "middle")
+        .attr("dy", 6)
+        .attr("x", a.x).attr("y", a.y!)
+        .text("🐰");
+      // Hop in 4 arcs from a to b
+      const hops = 4;
+      const dur = 220;
+      let i = 0;
+      const hop = () => {
+        i++;
+        const t = i / hops;
+        const x = (a.x! + (b.x! - a.x!) * t);
+        const y = (a.y! + (b.y! - a.y!) * t);
+        bunny.transition().duration(dur).ease(d3.easeQuadOut)
+          .attr("x", x).attr("y", y - 18)
+          .transition().duration(dur).ease(d3.easeQuadIn)
+          .attr("y", y)
+          .on("end", () => { if (i < hops) hop(); else bunny.transition().duration(400).style("opacity", 0).remove(); });
+      };
+      hop();
+    };
+    const interval = window.setInterval(() => {
+      const next = bunnyQueueRef.current.splice(0, 3);
+      next.forEach(launchBunny);
+    }, 400);
+    // Stash on sim so we can clear on restart
+    (sim as any)._bunnyInterval && window.clearInterval((sim as any)._bunnyInterval);
+    (sim as any)._bunnyInterval = interval;
   }
 
   const stats = useMemo(() => {
