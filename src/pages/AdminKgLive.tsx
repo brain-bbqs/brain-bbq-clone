@@ -8,8 +8,7 @@ import { PageMeta } from "@/components/PageMeta";
 import { Lock, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Zap, ExternalLink, Flame, Network } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Zap, ExternalLink, Flame } from "lucide-react";
 
 type Run = {
   id: string;
