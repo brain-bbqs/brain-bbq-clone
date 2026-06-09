@@ -402,11 +402,17 @@ Deno.serve(async (req) => {
         for (const t of (extract.analysis_metrics ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 60), kind: "analysis" });
         for (const kw of kwRows) {
           if (!kw.term) continue;
-          await supabase.from("harvester_keywords").upsert({
-            term: kw.term, kind: kw.kind, frequency: 1, last_seen_at: new Date().toISOString(),
-          }, { onConflict: "term,kind", ignoreDuplicates: false });
-          // bump frequency on conflict via RPC-less increment
-          await supabase.rpc("update_updated_at_column").catch(() => {});
+          const { data: existing } = await supabase
+            .from("harvester_keywords")
+            .select("id,frequency")
+            .eq("term", kw.term).eq("kind", kw.kind).maybeSingle();
+          if (existing) {
+            await supabase.from("harvester_keywords")
+              .update({ frequency: (existing.frequency ?? 0) + 1, last_seen_at: new Date().toISOString() })
+              .eq("id", existing.id);
+          } else {
+            await supabase.from("harvester_keywords").insert({ term: kw.term, kind: kw.kind, frequency: 1 });
+          }
         }
       }
 
