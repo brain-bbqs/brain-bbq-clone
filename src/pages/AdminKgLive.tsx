@@ -296,7 +296,7 @@ function Heatmap({
   // Tick to animate flash decay
   const [, force] = useState(0);
   useEffect(() => {
-    const id = window.setInterval(() => force((v) => (v + 1) % 1e9), 250);
+    const id = window.setInterval(() => force((v) => (v + 1) % 1e9), 60);
     return () => window.clearInterval(id);
   }, []);
 
