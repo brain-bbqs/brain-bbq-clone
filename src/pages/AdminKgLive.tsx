@@ -496,6 +496,23 @@ export default function AdminKgLive() {
     refetchInterval: 10000,
   });
 
+  const { data: grantTitleRows = [] } = useQuery({
+    queryKey: ["kg-live-grant-titles"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("grants")
+        .select("grant_number,title")
+        .limit(1000);
+      return (data ?? []) as { grant_number: string; title: string | null }[];
+    },
+  });
+  const grantTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const g of grantTitleRows) if (g.grant_number && g.title) m[g.grant_number] = g.title;
+    return m;
+  }, [grantTitleRows]);
+
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
     if (!isCurator || !continuous) return;
