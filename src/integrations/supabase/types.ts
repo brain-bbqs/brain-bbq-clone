@@ -839,9 +839,11 @@ export type Database = {
       grant_methods_evidence: {
         Row: {
           analysis_metrics: Json | null
+          behavior_paradigm: string[] | null
           confidence: number | null
           created_at: string
           depth: number
+          device_class: string[] | null
           device_hardware: Json | null
           discovery_path_id: string | null
           extracted_at: string
@@ -861,13 +863,18 @@ export type Database = {
           source_org: string | null
           source_org_type: string | null
           source_url: string | null
+          species: string[] | null
           stimulation_params: Json | null
+          study_arm: string | null
+          subject_n: number | null
         }
         Insert: {
           analysis_metrics?: Json | null
+          behavior_paradigm?: string[] | null
           confidence?: number | null
           created_at?: string
           depth?: number
+          device_class?: string[] | null
           device_hardware?: Json | null
           discovery_path_id?: string | null
           extracted_at?: string
@@ -887,13 +894,18 @@ export type Database = {
           source_org?: string | null
           source_org_type?: string | null
           source_url?: string | null
+          species?: string[] | null
           stimulation_params?: Json | null
+          study_arm?: string | null
+          subject_n?: number | null
         }
         Update: {
           analysis_metrics?: Json | null
+          behavior_paradigm?: string[] | null
           confidence?: number | null
           created_at?: string
           depth?: number
+          device_class?: string[] | null
           device_hardware?: Json | null
           discovery_path_id?: string | null
           extracted_at?: string
@@ -913,7 +925,10 @@ export type Database = {
           source_org?: string | null
           source_org_type?: string | null
           source_url?: string | null
+          species?: string[] | null
           stimulation_params?: Json | null
+          study_arm?: string | null
+          subject_n?: number | null
         }
         Relationships: [
           {
@@ -1013,6 +1028,98 @@ export type Database = {
           },
         ]
       }
+      harvester_keywords: {
+        Row: {
+          canonical_term: string | null
+          created_at: string
+          first_seen_at: string
+          frequency: number
+          id: string
+          kind: string
+          last_seen_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_term?: string | null
+          created_at?: string
+          first_seen_at?: string
+          frequency?: number
+          id?: string
+          kind: string
+          last_seen_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_term?: string | null
+          created_at?: string
+          first_seen_at?: string
+          frequency?: number
+          id?: string
+          kind?: string
+          last_seen_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      harvester_queue: {
+        Row: {
+          cool_down_hours: number
+          created_at: string
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          last_run_id: string | null
+          notes: string | null
+          priority: number
+          seed_grant: string
+          updated_at: string
+        }
+        Insert: {
+          cool_down_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_id?: string | null
+          notes?: string | null
+          priority?: number
+          seed_grant: string
+          updated_at?: string
+        }
+        Update: {
+          cool_down_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_id?: string | null
+          notes?: string | null
+          priority?: number
+          seed_grant?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvester_queue_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "harvester_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harvester_relations: {
         Row: {
           approved_at: string
@@ -1052,6 +1159,57 @@ export type Database = {
         }
         Relationships: []
       }
+      harvester_runs: {
+        Row: {
+          created_at: string
+          current_hop: number
+          current_target: string | null
+          errors: number
+          evidence_rows: number
+          finished_at: string | null
+          firecrawl_calls: number
+          id: string
+          last_message: string | null
+          phase: string
+          pubs_found: number
+          seed_grant: string
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_hop?: number
+          current_target?: string | null
+          errors?: number
+          evidence_rows?: number
+          finished_at?: string | null
+          firecrawl_calls?: number
+          id?: string
+          last_message?: string | null
+          phase?: string
+          pubs_found?: number
+          seed_grant: string
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_hop?: number
+          current_target?: string | null
+          errors?: number
+          evidence_rows?: number
+          finished_at?: string | null
+          firecrawl_calls?: number
+          id?: string
+          last_message?: string | null
+          phase?: string
+          pubs_found?: number
+          seed_grant?: string
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       harvester_settings: {
         Row: {
           beam_width: number
@@ -1085,6 +1243,33 @@ export type Database = {
           targets_per_relation?: number
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      harvester_synonyms: {
+        Row: {
+          alias: string
+          canonical: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+        }
+        Insert: {
+          alias: string
+          canonical: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+        }
+        Update: {
+          alias?: string
+          canonical?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
         }
         Relationships: []
       }
