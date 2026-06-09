@@ -185,7 +185,9 @@ function extractMethods(md: string): string | null {
     const m = lines[i].match(headingRe);
     if (m && methodsRe.test(m[2].trim())) { start = i; level = m[1].length; break; }
   }
-  if (start === -1) return null;
+  // Fallback: no Methods heading (typical for PubMed abstract pages or non-PMC sources).
+  // Use the whole document so the LLM still has something to extract from.
+  if (start === -1) return md.slice(0, 12000);
   let end = lines.length;
   for (let i = start+1; i < lines.length; i++) {
     const m = lines[i].match(headingRe);
