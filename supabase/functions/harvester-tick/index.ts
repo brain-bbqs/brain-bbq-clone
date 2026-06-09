@@ -11,6 +11,10 @@ Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const jsonHeaders = { ...cors, "Content-Type": "application/json" };
+  let body: any = {};
+  try { body = await req.json(); } catch { /* GET / cron has no body */ }
+  const force: boolean = !!body?.force;
+  const explicitSeed: string | undefined = body?.seedGrantNumber;
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -22,16 +26,18 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, skipped: "paused" }), { headers: jsonHeaders });
   }
 
-  // Don't start a new run if one is currently active
-  const { count: active } = await supabase
-    .from("harvester_runs")
-    .select("id", { head: true, count: "exact" })
-    .in("phase", ["queued", "scraping", "extracting", "hopping"]);
-  if ((active ?? 0) > 0) {
-    return new Response(JSON.stringify({ ok: true, skipped: "run_in_progress", active }), { headers: jsonHeaders });
+  // Don't start a new run if one is currently active (unless forced)
+  if (!force) {
+    const { count: active } = await supabase
+      .from("harvester_runs")
+      .select("id", { head: true, count: "exact" })
+      .in("phase", ["queued", "scraping", "extracting", "hopping"]);
+    if ((active ?? 0) > 0) {
+      return new Response(JSON.stringify({ ok: true, skipped: "run_in_progress", active }), { headers: jsonHeaders });
+    }
   }
 
-  // Pick next eligible seed
+  // Pick next seed
   const { data: queue } = await supabase
     .from("harvester_queue")
     .select("*")
@@ -40,19 +46,30 @@ Deno.serve(async (req) => {
     .order("last_run_at", { ascending: true, nullsFirst: true })
     .limit(20);
 
-  const now = Date.now();
-  const next = (queue ?? []).find((q: any) => {
-    if (!q.last_run_at) return true;
-    const cd = (q.cool_down_hours ?? 72) * 3600 * 1000;
-    return now - new Date(q.last_run_at).getTime() >= cd;
-  });
+  let next: any = null;
+  if (explicitSeed) {
+    next = (queue ?? []).find((q: any) => q.seed_grant === explicitSeed)
+         ?? { id: null, seed_grant: explicitSeed };
+  } else if (force) {
+    // Force: pick the oldest seed regardless of cool_down
+    next = (queue ?? [])[0] ?? null;
+  } else {
+    const now = Date.now();
+    next = (queue ?? []).find((q: any) => {
+      if (!q.last_run_at) return true;
+      const cd = (q.cool_down_hours ?? 72) * 3600 * 1000;
+      return now - new Date(q.last_run_at).getTime() >= cd;
+    });
+  }
 
   if (!next) {
     return new Response(JSON.stringify({ ok: true, skipped: "no_eligible_seed" }), { headers: jsonHeaders });
   }
 
   // Mark last_run_at immediately (optimistic — prevents re-fire on next tick if invoke is slow)
-  await supabase.from("harvester_queue").update({ last_run_at: new Date().toISOString() }).eq("id", next.id);
+  if (next.id) {
+    await supabase.from("harvester_queue").update({ last_run_at: new Date().toISOString() }).eq("id", next.id);
+  }
 
   // Fire and forget — call the multihop function
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/harvest-grant-methods-multihop`;
@@ -64,7 +81,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({ seedGrantNumber: next.seed_grant }),
   }).catch((e) => console.error("[tick] invoke failed", e));
 
-  return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant }), {
+  return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant, forced: force }), {
     headers: jsonHeaders,
   });
 });

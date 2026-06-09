@@ -8,6 +8,7 @@ import { PageMeta } from "@/components/PageMeta";
 import { Lock, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Zap, ExternalLink } from "lucide-react";
 
 type Run = {
   id: string;
@@ -50,6 +51,25 @@ const NODE_R: Record<Kind, number> = {
 
 const VIEW_W = 1100;
 const VIEW_H = 620;
+
+function Bunny({ scale = 1 }: { scale?: number }) {
+  // Side-view full-body bunny, drawn in SVG. Centered at (0,0).
+  return (
+    <g transform={`scale(${scale})`}>
+      <ellipse cx="0" cy="2" rx="9" ry="6.5" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.9" />
+      <circle cx="-8" cy="1" r="2.6" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.7" />
+      <circle cx="7.5" cy="-2.5" r="5" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.9" />
+      <ellipse cx="5.8" cy="-9" rx="1.3" ry="4" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.7" />
+      <ellipse cx="9" cy="-9" rx="1.3" ry="4" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.7" />
+      <ellipse cx="5.8" cy="-9" rx="0.5" ry="2.5" fill="hsl(38 90% 60%)" />
+      <ellipse cx="9" cy="-9" rx="0.5" ry="2.5" fill="hsl(38 90% 60%)" />
+      <circle cx="9" cy="-2.8" r="0.65" fill="hsl(229 50% 15%)" />
+      <circle cx="11" cy="-1.4" r="0.5" fill="hsl(38 90% 50%)" />
+      <ellipse cx="-2.5" cy="8" rx="2.4" ry="1.4" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.6" />
+      <ellipse cx="3.5" cy="8" rx="2.4" ry="1.4" fill="white" stroke="hsl(229 40% 25%)" strokeWidth="0.6" />
+    </g>
+  );
+}
 
 function Graph2D({
   nodesRef, linksRef, pulsesRef,
@@ -154,37 +174,30 @@ function Graph2D({
         const DURATION = 1.6;
         const t = Math.min(1, (now - p.t0) / DURATION);
         const x = a.x + (b.x - a.x) * t;
-        // 4 little hop arcs across the segment
         const HOPS = 4;
         const segT = (t * HOPS) % 1;
-        const arc = Math.sin(segT * Math.PI) * 14;
+        const arc = Math.sin(segT * Math.PI) * 16;
         const y = a.y + (b.y - a.y) * t - arc;
-        const dx = b.x - a.x;
-        const facing = dx >= 0 ? 1 : -1;
+        const facing = (b.x - a.x) >= 0 ? 1 : -1;
         return (
-          <g key={p.id} transform={`translate(${x},${y}) scale(${facing},1)`}>
-            {/* shadow */}
-            <ellipse cx="0" cy={arc + 8} rx={6 - arc * 0.15} ry="1.2" fill="hsl(229 30% 20%)" opacity="0.18" />
-            {/* body */}
-            <ellipse cx="0" cy="2" rx="7" ry="5.5" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.8" />
-            {/* tail */}
-            <circle cx="-6" cy="1" r="2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
-            {/* head */}
-            <circle cx="6" cy="-2" r="4" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.8" />
-            {/* ears */}
-            <ellipse cx="5" cy="-7" rx="1.1" ry="3.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
-            <ellipse cx="7.5" cy="-7" rx="1.1" ry="3.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
-            <ellipse cx="5" cy="-7" rx="0.4" ry="2" fill="hsl(38 90% 60%)" />
-            <ellipse cx="7.5" cy="-7" rx="0.4" ry="2" fill="hsl(38 90% 60%)" />
-            {/* eye + nose */}
-            <circle cx="7.5" cy="-2.2" r="0.55" fill="hsl(229 50% 15%)" />
-            <circle cx="9.2" cy="-1" r="0.4" fill="hsl(38 90% 50%)" />
-            {/* feet */}
-            <ellipse cx="-2" cy="6.5" rx="2" ry="1.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.5" />
-            <ellipse cx="3" cy="6.5" rx="2" ry="1.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.5" />
+          <g key={p.id} transform={`translate(${x},${y}) scale(${facing * 1.4},1.4)`}>
+            <ellipse cx="0" cy={arc / 1.4 + 9} rx={8 - arc * 0.12} ry="1.4" fill="hsl(229 30% 15%)" opacity="0.2" />
+            <Bunny />
           </g>
         );
       })}
+
+      {/* Idle parked bunny — visible even when no traversal is running */}
+      {pulsesRef.current.length === 0 && nodes.length > 0 && (() => {
+        const home = nodes[0];
+        const bob = Math.sin(now * 2.2) * 1.5;
+        return (
+          <g transform={`translate(${home.x + 26},${home.y - 14 + bob}) scale(1.5,1.5)`}>
+            <ellipse cx="0" cy="10" rx="9" ry="1.4" fill="hsl(229 30% 15%)" opacity="0.18" />
+            <Bunny />
+          </g>
+        );
+      })()}
 
       {/* Nodes */}
       {nodes.map((n) => (
@@ -225,16 +238,19 @@ export default function AdminKgLive() {
   const [pinging, setPinging] = useState(false);
 
   const fireTick = async (source: string) => {
+    return fireTickInternal(source, false);
+  };
+  const fireTickInternal = async (source: string, force: boolean) => {
     setPinging(true);
     const at = new Date().toLocaleTimeString();
     try {
       const { data, error } = await supabase.functions.invoke("harvester-tick", {
-        body: { source },
+        body: { source, force },
       });
       const msg = error
         ? `error: ${error.message}`
         : data?.kicked
-          ? `kicked ${data.kicked}`
+          ? `${data.forced ? "forced" : "kicked"} ${data.kicked}`
           : data?.skipped
             ? `skipped: ${data.skipped}${data.active ? ` (${data.active} active)` : ""}`
             : JSON.stringify(data ?? {});
@@ -247,6 +263,12 @@ export default function AdminKgLive() {
       refetchRuns();
     }
   };
+
+  // Live evidence trace: rolling list of inserted rows with URLs
+  const [trace, setTrace] = useState<Array<{
+    at: string; grant?: string; pmid?: string | null; title?: string;
+    url?: string | null; org?: string | null; devices?: string[];
+  }>>([]);
 
   const { data: runs = [], refetch: refetchRuns } = useQuery({
     queryKey: ["kg-live-runs"],
@@ -302,7 +324,18 @@ export default function AdminKgLive() {
     }
   };
 
-  const ingestEvidence = (row: any) => {
+  const ingestEvidence = (row: any, opts?: { trace?: boolean }) => {
+    if (opts?.trace !== false) {
+      setTrace((t) => [{
+        at: new Date().toLocaleTimeString(),
+        grant: row.source_grant_number,
+        pmid: row.pmid,
+        title: row.publication_title,
+        url: row.source_url,
+        org: row.source_org,
+        devices: row.device_class ?? [],
+      }, ...t].slice(0, 40));
+    }
     if (row.source_org) {
       const orgId = `org:${row.source_org}`;
       upsertNode(orgId, "org", row.source_org, 2);
@@ -329,10 +362,21 @@ export default function AdminKgLive() {
       (paths ?? []).forEach(ingestPath);
       const { data: ev } = await supabase
         .from("grant_methods_evidence")
-        .select("source_grant_number,source_org,device_class,extracted_at")
-        .gte("extracted_at", since).limit(1000);
+        .select("source_grant_number,source_org,device_class,extracted_at,source_url,pmid,publication_title")
+        .gte("extracted_at", since).order("extracted_at", { ascending: false }).limit(1000);
       if (cancelled) return;
-      (ev ?? []).forEach(ingestEvidence);
+      // Graph nodes from all rows, but only seed the trace with the latest 30
+      (ev ?? []).forEach((r) => ingestEvidence(r, { trace: false }));
+      const seedTrace = (ev ?? []).slice(0, 30).map((r: any) => ({
+        at: new Date(r.extracted_at).toLocaleTimeString(),
+        grant: r.source_grant_number,
+        pmid: r.pmid,
+        title: r.publication_title,
+        url: r.source_url,
+        org: r.source_org,
+        devices: r.device_class ?? [],
+      }));
+      setTrace(seedTrace);
       setVersion((v) => v + 1);
     })();
     const ch = supabase
@@ -415,9 +459,14 @@ export default function AdminKgLive() {
               <span>
                 Every {tickIntervalSec}s (client) · every 2m (cron) · daily 09:00 UTC refresh
               </span>
-              <Button size="sm" variant="outline" onClick={() => fireTick("manual")} disabled={pinging}>
-                Ping now
-              </Button>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={() => fireTick("manual")} disabled={pinging}>
+                  Ping
+                </Button>
+                <Button size="sm" variant="default" onClick={() => fireTickInternal("manual-force", true)} disabled={pinging}>
+                  <Zap className="w-3 h-3 mr-1" /> Force run
+                </Button>
+              </div>
             </div>
             <div className="flex gap-1 text-[10px]">
               {[10, 25, 60, 120].map((s) => (
@@ -447,6 +496,59 @@ export default function AdminKgLive() {
                 Last ping {Math.round((Date.now() - lastPingAt) / 1000)}s ago
               </div>
             )}
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center justify-between">
+              <span>Live trace</span>
+              <span className="text-[10px] font-normal text-muted-foreground">{trace.length} captured</span>
+            </h2>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              Each evidence row landed in the DB — grant, paper, source URL, org, devices.
+            </p>
+            <div className="space-y-1.5 max-h-[340px] overflow-y-auto text-[11px] border-t pt-2">
+              {trace.length === 0 && (
+                <div className="text-muted-foreground italic">Waiting for the next evidence row…</div>
+              )}
+              {trace.map((t, i) => (
+                <div key={i} className="border rounded p-1.5 space-y-0.5">
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span className="font-mono">{t.grant ?? "—"}</span>
+                    <span>{t.at}</span>
+                  </div>
+                  {t.title && <div className="line-clamp-2 leading-tight">{t.title}</div>}
+                  <div className="flex flex-wrap gap-1 text-[10px]">
+                    {t.pmid && (
+                      <a
+                        href={`https://pubmed.ncbi.nlm.nih.gov/${t.pmid}/`}
+                        target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                      >
+                        PMID {t.pmid}<ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                    {t.url && (
+                      <a
+                        href={t.url}
+                        target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-0.5 text-primary hover:underline truncate max-w-[180px]"
+                        title={t.url}
+                      >
+                        source<ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                    {t.org && <Badge variant="outline" className="text-[9px] py-0">{t.org}</Badge>}
+                  </div>
+                  {t.devices && t.devices.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5">
+                      {t.devices.slice(0, 4).map((d, k) => (
+                        <Badge key={k} variant="secondary" className="text-[9px] py-0">{d}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </Card>
 
           <Card className="p-4 space-y-2">
