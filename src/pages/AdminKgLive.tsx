@@ -151,13 +151,37 @@ function Graph2D({
         const a = nodesRef.current.get(p.from);
         const b = nodesRef.current.get(p.to);
         if (!a || !b) return null;
-        const t = Math.min(1, (now - p.t0) / 1.4);
+        const DURATION = 1.6;
+        const t = Math.min(1, (now - p.t0) / DURATION);
         const x = a.x + (b.x - a.x) * t;
-        const y = a.y + (b.y - a.y) * t;
+        // 4 little hop arcs across the segment
+        const HOPS = 4;
+        const segT = (t * HOPS) % 1;
+        const arc = Math.sin(segT * Math.PI) * 14;
+        const y = a.y + (b.y - a.y) * t - arc;
+        const dx = b.x - a.x;
+        const facing = dx >= 0 ? 1 : -1;
         return (
-          <g key={p.id}>
-            <circle cx={x} cy={y} r="14" fill="url(#kg-pulse)" />
-            <circle cx={x} cy={y} r="3" fill="hsl(38 90% 50%)" />
+          <g key={p.id} transform={`translate(${x},${y}) scale(${facing},1)`}>
+            {/* shadow */}
+            <ellipse cx="0" cy={arc + 8} rx={6 - arc * 0.15} ry="1.2" fill="hsl(229 30% 20%)" opacity="0.18" />
+            {/* body */}
+            <ellipse cx="0" cy="2" rx="7" ry="5.5" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.8" />
+            {/* tail */}
+            <circle cx="-6" cy="1" r="2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
+            {/* head */}
+            <circle cx="6" cy="-2" r="4" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.8" />
+            {/* ears */}
+            <ellipse cx="5" cy="-7" rx="1.1" ry="3.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
+            <ellipse cx="7.5" cy="-7" rx="1.1" ry="3.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.6" />
+            <ellipse cx="5" cy="-7" rx="0.4" ry="2" fill="hsl(38 90% 60%)" />
+            <ellipse cx="7.5" cy="-7" rx="0.4" ry="2" fill="hsl(38 90% 60%)" />
+            {/* eye + nose */}
+            <circle cx="7.5" cy="-2.2" r="0.55" fill="hsl(229 50% 15%)" />
+            <circle cx="9.2" cy="-1" r="0.4" fill="hsl(38 90% 50%)" />
+            {/* feet */}
+            <ellipse cx="-2" cy="6.5" rx="2" ry="1.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.5" />
+            <ellipse cx="3" cy="6.5" rx="2" ry="1.2" fill="white" stroke="hsl(229 40% 30%)" strokeWidth="0.5" />
           </g>
         );
       })}
