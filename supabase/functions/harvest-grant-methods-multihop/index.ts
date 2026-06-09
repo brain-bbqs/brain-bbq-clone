@@ -191,7 +191,16 @@ function extractMethods(md: string): string | null {
 }
 async function extractStructured(methods: string, title: string, key: string) {
   const sys = `Extract experimental hardware and methods. Return ONLY JSON.`;
-  const user = `Publication: ${title}\n\nMETHODS:\n${methods}\n\nKeys: device_hardware[], stimulation_params{}, recording_params{}, analysis_metrics[], setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown), irb_or_population, quote, confidence(0-1).`;
+  const user = `Publication: ${title}\n\nMETHODS:\n${methods}\n\nKeys:
+- device_hardware[] (free text list of specific devices/instruments)
+- device_class[] (coarse buckets, ANY of: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, optogenetics, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS, other)
+- species[] (ANY of: mouse, rat, nhp_macaque, nhp_marmoset, human_adult, human_pediatric, human_neonate, other)
+- behavior_paradigm[] (e.g. open_field, head_fixed_treadmill, lick_task, social_interaction, sleep, clinical_outcome_scale, free_behavior, decision_task)
+- subject_n (integer or null)
+- study_arm (one of: animal_model, clinical_translational, computational, unknown)
+- stimulation_params{}, recording_params{}, analysis_metrics[]
+- setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
+- irb_or_population, quote, confidence(0-1)`;
   const res = await fetch(`${AI}/chat/completions`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -222,6 +231,17 @@ Deno.serve(async (req) => {
     const startedAt = Date.now();
     const WALL_MS = 90_000;
 
+    // Create a live run row so the UI can subscribe
+    const { data: runRow } = await supabase.from("harvester_runs").insert({
+      seed_grant: seedGrantNumber, phase: "scraping", last_message: "Loading seed",
+    }).select("id").single();
+    const runId = runRow?.id as string | undefined;
+    const tick = async (patch: Record<string, any>) => {
+      if (!runId) return;
+      await supabase.from("harvester_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);
+    };
+    let firecrawlCalls = 0, pubsFound = 0, evidenceRows = 0, errors = 0;
+
     // Load settings + vocabulary
     const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
     const { data: vocab } = await supabase.from("harvester_relations").select("*").eq("enabled", true);
@@ -233,14 +253,21 @@ Deno.serve(async (req) => {
 
     // Seed
     const seed = await reporterProject(seedGrantNumber);
-    if (!seed) return new Response(JSON.stringify({ error: "seed not in NIH RePORTER" }),
-      { status: 404, headers: { ...cors, "Content-Type": "application/json" } });
+    if (!seed) {
+      await tick({ phase: "error", last_message: "seed not in NIH RePORTER", finished_at: new Date().toISOString(), errors: 1 });
+      return new Response(JSON.stringify({ error: "seed not in NIH RePORTER" }),
+        { status: 404, headers: { ...cors, "Content-Type": "application/json" } });
+    }
     const seedText = `${seed.project_title ?? ""}\n${seed.abstract_text ?? ""}`;
     const seedEmbedding = await embed(seedText, aiKey);
-    if (!seedEmbedding) return new Response(JSON.stringify({ error: "seed embedding failed" }),
-      { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    if (!seedEmbedding) {
+      await tick({ phase: "error", last_message: "seed embedding failed", finished_at: new Date().toISOString(), errors: 1 });
+      return new Response(JSON.stringify({ error: "seed embedding failed" }),
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    }
 
     // Plan
+    await tick({ phase: "hopping", last_message: "Planning hops", current_hop: 0 });
     const hops = await planHops(seedText, vocab ?? [], maxHops, aiKey);
     const validatedHops: string[][] = [];
     for (const hop of hops) {
@@ -273,6 +300,7 @@ Deno.serve(async (req) => {
     for (let hopIdx = 0; hopIdx < validatedHops.length; hopIdx++) {
       if (Date.now() - startedAt > WALL_MS) break;
       const relations = validatedHops[hopIdx];
+      await tick({ phase: "hopping", current_hop: hopIdx + 1, last_message: `Hop ${hopIdx + 1}: ${relations.join(", ")}` });
       const nextFrontier: typeof frontier = [];
 
       for (const f of frontier) {
@@ -307,9 +335,12 @@ Deno.serve(async (req) => {
         if (!pmid || seenPmids.has(pmid)) continue;
         seenPmids.add(pmid);
         pubsExtracted++;
+        pubsFound++;
+        await tick({ phase: "extracting", current_target: `PMID ${pmid}`, pubs_found: pubsFound, last_message: f.node.label ?? `PMID ${pmid}` });
 
         const url = await pmidToUrl(pmid);
         const md = await scrapeMd(url);
+        firecrawlCalls++;
         if (!md) continue;
         const methods = extractMethods(md);
         if (!methods || methods.length < 300) continue;
@@ -340,6 +371,11 @@ Deno.serve(async (req) => {
           source_url: url,
           methods_snippet: methods.slice(0, 8000),
           device_hardware: extract.device_hardware ?? [],
+          device_class: Array.isArray(extract.device_class) ? extract.device_class : [],
+          species: Array.isArray(extract.species) ? extract.species : [],
+          behavior_paradigm: Array.isArray(extract.behavior_paradigm) ? extract.behavior_paradigm : [],
+          subject_n: Number.isFinite(Number(extract.subject_n)) ? Number(extract.subject_n) : null,
+          study_arm: typeof extract.study_arm === "string" ? extract.study_arm : null,
           stimulation_params: extract.stimulation_params ?? {},
           recording_params: extract.recording_params ?? {},
           analysis_metrics: extract.analysis_metrics ?? [],
@@ -354,6 +390,23 @@ Deno.serve(async (req) => {
         if (pathRow?.id && ev?.id) {
           await supabase.from("grant_methods_traversal_paths").update({ terminal_evidence_id: ev.id }).eq("id", pathRow.id);
           insertedPathIds.push(pathRow.id);
+          evidenceRows++;
+          await tick({ evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls });
+        }
+
+        // Track novel keywords for curator review
+        const kwRows: { term: string; kind: string }[] = [];
+        for (const t of (extract.device_class ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "device" });
+        for (const t of (extract.behavior_paradigm ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "behavior" });
+        for (const t of (extract.species ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "species" });
+        for (const t of (extract.analysis_metrics ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 60), kind: "analysis" });
+        for (const kw of kwRows) {
+          if (!kw.term) continue;
+          await supabase.from("harvester_keywords").upsert({
+            term: kw.term, kind: kw.kind, frequency: 1, last_seen_at: new Date().toISOString(),
+          }, { onConflict: "term,kind", ignoreDuplicates: false });
+          // bump frequency on conflict via RPC-less increment
+          await supabase.rpc("update_updated_at_column").catch(() => {});
         }
       }
 
@@ -363,10 +416,16 @@ Deno.serve(async (req) => {
       if (!frontier.length) break;
     }
 
+    await tick({
+      phase: "done", finished_at: new Date().toISOString(),
+      pubs_found: pubsFound, evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls, errors,
+      last_message: `Done: ${evidenceRows} evidence rows`,
+    });
+
     return new Response(JSON.stringify({
       ok: true, mode: "multihop", seed: seedGrantNumber,
       hops_planned: validatedHops, publications_extracted: pubsExtracted,
-      paths_recorded: insertedPathIds.length,
+      paths_recorded: insertedPathIds.length, run_id: runId,
     }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("multihop", e);
