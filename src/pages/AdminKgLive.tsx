@@ -545,6 +545,22 @@ export default function AdminKgLive() {
 
   const ingestPath = (row: any) => {
     const path = Array.isArray(row?.path) ? row.path : [];
+    // Heatmap: surface each (seed grant → publication) hop as a "pub" cell so the
+    // grid warms up from traversal paths alone, even before evidence rows land.
+    const seed: string | undefined = row?.seed_grant_number;
+    if (seed) {
+      const r = heatRef.current.get(seed) ?? new Map<string, CellHit>();
+      const now = performance.now() / 1000;
+      for (const step of path) {
+        if (step?.node_type !== "publication") continue;
+        const label = step.label || (step.node_id ? `PMID ${step.node_id}` : null);
+        if (!label) continue;
+        const k = `pub\u0001${label}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "pub" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
+      if (r.size > 0) heatRef.current.set(seed, r);
+    }
     let prevId: string | null = null;
     for (const step of path) {
       const id = `${step.node_type}:${step.node_id}`;
