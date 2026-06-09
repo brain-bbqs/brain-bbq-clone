@@ -71,6 +71,17 @@ Deno.serve(async (req) => {
     }), { headers: jsonHeaders });
   }
 
+  if (next.id) {
+    const claimPatch = { last_run_at: new Date().toISOString(), last_run_id: null };
+    const claimQuery = supabase.from("harvester_queue").update(claimPatch).eq("id", next.id).select("id");
+    const { data: claimed, error: claimError } = next.last_run_at
+      ? await claimQuery.eq("last_run_at", next.last_run_at)
+      : await claimQuery.is("last_run_at", null);
+    if (claimError || !claimed?.length) {
+      return new Response(JSON.stringify({ ok: true, skipped: "seed_claimed_by_another_tick", seed: next.seed_grant }), { headers: jsonHeaders });
+    }
+  }
+
   const { data: runRow, error: runError } = await supabase.from("harvester_runs").insert({
     seed_grant: next.seed_grant,
     phase: "queued",
@@ -83,12 +94,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Mark last_run_at immediately (optimistic — prevents re-fire on next tick if invoke is slow)
   if (next.id) {
-    await supabase.from("harvester_queue").update({
-      last_run_at: new Date().toISOString(),
-      last_run_id: runRow.id,
-    }).eq("id", next.id);
+    await supabase.from("harvester_queue").update({ last_run_id: runRow.id }).eq("id", next.id);
   }
 
   // Fire and forget — call the multihop function
