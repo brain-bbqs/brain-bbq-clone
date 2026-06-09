@@ -324,16 +324,18 @@ export default function AdminKgLive() {
     }
   };
 
-  const ingestEvidence = (row: any) => {
-    setTrace((t) => [{
-      at: new Date().toLocaleTimeString(),
-      grant: row.source_grant_number,
-      pmid: row.pmid,
-      title: row.publication_title,
-      url: row.source_url,
-      org: row.source_org,
-      devices: row.device_class ?? [],
-    }, ...t].slice(0, 40));
+  const ingestEvidence = (row: any, opts?: { trace?: boolean }) => {
+    if (opts?.trace !== false) {
+      setTrace((t) => [{
+        at: new Date().toLocaleTimeString(),
+        grant: row.source_grant_number,
+        pmid: row.pmid,
+        title: row.publication_title,
+        url: row.source_url,
+        org: row.source_org,
+        devices: row.device_class ?? [],
+      }, ...t].slice(0, 40));
+    }
     if (row.source_org) {
       const orgId = `org:${row.source_org}`;
       upsertNode(orgId, "org", row.source_org, 2);
@@ -363,7 +365,18 @@ export default function AdminKgLive() {
         .select("source_grant_number,source_org,device_class,extracted_at,source_url,pmid,publication_title")
         .gte("extracted_at", since).order("extracted_at", { ascending: false }).limit(1000);
       if (cancelled) return;
-      (ev ?? []).forEach(ingestEvidence);
+      // Graph nodes from all rows, but only seed the trace with the latest 30
+      (ev ?? []).forEach((r) => ingestEvidence(r, { trace: false }));
+      const seedTrace = (ev ?? []).slice(0, 30).map((r: any) => ({
+        at: new Date(r.extracted_at).toLocaleTimeString(),
+        grant: r.source_grant_number,
+        pmid: r.pmid,
+        title: r.publication_title,
+        url: r.source_url,
+        org: r.source_org,
+        devices: r.device_class ?? [],
+      }));
+      setTrace(seedTrace);
       setVersion((v) => v + 1);
     })();
     const ch = supabase
