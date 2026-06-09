@@ -358,11 +358,21 @@ Deno.serve(async (req) => {
         await tick({ phase: "extracting", current_target: `PMID ${pmid}`, pubs_found: pubsFound, last_message: f.node.label ?? `PMID ${pmid}` });
 
         const url = await pmidToUrl(pmid);
-        const md = await scrapeMd(url);
+        let md = await scrapeMd(url);
         firecrawlCalls++;
+        // Fallback chain: Firecrawl → publication title/abstract from RePORTER payload.
+        if (!md || md.length < 200) {
+          const fallback = [
+            f.node.label,
+            f.node.payload?.abstract,
+            f.node.payload?.publication_title,
+          ].filter(Boolean).join("\n\n");
+          md = fallback || md;
+        }
         if (!md) continue;
         const methods = extractMethods(md);
-        if (!methods || methods.length < 300) continue;
+        // Allow short snippets — abstract-only pages are still extractable.
+        if (!methods || methods.length < 120) continue;
         const extract = await extractStructured(methods, f.node.label ?? "", aiKey);
         if (!extract) continue;
 
