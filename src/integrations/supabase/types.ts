@@ -1212,6 +1212,7 @@ export type Database = {
       }
       harvester_settings: {
         Row: {
+          batch_paused: boolean
           beam_width: number
           chain_score_threshold: number
           id: number
@@ -1223,6 +1224,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          batch_paused?: boolean
           beam_width?: number
           chain_score_threshold?: number
           id?: number
@@ -1234,6 +1236,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          batch_paused?: boolean
           beam_width?: number
           chain_score_threshold?: number
           id?: number
