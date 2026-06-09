@@ -228,9 +228,11 @@ function Graph2D({
 function Heatmap({
   heatRef,
   version,
+  grantTitles,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   version: number;
+  grantTitles: Record<string, string>;
 }) {
   // Tick to animate flash decay
   const [, force] = useState(0);
