@@ -687,16 +687,23 @@ export default function AdminKgLive() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <Card className="p-0 overflow-hidden bg-background">
-          <div className="flex items-center justify-between px-3 pt-3">
-            <h2 className="text-xs font-semibold flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-primary" /> Relationship heatmap
+          <div className="px-4 pt-4 pb-3 border-b space-y-1.5 bg-muted/30">
+            <h2 className="text-sm font-semibold flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-primary" /> What each grant has been linked to
             </h2>
-            <span className="text-[10px] text-muted-foreground">
-              Grants × Pubs/Orgs/Devices — cells flash as evidence lands.
-            </span>
+            <p className="text-xs text-muted-foreground leading-snug">
+              <strong>Rows</strong> are NIH grants the harvester is following.
+              <strong> Columns</strong> are things the harvester discovered while reading the grant's papers — other
+              <span className="text-[hsl(38_70%_38%)] font-medium"> publications</span>,
+              <span className="text-[hsl(174_50%_30%)] font-medium"> organizations</span> doing the work, and
+              <span className="text-[hsl(265_60%_45%)] font-medium"> devices</span> being used.
+              A <strong>filled cell</strong> means "this grant is linked to this thing"; the number is how many
+              evidence rows back it up. Darker orange = stronger link. A flashing ring means a brand-new link just landed.
+              Hover any cell for the plain-English sentence.
+            </p>
           </div>
           <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-            <Heatmap heatRef={heatRef} version={version} />
+            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} />
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
