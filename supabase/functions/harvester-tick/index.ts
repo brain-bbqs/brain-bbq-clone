@@ -61,13 +61,21 @@ Deno.serve(async (req) => {
       const cd = (q.cool_down_hours ?? 72) * 3600 * 1000;
       return now - new Date(q.last_run_at).getTime() >= cd;
     });
+    // Continuous mode: if everything is cooling down but no run is active,
+    // recycle the oldest seed so the heatmap keeps getting fresh pulses.
+    // The "one run at a time" lock above still rate-limits us, so this won't
+    // hammer Firecrawl — it just keeps the pipeline moving instead of idling
+    // for 72 hours after the first pass.
+    if (!next && (queue ?? []).length > 0) {
+      next = (queue ?? [])[0];
+    }
   }
 
   if (!next) {
     return new Response(JSON.stringify({
       ok: true,
       skipped: "no_eligible_seed",
-      reason: "All enabled seeds are inside their cooldown window. Use Force run for setup, or wait for the daily refresh.",
+      reason: "Harvester queue is empty. Add seeds to harvester_queue to get started.",
     }), { headers: jsonHeaders });
   }
 
