@@ -228,9 +228,11 @@ function Graph2D({
 function Heatmap({
   heatRef,
   version,
+  grantTitles,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   version: number;
+  grantTitles: Record<string, string>;
 }) {
   // Tick to animate flash decay
   const [, force] = useState(0);
@@ -328,13 +330,20 @@ function Heatmap({
           {rows.map((g) => {
             const m = heatRef.current.get(g);
             const rowTotal = m ? Array.from(m.values()).reduce((s, c) => s + c.count, 0) : 0;
+            const title = grantTitles[g];
             return (
               <tr key={g}>
-                <th className="sticky left-0 bg-background z-10 text-left font-mono pr-2 align-middle whitespace-nowrap">
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: NODE_COLOR.grant }} />
-                    <span className="truncate max-w-[110px]" title={g}>{g}</span>
-                    <span className="text-muted-foreground">{rowTotal}</span>
+                <th className="sticky left-0 bg-background z-10 text-left pr-2 align-middle">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: NODE_COLOR.grant }} />
+                    <div className="flex flex-col leading-tight">
+                      <span className="truncate max-w-[180px] text-[11px] font-medium" title={title ?? g}>
+                        {title ? (title.length > 36 ? title.slice(0, 34) + "…" : title) : g}
+                      </span>
+                      <span className="font-mono text-[9px] text-muted-foreground">
+                        {g} · {rowTotal} link{rowTotal === 1 ? "" : "s"}
+                      </span>
+                    </div>
                   </div>
                 </th>
                 {cols.map((c) => {
@@ -343,12 +352,27 @@ function Heatmap({
                     return <td key={c.key} className="w-5 h-5 rounded-sm" style={{ background: "hsl(220 14% 95%)" }} />;
                   }
                   const { bg, flashOpacity } = cell(hit.count, hit.lastT);
+                  const kindWord =
+                    c.kind === "pub" ? "the paper"
+                    : c.kind === "org" ? "researchers at"
+                    : "the device";
+                  const verb =
+                    c.kind === "pub" ? "describes"
+                    : c.kind === "org" ? "are running"
+                    : "is used in";
+                  const tip =
+                    `Grant ${g}${title ? ` ("${title}")` : ""} ` +
+                    (c.kind === "pub"
+                      ? `is linked to ${kindWord} "${c.label}" by ${hit.count} evidence row${hit.count === 1 ? "" : "s"} — i.e. the paper ${verb} methods funded by this grant.`
+                      : c.kind === "org"
+                      ? `has ${hit.count} evidence row${hit.count === 1 ? "" : "s"} placing the work at ${c.label}.`
+                      : `has ${hit.count} evidence row${hit.count === 1 ? "" : "s"} where ${c.label} ${verb} the grant's work.`);
                   return (
                     <td key={c.key} className="relative">
                       <div
                         className="w-5 h-5 rounded-sm hover:ring-2 hover:ring-primary transition-all flex items-center justify-center text-[9px] font-medium text-foreground/80 cursor-default"
                         style={{ background: bg }}
-                        title={`${g} × ${c.label} — ${hit.count} evidence`}
+                        title={tip}
                       >
                         {hit.count > 1 ? hit.count : ""}
                       </div>
@@ -472,6 +496,23 @@ export default function AdminKgLive() {
     refetchInterval: 10000,
   });
 
+  const { data: grantTitleRows = [] } = useQuery({
+    queryKey: ["kg-live-grant-titles"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("grants")
+        .select("grant_number,title")
+        .limit(1000);
+      return (data ?? []) as { grant_number: string; title: string | null }[];
+    },
+  });
+  const grantTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const g of grantTitleRows) if (g.grant_number && g.title) m[g.grant_number] = g.title;
+    return m;
+  }, [grantTitleRows]);
+
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
     if (!isCurator || !continuous) return;
@@ -505,24 +546,13 @@ export default function AdminKgLive() {
   const ingestPath = (row: any) => {
     const path = Array.isArray(row?.path) ? row.path : [];
     let prevId: string | null = null;
-    const seed: string | undefined = row?.seed_grant_number
-      ?? path.find((s: any) => s?.node_type === "grant")?.node_id;
-    const now = performance.now() / 1000;
-    const heatRow = seed ? (heatRef.current.get(seed) ?? new Map<string, CellHit>()) : null;
     for (const step of path) {
       const id = `${step.node_type}:${step.node_id}`;
       const kind: Kind = step.node_type === "grant" ? "grant" : "publication";
       upsertNode(id, kind, step.label || step.node_id, step.hop ?? 0);
       if (prevId && step.relation_in) addLink(prevId, id, step.relation_in);
       prevId = id;
-      if (heatRow && step.node_type !== "grant") {
-        const label = step.label || step.node_id;
-        const k = `pub\u0001${label}`;
-        const c = heatRow.get(k) ?? { count: 0, lastT: 0, colKind: "pub" as const };
-        c.count++; c.lastT = now; heatRow.set(k, c);
-      }
     }
-    if (seed && heatRow && heatRow.size > 0) heatRef.current.set(seed, heatRow);
   };
 
   const ingestEvidence = (row: any, opts?: { trace?: boolean }) => {
@@ -657,16 +687,23 @@ export default function AdminKgLive() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <Card className="p-0 overflow-hidden bg-background">
-          <div className="flex items-center justify-between px-3 pt-3">
-            <h2 className="text-xs font-semibold flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-primary" /> Relationship heatmap
+          <div className="px-4 pt-4 pb-3 border-b space-y-1.5 bg-muted/30">
+            <h2 className="text-sm font-semibold flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-primary" /> What each grant has been linked to
             </h2>
-            <span className="text-[10px] text-muted-foreground">
-              Grants × Pubs/Orgs/Devices — cells flash as evidence lands.
-            </span>
+            <p className="text-xs text-muted-foreground leading-snug">
+              <strong>Rows</strong> are NIH grants the harvester is following.
+              <strong> Columns</strong> are things the harvester discovered while reading the grant's papers — other
+              <span className="text-[hsl(38_70%_38%)] font-medium"> publications</span>,
+              <span className="text-[hsl(174_50%_30%)] font-medium"> organizations</span> doing the work, and
+              <span className="text-[hsl(265_60%_45%)] font-medium"> devices</span> being used.
+              A <strong>filled cell</strong> means "this grant is linked to this thing"; the number is how many
+              evidence rows back it up. Darker orange = stronger link. A flashing ring means a brand-new link just landed.
+              Hover any cell for the plain-English sentence.
+            </p>
           </div>
           <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-            <Heatmap heatRef={heatRef} version={version} />
+            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} />
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
