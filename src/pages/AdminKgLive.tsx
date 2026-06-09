@@ -39,7 +39,7 @@ type N2 = {
 };
 type L2 = { source: string; target: string; relation: string };
 type Pulse = { from: string; to: string; id: number; t0: number };
-type CellHit = { count: number; lastT: number; colKind: "org" | "device" };
+type CellHit = { count: number; lastT: number; colKind: "org" | "device" | "pub" };
 
 const NODE_COLOR: Record<Kind, string> = {
   grant: "hsl(229, 50%, 32%)",
