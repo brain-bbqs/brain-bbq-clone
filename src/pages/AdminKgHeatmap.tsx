@@ -27,10 +27,13 @@ type Evidence = {
   discovery_path_id: string | null;
   source_url: string | null;
   quote: string | null;
+  device_class: string[] | null;
+  species: string[] | null;
+  study_arm: string | null;
 };
 type Path = { id: string; chain_score: number };
 
-type AxisKey = "grants_hardware" | "orgs_conditions" | "investigators_hardware";
+type AxisKey = "grants_hardware" | "orgs_conditions" | "investigators_hardware" | "orgs_devices";
 
 // Hop band colors — orange = close, yellow = mid, pale = far
 function depthColor(minDepth: number, intensity: number): string {
@@ -71,7 +74,7 @@ export default function AdminKgHeatmap() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grant_methods_evidence")
-        .select("id,seed_grant_number,source_grant_number,source_grant_title,source_org,source_org_type,depth,pmid,publication_title,device_hardware,analysis_metrics,setting,confidence,discovery_path_id,source_url,quote")
+        .select("id,seed_grant_number,source_grant_number,source_grant_title,source_org,source_org_type,depth,pmid,publication_title,device_hardware,analysis_metrics,setting,confidence,discovery_path_id,source_url,quote,device_class,species,study_arm")
         .limit(5000);
       if (error) throw error;
       return (data ?? []) as Evidence[];
@@ -105,6 +108,17 @@ export default function AdminKgHeatmap() {
     return m;
   }, [paths]);
 
+  // Bridge orgs: orgs that appear in BOTH animal_model AND clinical_translational study_arms
+  const bridgeOrgs = useMemo(() => {
+    const animal = new Set<string>(), clinical = new Set<string>();
+    for (const ev of evidence) {
+      if (!ev.source_org) continue;
+      if (ev.study_arm === "animal_model") animal.add(ev.source_org);
+      if (ev.study_arm === "clinical_translational") clinical.add(ev.source_org);
+    }
+    return new Set([...animal].filter((o) => clinical.has(o)));
+  }, [evidence]);
+
   // Build {row,col} → { count, sumScore, minDepth, rows[] }
   const matrix = useMemo(() => {
     const cells = new Map<string, { count: number; score: number; minDepth: number; rows: Evidence[] }>();
@@ -132,6 +146,9 @@ export default function AdminKgHeatmap() {
       } else if (axis === "orgs_conditions") {
         rowVals = ev.source_org ? [ev.source_org] : [];
         colVals = [deriveCondition(ev)];
+      } else if (axis === "orgs_devices") {
+        rowVals = ev.source_org ? [ev.source_org] : [];
+        colVals = (ev.device_class ?? []).filter(Boolean);
       } else {
         rowVals = grantToInvs[ev.source_grant_number] ?? [];
         colVals = (ev.device_hardware ?? []).filter(Boolean);
@@ -226,10 +243,11 @@ export default function AdminKgHeatmap() {
         <TabsList>
           <TabsTrigger value="grants_hardware">Grants × Hardware</TabsTrigger>
           <TabsTrigger value="orgs_conditions">Organizations × Conditions</TabsTrigger>
+          <TabsTrigger value="orgs_devices">Orgs × Device-class</TabsTrigger>
           <TabsTrigger value="investigators_hardware">Investigators × Hardware</TabsTrigger>
         </TabsList>
 
-        {(["grants_hardware", "orgs_conditions", "investigators_hardware"] as AxisKey[]).map((k) => (
+        {(["grants_hardware", "orgs_conditions", "orgs_devices", "investigators_hardware"] as AxisKey[]).map((k) => (
           <TabsContent key={k} value={k}>
             <Card className="p-2 overflow-auto">
               {filtered.rows.length === 0 || filtered.cols.length === 0 ? (
@@ -254,6 +272,9 @@ export default function AdminKgHeatmap() {
                     {filtered.rows.map((r) => (
                       <tr key={r}>
                         <th className="sticky left-0 bg-background z-10 text-left font-mono text-[10px] pr-2 align-middle whitespace-nowrap">
+                          {(axis === "orgs_devices" || axis === "orgs_conditions") && bridgeOrgs.has(r) && (
+                            <span title="Translational bridge: org spans animal + clinical arms" className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: "hsl(20 95% 55%)" }} />
+                          )}
                           {r.length > 38 ? r.slice(0, 36) + "…" : r}
                         </th>
                         {filtered.cols.map((c) => {
@@ -262,12 +283,13 @@ export default function AdminKgHeatmap() {
                             return <td key={c} className="w-5 h-5 bg-muted/30 rounded-sm" />;
                           }
                           const intensity = Math.min(1, cell.score / maxScore);
+                          const isBridge = axis === "orgs_devices" && bridgeOrgs.has(r);
                           return (
                             <td key={c}>
                               <button
                                 onClick={() => setSelected({ row: r, col: c, rows: cell.rows })}
-                                title={`${cell.count} evidence · max chain ${cell.score.toFixed(2)} · min hop ${cell.minDepth}`}
-                                className="w-5 h-5 rounded-sm hover:ring-2 hover:ring-primary transition-all"
+                                title={`${cell.count} evidence · max chain ${cell.score.toFixed(2)} · min hop ${cell.minDepth}${isBridge ? " · translational bridge" : ""}`}
+                                className={`w-5 h-5 rounded-sm hover:ring-2 hover:ring-primary transition-all ${isBridge ? "ring-1 ring-orange-500" : ""}`}
                                 style={{ background: depthColor(cell.minDepth, intensity) }}
                               />
                             </td>
