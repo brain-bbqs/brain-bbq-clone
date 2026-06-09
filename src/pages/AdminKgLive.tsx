@@ -288,10 +288,12 @@ function Heatmap({
   heatRef,
   version,
   grantTitles,
+  pubTitles,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   version: number;
   grantTitles: Record<string, string>;
+  pubTitles: Record<string, string>;
 }) {
   // Tick to animate flash decay
   const [, force] = useState(0);
@@ -458,7 +460,7 @@ function Heatmap({
         <span>· cells breathe with strength · ripple = new evidence · {rows.length}×{cols.length}</span>
       </div>
 
-      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} version={version} />
+      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} pubTitles={pubTitles} version={version} />
     </div>
   );
 }
