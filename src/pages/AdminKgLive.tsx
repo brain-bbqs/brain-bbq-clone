@@ -907,7 +907,7 @@ export default function AdminKgLive() {
             </p>
           </div>
           <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} />
+            <Heatmap heatRef={heatRef} version={version} grantTitles={grantTitles} pubTitles={pubTitles} />
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
