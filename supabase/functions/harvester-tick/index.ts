@@ -1,0 +1,66 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+/**
+ * harvester-tick — cron-driven worker. Picks the next eligible seed from
+ * harvester_queue (respecting cool_down + enabled) and invokes
+ * harvest-grant-methods-multihop on it. Runs at most one seed per tick to
+ * stay friendly to Firecrawl rate limits.
+ */
+Deno.serve(async (_req) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Global kill switch via harvester_settings.batch_paused (graceful if column missing)
+  const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
+  if (settings?.batch_paused) {
+    return new Response(JSON.stringify({ ok: true, skipped: "paused" }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  // Don't start a new run if one is currently active
+  const { count: active } = await supabase
+    .from("harvester_runs")
+    .select("id", { head: true, count: "exact" })
+    .in("phase", ["queued", "scraping", "extracting", "hopping"]);
+  if ((active ?? 0) > 0) {
+    return new Response(JSON.stringify({ ok: true, skipped: "run_in_progress", active }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  // Pick next eligible seed
+  const { data: queue } = await supabase
+    .from("harvester_queue")
+    .select("*")
+    .eq("enabled", true)
+    .order("priority", { ascending: true })
+    .order("last_run_at", { ascending: true, nullsFirst: true })
+    .limit(20);
+
+  const now = Date.now();
+  const next = (queue ?? []).find((q: any) => {
+    if (!q.last_run_at) return true;
+    const cd = (q.cool_down_hours ?? 72) * 3600 * 1000;
+    return now - new Date(q.last_run_at).getTime() >= cd;
+  });
+
+  if (!next) {
+    return new Response(JSON.stringify({ ok: true, skipped: "no_eligible_seed" }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  // Mark last_run_at immediately (optimistic — prevents re-fire on next tick if invoke is slow)
+  await supabase.from("harvester_queue").update({ last_run_at: new Date().toISOString() }).eq("id", next.id);
+
+  // Fire and forget — call the multihop function
+  const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/harvest-grant-methods-multihop`;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  // Don't await: long-running, this tick just kicks it off.
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ seedGrantNumber: next.seed_grant }),
+  }).catch((e) => console.error("[tick] invoke failed", e));
+
+  return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant }), {
+    headers: { "Content-Type": "application/json" },
+  });
+});
