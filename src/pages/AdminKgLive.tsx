@@ -468,10 +468,12 @@ function Heatmap({
 function RelationshipAssessment({
   heatRef,
   grantTitles,
+  pubTitles,
   version,
 }: {
   heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
   grantTitles: Record<string, string>;
+  pubTitles: Record<string, string>;
   version: number;
 }) {
   const rels = useMemo(() => {
@@ -487,12 +489,19 @@ function RelationshipAssessment({
     for (const [g, m] of heatRef.current) {
       for (const [k, cell] of m) {
         const label = k.split("\u0001")[1];
+        // For pub columns, prefer the real publication title (looked up by PMID)
+        // over the "PMID 12345" placeholder we get from traversal paths.
+        let display = label;
+        if (cell.colKind === "pub") {
+          const pm = label.match(/^PMID\s+(\d+)/i);
+          if (pm && pubTitles[pm[1]]) display = pubTitles[pm[1]];
+        }
         out.push({
           grant: g,
           grantShort: shortLabel(grantTitles[g] ?? g, 2),
           kind: cell.colKind,
-          thingShort: shortLabel(label),
-          thingFull: label,
+          thingShort: shortLabel(display, 2),
+          thingFull: display,
           count: cell.count,
           lastT: cell.lastT,
         });
@@ -502,7 +511,7 @@ function RelationshipAssessment({
     out.sort((a, b) => b.count - a.count || b.lastT - a.lastT);
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, grantTitles]);
+  }, [version, grantTitles, pubTitles]);
 
   if (rels.length === 0) return null;
 
