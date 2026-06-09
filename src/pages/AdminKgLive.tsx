@@ -395,7 +395,6 @@ export default function AdminKgLive() {
   // Heatmap accumulator: Map<grant, Map<col, CellHit>>
   const heatRef = useRef<Map<string, Map<string, CellHit>>>(new Map());
   const [version, setVersion] = useState(0);
-  const [view, setView] = useState<"heatmap" | "graph">("heatmap");
   const [continuous, setContinuous] = useState(true);
   const [tickIntervalSec, setTickIntervalSec] = useState(25);
   const [pings, setPings] = useState<{ at: string; ok: boolean; msg: string }[]>([]);
