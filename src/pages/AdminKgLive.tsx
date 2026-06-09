@@ -39,7 +39,7 @@ type N2 = {
 };
 type L2 = { source: string; target: string; relation: string };
 type Pulse = { from: string; to: string; id: number; t0: number };
-type CellHit = { count: number; lastT: number; colKind: "org" | "device" };
+type CellHit = { count: number; lastT: number; colKind: "org" | "device" | "pub" };
 
 const NODE_COLOR: Record<Kind, string> = {
   grant: "hsl(229, 50%, 32%)",
@@ -242,7 +242,7 @@ function Heatmap({
 
   const { rows, cols, max } = useMemo(() => {
     const rowSet = new Set<string>();
-    const colMap = new Map<string, "org" | "device">();
+    const colMap = new Map<string, "org" | "device" | "pub">();
     let max = 1;
     for (const [g, m] of heatRef.current) {
       rowSet.add(g);
@@ -252,10 +252,11 @@ function Heatmap({
       }
     }
     const rows = Array.from(rowSet).sort();
-    // Cols: orgs first then devices, each alpha by label
+    // Cols: pubs first, then orgs, then devices, each alpha by label
+    const kindOrder = { pub: 0, org: 1, device: 2 } as const;
     const cols = Array.from(colMap.entries())
       .sort((a, b) => {
-        if (a[1] !== b[1]) return a[1] === "org" ? -1 : 1;
+        if (a[1] !== b[1]) return kindOrder[a[1]] - kindOrder[b[1]];
         return a[0].split("\u0001")[1].localeCompare(b[0].split("\u0001")[1]);
       })
       .map(([k, kind]) => ({ key: k, kind, label: k.split("\u0001")[1] }));
@@ -308,7 +309,15 @@ function Heatmap({
                   style={{ transform: "rotate(-55deg)", transformOrigin: "left bottom" }}
                   title={c.label}
                 >
-                  <span className={c.kind === "device" ? "text-[hsl(265_60%_45%)]" : "text-[hsl(174_50%_30%)]"}>
+                  <span
+                    className={
+                      c.kind === "device"
+                        ? "text-[hsl(265_60%_45%)]"
+                        : c.kind === "org"
+                          ? "text-[hsl(174_50%_30%)]"
+                          : "text-[hsl(38_70%_38%)]"
+                    }
+                  >
                     {c.label.length > 28 ? c.label.slice(0, 26) + "…" : c.label}
                   </span>
                 </div>
@@ -363,6 +372,9 @@ function Heatmap({
       <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
         <span>Cell color = evidence count (log scale, teal → orange)</span>
         <span>· Flash = new hit</span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(38_90%_55%)]" /> publication
+        </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-2 h-2 rounded-full bg-[hsl(174_62%_47%)]" /> org column
         </span>
@@ -469,13 +481,24 @@ export default function AdminKgLive() {
   const ingestPath = (row: any) => {
     const path = Array.isArray(row?.path) ? row.path : [];
     let prevId: string | null = null;
+    const seed: string | undefined = row?.seed_grant_number
+      ?? path.find((s: any) => s?.node_type === "grant")?.node_id;
+    const now = performance.now() / 1000;
+    const heatRow = seed ? (heatRef.current.get(seed) ?? new Map<string, CellHit>()) : null;
     for (const step of path) {
       const id = `${step.node_type}:${step.node_id}`;
       const kind: Kind = step.node_type === "grant" ? "grant" : "publication";
       upsertNode(id, kind, step.label || step.node_id, step.hop ?? 0);
       if (prevId && step.relation_in) addLink(prevId, id, step.relation_in);
       prevId = id;
+      if (heatRow && step.node_type !== "grant") {
+        const label = step.label || step.node_id;
+        const k = `pub\u0001${label}`;
+        const c = heatRow.get(k) ?? { count: 0, lastT: 0, colKind: "pub" as const };
+        c.count++; c.lastT = now; heatRow.set(k, c);
+      }
     }
+    if (seed && heatRow && heatRow.size > 0) heatRef.current.set(seed, heatRow);
   };
 
   const ingestEvidence = (row: any, opts?: { trace?: boolean }) => {
@@ -495,6 +518,12 @@ export default function AdminKgLive() {
     if (grant) {
       const r = heatRef.current.get(grant) ?? new Map<string, CellHit>();
       const now = performance.now() / 1000;
+      const pubLabel = row.publication_title || (row.pmid ? `PMID ${row.pmid}` : null);
+      if (pubLabel) {
+        const k = `pub\u0001${pubLabel}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "pub" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
       if (row.source_org) {
         const k = `org\u0001${row.source_org}`;
         const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "org" as const };
