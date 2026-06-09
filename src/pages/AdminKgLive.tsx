@@ -296,7 +296,7 @@ function Heatmap({
   // Tick to animate flash decay
   const [, force] = useState(0);
   useEffect(() => {
-    const id = window.setInterval(() => force((v) => (v + 1) % 1e9), 250);
+    const id = window.setInterval(() => force((v) => (v + 1) % 1e9), 60);
     return () => window.clearInterval(id);
   }, []);
 
@@ -358,29 +358,24 @@ function Heatmap({
 
   return (
     <div className="h-full overflow-auto p-3">
-      <table className="border-separate border-spacing-[2px] text-[10px]">
+      <table className="border-separate border-spacing-[3px] text-[10px]">
         <thead>
           <tr>
-            <th className="sticky left-0 top-0 bg-background z-30 p-1 text-left w-[140px]"></th>
+            <th className="sticky left-0 top-0 bg-background z-30 p-1 text-left w-[120px]"></th>
             {cols.map((c) => (
-              <th key={c.key} className="sticky top-0 bg-background z-20 p-0 align-bottom">
+              <th key={c.key} className="sticky top-0 bg-background z-20 p-0 pb-1 align-bottom" title={c.label}>
                 <div
-                  className="origin-bottom-left whitespace-nowrap font-medium h-24 w-5 flex items-end"
-                  style={{ transform: "rotate(-55deg)", transformOrigin: "left bottom" }}
-                  title={c.label}
-                >
-                  <span
-                    className={
-                      c.kind === "device"
-                        ? "text-[hsl(265_60%_45%)]"
+                  className="w-7 h-2 rounded-t-sm"
+                  style={{
+                    background:
+                      c.kind === "pub"
+                        ? "hsl(38 90% 55%)"
                         : c.kind === "org"
-                          ? "text-[hsl(174_50%_30%)]"
-                          : "text-[hsl(38_70%_38%)]"
-                    }
-                  >
-                    {shortLabel(c.label)}
-                  </span>
-                </div>
+                          ? "hsl(174 62% 47%)"
+                          : "hsl(265 84% 70%)",
+                    opacity: 0.55,
+                  }}
+                />
               </th>
             ))}
           </tr>
@@ -392,56 +387,61 @@ function Heatmap({
             const title = grantTitles[g];
             return (
               <tr key={g}>
-                <th className="sticky left-0 bg-background z-10 text-left pr-2 align-middle">
+                <th
+                  className="sticky left-0 bg-background z-10 text-left pr-2 align-middle"
+                  title={`${title ?? g} · ${g} · ${rowTotal} link${rowTotal === 1 ? "" : "s"}`}
+                >
                   <div className="flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: NODE_COLOR.grant }} />
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-[11px] font-medium" title={title ?? g}>
-                        {shortLabel(title ?? g, 2)}
-                      </span>
-                      <span className="font-mono text-[9px] text-muted-foreground">
-                        {g} · {rowTotal} link{rowTotal === 1 ? "" : "s"}
-                      </span>
-                    </div>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: NODE_COLOR.grant }} />
+                    <span className="text-[11px] font-medium truncate max-w-[100px]">
+                      {shortLabel(title ?? g, 2)}
+                    </span>
                   </div>
                 </th>
                 {cols.map((c) => {
                   const hit = m?.get(c.key);
                   if (!hit) {
-                    return <td key={c.key} className="w-5 h-5 rounded-sm" style={{ background: "hsl(220 14% 95%)" }} />;
+                    return (
+                      <td key={c.key}>
+                        <div className="w-7 h-7 rounded-sm" style={{ background: "hsl(220 14% 95%)" }} />
+                      </td>
+                    );
                   }
                   const { bg, flashOpacity } = cell(hit.count, hit.lastT);
-                  const kindWord =
-                    c.kind === "pub" ? "the paper"
-                    : c.kind === "org" ? "researchers at"
-                    : "the device";
-                  const verb =
-                    c.kind === "pub" ? "describes"
-                    : c.kind === "org" ? "are running"
-                    : "is used in";
+                  const intensity = Math.min(1, Math.log(1 + hit.count) / Math.log(1 + max));
+                  const breath = 1 + Math.sin(now * 1.6 + hit.count * 0.7) * 0.05 * (0.3 + intensity * 0.7);
                   const tip =
-                    `Grant ${g}${title ? ` ("${title}")` : ""} ` +
-                    (c.kind === "pub"
-                      ? `is linked to ${kindWord} "${c.label}" by ${hit.count} evidence row${hit.count === 1 ? "" : "s"} — i.e. the paper ${verb} methods funded by this grant.`
-                      : c.kind === "org"
-                      ? `has ${hit.count} evidence row${hit.count === 1 ? "" : "s"} placing the work at ${c.label}.`
-                      : `has ${hit.count} evidence row${hit.count === 1 ? "" : "s"} where ${c.label} ${verb} the grant's work.`);
+                    `${title ?? g} → ${c.kind === "pub" ? "paper" : c.kind} "${c.label}" · ${hit.count} evidence`;
                   return (
                     <td key={c.key} className="relative">
                       <div
-                        className="w-5 h-5 rounded-sm hover:ring-2 hover:ring-primary transition-all flex items-center justify-center text-[9px] font-medium text-foreground/80 cursor-default"
-                        style={{ background: bg }}
+                        className="w-7 h-7 rounded-sm hover:ring-2 hover:ring-primary flex items-center justify-center text-[10px] font-semibold text-foreground/80 cursor-default"
+                        style={{
+                          background: bg,
+                          transform: `scale(${breath})`,
+                          transition: "background 200ms linear",
+                        }}
                         title={tip}
                       >
                         {hit.count > 1 ? hit.count : ""}
                       </div>
                       {flashOpacity > 0 && (
-                        <div
-                          className="absolute inset-0 rounded-sm pointer-events-none"
-                          style={{
-                            boxShadow: `0 0 0 2px hsl(38 90% 55% / ${flashOpacity}), 0 0 12px hsl(38 90% 55% / ${flashOpacity})`,
-                          }}
-                        />
+                        <>
+                          <div
+                            className="absolute inset-0 rounded-sm pointer-events-none"
+                            style={{
+                              boxShadow: `0 0 0 2px hsl(38 90% 55% / ${flashOpacity}), 0 0 18px hsl(38 90% 55% / ${flashOpacity})`,
+                            }}
+                          />
+                          <div
+                            className="absolute inset-0 rounded-sm pointer-events-none"
+                            style={{
+                              transform: `scale(${1 + (1 - flashOpacity) * 1.8})`,
+                              border: `2px solid hsl(38 90% 55% / ${flashOpacity})`,
+                              opacity: flashOpacity,
+                            }}
+                          />
+                        </>
                       )}
                     </td>
                   );
@@ -452,18 +452,10 @@ function Heatmap({
         </tbody>
       </table>
       <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
-        <span>Cell color = evidence count (log scale, teal → orange)</span>
-        <span>· Flash = new hit</span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(38_90%_55%)]" /> publication
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(174_62%_47%)]" /> org column
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(265_84%_70%)]" /> device column
-        </span>
-        <span>· {rows.length} grants × {cols.length} columns</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[hsl(38_90%_55%)]" /> paper</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[hsl(174_62%_47%)]" /> org</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[hsl(265_84%_70%)]" /> device</span>
+        <span>· cells breathe with strength · ripple = new evidence · {rows.length}×{cols.length}</span>
       </div>
 
       <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} version={version} />
