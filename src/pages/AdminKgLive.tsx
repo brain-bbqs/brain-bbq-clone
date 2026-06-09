@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Grid, Line, Html } from "@react-three/drei";
-import * as THREE from "three";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageMeta } from "@/components/PageMeta";
 import { Lock, Activity } from "lucide-react";
-import { Bunny3D } from "@/components/admin/kg/Bunny3D";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
@@ -29,202 +25,174 @@ type Run = {
 };
 
 type Kind = "grant" | "publication" | "org" | "device";
-type N3 = {
+type N2 = {
   id: string;
   kind: Kind;
   label: string;
   hop: number;
-  pos: THREE.Vector3;
-  vel: THREE.Vector3;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
 };
-type L3 = { source: string; target: string; relation: string };
-type Hop = { from: string; to: string; id: number; t0: number };
+type L2 = { source: string; target: string; relation: string };
+type Pulse = { from: string; to: string; id: number; t0: number };
 
 const NODE_COLOR: Record<Kind, string> = {
-  grant: "#3a4a8c",
-  publication: "#f5a524",
-  org: "#2dd4bf",
-  device: "#c084fc",
+  grant: "hsl(229, 50%, 32%)",
+  publication: "hsl(38, 90%, 50%)",
+  org: "hsl(174, 62%, 47%)",
+  device: "hsl(265, 84%, 70%)",
 };
-const NODE_SCALE: Record<Kind, number> = {
-  grant: 0.55, publication: 0.35, org: 0.45, device: 0.4,
+const NODE_R: Record<Kind, number> = {
+  grant: 9, publication: 6, org: 7, device: 6,
 };
 
-function rand(s: number) {
-  // deterministic-ish jitter
-  return (Math.sin(s * 9301 + 49297) * 233280) % 1;
-}
+const VIEW_W = 1100;
+const VIEW_H = 620;
 
-// 3D force-directed scene: applies repulsion + link springs + center gravity
-// each frame. Bunnies hop along emitted edges.
-function Scene({
-  nodesRef, linksRef, hopsRef, version,
+function Graph2D({
+  nodesRef, linksRef, pulsesRef,
 }: {
-  nodesRef: React.MutableRefObject<Map<string, N3>>;
-  linksRef: React.MutableRefObject<L3[]>;
-  hopsRef: React.MutableRefObject<Hop[]>;
-  version: number;
+  nodesRef: React.MutableRefObject<Map<string, N2>>;
+  linksRef: React.MutableRefObject<L2[]>;
+  pulsesRef: React.MutableRefObject<Pulse[]>;
 }) {
-  // Force tick
-  useFrame((_, dt) => {
-    const nodes = Array.from(nodesRef.current.values());
-    const ns = nodes.length;
-    if (ns === 0) return;
-    const step = Math.min(dt, 0.05);
-    // Repulsion
-    for (let i = 0; i < ns; i++) {
-      for (let j = i + 1; j < ns; j++) {
-        const a = nodes[i], b = nodes[j];
-        const dx = a.pos.x - b.pos.x, dy = a.pos.y - b.pos.y, dz = a.pos.z - b.pos.z;
-        const d2 = dx*dx + dy*dy + dz*dz + 0.05;
-        const f = 4 / d2;
-        const d = Math.sqrt(d2);
-        const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
-        a.vel.x += fx * step; a.vel.y += fy * step; a.vel.z += fz * step;
-        b.vel.x -= fx * step; b.vel.y -= fy * step; b.vel.z -= fz * step;
+  const [, force] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      const nodes = Array.from(nodesRef.current.values());
+      const ns = nodes.length;
+      // Repulsion
+      for (let i = 0; i < ns; i++) {
+        for (let j = i + 1; j < ns; j++) {
+          const a = nodes[i], b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d2 = dx*dx + dy*dy + 0.5;
+          const f = 2400 / d2;
+          const d = Math.sqrt(d2);
+          const fx = (dx / d) * f, fy = (dy / d) * f;
+          a.vx += fx * dt; a.vy += fy * dt;
+          b.vx -= fx * dt; b.vy -= fy * dt;
+        }
       }
-    }
-    // Spring links
-    for (const l of linksRef.current) {
-      const a = nodesRef.current.get(l.source);
-      const b = nodesRef.current.get(l.target);
-      if (!a || !b) continue;
-      const dx = b.pos.x - a.pos.x, dy = b.pos.y - a.pos.y, dz = b.pos.z - a.pos.z;
-      const d = Math.sqrt(dx*dx + dy*dy + dz*dz) || 0.001;
-      const target = 2.2;
-      const f = (d - target) * 0.6;
-      const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
-      a.vel.x += fx * step; a.vel.y += fy * step; a.vel.z += fz * step;
-      b.vel.x -= fx * step; b.vel.y -= fy * step; b.vel.z -= fz * step;
-    }
-    // Gravity to center + damping + integrate
-    for (const n of nodes) {
-      n.vel.x += -n.pos.x * 0.05 * step;
-      n.vel.y += -n.pos.y * 0.05 * step;
-      n.vel.z += -n.pos.z * 0.05 * step;
-      n.vel.multiplyScalar(0.88);
-      n.pos.x += n.vel.x; n.pos.y += n.vel.y; n.pos.z += n.vel.z;
-      // keep above the grid floor a bit
-      if (n.pos.y < -2) { n.pos.y = -2; n.vel.y = Math.abs(n.vel.y) * 0.3; }
-    }
-  });
-
-  // Snapshot for render
-  const nodes = Array.from(nodesRef.current.values());
-  const links = linksRef.current;
-
-  return (
-    <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[8, 12, 6]} intensity={1.1} castShadow />
-      <directionalLight position={[-6, 4, -4]} intensity={0.4} />
-      <Grid
-        args={[40, 40]}
-        position={[0, -2.05, 0]}
-        cellSize={0.5}
-        cellThickness={0.6}
-        cellColor="#c8d0e0"
-        sectionSize={2}
-        sectionThickness={1.2}
-        sectionColor="#3a4a8c"
-        fadeDistance={28}
-        fadeStrength={1}
-        infiniteGrid
-      />
-
-      {/* Links */}
-      {links.map((l, i) => {
+      // Springs
+      for (const l of linksRef.current) {
         const a = nodesRef.current.get(l.source);
         const b = nodesRef.current.get(l.target);
+        if (!a || !b) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.sqrt(dx*dx + dy*dy) || 0.001;
+        const target = 110;
+        const f = (d - target) * 1.4;
+        const fx = (dx / d) * f, fy = (dy / d) * f;
+        a.vx += fx * dt; a.vy += fy * dt;
+        b.vx -= fx * dt; b.vy -= fy * dt;
+      }
+      // Gravity + damping + integrate
+      for (const n of nodes) {
+        n.vx += (VIEW_W / 2 - n.x) * 0.4 * dt;
+        n.vy += (VIEW_H / 2 - n.y) * 0.4 * dt;
+        n.vx *= 0.86; n.vy *= 0.86;
+        n.x += n.vx; n.y += n.vy;
+        // Clamp inside viewport
+        n.x = Math.max(20, Math.min(VIEW_W - 20, n.x));
+        n.y = Math.max(20, Math.min(VIEW_H - 20, n.y));
+      }
+      // Drop expired pulses
+      const T = performance.now() / 1000;
+      pulsesRef.current = pulsesRef.current.filter((p) => T - p.t0 < 2.0);
+      force((v) => (v + 1) % 1_000_000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [nodesRef, linksRef, pulsesRef]);
+
+  const nodes = Array.from(nodesRef.current.values());
+  const links = linksRef.current;
+  const now = performance.now() / 1000;
+
+  return (
+    <svg
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ display: "block", background: "hsl(220 20% 99%)" }}
+    >
+      <defs>
+        <pattern id="kg-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(220 14% 92%)" strokeWidth="1" />
+        </pattern>
+        <radialGradient id="kg-pulse" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="hsl(38 90% 55%)" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="hsl(38 90% 55%)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={VIEW_W} height={VIEW_H} fill="url(#kg-grid)" />
+
+      {/* Links */}
+      <g stroke="hsl(220 14% 75%)" strokeWidth="1">
+        {links.map((l, i) => {
+          const a = nodesRef.current.get(l.source);
+          const b = nodesRef.current.get(l.target);
+          if (!a || !b) return null;
+          return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
+        })}
+      </g>
+
+      {/* Pulses traveling along edges */}
+      {pulsesRef.current.map((p) => {
+        const a = nodesRef.current.get(p.from);
+        const b = nodesRef.current.get(p.to);
         if (!a || !b) return null;
+        const t = Math.min(1, (now - p.t0) / 1.4);
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
         return (
-          <Line
-            key={i}
-            points={[a.pos.toArray() as [number, number, number], b.pos.toArray() as [number, number, number]]}
-            color="#94a3b8"
-            transparent
-            opacity={0.55}
-            lineWidth={1.2}
-          />
+          <g key={p.id}>
+            <circle cx={x} cy={y} r="14" fill="url(#kg-pulse)" />
+            <circle cx={x} cy={y} r="3" fill="hsl(38 90% 50%)" />
+          </g>
         );
       })}
 
       {/* Nodes */}
       {nodes.map((n) => (
-        <group key={n.id} position={n.pos.toArray() as [number, number, number]}>
-          <mesh castShadow>
-            <sphereGeometry args={[NODE_SCALE[n.kind], 18, 18]} />
-            <meshStandardMaterial color={NODE_COLOR[n.kind]} emissive={NODE_COLOR[n.kind]} emissiveIntensity={0.18} roughness={0.45} />
-          </mesh>
-          <Html position={[0, NODE_SCALE[n.kind] + 0.18, 0]} center distanceFactor={10} style={{ pointerEvents: "none" }}>
-            <div style={{
-              fontSize: 10, color: "#1a2547", background: "rgba(255,255,255,0.85)",
-              padding: "1px 5px", borderRadius: 4, whiteSpace: "nowrap",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-            }}>
-              {n.label.length > 28 ? n.label.slice(0, 26) + "…" : n.label}
-            </div>
-          </Html>
-        </group>
+        <g key={n.id} transform={`translate(${n.x},${n.y})`}>
+          <circle
+            r={NODE_R[n.kind]}
+            fill={NODE_COLOR[n.kind]}
+            stroke="white"
+            strokeWidth="1.5"
+          />
+          <text
+            x={NODE_R[n.kind] + 4}
+            y={3}
+            fontSize="10"
+            fontFamily="ui-sans-serif, system-ui, sans-serif"
+            fill="hsl(229 30% 25%)"
+            style={{ pointerEvents: "none" }}
+          >
+            {n.label.length > 32 ? n.label.slice(0, 30) + "…" : n.label}
+          </text>
+        </g>
       ))}
-
-      {/* Hopping bunnies */}
-      {hopsRef.current.map((h) => (
-        <BunnyHop key={h.id} hop={h} nodesRef={nodesRef} hopsRef={hopsRef} />
-      ))}
-
-      <OrbitControls makeDefault enableDamping dampingFactor={0.12} />
-      {/* Force re-render when version changes */}
-      <group visible={false}><mesh><boxGeometry args={[0,0,0]} /><meshBasicMaterial /></mesh><Html><span style={{display:"none"}}>{version}</span></Html></group>
-    </>
-  );
-}
-
-function BunnyHop({
-  hop, nodesRef, hopsRef,
-}: {
-  hop: Hop;
-  nodesRef: React.MutableRefObject<Map<string, N3>>;
-  hopsRef: React.MutableRefObject<Hop[]>;
-}) {
-  const ref = useRef<THREE.Group>(null!);
-  const DURATION = 2.4; // seconds for full traversal
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const a = nodesRef.current.get(hop.from);
-    const b = nodesRef.current.get(hop.to);
-    if (!a || !b) return;
-    const t = (clock.getElapsedTime() - hop.t0) / DURATION;
-    if (t >= 1) {
-      hopsRef.current = hopsRef.current.filter((h) => h.id !== hop.id);
-      return;
-    }
-    // 4 mini-arc hops along the segment
-    const HOPS = 5;
-    const segT = (t * HOPS) % 1;
-    const x = a.pos.x + (b.pos.x - a.pos.x) * t;
-    const y = a.pos.y + (b.pos.y - a.pos.y) * t + Math.sin(segT * Math.PI) * 0.4;
-    const z = a.pos.z + (b.pos.z - a.pos.z) * t;
-    ref.current.position.set(x, y, z);
-    // Face direction of travel
-    const dir = new THREE.Vector3(b.pos.x - a.pos.x, 0, b.pos.z - a.pos.z);
-    if (dir.lengthSq() > 0.0001) {
-      ref.current.rotation.y = Math.atan2(dir.z, dir.x) * -1;
-    }
-  });
-  return (
-    <group ref={ref}>
-      <Bunny3D color="#fafafa" />
-    </group>
+    </svg>
   );
 }
 
 export default function AdminKgLive() {
   const { isCurator, isLoading } = useUserTier();
-  const nodesRef = useRef<Map<string, N3>>(new Map());
-  const linksRef = useRef<L3[]>([]);
-  const hopsRef = useRef<Hop[]>([]);
-  const hopIdRef = useRef(0);
+  const nodesRef = useRef<Map<string, N2>>(new Map());
+  const linksRef = useRef<L2[]>([]);
+  const pulsesRef = useRef<Pulse[]>([]);
+  const pulseIdRef = useRef(0);
   const [version, setVersion] = useState(0);
   const [continuous, setContinuous] = useState(true);
   const [tickIntervalSec, setTickIntervalSec] = useState(25);
@@ -283,23 +251,19 @@ export default function AdminKgLive() {
     const cur = nodesRef.current.get(id);
     if (cur) { cur.hop = Math.min(cur.hop, hop); return; }
     const s = nodesRef.current.size + 1;
-    const r = 3 + hop * 1.8;
-    const theta = rand(s) * Math.PI * 2;
-    const phi = rand(s + 7) * Math.PI;
+    const r = 80 + hop * 90;
+    const theta = (s * 137.5) * (Math.PI / 180);
     nodesRef.current.set(id, {
       id, kind, label: label || id, hop,
-      pos: new THREE.Vector3(
-        Math.sin(phi) * Math.cos(theta) * r,
-        Math.cos(phi) * r * 0.5,
-        Math.sin(phi) * Math.sin(theta) * r,
-      ),
-      vel: new THREE.Vector3(),
+      x: VIEW_W / 2 + Math.cos(theta) * r,
+      y: VIEW_H / 2 + Math.sin(theta) * r,
+      vx: 0, vy: 0,
     });
   };
 
   const addLink = (from: string, to: string, relation: string) => {
     linksRef.current.push({ source: from, target: to, relation });
-    hopsRef.current.push({ from, to, id: ++hopIdRef.current, t0: performance.now() / 1000 });
+    pulsesRef.current.push({ from, to, id: ++pulseIdRef.current, t0: performance.now() / 1000 });
   };
 
   const ingestPath = (row: any) => {
@@ -390,26 +354,24 @@ export default function AdminKgLive() {
       <div className="flex items-center gap-3">
         <Activity className="w-6 h-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold">KG Live · 3D</h1>
+          <h1 className="text-2xl font-bold">Knowledge Graph · Live Harvest</h1>
           <p className="text-xs text-muted-foreground">
-            Drag to orbit, scroll to zoom. Bunnies hop along edges as NIH RePORTER paths are discovered.
+            Real-time view of NIH RePORTER multi-hop traversal. Pulses mark newly discovered relationships.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <Card className="p-0 overflow-hidden bg-background">
-          <div style={{ width: "100%", height: "70vh", minHeight: 520, background: "linear-gradient(180deg, #eef2fb 0%, #dde4f5 100%)" }}>
-            <Canvas shadows camera={{ position: [8, 6, 10], fov: 50 }}>
-              <Scene nodesRef={nodesRef} linksRef={linksRef} hopsRef={hopsRef} version={version} />
-            </Canvas>
+          <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
+            <Graph2D nodesRef={nodesRef} linksRef={linksRef} pulsesRef={pulsesRef} />
           </div>
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-2">
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.publication }} /> Pubs ({stats.pubs})</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.org }} /> Orgs ({stats.orgs})</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.device }} /> Devices ({stats.devices})</span>
-            <span>· {stats.links} links · 🐰 {hopsRef.current.length} hopping</span>
+            <span>· {stats.links} edges · {pulsesRef.current.length} active traversals</span>
           </div>
         </Card>
 
