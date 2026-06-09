@@ -786,6 +786,68 @@ export default function AdminKgLive() {
           </Card>
 
           <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center justify-between">
+              <span>Proposed relations</span>
+              <Badge variant="secondary">{proposedRelations.length} pending</Badge>
+            </h2>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              New edge types the planner wants to add. Pending ones land here first; approved ones move into the active taxonomy below.
+            </p>
+            <div className="space-y-1.5 max-h-[220px] overflow-y-auto text-[11px] border-t pt-2">
+              {proposedRelations.length === 0 && (
+                <div className="text-muted-foreground italic">
+                  No proposed relations yet. The planner only proposes a new edge type when current evidence doesn't fit an existing relation.
+                </div>
+              )}
+              {proposedRelations.map((p: any) => (
+                <div key={p.id} className="border rounded p-1.5 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px]">
+                      <span className="text-[hsl(229_50%_25%)]">{p.src_node_type}</span>
+                      <span className="mx-1 text-muted-foreground">—{p.relation_name}→</span>
+                      <span className="text-[hsl(38_70%_38%)]">{p.dst_node_type}</span>
+                    </span>
+                    <Badge
+                      variant={p.status === "approved" ? "default" : p.status === "rejected" ? "destructive" : "outline"}
+                      className="text-[9px] py-0"
+                    >
+                      {p.status ?? "pending"}
+                    </Badge>
+                  </div>
+                  {p.planner_rationale && (
+                    <div className="text-muted-foreground italic line-clamp-2">{p.planner_rationale}</div>
+                  )}
+                  {p.seed_grant_number && (
+                    <div className="text-[10px] text-muted-foreground font-mono">seed {p.seed_grant_number}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center justify-between">
+              <span>Active relation taxonomy</span>
+              <Badge variant="secondary">{activeRelations.length}</Badge>
+            </h2>
+            <p className="text-[10px] text-muted-foreground -mt-1">
+              Edge types the harvester is currently allowed to draw.
+            </p>
+            <div className="space-y-1 max-h-[180px] overflow-y-auto text-[10px] border-t pt-2 font-mono">
+              {activeRelations.map((r: any, i: number) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span>
+                    <span className="text-[hsl(229_50%_25%)]">{r.src_node_type}</span>
+                    <span className="mx-1 text-muted-foreground">—{r.name}→</span>
+                    <span className="text-[hsl(38_70%_38%)]">{r.dst_node_type}</span>
+                  </span>
+                  {!r.enabled && <Badge variant="outline" className="text-[9px] py-0">off</Badge>}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-2">
             <h2 className="text-sm font-semibold">Active runs <Badge variant="secondary">{active.length}</Badge></h2>
             {active.length === 0 && <p className="text-xs text-muted-foreground">Idle. Background tick will pick up the next eligible seed.</p>}
             {active.map((r) => (
