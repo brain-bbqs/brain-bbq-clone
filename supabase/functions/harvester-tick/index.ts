@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getCorsHeaders } from "../_shared/auth.ts";
 
 /**
  * harvester-tick — cron-driven worker. Picks the next eligible seed from
@@ -6,7 +7,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
  * harvest-grant-methods-multihop on it. Runs at most one seed per tick to
  * stay friendly to Firecrawl rate limits.
  */
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const jsonHeaders = { ...cors, "Content-Type": "application/json" };
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -15,7 +19,7 @@ Deno.serve(async (_req) => {
   // Global kill switch via harvester_settings.batch_paused (graceful if column missing)
   const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
   if (settings?.batch_paused) {
-    return new Response(JSON.stringify({ ok: true, skipped: "paused" }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, skipped: "paused" }), { headers: jsonHeaders });
   }
 
   // Don't start a new run if one is currently active
@@ -24,7 +28,7 @@ Deno.serve(async (_req) => {
     .select("id", { head: true, count: "exact" })
     .in("phase", ["queued", "scraping", "extracting", "hopping"]);
   if ((active ?? 0) > 0) {
-    return new Response(JSON.stringify({ ok: true, skipped: "run_in_progress", active }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, skipped: "run_in_progress", active }), { headers: jsonHeaders });
   }
 
   // Pick next eligible seed
@@ -44,7 +48,7 @@ Deno.serve(async (_req) => {
   });
 
   if (!next) {
-    return new Response(JSON.stringify({ ok: true, skipped: "no_eligible_seed" }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, skipped: "no_eligible_seed" }), { headers: jsonHeaders });
   }
 
   // Mark last_run_at immediately (optimistic — prevents re-fire on next tick if invoke is slow)
@@ -61,6 +65,6 @@ Deno.serve(async (_req) => {
   }).catch((e) => console.error("[tick] invoke failed", e));
 
   return new Response(JSON.stringify({ ok: true, kicked: next.seed_grant }), {
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders,
   });
 });
