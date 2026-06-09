@@ -378,7 +378,7 @@ function Heatmap({
                           : "text-[hsl(38_70%_38%)]"
                     }
                   >
-                    {c.label.length > 28 ? c.label.slice(0, 26) + "…" : c.label}
+                    {shortLabel(c.label)}
                   </span>
                 </div>
               </th>
@@ -396,8 +396,8 @@ function Heatmap({
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: NODE_COLOR.grant }} />
                     <div className="flex flex-col leading-tight">
-                      <span className="truncate max-w-[180px] text-[11px] font-medium" title={title ?? g}>
-                        {title ? (title.length > 36 ? title.slice(0, 34) + "…" : title) : g}
+                      <span className="text-[11px] font-medium" title={title ?? g}>
+                        {shortLabel(title ?? g, 2)}
                       </span>
                       <span className="font-mono text-[9px] text-muted-foreground">
                         {g} · {rowTotal} link{rowTotal === 1 ? "" : "s"}
