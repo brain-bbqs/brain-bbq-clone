@@ -446,6 +446,32 @@ export default function AdminKgLive() {
     refetchInterval: 5000,
   });
 
+  const { data: activeRelations = [] } = useQuery({
+    queryKey: ["kg-live-active-relations"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("harvester_relations")
+        .select("name,src_node_type,dst_node_type,enabled,approved_at")
+        .order("approved_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const { data: proposedRelations = [], refetch: refetchProposed } = useQuery({
+    queryKey: ["kg-live-proposed-relations"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("proposed_relations")
+        .select("id,relation_name,src_node_type,dst_node_type,seed_grant_number,planner_rationale,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      return data ?? [];
+    },
+    refetchInterval: 10000,
+  });
+
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
     if (!isCurator || !continuous) return;
