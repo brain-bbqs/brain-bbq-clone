@@ -678,6 +678,29 @@ export default function AdminKgLive() {
     return m;
   }, [grantTitleRows]);
 
+  // PMID → publication title lookup so the relationship list can show a
+  // 1-2 word summary of the actual paper instead of "Paper 12345".
+  const { data: pubTitleRows = [] } = useQuery({
+    queryKey: ["kg-live-pub-titles"],
+    enabled: isCurator,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("publications")
+        .select("pmid,title")
+        .not("pmid", "is", null)
+        .limit(5000);
+      return (data ?? []) as { pmid: string | number; title: string | null }[];
+    },
+    refetchInterval: 60000,
+  });
+  const pubTitles = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of pubTitleRows) {
+      if (p.pmid && p.title) m[String(p.pmid)] = p.title;
+    }
+    return m;
+  }, [pubTitleRows]);
+
   // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
   useEffect(() => {
     if (!isCurator || !continuous) return;
