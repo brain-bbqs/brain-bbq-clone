@@ -242,7 +242,7 @@ function Heatmap({
 
   const { rows, cols, max } = useMemo(() => {
     const rowSet = new Set<string>();
-    const colMap = new Map<string, "org" | "device">();
+    const colMap = new Map<string, "org" | "device" | "pub">();
     let max = 1;
     for (const [g, m] of heatRef.current) {
       rowSet.add(g);
@@ -252,10 +252,11 @@ function Heatmap({
       }
     }
     const rows = Array.from(rowSet).sort();
-    // Cols: orgs first then devices, each alpha by label
+    // Cols: pubs first, then orgs, then devices, each alpha by label
+    const kindOrder = { pub: 0, org: 1, device: 2 } as const;
     const cols = Array.from(colMap.entries())
       .sort((a, b) => {
-        if (a[1] !== b[1]) return a[1] === "org" ? -1 : 1;
+        if (a[1] !== b[1]) return kindOrder[a[1]] - kindOrder[b[1]];
         return a[0].split("\u0001")[1].localeCompare(b[0].split("\u0001")[1]);
       })
       .map(([k, kind]) => ({ key: k, kind, label: k.split("\u0001")[1] }));
