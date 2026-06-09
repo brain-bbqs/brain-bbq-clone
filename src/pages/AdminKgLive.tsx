@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { PageMeta } from "@/components/PageMeta";
 import { Lock, Activity } from "lucide-react";
 import { Bunny3D } from "@/components/admin/kg/Bunny3D";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 type Run = {
   id: string;
@@ -224,6 +226,35 @@ export default function AdminKgLive() {
   const hopsRef = useRef<Hop[]>([]);
   const hopIdRef = useRef(0);
   const [version, setVersion] = useState(0);
+  const [continuous, setContinuous] = useState(true);
+  const [tickIntervalSec, setTickIntervalSec] = useState(25);
+  const [pings, setPings] = useState<{ at: string; ok: boolean; msg: string }[]>([]);
+  const [lastPingAt, setLastPingAt] = useState<number | null>(null);
+  const [pinging, setPinging] = useState(false);
+
+  const fireTick = async (source: string) => {
+    setPinging(true);
+    const at = new Date().toLocaleTimeString();
+    try {
+      const { data, error } = await supabase.functions.invoke("harvester-tick", {
+        body: { source },
+      });
+      const msg = error
+        ? `error: ${error.message}`
+        : data?.kicked
+          ? `kicked ${data.kicked}`
+          : data?.skipped
+            ? `skipped: ${data.skipped}${data.active ? ` (${data.active} active)` : ""}`
+            : JSON.stringify(data ?? {});
+      setPings((p) => [{ at, ok: !error, msg }, ...p].slice(0, 30));
+    } catch (e: any) {
+      setPings((p) => [{ at, ok: false, msg: `throw: ${e?.message ?? e}` }, ...p].slice(0, 30));
+    } finally {
+      setLastPingAt(Date.now());
+      setPinging(false);
+      refetchRuns();
+    }
+  };
 
   const { data: runs = [], refetch: refetchRuns } = useQuery({
     queryKey: ["kg-live-runs"],
@@ -236,6 +267,15 @@ export default function AdminKgLive() {
     },
     refetchInterval: 5000,
   });
+
+  // Continuous client-side ticker (in addition to the 2-min pg_cron schedule)
+  useEffect(() => {
+    if (!isCurator || !continuous) return;
+    fireTick("kg-live-mount");
+    const t = window.setInterval(() => fireTick("kg-live-interval"), tickIntervalSec * 1000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCurator, continuous, tickIntervalSec]);
 
   const active = runs.filter((r) => !r.finished_at && r.phase !== "done" && r.phase !== "error");
 
@@ -374,6 +414,55 @@ export default function AdminKgLive() {
         </Card>
 
         <div className="space-y-3">
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <span className={`inline-block w-2 h-2 rounded-full ${pinging ? "bg-amber-500 animate-pulse" : continuous ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
+                Cycler
+              </h2>
+              <label className="flex items-center gap-2 text-xs">
+                Continuous
+                <Switch checked={continuous} onCheckedChange={setContinuous} />
+              </label>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                Every {tickIntervalSec}s (client) · every 2m (cron) · daily 09:00 UTC refresh
+              </span>
+              <Button size="sm" variant="outline" onClick={() => fireTick("manual")} disabled={pinging}>
+                Ping now
+              </Button>
+            </div>
+            <div className="flex gap-1 text-[10px]">
+              {[10, 25, 60, 120].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setTickIntervalSec(s)}
+                  className={`px-2 py-0.5 rounded border ${tickIntervalSec === s ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}`}
+                >
+                  {s}s
+                </button>
+              ))}
+            </div>
+            <div className="space-y-0.5 max-h-[180px] overflow-y-auto text-[11px] font-mono border-t pt-2">
+              {pings.length === 0 && (
+                <div className="text-muted-foreground italic">No pings yet…</div>
+              )}
+              {pings.map((p, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className={p.ok ? "text-emerald-600" : "text-destructive"}>●</span>
+                  <span className="text-muted-foreground">{p.at}</span>
+                  <span className="truncate">{p.msg}</span>
+                </div>
+              ))}
+            </div>
+            {lastPingAt && (
+              <div className="text-[10px] text-muted-foreground">
+                Last ping {Math.round((Date.now() - lastPingAt) / 1000)}s ago
+              </div>
+            )}
+          </Card>
+
           <Card className="p-4 space-y-2">
             <h2 className="text-sm font-semibold">Active runs <Badge variant="secondary">{active.length}</Badge></h2>
             {active.length === 0 && <p className="text-xs text-muted-foreground">Idle. Background tick will pick up the next eligible seed.</p>}
