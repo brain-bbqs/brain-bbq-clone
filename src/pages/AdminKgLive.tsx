@@ -8,7 +8,8 @@ import { PageMeta } from "@/components/PageMeta";
 import { Lock, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Zap, ExternalLink } from "lucide-react";
+import { Zap, ExternalLink, Flame, Network } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Run = {
   id: string;
@@ -38,6 +39,7 @@ type N2 = {
 };
 type L2 = { source: string; target: string; relation: string };
 type Pulse = { from: string; to: string; id: number; t0: number };
+type CellHit = { count: number; lastT: number; colKind: "org" | "device" };
 
 const NODE_COLOR: Record<Kind, string> = {
   grant: "hsl(229, 50%, 32%)",
@@ -224,13 +226,165 @@ function Graph2D({
   );
 }
 
+function Heatmap({
+  heatRef,
+  version,
+}: {
+  heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
+  version: number;
+}) {
+  // Tick to animate flash decay
+  const [, force] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => force((v) => (v + 1) % 1e9), 250);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const { rows, cols, max } = useMemo(() => {
+    const rowSet = new Set<string>();
+    const colMap = new Map<string, "org" | "device">();
+    let max = 1;
+    for (const [g, m] of heatRef.current) {
+      rowSet.add(g);
+      for (const [k, cell] of m) {
+        colMap.set(k, cell.colKind);
+        if (cell.count > max) max = cell.count;
+      }
+    }
+    const rows = Array.from(rowSet).sort();
+    // Cols: orgs first then devices, each alpha by label
+    const cols = Array.from(colMap.entries())
+      .sort((a, b) => {
+        if (a[1] !== b[1]) return a[1] === "org" ? -1 : 1;
+        return a[0].split("\u0001")[1].localeCompare(b[0].split("\u0001")[1]);
+      })
+      .map(([k, kind]) => ({ key: k, kind, label: k.split("\u0001")[1] }));
+    return { rows, cols, max };
+    // re-derive when version bumps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version]);
+
+  const now = performance.now() / 1000;
+
+  if (rows.length === 0 || cols.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center text-center p-8">
+        <div className="max-w-sm space-y-2">
+          <Flame className="w-10 h-10 mx-auto text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">
+            Heatmap warms up as the harvester lands evidence. Each grant gains a row; orgs and devices
+            grow into columns. Cells flash orange as new relationships arrive.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const cell = (count: number, flash: number) => {
+    // Intensity uses log scale so single hits stay readable.
+    const t = Math.min(1, Math.log(1 + count) / Math.log(1 + max));
+    const alpha = 0.10 + t * 0.85;
+    // Hue ramp: cool teal → warm orange as count grows.
+    const hue = 174 - t * 136; // 174 (teal) → 38 (orange)
+    const sat = 60 + t * 30;
+    const light = 62 - t * 12;
+    const bg = `hsl(${hue} ${sat}% ${light}% / ${alpha})`;
+    // Flash ring when recent
+    const age = now - flash;
+    const flashOpacity = age < 1.6 ? Math.max(0, 1 - age / 1.6) : 0;
+    return { bg, flashOpacity };
+  };
+
+  return (
+    <div className="h-full overflow-auto p-3">
+      <table className="border-separate border-spacing-[2px] text-[10px]">
+        <thead>
+          <tr>
+            <th className="sticky left-0 top-0 bg-background z-30 p-1 text-left w-[140px]"></th>
+            {cols.map((c) => (
+              <th key={c.key} className="sticky top-0 bg-background z-20 p-0 align-bottom">
+                <div
+                  className="origin-bottom-left whitespace-nowrap font-medium h-24 w-5 flex items-end"
+                  style={{ transform: "rotate(-55deg)", transformOrigin: "left bottom" }}
+                  title={c.label}
+                >
+                  <span className={c.kind === "device" ? "text-[hsl(265_60%_45%)]" : "text-[hsl(174_50%_30%)]"}>
+                    {c.label.length > 28 ? c.label.slice(0, 26) + "…" : c.label}
+                  </span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((g) => {
+            const m = heatRef.current.get(g);
+            const rowTotal = m ? Array.from(m.values()).reduce((s, c) => s + c.count, 0) : 0;
+            return (
+              <tr key={g}>
+                <th className="sticky left-0 bg-background z-10 text-left font-mono pr-2 align-middle whitespace-nowrap">
+                  <div className="flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: NODE_COLOR.grant }} />
+                    <span className="truncate max-w-[110px]" title={g}>{g}</span>
+                    <span className="text-muted-foreground">{rowTotal}</span>
+                  </div>
+                </th>
+                {cols.map((c) => {
+                  const hit = m?.get(c.key);
+                  if (!hit) {
+                    return <td key={c.key} className="w-5 h-5 rounded-sm" style={{ background: "hsl(220 14% 95%)" }} />;
+                  }
+                  const { bg, flashOpacity } = cell(hit.count, hit.lastT);
+                  return (
+                    <td key={c.key} className="relative">
+                      <div
+                        className="w-5 h-5 rounded-sm hover:ring-2 hover:ring-primary transition-all flex items-center justify-center text-[9px] font-medium text-foreground/80 cursor-default"
+                        style={{ background: bg }}
+                        title={`${g} × ${c.label} — ${hit.count} evidence`}
+                      >
+                        {hit.count > 1 ? hit.count : ""}
+                      </div>
+                      {flashOpacity > 0 && (
+                        <div
+                          className="absolute inset-0 rounded-sm pointer-events-none"
+                          style={{
+                            boxShadow: `0 0 0 2px hsl(38 90% 55% / ${flashOpacity}), 0 0 12px hsl(38 90% 55% / ${flashOpacity})`,
+                          }}
+                        />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
+        <span>Cell color = evidence count (log scale, teal → orange)</span>
+        <span>· Flash = new hit</span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(174_62%_47%)]" /> org column
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-[hsl(265_84%_70%)]" /> device column
+        </span>
+        <span>· {rows.length} grants × {cols.length} columns</span>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminKgLive() {
   const { isCurator, isLoading } = useUserTier();
   const nodesRef = useRef<Map<string, N2>>(new Map());
   const linksRef = useRef<L2[]>([]);
   const pulsesRef = useRef<Pulse[]>([]);
   const pulseIdRef = useRef(0);
+  // Heatmap accumulator: Map<grant, Map<col, CellHit>>
+  const heatRef = useRef<Map<string, Map<string, CellHit>>>(new Map());
   const [version, setVersion] = useState(0);
+  const [view, setView] = useState<"heatmap" | "graph">("heatmap");
   const [continuous, setContinuous] = useState(true);
   const [tickIntervalSec, setTickIntervalSec] = useState(25);
   const [pings, setPings] = useState<{ at: string; ok: boolean; msg: string }[]>([]);
@@ -336,6 +490,23 @@ export default function AdminKgLive() {
         devices: row.device_class ?? [],
       }, ...t].slice(0, 40));
     }
+    // Heatmap accumulator
+    const grant = row.source_grant_number;
+    if (grant) {
+      const r = heatRef.current.get(grant) ?? new Map<string, CellHit>();
+      const now = performance.now() / 1000;
+      if (row.source_org) {
+        const k = `org\u0001${row.source_org}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "org" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
+      for (const d of (row.device_class ?? []) as string[]) {
+        const k = `device\u0001${d}`;
+        const c = r.get(k) ?? { count: 0, lastT: 0, colKind: "device" as const };
+        c.count++; c.lastT = now; r.set(k, c);
+      }
+      if (r.size > 0) heatRef.current.set(grant, r);
+    }
     if (row.source_org) {
       const orgId = `org:${row.source_org}`;
       upsertNode(orgId, "org", row.source_org, 2);
@@ -431,9 +602,33 @@ export default function AdminKgLive() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <Card className="p-0 overflow-hidden bg-background">
-          <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
-            <Graph2D nodesRef={nodesRef} linksRef={linksRef} pulsesRef={pulsesRef} />
-          </div>
+          <Tabs value={view} onValueChange={(v) => setView(v as "heatmap" | "graph")}>
+            <div className="flex items-center justify-between px-3 pt-3">
+              <TabsList>
+                <TabsTrigger value="heatmap" className="text-xs gap-1">
+                  <Flame className="w-3 h-3" /> Relationship heatmap
+                </TabsTrigger>
+                <TabsTrigger value="graph" className="text-xs gap-1">
+                  <Network className="w-3 h-3" /> Force graph
+                </TabsTrigger>
+              </TabsList>
+              <span className="text-[10px] text-muted-foreground">
+                {view === "heatmap"
+                  ? "Grants × Orgs+Devices — cells flash as evidence lands."
+                  : "Bunny hops along newly discovered edges."}
+              </span>
+            </div>
+            <TabsContent value="heatmap" className="m-0">
+              <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
+                <Heatmap heatRef={heatRef} version={version} />
+              </div>
+            </TabsContent>
+            <TabsContent value="graph" className="m-0">
+              <div style={{ width: "100%", height: "70vh", minHeight: 520 }}>
+                <Graph2D nodesRef={nodesRef} linksRef={linksRef} pulsesRef={pulsesRef} />
+              </div>
+            </TabsContent>
+          </Tabs>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground p-3 border-t">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.grant }} /> Grants ({stats.grants})</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ background: NODE_COLOR.publication }} /> Pubs ({stats.pubs})</span>
