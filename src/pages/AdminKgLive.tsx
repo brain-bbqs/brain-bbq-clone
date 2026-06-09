@@ -53,6 +53,65 @@ const NODE_R: Record<Kind, number> = {
 const VIEW_W = 1100;
 const VIEW_H = 620;
 
+// Compress any string to a 1-2 word summary chip.
+const STOPWORDS = new Set([
+  "a","an","the","of","for","and","or","to","in","on","with","by","via","from",
+  "is","are","using","use","based","novel","new","high","low","study","studies",
+  "approach","approaches","analysis","system","systems","model","models","method","methods",
+  "investigation","investigations","research","towards","toward","into","at","as",
+]);
+function shortLabel(s: string | null | undefined, max = 2): string {
+  if (!s) return "—";
+  // PMID columns: "PMID 12345" → "Paper 12345" (no shrink needed)
+  const pmid = s.match(/^PMID\s+(\d+)/i);
+  if (pmid) return `Paper ${pmid[1].slice(-5)}`;
+  const tokens = s
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  const picked: string[] = [];
+  for (const t of tokens) {
+    const lower = t.toLowerCase();
+    if (STOPWORDS.has(lower)) continue;
+    if (t.length < 3) continue;
+    picked.push(t[0].toUpperCase() + t.slice(1));
+    if (picked.length >= max) break;
+  }
+  if (picked.length === 0) picked.push(tokens[0] ?? s);
+  return picked.join(" ");
+}
+
+// Verdict for a single grant→thing relationship, based on evidence count.
+function assessRelation(count: number): {
+  level: "strong" | "moderate" | "weak";
+  label: string;
+  blurb: string;
+  badgeClass: string;
+} {
+  if (count >= 4) {
+    return {
+      level: "strong",
+      label: "Solid lead",
+      blurb: "Multiple evidence rows back this up — worth following.",
+      badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    };
+  }
+  if (count >= 2) {
+    return {
+      level: "moderate",
+      label: "Plausible",
+      blurb: "Limited evidence so far. Watch as more lands.",
+      badgeClass: "bg-amber-100 text-amber-800 border-amber-300",
+    };
+  }
+  return {
+    level: "weak",
+    label: "Speculative",
+    blurb: "Single mention — may be noise.",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+  };
+}
+
 function Bunny({ scale = 1 }: { scale?: number }) {
   // Side-view full-body bunny, drawn in SVG. Centered at (0,0).
   return (
@@ -319,7 +378,7 @@ function Heatmap({
                           : "text-[hsl(38_70%_38%)]"
                     }
                   >
-                    {c.label.length > 28 ? c.label.slice(0, 26) + "…" : c.label}
+                    {shortLabel(c.label)}
                   </span>
                 </div>
               </th>
@@ -337,8 +396,8 @@ function Heatmap({
                   <div className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: NODE_COLOR.grant }} />
                     <div className="flex flex-col leading-tight">
-                      <span className="truncate max-w-[180px] text-[11px] font-medium" title={title ?? g}>
-                        {title ? (title.length > 36 ? title.slice(0, 34) + "…" : title) : g}
+                      <span className="text-[11px] font-medium" title={title ?? g}>
+                        {shortLabel(title ?? g, 2)}
                       </span>
                       <span className="font-mono text-[9px] text-muted-foreground">
                         {g} · {rowTotal} link{rowTotal === 1 ? "" : "s"}
@@ -405,6 +464,120 @@ function Heatmap({
           <span className="inline-block w-2 h-2 rounded-full bg-[hsl(265_84%_70%)]" /> device column
         </span>
         <span>· {rows.length} grants × {cols.length} columns</span>
+      </div>
+
+      <RelationshipAssessment heatRef={heatRef} grantTitles={grantTitles} version={version} />
+    </div>
+  );
+}
+
+function RelationshipAssessment({
+  heatRef,
+  grantTitles,
+  version,
+}: {
+  heatRef: React.MutableRefObject<Map<string, Map<string, CellHit>>>;
+  grantTitles: Record<string, string>;
+  version: number;
+}) {
+  const rels = useMemo(() => {
+    const out: Array<{
+      grant: string;
+      grantShort: string;
+      kind: "pub" | "org" | "device";
+      thingShort: string;
+      thingFull: string;
+      count: number;
+      lastT: number;
+    }> = [];
+    for (const [g, m] of heatRef.current) {
+      for (const [k, cell] of m) {
+        const label = k.split("\u0001")[1];
+        out.push({
+          grant: g,
+          grantShort: shortLabel(grantTitles[g] ?? g, 2),
+          kind: cell.colKind,
+          thingShort: shortLabel(label),
+          thingFull: label,
+          count: cell.count,
+          lastT: cell.lastT,
+        });
+      }
+    }
+    // Sort: strongest first, then most recent
+    out.sort((a, b) => b.count - a.count || b.lastT - a.lastT);
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version, grantTitles]);
+
+  if (rels.length === 0) return null;
+
+  const verbFor = (kind: "pub" | "org" | "device") =>
+    kind === "pub" ? "linked to paper" : kind === "org" ? "based at" : "uses device";
+  const dotColor = (kind: "pub" | "org" | "device") =>
+    kind === "pub" ? "hsl(38 90% 55%)" : kind === "org" ? "hsl(174 62% 47%)" : "hsl(265 84% 70%)";
+
+  const counts = {
+    strong: rels.filter((r) => r.count >= 4).length,
+    moderate: rels.filter((r) => r.count >= 2 && r.count < 4).length,
+    weak: rels.filter((r) => r.count < 2).length,
+  };
+
+  return (
+    <div className="mt-6 border-t pt-4">
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="text-sm font-semibold">Relationships found · with verdict</h3>
+        <div className="flex gap-2 text-[10px]">
+          <span className="px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300">
+            {counts.strong} solid
+          </span>
+          <span className="px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300">
+            {counts.moderate} plausible
+          </span>
+          <span className="px-1.5 py-0.5 rounded border bg-muted text-muted-foreground border-border">
+            {counts.weak} speculative
+          </span>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3">
+        Each row is one (grant → thing) link the harvester pulled out. The verdict tells you
+        whether it's worth acting on: <strong>Solid lead</strong> = repeated across evidence,{" "}
+        <strong>Plausible</strong> = a few hits, <strong>Speculative</strong> = single mention.
+      </p>
+      <div className="space-y-1 max-h-[320px] overflow-y-auto">
+        {rels.slice(0, 80).map((r, i) => {
+          const v = assessRelation(r.count);
+          return (
+            <div
+              key={i}
+              className="flex items-center gap-2 text-[11px] py-1.5 px-2 rounded hover:bg-muted/40 border border-transparent hover:border-border"
+              title={`Grant ${r.grant} ${verbFor(r.kind)} "${r.thingFull}" — ${r.count} evidence row${r.count === 1 ? "" : "s"}. ${v.blurb}`}
+            >
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: NODE_COLOR.grant }}
+              />
+              <span className="font-medium min-w-[110px] truncate">{r.grantShort}</span>
+              <span className="text-muted-foreground">{verbFor(r.kind)}</span>
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: dotColor(r.kind) }}
+              />
+              <span className="font-medium truncate flex-1">{r.thingShort}</span>
+              <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                ×{r.count}
+              </span>
+              <span className={`px-1.5 py-0.5 rounded border text-[10px] flex-shrink-0 ${v.badgeClass}`}>
+                {v.label}
+              </span>
+            </div>
+          );
+        })}
+        {rels.length > 80 && (
+          <div className="text-[10px] text-muted-foreground text-center pt-1">
+            + {rels.length - 80} more relationships
+          </div>
+        )}
       </div>
     </div>
   );
