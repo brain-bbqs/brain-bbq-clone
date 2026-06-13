@@ -12,3 +12,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Disallow admin and auth-gated paths
+Disallow: /admin/
+Disallow: /auth
+Disallow: /request-access
+
+Host: app.brain-bbqs.org
+Sitemap: https://app.brain-bbqs.org/sitemap.xml

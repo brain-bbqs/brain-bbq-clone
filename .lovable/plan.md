@@ -1,75 +1,94 @@
-# Database Schema — Resource-Centric Architecture (COMPLETE)
+# Live Knowledge-Graph Harvester — Plan
 
-## Relationship Graph
+Four coordinated additions to turn the multi-hop harvester into an always-on, watchable, curatable pipeline.
 
-### 1. Tenants & Users
-```
-profiles.id                → auth.users.id
-profiles.organization_id   → organizations.id
-allowed_domains.organization_id → organizations.id
-```
+## 1. Animal & device facet in the extractor
 
-### 2. Core Knowledge Graph
-Every domain table has an optional `resource_id → resources.id` FK:
-- `organizations.resource_id`
-- `projects.resource_id`
-- `grants.resource_id`
-- `publications.resource_id`
-- `software_tools.resource_id`
-- `species.resource_id`
-- `investigators.resource_id`
+Extend `harvest-grant-methods-multihop` extractor JSON with:
+- `species[]` — e.g. `mouse`, `rat`, `nhp_macaque`, `human_adult`, `human_pediatric`
+- `behavior_paradigm[]` — e.g. `open_field`, `freely_moving`, `head_fixed_treadmill`, `lick_task`, `social_interaction`, `clinical_outcome_scale`
+- `device_class[]` — coarse buckets: `ephys_headstage`, `silicon_probe`, `miniscope`, `fiber_photometry`, `optogenetics`, `iEEG_clinical`, `sEEG_clinical`, `DBS_clinical`, `EEG_scalp`, `wearable_actigraphy`
+- `subject_n` — integer when extractable
 
-Generic graph edges: `resource_links (source_id, target_id → resources.id)`
+Also add a coarse `study_arm` field (`animal_model` vs `clinical_translational`) so animal R34 sites and human R61 sites can be cross-referenced.
 
-### 3. Core Scientific Relationships
-```
-projects.grant_id               → grants.id
-project_publications (project_id → projects.id, publication_id → publications.id)
-project_resources    (project_id → projects.id, resource_id → resources.id)
-grant_investigators  (grant_id → grants.id, investigator_id → investigators.id)
-investigator_organizations (investigator_id → investigators.id, organization_id → organizations.id)
-```
+DB: add these as columns on `grant_methods_evidence` (text[] / jsonb), backfill nullable.
 
-### 4. Multi-Tenant Scoping
-`organization_id → organizations.id` on:
-- `projects`
-- `resources`
-- `chat_conversations`
-- `announcements`
-- `jobs`
-- `feature_suggestions`
-- `analytics_pageviews`
-- `analytics_clicks`
+## 2. New heatmap view: Org × Device-class
 
-### 5. Application Features
-- `entity_comments` (resource_id → resources, user_id, parent_id → self)
-- `chat_conversations` (user_id, organization_id) → `chat_messages` (conversation_id)
-- `feature_suggestions` (submitted_by, organization_id) → `feature_votes` (suggestion_id)
-- `announcements` / `jobs` (resource_id, posted_by, organization_id)
+In `AdminKgHeatmap`, add a third switchable axis pair:
+- Rows: organization
+- Cols: `device_class`
+- Cell color: count × avg chain-score
+- Filters: species, study_arm (animal/clinical), R-mechanism (R61/R34)
+- Click cell → drawer listing source grants + PMIDs + extracted methods snippet
 
-### 6. Reference & Embeddings
-- `knowledge_embeddings` (resource_id → resources, source_type, source_id)
-- `taxonomies`, `ontology_standards`, `custom_field_usage`, `edit_history`, `search_queries`
+Bridge badge: when an org appears in both an `animal_model` row and a `clinical_translational` row for the same `device_class` (or a mapped equivalent), flag the cell as a *translational bridge* with an orange ring.
 
-## Tables Dropped
-| Table | Reason |
-|---|---|
-| `paper_extractions` | Dropped; metadata lives in projects.metadata JSONB |
-| `nih_grants_cache` | Redundant; grants table + NIH Reporter API |
-| `nih_grants_sync_log` | Operational logging only |
-| `extraction_corrections` | Depended on paper_extractions |
+## 3. Live graph view of the harvester running
 
-## Migrations Completed
-1. Dropped unused tables
-2. Consolidated projects array columns → `metadata` JSONB
-3. Simplified edit_history
-4. Added `resource_id` to projects
-5. Added `organization_id` to 8 feature/scoping tables (including projects, resources)
-6. Replaced `grant_investigators.grant_number` with `grant_id`
-7. Relaxed `grant_number` uniqueness on projects
-8. Ensured all FK constraints exist across all tables
+New page `/admin/kg-live`:
+- Force-directed graph (d3-force) of nodes added in the last N minutes
+- Node shapes: grant (square), publication (circle), org (diamond), device_class (hex)
+- Edge labels: relation name + hop score
+- Realtime via Supabase Realtime subscription on `grant_methods_traversal_paths` (insert) and `grant_methods_evidence` (insert)
+- Side panel: current batch status — seeds queued / in-progress / done, current hop, current PMID being scraped
+- Sparkline of pubs-extracted-per-minute, Firecrawl calls/min, error rate
 
-## Remaining Work
-- Backfill `projects.resource_id` and `projects.organization_id`
-- Backfill `resources.organization_id`
-- Tighten RLS policies (20 warnings for overly permissive `true` checks)
+Requires a new lightweight table `harvester_runs` (run_id, seed, phase, current_hop, started_at, finished_at, error, counters) updated by the multihop function at hop boundaries.
+
+## 4. Always-on background runner (Firecrawl-friendly throttle)
+
+Replace the manual "Start batch" with a cron-scheduled tick:
+- New edge function `harvester-tick` runs every 5 min via `pg_cron` + `pg_net`
+- Picks the next seed grant from a queue table `harvester_queue` (priority + last_run_at), respects a per-tick budget (e.g. 1 seed/tick, max 20 Firecrawl scrapes)
+- Re-enqueues seeds with a `cool_down_hours` after a successful run (default 72h) so the graph keeps refreshing without hammering Firecrawl
+- Global kill-switch + concurrency=1 lock in `harvester_settings`
+- Admin console gets: queue table, pause/resume toggle, manual "bump priority" button per seed
+
+## 5. Keyword tracker + relationship curation
+
+New table `harvester_keywords` (term, kind, frequency, first_seen_at, last_seen_at, status: `auto`/`approved`/`rejected`).
+
+- Extractor writes every novel device/behavior/species term into this table with a frequency counter
+- Curator UI at `/admin/kg-curate`:
+  - Tab 1: **Keywords** — review novel terms, merge synonyms (e.g. `2-photon` → `two_photon_imaging`), promote to canonical vocabulary
+  - Tab 2: **Relations** — review `proposed_relations` the planner suggested but weren't in the vocabulary; approve to extend the planner's allowed set
+  - Tab 3: **Evidence rows** — flag wrong extractions; flagged rows get re-run on next tick
+- Synonyms file lives in DB (`harvester_synonyms` table) so the extractor prompt can include it at run time
+
+## Technical details
+
+**Migrations**
+- `grant_methods_evidence`: add `species text[]`, `behavior_paradigm text[]`, `device_class text[]`, `subject_n int`, `study_arm text`
+- New: `harvester_runs`, `harvester_queue`, `harvester_keywords`, `harvester_synonyms`
+- All admin/curator gated via existing `is_curator_or_admin`
+- Enable Realtime publication on `grant_methods_evidence`, `grant_methods_traversal_paths`, `harvester_runs`
+
+**Edge functions**
+- Modify: `harvest-grant-methods-multihop` (richer extractor JSON, write `harvester_runs` ticks, write keywords)
+- New: `harvester-tick` (cron-driven queue worker)
+- Keep: `harvest-grants-batch` for one-off manual bursts
+
+**Cron**
+- `pg_cron` schedule `*/5 * * * *` → `harvester-tick`
+- Will be installed via `supabase--insert` (not migration) since the URL+anon-key are project-specific
+
+**Frontend**
+- New pages: `/admin/kg-live`, `/admin/kg-curate`
+- Heatmap page gets Org×Device axis + bridge logic
+- Realtime hook using `supabase.channel(...).on('postgres_changes', ...)`
+- d3-force already pairs well; alternative is `react-force-graph` if you'd prefer (lighter to wire)
+
+## Build order
+1. Migrations (facet columns, runs/queue/keywords/synonyms tables, realtime publication)
+2. Extractor upgrade + keyword writes
+3. `harvester-tick` + cron
+4. `/admin/kg-live` realtime view
+5. Heatmap Org×Device axis + bridge badges
+6. `/admin/kg-curate` console
+
+## Open questions
+- Cool-down default — 72h per seed OK, or want faster (24h) / slower (weekly)?
+- Force-graph library — d3-force (more control) vs react-force-graph (faster to ship)?
+- Curator console: should "approve keyword" auto-merge into all existing evidence rows, or only affect future extractions?

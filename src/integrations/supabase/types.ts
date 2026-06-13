@@ -836,6 +836,151 @@ export type Database = {
           },
         ]
       }
+      grant_methods_evidence: {
+        Row: {
+          analysis_metrics: Json | null
+          behavior_paradigm: string[] | null
+          confidence: number | null
+          created_at: string
+          depth: number
+          device_class: string[] | null
+          device_hardware: Json | null
+          discovery_path_id: string | null
+          extracted_at: string
+          id: string
+          irb_or_population: string | null
+          match_score: number | null
+          methods_snippet: string | null
+          pmid: string | null
+          publication_title: string | null
+          publication_year: number | null
+          quote: string | null
+          recording_params: Json | null
+          seed_grant_number: string
+          setting: string | null
+          source_grant_number: string
+          source_grant_title: string | null
+          source_org: string | null
+          source_org_type: string | null
+          source_url: string | null
+          species: string[] | null
+          stimulation_params: Json | null
+          study_arm: string | null
+          subject_n: number | null
+        }
+        Insert: {
+          analysis_metrics?: Json | null
+          behavior_paradigm?: string[] | null
+          confidence?: number | null
+          created_at?: string
+          depth?: number
+          device_class?: string[] | null
+          device_hardware?: Json | null
+          discovery_path_id?: string | null
+          extracted_at?: string
+          id?: string
+          irb_or_population?: string | null
+          match_score?: number | null
+          methods_snippet?: string | null
+          pmid?: string | null
+          publication_title?: string | null
+          publication_year?: number | null
+          quote?: string | null
+          recording_params?: Json | null
+          seed_grant_number: string
+          setting?: string | null
+          source_grant_number: string
+          source_grant_title?: string | null
+          source_org?: string | null
+          source_org_type?: string | null
+          source_url?: string | null
+          species?: string[] | null
+          stimulation_params?: Json | null
+          study_arm?: string | null
+          subject_n?: number | null
+        }
+        Update: {
+          analysis_metrics?: Json | null
+          behavior_paradigm?: string[] | null
+          confidence?: number | null
+          created_at?: string
+          depth?: number
+          device_class?: string[] | null
+          device_hardware?: Json | null
+          discovery_path_id?: string | null
+          extracted_at?: string
+          id?: string
+          irb_or_population?: string | null
+          match_score?: number | null
+          methods_snippet?: string | null
+          pmid?: string | null
+          publication_title?: string | null
+          publication_year?: number | null
+          quote?: string | null
+          recording_params?: Json | null
+          seed_grant_number?: string
+          setting?: string | null
+          source_grant_number?: string
+          source_grant_title?: string | null
+          source_org?: string | null
+          source_org_type?: string | null
+          source_url?: string | null
+          species?: string[] | null
+          stimulation_params?: Json | null
+          study_arm?: string | null
+          subject_n?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_methods_evidence_discovery_path_id_fkey"
+            columns: ["discovery_path_id"]
+            isOneToOne: false
+            referencedRelation: "grant_methods_traversal_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grant_methods_traversal_paths: {
+        Row: {
+          chain_score: number
+          created_at: string
+          id: string
+          path: Json
+          planner_model: string | null
+          replan_count: number
+          seed_grant_number: string
+          terminal_evidence_id: string | null
+        }
+        Insert: {
+          chain_score?: number
+          created_at?: string
+          id?: string
+          path: Json
+          planner_model?: string | null
+          replan_count?: number
+          seed_grant_number: string
+          terminal_evidence_id?: string | null
+        }
+        Update: {
+          chain_score?: number
+          created_at?: string
+          id?: string
+          path?: Json
+          planner_model?: string | null
+          replan_count?: number
+          seed_grant_number?: string
+          terminal_evidence_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_methods_traversal_paths_terminal_evidence_id_fkey"
+            columns: ["terminal_evidence_id"]
+            isOneToOne: false
+            referencedRelation: "grant_methods_evidence"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grants: {
         Row: {
           abstract: string | null
@@ -882,6 +1027,254 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      harvester_keywords: {
+        Row: {
+          canonical_term: string | null
+          created_at: string
+          first_seen_at: string
+          frequency: number
+          id: string
+          kind: string
+          last_seen_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_term?: string | null
+          created_at?: string
+          first_seen_at?: string
+          frequency?: number
+          id?: string
+          kind: string
+          last_seen_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_term?: string | null
+          created_at?: string
+          first_seen_at?: string
+          frequency?: number
+          id?: string
+          kind?: string
+          last_seen_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      harvester_queue: {
+        Row: {
+          cool_down_hours: number
+          created_at: string
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          last_run_id: string | null
+          notes: string | null
+          priority: number
+          seed_grant: string
+          updated_at: string
+        }
+        Insert: {
+          cool_down_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_id?: string | null
+          notes?: string | null
+          priority?: number
+          seed_grant: string
+          updated_at?: string
+        }
+        Update: {
+          cool_down_hours?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_id?: string | null
+          notes?: string | null
+          priority?: number
+          seed_grant?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvester_queue_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "harvester_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      harvester_relations: {
+        Row: {
+          approved_at: string
+          approved_by: string | null
+          created_at: string
+          description: string | null
+          dst_node_type: string
+          enabled: boolean
+          fetcher_key: string
+          id: string
+          name: string
+          src_node_type: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          dst_node_type: string
+          enabled?: boolean
+          fetcher_key: string
+          id?: string
+          name: string
+          src_node_type: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          dst_node_type?: string
+          enabled?: boolean
+          fetcher_key?: string
+          id?: string
+          name?: string
+          src_node_type?: string
+        }
+        Relationships: []
+      }
+      harvester_runs: {
+        Row: {
+          created_at: string
+          current_hop: number
+          current_target: string | null
+          errors: number
+          evidence_rows: number
+          finished_at: string | null
+          firecrawl_calls: number
+          id: string
+          last_message: string | null
+          phase: string
+          pubs_found: number
+          seed_grant: string
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_hop?: number
+          current_target?: string | null
+          errors?: number
+          evidence_rows?: number
+          finished_at?: string | null
+          firecrawl_calls?: number
+          id?: string
+          last_message?: string | null
+          phase?: string
+          pubs_found?: number
+          seed_grant: string
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_hop?: number
+          current_target?: string | null
+          errors?: number
+          evidence_rows?: number
+          finished_at?: string | null
+          firecrawl_calls?: number
+          id?: string
+          last_message?: string | null
+          phase?: string
+          pubs_found?: number
+          seed_grant?: string
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      harvester_settings: {
+        Row: {
+          batch_paused: boolean
+          beam_width: number
+          chain_score_threshold: number
+          id: number
+          max_hops: number
+          max_publications_per_seed: number
+          max_replans: number
+          targets_per_relation: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          batch_paused?: boolean
+          beam_width?: number
+          chain_score_threshold?: number
+          id?: number
+          max_hops?: number
+          max_publications_per_seed?: number
+          max_replans?: number
+          targets_per_relation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          batch_paused?: boolean
+          beam_width?: number
+          chain_score_threshold?: number
+          id?: number
+          max_hops?: number
+          max_publications_per_seed?: number
+          max_replans?: number
+          targets_per_relation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      harvester_synonyms: {
+        Row: {
+          alias: string
+          canonical: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+        }
+        Insert: {
+          alias: string
+          canonical: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+        }
+        Update: {
+          alias?: string
+          canonical?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+        }
+        Relationships: []
       }
       investigator_organizations: {
         Row: {
@@ -1399,6 +1792,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      proposed_relations: {
+        Row: {
+          created_at: string
+          dst_node_type: string | null
+          example_edge: Json | null
+          id: string
+          planner_rationale: string | null
+          relation_name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          seed_grant_number: string | null
+          src_node_type: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dst_node_type?: string | null
+          example_edge?: Json | null
+          id?: string
+          planner_rationale?: string | null
+          relation_name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seed_grant_number?: string | null
+          src_node_type?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          dst_node_type?: string | null
+          example_edge?: Json | null
+          id?: string
+          planner_rationale?: string | null
+          relation_name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seed_grant_number?: string | null
+          src_node_type?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       publications: {
         Row: {
