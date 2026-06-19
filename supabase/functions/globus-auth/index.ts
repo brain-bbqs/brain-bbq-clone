@@ -185,6 +185,11 @@ Deno.serve(async (req) => {
       const userinfo = await userinfoRes.json();
       const email = userinfo.email;
       const name = userinfo.name || userinfo.preferred_username || "";
+      // The name we hand back to the frontend (sign-in greeting etc.). Defaults to
+      // the Globus-provided name, but is upgraded below to the onboarded investigator
+      // name when we have one — so a member whose Globus account name is a username
+      // (e.g. "test-user-tier1") is greeted by their real consortium name.
+      let displayName = name;
 
       if (!email) {
         return await errorRedirectAndNotify("no_email", undefined, name);
@@ -388,6 +393,8 @@ Deno.serve(async (req) => {
         // onboarded name everywhere, not only where it falls back to the investigator
         // record. Only fills an EMPTY name; never overwrites a name the user set.
         const invName = (invRow?.name as string | null)?.trim();
+        // Prefer the onboarded investigator name for the frontend greeting.
+        if (invName) displayName = invName;
         if (invName) {
           const { data: prof } = await supabaseAdmin
             .from("profiles")
@@ -424,7 +431,7 @@ Deno.serve(async (req) => {
       // Redirect back to frontend with token_hash
       const successRedirect = new URL(frontendRedirect);
       successRedirect.searchParams.set("token_hash", linkData.properties.hashed_token);
-      successRedirect.searchParams.set("globus_name", name);
+      successRedirect.searchParams.set("globus_name", displayName);
       successRedirect.searchParams.set("globus_email", email);
 
       return Response.redirect(successRedirect.toString(), 302);
