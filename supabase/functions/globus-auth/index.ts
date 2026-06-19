@@ -305,6 +305,25 @@ Deno.serve(async (req) => {
         userId = newUser.user.id;
       }
 
+      // Link the investigator record to this auth user on EVERY sign-in. The
+      // auto_link_investigator trigger only fires on auth-user INSERT, so a member
+      // who is RE-ONBOARDED after a reset (their auth.users row already exists) is
+      // never re-linked — their new investigator row keeps user_id = NULL and the
+      // agent's member context (which resolves by user_id under RLS) can't see it
+      // (blank profile, no onboarding steps). Match primary OR secondary email; only
+      // set when currently NULL so an already-linked row is never re-pointed.
+      // Best-effort: must NOT block sign-in.
+      try {
+        const { error: linkErr } = await supabaseAdmin
+          .from("investigators")
+          .update({ user_id: userId })
+          .or(`email.ilike.${canonicalEmail},secondary_emails.cs.{${emailLower}}`)
+          .is("user_id", null);
+        if (linkErr) console.error("investigator user_id link failed:", linkErr.message);
+      } catch (linkEx) {
+        console.error("investigator link threw:", linkEx instanceof Error ? linkEx.message : String(linkEx));
+      }
+
       // Generate magic link using canonical email
       const { data: linkData, error: linkError } =
         await supabaseAdmin.auth.admin.generateLink({
