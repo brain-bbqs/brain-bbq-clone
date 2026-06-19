@@ -324,6 +324,68 @@ Deno.serve(async (req) => {
         console.error("investigator link threw:", linkEx instanceof Error ? linkEx.message : String(linkEx));
       }
 
+      // ===== TIER → ROLE SYNC (KG user_roles + agent app_metadata.role) =====
+      // An admin sets an access tier at onboarding → investigators.pending_role
+      // (admin/curator/member). Two separate role systems must reflect it:
+      //   • user_roles  — KG RLS (has_role / is_curator_or_admin)
+      //   • app_metadata.role on the auth user — the AGENT's persona tier
+      //     (resolveUserRole reads ONLY app_metadata.role; user_roles is invisible
+      //      to it), which is why an elevated member previously never saw Admin MODE.
+      // The auto_link_investigator trigger promotes pending_role → user_roles ONLY
+      // on auth-user INSERT, and NOTHING ever set app_metadata.role. So we do both
+      // here, on EVERY sign-in: (1) promote any lingering pending_role (covers the
+      // re-onboard case where the trigger didn't fire), (2) mirror the highest
+      // ELEVATED user_roles role into app_metadata.role. Elevate-only — we never
+      // downgrade here, to avoid clobbering an admin granted out-of-band; role
+      // REMOVAL is handled on the offboarding path. Best-effort: never block sign-in.
+      try {
+        const { data: invRow } = await supabaseAdmin
+          .from("investigators")
+          .select("pending_role")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const pending = (invRow?.pending_role as string | null) ?? null;
+
+        // (1) Re-onboard: promote pending_role → user_roles ourselves, then clear it.
+        if (pending && pending !== "member") {
+          const { data: have } = await supabaseAdmin
+            .from("user_roles")
+            .select("user_id")
+            .eq("user_id", userId)
+            .eq("role", pending)
+            .maybeSingle();
+          if (!have) {
+            const { error: roleInsErr } = await supabaseAdmin
+              .from("user_roles")
+              .insert({ user_id: userId, role: pending });
+            if (roleInsErr) console.error("user_roles insert failed:", roleInsErr.message);
+          }
+        }
+        if (pending) {
+          await supabaseAdmin.from("investigators").update({ pending_role: null }).eq("user_id", userId);
+        }
+
+        // (2) Mirror the highest ELEVATED user_roles role into app_metadata.role.
+        const { data: roleRows } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const roleSet = new Set((roleRows ?? []).map((r: any) => r.role as string));
+        const elevated = roleSet.has("admin") ? "admin" : roleSet.has("curator") ? "curator" : null;
+        if (elevated) {
+          const baseMeta = (existingUser?.app_metadata as Record<string, unknown>) ?? {};
+          if (baseMeta.role !== elevated) {
+            const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+              app_metadata: { ...baseMeta, role: elevated },
+            });
+            if (metaErr) console.error("app_metadata.role sync failed:", metaErr.message);
+            else console.log(`Set app_metadata.role=${elevated} for ${canonicalEmail}`);
+          }
+        }
+      } catch (roleEx) {
+        console.error("tier→role sync threw:", roleEx instanceof Error ? roleEx.message : String(roleEx));
+      }
+
       // Generate magic link using canonical email
       const { data: linkData, error: linkError } =
         await supabaseAdmin.auth.admin.generateLink({
