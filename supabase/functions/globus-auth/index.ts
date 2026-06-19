@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
       try {
         const { data: invRow } = await supabaseAdmin
           .from("investigators")
-          .select("pending_role")
+          .select("pending_role, name")
           .eq("user_id", userId)
           .maybeSingle();
         const pending = (invRow?.pending_role as string | null) ?? null;
@@ -382,8 +382,29 @@ Deno.serve(async (req) => {
             else console.log(`Set app_metadata.role=${elevated} for ${canonicalEmail}`);
           }
         }
+
+        // (3) Backfill profiles.full_name from the investigator name when the profile
+        // has no name yet (e.g. Globus returned none) — so the website shows the
+        // onboarded name everywhere, not only where it falls back to the investigator
+        // record. Only fills an EMPTY name; never overwrites a name the user set.
+        const invName = (invRow?.name as string | null)?.trim();
+        if (invName) {
+          const { data: prof } = await supabaseAdmin
+            .from("profiles")
+            .select("full_name")
+            .eq("id", userId)
+            .maybeSingle();
+          if (prof && (!prof.full_name || String(prof.full_name).trim() === "")) {
+            const { error: nameErr } = await supabaseAdmin
+              .from("profiles")
+              .update({ full_name: invName })
+              .eq("id", userId);
+            if (nameErr) console.error("profiles.full_name backfill failed:", nameErr.message);
+            else console.log(`Backfilled profiles.full_name='${invName}' for ${canonicalEmail}`);
+          }
+        }
       } catch (roleEx) {
-        console.error("tier→role sync threw:", roleEx instanceof Error ? roleEx.message : String(roleEx));
+        console.error("tier→role/name sync threw:", roleEx instanceof Error ? roleEx.message : String(roleEx));
       }
 
       // Generate magic link using canonical email
