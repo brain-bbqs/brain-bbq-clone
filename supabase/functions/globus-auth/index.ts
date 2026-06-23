@@ -319,12 +319,33 @@ Deno.serve(async (req) => {
       // set when currently NULL so an already-linked row is never re-pointed.
       // Best-effort: must NOT block sign-in.
       try {
-        const { error: linkErr } = await supabaseAdmin
+        // Find the unlinked investigator(s) matching this email (primary or secondary).
+        // There can be DUPLICATE rows for one person (same email, multiple records). A
+        // blanket UPDATE would set the SAME user_id on >1 row → unique-constraint
+        // violation → the whole update fails and the member is NEVER linked (so the
+        // agent can't resolve them by user_id). So link EXACTLY ONE row — the most
+        // recently updated (the active record, e.g. the one carrying the grant link) —
+        // and log any duplicates so they can be de-duped.
+        const { data: matches } = await supabaseAdmin
           .from("investigators")
-          .update({ user_id: userId })
+          .select("id")
           .or(`email.ilike.${canonicalEmail},secondary_emails.cs.{${emailLower}}`)
-          .is("user_id", null);
-        if (linkErr) console.error("investigator user_id link failed:", linkErr.message);
+          .is("user_id", null)
+          .order("updated_at", { ascending: false });
+        if (matches && matches.length > 0) {
+          if (matches.length > 1) {
+            console.warn(
+              `Multiple unlinked investigators for ${canonicalEmail} (${matches.length}) — linking the most recent; de-dup the rest:`,
+              (matches as Array<{ id: string }>).map((m) => m.id).join(", "),
+            );
+          }
+          const targetId = (matches[0] as { id: string }).id;
+          const { error: linkErr } = await supabaseAdmin
+            .from("investigators")
+            .update({ user_id: userId })
+            .eq("id", targetId);
+          if (linkErr) console.error("investigator user_id link failed:", linkErr.message);
+        }
       } catch (linkEx) {
         console.error("investigator link threw:", linkEx instanceof Error ? linkEx.message : String(linkEx));
       }
