@@ -8,17 +8,34 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
+// Must cover the FULL grant_investigators.role vocabulary the BBQS agent writes
+// (the 9 onboarding-form roles: contact_pi/co_pi/mpi/co-investigator/research_staff/
+// postdoc/project_manager/data_manager/nih_program) AND the legacy website values
+// (pi/collaborator/trainee/staff) — otherwise a member with e.g. role="research_staff"
+// renders a BLANK dropdown because no SelectItem matches the value.
 const ROLES = [
-  { value: "pi", label: "PI (Lead/Contact)" },
+  { value: "contact_pi", label: "Contact PI" },
   { value: "co_pi", label: "Co-PI" },
   { value: "mpi", label: "MPI" },
+  { value: "co-investigator", label: "Co-Investigator" },
+  { value: "research_staff", label: "Research Staff" },
+  { value: "postdoc", label: "Postdoc" },
+  { value: "project_manager", label: "Project Manager" },
+  { value: "data_manager", label: "Data Manager" },
+  { value: "nih_program", label: "NIH Program" },
+  { value: "other", label: "Other" },
+  // legacy values kept so existing rows still display + are editable
+  { value: "pi", label: "PI (legacy)" },
   { value: "collaborator", label: "Collaborator" },
   { value: "trainee", label: "Trainee" },
   { value: "staff", label: "Staff" },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
-  pi: "PI", co_pi: "Co-PI", mpi: "MPI", collaborator: "Collab", trainee: "Trainee", staff: "Staff",
+  contact_pi: "Contact PI", co_pi: "Co-PI", mpi: "MPI", "co-investigator": "Co-I",
+  research_staff: "Research Staff", postdoc: "Postdoc", project_manager: "Proj Mgr",
+  data_manager: "Data Mgr", nih_program: "NIH Program", other: "Other",
+  pi: "PI", collaborator: "Collab", trainee: "Trainee", staff: "Staff",
 };
 
 interface Props {
