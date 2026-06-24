@@ -1318,6 +1318,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          institution: string | null
           name: string
           onboarding_checklist: Json | null
           onboarding_completed_at: string | null
@@ -1338,6 +1339,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          institution?: string | null
           name: string
           onboarding_checklist?: Json | null
           onboarding_completed_at?: string | null
@@ -1358,6 +1360,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          institution?: string | null
           name?: string
           onboarding_checklist?: Json | null
           onboarding_completed_at?: string | null
