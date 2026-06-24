@@ -338,6 +338,50 @@ const fetchGrants = async (): Promise<ProjectRow[]> => {
     .filter((row): row is ProjectRow => row !== null);
 };
 
+// "Funding opportunities" strip at the top of the grants page — active rows from the
+// KG funding_opportunities table (added by the BBQS agent or curators). Hidden when empty.
+function FundingOpportunities() {
+  const { data: items = [] } = useQuery({
+    queryKey: ["funding-opportunities"],
+    queryFn: async () => {
+      // Cast past generated types — funding_opportunities is a new table.
+      const { data } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { eq: (k: string, v: boolean) => { order: (c: string, o: { ascending: boolean }) => Promise<{ data: Array<Record<string, string>> | null }> } };
+        };
+      })
+        .from("funding_opportunities")
+        .select("id,title,url,source,deadline")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+  if (!items.length) return null;
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-card/50 p-4">
+      <h2 className="mb-2 text-sm font-semibold text-foreground">Funding opportunities</h2>
+      <ul className="flex flex-wrap gap-2">
+        {items.map((f) => (
+          <li key={f.id}>
+            <a
+              href={f.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-primary hover:underline"
+              title={f.description || undefined}
+            >
+              {f.title}
+              {f.source ? ` · ${f.source}` : ""}
+              {f.deadline ? ` (due ${f.deadline})` : ""}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const Projects = () => {
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
@@ -628,6 +672,8 @@ const Projects = () => {
           <p className="text-muted-foreground mb-6">
             NIH-funded Brain Behavior Quantification and Synchronization grants.
           </p>
+
+          <FundingOpportunities />
 
           {/* Metrics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
