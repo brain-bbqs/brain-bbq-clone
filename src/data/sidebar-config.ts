@@ -22,6 +22,7 @@ import {
   FlaskConical,
   Hotel,
   ShieldCheck,
+  Plane,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
