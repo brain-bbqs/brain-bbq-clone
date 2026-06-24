@@ -100,6 +100,53 @@ export function AppSidebar() {
                 </a>
               )}
             </SidebarMenuButton>
+            {item.children && !collapsed && currentPath.startsWith(item.url) && (
+              <div className="overflow-hidden animate-accordion-down">
+                <ul className="ml-4 mt-1 mb-1 border-l border-sidebar-border/60 pl-2 space-y-0.5">
+                  {item.children
+                    .filter((c) => !c.adminOnly || canSeeAdmin)
+                    .map((child, idx) => {
+                      const childLocked = child.authRequired && !user;
+                      const childActive = isActive(child.url) || currentPath + location.hash === child.url;
+                      const content = (
+                        <>
+                          <child.icon className="h-4 w-4" />
+                          <span className="text-sm">{child.title}</span>
+                        </>
+                      );
+                      return (
+                        <li
+                          key={child.title}
+                          className="animate-fade-in"
+                          style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "both" }}
+                        >
+                          {childLocked ? (
+                            <button
+                              onClick={() => {
+                                handleNavClick();
+                                window.location.href = "/auth";
+                              }}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm opacity-50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                            >
+                              {content}
+                            </button>
+                          ) : (
+                            <Link
+                              to={child.url}
+                              onClick={handleNavClick}
+                              className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
+                                childActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : ""
+                              }`}
+                            >
+                              {content}
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+            )}
           </SidebarMenuItem>
         );
       })}
