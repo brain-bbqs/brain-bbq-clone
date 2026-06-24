@@ -22,6 +22,7 @@ import {
   FlaskConical,
   Hotel,
   ShieldCheck,
+  Plane,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -68,7 +69,9 @@ const communityItems: NavItem[] = [
 
 const conferencesItems: NavItem[] = [
   { title: "MIT Workshop 2026", url: "/mit-workshop-2026", icon: Calendar },
-  { title: "  Travel & Hotels", url: "/mit-workshop-2026/travel", icon: Hotel, authRequired: true },
+  { title: "  Travel", url: "/mit-workshop-2026/travel", icon: Plane, authRequired: true },
+  { title: "  Hotel", url: "/mit-workshop-2026/travel#hotels", icon: Hotel, authRequired: true },
+  { title: "  Participants", url: "/mit-workshop-2026/participants", icon: Users, authRequired: true },
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
 ];
 
