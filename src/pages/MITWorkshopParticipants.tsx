@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -156,6 +156,14 @@ const MITWorkshopParticipants = () => {
     return arr;
   }, [normalized, sortKey, sortDir]);
 
+  const stats = useMemo(() => {
+    const inPerson = normalized.filter((p) => /in.?person|yes|attend/i.test(p.attendance || "") && !/virtual|remote|online|no\b/i.test(p.attendance || "")).length;
+    const young = normalized.filter((p) => /phd student|ph\.d\.? student|graduate student|grad student|postdoc|post-doc|post doc|junior fellow|trainee|fellow\b/i.test(p.role || "")).length;
+    const nih = normalized.filter((p) => /\bnih\b|national institutes of health|nimh|ninds|nida|niaaa|nichd|nia\b/i.test(p.institution || "")).length;
+    const pis = normalized.filter((p) => /\bpi\b|principal investigator|faculty|professor|investigator/i.test(p.role || "")).length;
+    return { inPerson, young, nih, pis };
+  }, [normalized]);
+
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -216,6 +224,28 @@ const MITWorkshopParticipants = () => {
             </Card>
           ) : (
             <>
+              {participants.length > 0 && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { label: "Attending in person", value: stats.inPerson, Icon: MapPin, color: "text-emerald-600" },
+                    { label: "Young investigators", value: stats.young, Icon: GraduationCap, color: "text-blue-600" },
+                    { label: "From NIH", value: stats.nih, Icon: Building2, color: "text-purple-600" },
+                    { label: "PIs / Faculty", value: stats.pis, Icon: Award, color: "text-amber-600" },
+                  ].map(({ label, value, Icon, color }) => (
+                    <Card key={label}>
+                      <CardContent className="pt-5 pb-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
+                            <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
+                          </div>
+                          <Icon className={`h-5 w-5 ${color}`} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between text-base">
