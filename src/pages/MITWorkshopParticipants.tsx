@@ -64,6 +64,27 @@ const canonicalizeInstitution = (raw: string): string => {
     .join(" ");
 };
 
+// Acronyms / words that should keep specific casing
+const ACRONYMS = new Set([
+  "MIT","UCLA","UCSF","UCSD","UCSC","UCSB","NYU","CMU","UPenn","UT","UC","HHMI","BBQS","PI","MPI","Co-PI","USA","UK","NIH","NSF","PhD","MD","II","III","IV",
+]);
+
+const toTitleCase = (raw: string): string => {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  return v
+    .split(/(\s+|-|\/)/) // keep separators
+    .map((token) => {
+      if (/^(\s+|-|\/)$/.test(token)) return token;
+      const upper = token.toUpperCase();
+      if (ACRONYMS.has(upper)) return upper;
+      if (token.length <= 3 && token === upper && /[A-Z]/.test(token)) return token;
+      // Handle O'Brien, McDonald minimally: just title-case first letter
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    })
+    .join("");
+};
+
 const roleColor = (role: string): string => {
   const r = (role || "").toLowerCase();
   if (/student|trainee|undergrad/.test(r))
@@ -116,7 +137,9 @@ const MITWorkshopParticipants = () => {
     () =>
       participants.map((p) => ({
         ...p,
+        name: toTitleCase(p.name),
         institution: canonicalizeInstitution(p.institution),
+        role: toTitleCase(p.role),
       })),
     [participants]
   );
