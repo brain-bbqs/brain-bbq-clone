@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +71,36 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
       return (data ?? []) as AccessRequest[];
     },
   });
+
+  // The "Person" name on a request is the value captured WHEN THE REQUEST WAS FILED
+  // (globus_name — often a Globus username like "test-user-tier1"). Once the person
+  // is on the investigators roster, the authoritative name is investigators.name.
+  // Resolve request email → investigator name so the console shows the real name
+  // for every row (no data migration needed).
+  const requestEmails = useMemo(
+    () => Array.from(new Set(requests.map((r) => r.email))),
+    [requests],
+  );
+  const { data: invNameByEmail = {} } = useQuery({
+    queryKey: ["access-request-investigator-names", requestEmails],
+    enabled: tier.isCurator && requestEmails.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("investigators")
+        .select("name, email")
+        .in("email", requestEmails);
+      const map: Record<string, string> = {};
+      for (const row of data ?? []) {
+        const e = (row as { email?: string | null }).email;
+        const n = (row as { name?: string | null }).name;
+        if (e && n) map[e.toLowerCase()] = n;
+      }
+      return map;
+    },
+  });
+  // Authoritative display name for a request: roster name → filed full_name → globus_name.
+  const personName = (r: AccessRequest) =>
+    invNameByEmail[r.email.toLowerCase()] || r.full_name || r.globus_name || "—";
 
   const sendApprovalEmail = async (to: string, name: string, note?: string) => {
     try {
@@ -376,7 +406,7 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
     <TableRow key={r.id}>
       <TableCell>
         <div className="font-medium text-foreground">
-          {r.full_name || r.globus_name || "—"}
+          {personName(r)}
         </div>
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <Mail className="h-3 w-3" /> {r.email}
@@ -561,7 +591,7 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
                         <TableRow key={r.id}>
                           <TableCell>
                             <div className="font-medium text-foreground">
-                              {r.full_name || r.globus_name || "—"}
+                              {personName(r)}
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <Mail className="h-3 w-3" /> {r.email}
@@ -627,7 +657,7 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
             <DialogDescription className="space-y-2 pt-2">
               <span className="block">
                 This will mark{" "}
-                <strong>{revokeTarget?.full_name || revokeTarget?.globus_name || revokeTarget?.email}</strong>{" "}
+                <strong>{revokeTarget ? (invNameByEmail[revokeTarget.email.toLowerCase()] || revokeTarget.full_name || revokeTarget.globus_name || revokeTarget.email) : ""}</strong>{" "}
                 as dismissed and remove their invite from the investigators directory if they
                 haven't signed in yet.
               </span>

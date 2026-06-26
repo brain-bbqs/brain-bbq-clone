@@ -40,7 +40,11 @@ serve(async (req) => {
     }
 
     const owner = "brain-bbqs";
-    const repo = "brain-bbq-clone";
+    // Caller may target a specific repo (allowlisted). Defaults to brain-bbq-clone so
+    // the website's existing feature-suggestion box keeps working unchanged. The BBQS
+    // agent routes by type: bug reports → bbqs-agent, feature ideas → brain-bbq-clone.
+    const ALLOWED_REPOS = ["brain-bbq-clone", "bbqs-agent"];
+    const repo = typeof body.repo === "string" && ALLOWED_REPOS.includes(body.repo) ? body.repo : "brain-bbq-clone";
     const ghHeaders = {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       Accept: "application/vnd.github.v3+json",

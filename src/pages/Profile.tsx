@@ -145,7 +145,7 @@ export default function Profile() {
     queryFn: async () => {
       const { data } = await supabase
         .from("investigators")
-        .select("id, skills, research_areas, email")
+        .select("id, name, skills, research_areas, email")
         .ilike("email", user!.email!)
         .maybeSingle();
       return data;
@@ -278,16 +278,27 @@ export default function Profile() {
   }
 
   const openInvestigatorCard = async () => {
-    if (!profile?.full_name) return;
-    const lastName = profile.full_name.split(" ").pop() || "";
+    const displayName = profile?.full_name || linkedInvestigator?.name;
+    // Prefer the investigator we've already linked by email (we have its id) over a
+    // fragile last-name match — and fall back to the investigator name when the
+    // profiles.full_name is unset, so the card opens even when full_name is empty.
+    if (linkedInvestigator?.id) {
+      const { data: inv } = await supabase
+        .from("investigators")
+        .select("id, resource_id")
+        .eq("id", linkedInvestigator.id)
+        .maybeSingle();
+      if (inv) open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: displayName || "Investigator" });
+      return;
+    }
+    if (!displayName) return;
+    const lastName = displayName.split(" ").pop() || "";
     const { data: inv } = await supabase
       .from("investigators")
       .select("id, resource_id")
       .ilike("name", `%${lastName}%`)
       .maybeSingle();
-    if (inv) {
-      open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: profile.full_name });
-    }
+    if (inv) open({ type: "investigator", id: inv.id, resourceId: inv.resource_id || undefined, label: displayName });
   };
 
   return (
@@ -331,7 +342,7 @@ export default function Profile() {
                         onClick={openInvestigatorCard}
                         className="text-xl font-semibold text-primary hover:underline cursor-pointer"
                       >
-                        {profile?.full_name || "No name set"}
+                        {profile?.full_name || linkedInvestigator?.name || "No name set"}
                       </button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startEditing}>
                         <Pencil className="h-3.5 w-3.5" />
