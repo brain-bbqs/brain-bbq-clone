@@ -824,6 +824,13 @@ export type Database = {
             foreignKeyName: "grant_investigators_investigator_id_fkey"
             columns: ["investigator_id"]
             isOneToOne: false
+            referencedRelation: "investigator_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
             referencedRelation: "investigators"
             referencedColumns: ["id"]
           },
@@ -1290,6 +1297,13 @@ export type Database = {
           organization_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "investigator_organizations_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigator_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "investigator_organizations_investigator_id_fkey"
             columns: ["investigator_id"]
@@ -2267,6 +2281,68 @@ export type Database = {
           votes?: number | null
         }
         Relationships: []
+      }
+      investigator_directory: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+          institution: string | null
+          name: string | null
+          orcid: string | null
+          profile_url: string | null
+          research_areas: string[] | null
+          resource_id: string | null
+          role: string | null
+          scholar_id: string | null
+          skills: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          working_groups: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          institution?: string | null
+          name?: string | null
+          orcid?: string | null
+          profile_url?: string | null
+          research_areas?: string[] | null
+          resource_id?: string | null
+          role?: string | null
+          scholar_id?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          working_groups?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          institution?: string | null
+          name?: string | null
+          orcid?: string | null
+          profile_url?: string | null
+          research_areas?: string[] | null
+          resource_id?: string | null
+          role?: string | null
+          scholar_id?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          working_groups?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigators_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       investigators_public: {
         Row: {

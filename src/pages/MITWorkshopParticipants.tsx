@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, X } from "lucide-react";
+import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, X, Download } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -216,6 +216,29 @@ const MITWorkshopParticipants = () => {
     });
   };
 
+  const downloadCsv = () => {
+    const rows = selected.size > 0 ? sorted.filter((p) => selected.has(rowKey(p))) : sorted;
+    if (rows.length === 0) return;
+    const esc = (v: string) => {
+      const s = (v ?? "").toString();
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ["Name", "Institution", "Role in BBQS", "Attendance"];
+    const csv = [header.join(",")]
+      .concat(rows.map((p) => [p.name, p.institution, p.role, p.attendance].map(esc).join(",")))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `bbqs-mit-participants-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -255,10 +278,22 @@ const MITWorkshopParticipants = () => {
               </p>
             </div>
             {user && (
-              <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadCsv}
+                  disabled={sorted.length === 0}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {selected.size > 0 ? `Download CSV (${selected.size})` : "Download CSV"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Refresh
+                </Button>
+              </div>
             )}
           </div>
 
