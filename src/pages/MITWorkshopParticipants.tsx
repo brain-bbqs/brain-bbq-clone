@@ -376,10 +376,20 @@ const MITWorkshopParticipants = () => {
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                           <tr>
+                            <th className="px-3 py-2 w-8">
+                              <input
+                                type="checkbox"
+                                aria-label="Select all visible"
+                                checked={allVisibleSelected}
+                                onChange={toggleSelectAllVisible}
+                                className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                              />
+                            </th>
                             {([
                               ["name", "Name"],
                               ["institution", "Institution"],
                               ["role", "Role in BBQS"],
+                              ["attendance", "Attendance"],
                             ] as [SortKey, string][]).map(([k, label]) => (
                               <th key={k} className="px-3 py-2">
                                 <button
@@ -396,7 +406,16 @@ const MITWorkshopParticipants = () => {
                         </thead>
                         <tbody>
                           {sorted.map((p, i) => (
-                            <tr key={`${p.name}-${i}`} className="border-t border-border hover:bg-muted/30">
+                            <tr key={`${p.name}-${i}`} className={`border-t border-border hover:bg-muted/30 ${selected.has(rowKey(p)) ? "bg-primary/5" : ""}`}>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select ${p.name}`}
+                                  checked={selected.has(rowKey(p))}
+                                  onChange={() => toggleRow(rowKey(p))}
+                                  className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                />
+                              </td>
                               <td className="px-3 py-2 font-medium text-foreground">{p.name || "—"}</td>
                               <td className="px-3 py-2 text-muted-foreground">{p.institution || "—"}</td>
                               <td className="px-3 py-2">
@@ -407,6 +426,11 @@ const MITWorkshopParticipants = () => {
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <Badge variant="outline" className={`font-normal border ${attendanceColor(p.attendance)}`}>
+                                  {p.attendance}
+                                </Badge>
                               </td>
                             </tr>
                           ))}
