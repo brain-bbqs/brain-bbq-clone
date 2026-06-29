@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award } from "lucide-react";
+import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, Filter, X } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -100,8 +100,22 @@ const roleColor = (role: string): string => {
   return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
 };
 
-type SortKey = "name" | "institution" | "role";
+type SortKey = "name" | "institution" | "role" | "attendance";
 type SortDir = "asc" | "desc";
+
+const normalizeAttendance = (raw: string): "In person" | "Virtual" | "Unknown" => {
+  const v = (raw || "").toLowerCase();
+  if (!v) return "Unknown";
+  if (/virtual|remote|online|zoom/.test(v)) return "Virtual";
+  if (/in.?person|yes|attend|onsite|on-site/.test(v)) return "In person";
+  return "Unknown";
+};
+
+const attendanceColor = (a: string) => {
+  if (a === "In person") return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900";
+  if (a === "Virtual") return "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950 dark:text-sky-200 dark:border-sky-900";
+  return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+};
 
 const MITWorkshopParticipants = () => {
   const { user, loading: authLoading } = useAuth();
@@ -112,6 +126,8 @@ const MITWorkshopParticipants = () => {
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = async () => {
     setLoading(true);
@@ -140,12 +156,27 @@ const MITWorkshopParticipants = () => {
         name: toTitleCase(p.name),
         institution: canonicalizeInstitution(p.institution),
         role: toTitleCase(p.role),
+        attendance: normalizeAttendance(p.attendance || ""),
       })),
     [participants]
   );
 
+  const roleOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    normalized.forEach((p) => {
+      const r = p.role || "Unspecified";
+      map.set(r, (map.get(r) || 0) + 1);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [normalized]);
+
+  const filtered = useMemo(() => {
+    if (roleFilter.size === 0) return normalized;
+    return normalized.filter((p) => roleFilter.has(p.role || "Unspecified"));
+  }, [normalized, roleFilter]);
+
   const sorted = useMemo(() => {
-    const arr = [...normalized];
+    const arr = [...filtered];
     arr.sort((a, b) => {
       const av = (a[sortKey] || "").toString().toLowerCase();
       const bv = (b[sortKey] || "").toString().toLowerCase();
@@ -154,15 +185,41 @@ const MITWorkshopParticipants = () => {
       return 0;
     });
     return arr;
-  }, [normalized, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir]);
 
   const stats = useMemo(() => {
-    const inPerson = normalized.filter((p) => /in.?person|yes|attend/i.test(p.attendance || "") && !/virtual|remote|online|no\b/i.test(p.attendance || "")).length;
+    const inPerson = normalized.filter((p) => p.attendance === "In person").length;
     const young = normalized.filter((p) => /phd student|ph\.d\.? student|graduate student|grad student|postdoc|post-doc|post doc|junior fellow|trainee|fellow\b/i.test(p.role || "")).length;
     const nih = normalized.filter((p) => /\bnih\b|national institutes of health|nimh|ninds|nida|niaaa|nichd|nia\b/i.test(p.institution || "")).length;
     const pis = normalized.filter((p) => /\bpi\b|principal investigator|faculty|professor|investigator/i.test(p.role || "")).length;
     return { inPerson, young, nih, pis };
   }, [normalized]);
+
+  const toggleRoleFilter = (r: string) => {
+    setRoleFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(r)) next.delete(r); else next.add(r);
+      return next;
+    });
+  };
+
+  const rowKey = (p: { name: string; institution: string }) => `${p.name}|${p.institution}`;
+  const allVisibleSelected = sorted.length > 0 && sorted.every((p) => selected.has(rowKey(p)));
+  const toggleSelectAllVisible = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) sorted.forEach((p) => next.delete(rowKey(p)));
+      else sorted.forEach((p) => next.add(rowKey(p)));
+      return next;
+    });
+  };
+  const toggleRow = (k: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
 
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -267,6 +324,47 @@ const MITWorkshopParticipants = () => {
                       {error}
                     </div>
                   )}
+                  {roleOptions.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground">
+                        <Filter className="h-3 w-3" /> Filter by role
+                      </span>
+                      {roleOptions.map(([r, count]) => {
+                        const active = roleFilter.has(r);
+                        return (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => toggleRoleFilter(r)}
+                            className={`text-xs px-2 py-1 rounded-full border transition-colors ${active ? roleColor(r) + " ring-2 ring-primary/40" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"}`}
+                          >
+                            {r} <span className="opacity-60">({count})</span>
+                          </button>
+                        );
+                      })}
+                      {roleFilter.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setRoleFilter(new Set())}
+                          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                        >
+                          <X className="h-3 w-3" /> Clear
+                        </button>
+                      )}
+                      {selected.size > 0 && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {selected.size} selected
+                          <button
+                            type="button"
+                            onClick={() => setSelected(new Set())}
+                            className="ml-2 underline hover:text-foreground"
+                          >
+                            clear
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {loading && participants.length === 0 ? (
                     <div className="flex items-center gap-2 text-muted-foreground text-sm py-8 justify-center">
                       <Loader2 className="h-4 w-4 animate-spin" /> Fetching latest registrations…
@@ -278,10 +376,20 @@ const MITWorkshopParticipants = () => {
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
                           <tr>
+                            <th className="px-3 py-2 w-8">
+                              <input
+                                type="checkbox"
+                                aria-label="Select all visible"
+                                checked={allVisibleSelected}
+                                onChange={toggleSelectAllVisible}
+                                className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                              />
+                            </th>
                             {([
                               ["name", "Name"],
                               ["institution", "Institution"],
                               ["role", "Role in BBQS"],
+                              ["attendance", "Attendance"],
                             ] as [SortKey, string][]).map(([k, label]) => (
                               <th key={k} className="px-3 py-2">
                                 <button
@@ -298,7 +406,16 @@ const MITWorkshopParticipants = () => {
                         </thead>
                         <tbody>
                           {sorted.map((p, i) => (
-                            <tr key={`${p.name}-${i}`} className="border-t border-border hover:bg-muted/30">
+                            <tr key={`${p.name}-${i}`} className={`border-t border-border hover:bg-muted/30 ${selected.has(rowKey(p)) ? "bg-primary/5" : ""}`}>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select ${p.name}`}
+                                  checked={selected.has(rowKey(p))}
+                                  onChange={() => toggleRow(rowKey(p))}
+                                  className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                                />
+                              </td>
                               <td className="px-3 py-2 font-medium text-foreground">{p.name || "—"}</td>
                               <td className="px-3 py-2 text-muted-foreground">{p.institution || "—"}</td>
                               <td className="px-3 py-2">
@@ -309,6 +426,11 @@ const MITWorkshopParticipants = () => {
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <Badge variant="outline" className={`font-normal border ${attendanceColor(p.attendance)}`}>
+                                  {p.attendance}
+                                </Badge>
                               </td>
                             </tr>
                           ))}
