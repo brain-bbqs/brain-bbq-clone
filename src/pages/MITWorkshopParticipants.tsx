@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, Filter, X } from "lucide-react";
+import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, X } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -126,7 +126,7 @@ const MITWorkshopParticipants = () => {
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<null | "inPerson" | "young" | "nih" | "pis">(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = async () => {
@@ -161,19 +161,21 @@ const MITWorkshopParticipants = () => {
     [participants]
   );
 
-  const roleOptions = useMemo(() => {
-    const map = new Map<string, number>();
-    normalized.forEach((p) => {
-      const r = p.role || "Unspecified";
-      map.set(r, (map.get(r) || 0) + 1);
-    });
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [normalized]);
+  const isYoung = (p: { role?: string }) => /phd student|ph\.d\.? student|graduate student|grad student|postdoc|post-doc|post doc|junior fellow|trainee|young investigator|fellow\b/i.test(p.role || "");
+  const isPi = (p: { role?: string }) => /\bpi\b|principal investigator|faculty|professor|investigator/i.test(p.role || "");
+  const isNih = (p: { institution?: string }) => /\bnih\b|national institutes of health|nimh|ninds|nida|niaaa|nichd|nia\b/i.test(p.institution || "");
+  const isInPerson = (p: { attendance?: string }) => p.attendance === "In person";
 
   const filtered = useMemo(() => {
-    if (roleFilter.size === 0) return normalized;
-    return normalized.filter((p) => roleFilter.has(p.role || "Unspecified"));
-  }, [normalized, roleFilter]);
+    if (!activeFilter) return normalized;
+    const pred = {
+      inPerson: isInPerson,
+      young: isYoung,
+      nih: isNih,
+      pis: isPi,
+    }[activeFilter];
+    return normalized.filter(pred);
+  }, [normalized, activeFilter]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -188,20 +190,13 @@ const MITWorkshopParticipants = () => {
   }, [filtered, sortKey, sortDir]);
 
   const stats = useMemo(() => {
-    const inPerson = normalized.filter((p) => p.attendance === "In person").length;
-    const young = normalized.filter((p) => /phd student|ph\.d\.? student|graduate student|grad student|postdoc|post-doc|post doc|junior fellow|trainee|fellow\b/i.test(p.role || "")).length;
-    const nih = normalized.filter((p) => /\bnih\b|national institutes of health|nimh|ninds|nida|niaaa|nichd|nia\b/i.test(p.institution || "")).length;
-    const pis = normalized.filter((p) => /\bpi\b|principal investigator|faculty|professor|investigator/i.test(p.role || "")).length;
-    return { inPerson, young, nih, pis };
+    return {
+      inPerson: normalized.filter(isInPerson).length,
+      young: normalized.filter(isYoung).length,
+      nih: normalized.filter(isNih).length,
+      pis: normalized.filter(isPi).length,
+    };
   }, [normalized]);
-
-  const toggleRoleFilter = (r: string) => {
-    setRoleFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(r)) next.delete(r); else next.add(r);
-      return next;
-    });
-  };
 
   const rowKey = (p: { name: string; institution: string }) => `${p.name}|${p.institution}`;
   const allVisibleSelected = sorted.length > 0 && sorted.every((p) => selected.has(rowKey(p)));
@@ -284,23 +279,29 @@ const MITWorkshopParticipants = () => {
               {participants.length > 0 && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { label: "Attending in person", value: stats.inPerson, Icon: MapPin, color: "text-emerald-600" },
-                    { label: "Young investigators", value: stats.young, Icon: GraduationCap, color: "text-blue-600" },
-                    { label: "From NIH", value: stats.nih, Icon: Building2, color: "text-purple-600" },
-                    { label: "PIs / Faculty", value: stats.pis, Icon: Award, color: "text-amber-600" },
-                  ].map(({ label, value, Icon, color }) => (
-                    <Card key={label}>
-                      <CardContent className="pt-5 pb-4">
-                        <div className="flex items-start justify-between gap-2">
+                    { key: "inPerson" as const, label: "Attending in person", value: stats.inPerson, Icon: MapPin, color: "text-emerald-600", ring: "ring-emerald-500/60" },
+                    { key: "young" as const, label: "Young investigators", value: stats.young, Icon: GraduationCap, color: "text-blue-600", ring: "ring-blue-500/60" },
+                    { key: "nih" as const, label: "From NIH", value: stats.nih, Icon: Building2, color: "text-purple-600", ring: "ring-purple-500/60" },
+                    { key: "pis" as const, label: "PIs / Faculty", value: stats.pis, Icon: Award, color: "text-amber-600", ring: "ring-amber-500/60" },
+                  ].map(({ key, label, value, Icon, color, ring }) => {
+                    const active = activeFilter === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setActiveFilter(active ? null : key)}
+                        className={`text-left rounded-lg border bg-card transition-all hover:border-foreground/30 hover:shadow-sm ${active ? `ring-2 ${ring} border-transparent shadow-sm` : "border-border"}`}
+                      >
+                        <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2">
                           <div>
                             <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-                            <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
+                            <p className="text-3xl font-bold text-foreground mt-1 tabular-nums">{value}</p>
                           </div>
                           <Icon className={`h-5 w-5 ${color}`} />
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               <Card>
@@ -324,35 +325,19 @@ const MITWorkshopParticipants = () => {
                       {error}
                     </div>
                   )}
-                  {roleOptions.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground">
-                        <Filter className="h-3 w-3" /> Filter by role
-                      </span>
-                      {roleOptions.map(([r, count]) => {
-                        const active = roleFilter.has(r);
-                        return (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => toggleRoleFilter(r)}
-                            className={`text-xs px-2 py-1 rounded-full border transition-colors ${active ? roleColor(r) + " ring-2 ring-primary/40" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"}`}
-                          >
-                            {r} <span className="opacity-60">({count})</span>
-                          </button>
-                        );
-                      })}
-                      {roleFilter.size > 0 && (
+                  {(activeFilter || selected.size > 0) && (
+                    <div className="flex flex-wrap items-center gap-3 mb-4 text-xs text-muted-foreground">
+                      {activeFilter && (
                         <button
                           type="button"
-                          onClick={() => setRoleFilter(new Set())}
-                          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                          onClick={() => setActiveFilter(null)}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
                         >
-                          <X className="h-3 w-3" /> Clear
+                          <X className="h-3 w-3" /> Clear filter
                         </button>
                       )}
                       {selected.size > 0 && (
-                        <span className="ml-auto text-xs text-muted-foreground">
+                        <span className="ml-auto">
                           {selected.size} selected
                           <button
                             type="button"
