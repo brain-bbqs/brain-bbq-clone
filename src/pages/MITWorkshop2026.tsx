@@ -139,42 +139,38 @@ const MITWorkshop2026 = () => {
               <AgendaDay
                 title="Day 1 — Wednesday, July 15, 2026"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Snacks & Ice Breakers", "Atrium"],
-                  ["10:00", "10:15", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Exciting things to look forward to and social events. Emphasizing a theme of cross-species and translation.", "Singleton"],
-                  ["10:15", "10:30", "Scientific and Technological Goals — NIH", "Singleton"],
-                  ["10:30", "11:30", "Perspective Cross-Species Panel Discussion — what is the fundamental unifying principle across different neuroscience studies?", "Singleton"],
-                  ["11:30", "12:00", "BBQS Community Resource & Leadership Roll Call — brief intros highlighting domains of expertise and available resources; identify potential project leads and points of contact across BBQS (facilitated by Nader & Sul).", "Singleton"],
-                  ["12:00", "2:00", "BBQS Task Force Working Lunch: Minds & Matches — encourage social collaboration and new innovation; secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium"],
-                  ["2:00", "2:30", "Group Photo", "MIT Main Building & McGovern"],
-                  ["2:30", "4:00", "BBQS Project Pitch & discussion — review proposed ideas & choose parallel sessions; identify volunteers to lead projects; define goals; gather information and share back via slides in BBQS Google Drive folder; GitHub workflow for project submission into the consortia.", "Singleton"],
-                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session: Devices, Data, and Ideas", "Atrium / Seminar 3189"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers", "Atrium"],
+                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals (TBD-NIH)", "Singleton"],
+                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton"],
+                  ["10:30", "12:00", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton"],
+                  ["12:00", "12:15", "Group Photo", "MIT Main Building & McGovern"],
+                  ["12:15", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium"],
+                  ["2:00", "4:00", "BBQS Project Pitch & Discussion — review proposed ideas & choose parallel sessions; identify volunteers to lead projects; define goals. Groups gather information and share back via slides in the Brainhack 2026 folder. Current projects: Brainhack planning — Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group. New projects can use the Brainhack planning template.", "Singleton"],
+                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas", "Atrium / Seminar 3189"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 2 — Thursday, July 16, 2026"
                 rows={[
-                  ["7:00", "8:00", "Ultimate Frisbee", "MIT Athletic Field"],
-                  ["9:00", "10:00", "Coffee/Tea Morning Social. Policy Formation Forum — voting on Data Sharing Policy and Data Usage Agreements (break-out for PIs).", "Atrium / Seminar 3189"],
-                  ["10:00", "11:00", "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents", "Singleton"],
-                  ["11:00", "12:00", "Build an AI-Powered Agentic Data Pipeline: Ingestion, ML Analysis, and Reporting Workshop (Optional)", "Seminar 3189"],
-                  ["12:00", "2:00", "BBQS Projects Working Lunch (Zoom available)", "Atrium"],
-                  ["2:00", "3:00", "BBQS Unconference: Community-Led Topics & Lightning Discussions", "Singleton"],
-                  ["3:00", "4:30", "Live Hacking", "Singleton / Atrium / Seminar 3189"],
-                  ["4:00", "6:00", "Light Dinner Reception (Brain-Boosting Snacks)", "Atrium"],
-                  ["6:00", "6:30", "Walking and Talking Tour of MIT (Optional)", "MIT Campus"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social. (Option A) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B) Pre-voting about data sharing and discussion — Office Hours with WG-ELSI.", "Singleton"],
+                  ["10:00", "11:30", "Report Back from Day 1 hacking sessions", "Singleton"],
+                  ["11:30", "12:30", "(Option A) Build an AI-Powered Agentic Video Data Pipeline: Ingestion, ML Analysis, and Reporting Workshop. (Option B) Write-a-thon for Publication. (Option C) Cross-Species Analytics.", "Singleton / Atrium / Seminar 3189"],
+                  ["12:30", "2:30", "BBQS Projects Working Lunch", "Atrium"],
+                  ["2:30", "4:00", "(Option A — Required PIs) Policy Formation Forum: voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, fireside chats and Speed Dating. (Option C) Continued Hacking.", "Seminar"],
+                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks)", "Atrium"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 3 — Friday, July 17, 2026"
                 rows={[
-                  ["7:15", "8:00", "Sunrise Yoga / Pilates", "MIT Athletic Field"],
-                  ["9:00", "11:00", "Open Debate: Is BBQS the Future of Brain-Behavior Neuroscience? — 10 min framing of the perspective paper and big question (\"What should BBQS ultimately be for?\"); 75 min moderated open debate, actively inviting opposing views; 40 min audience town hall / open mic, collecting phrases live for the paper.", "Singleton"],
-                  ["11:00", "12:00", "Young Investigator-led unconference, fireside chats (Zoom available)", "Seminar 3189"],
-                  ["12:00", "1:00", "BBQS Working Lunch: Live NeuroHack Labs — wrap-up of deliverables and documentation", "Atrium"],
-                  ["1:00", "2:30", "BBQS Project Outcomes & Consortium Handoff — final project reports and parallel session summaries; confirm project leads and next-step milestones; capture goals, findings, and open questions in shared BBQS slides; walk through the GitHub Organization workflow for consortium project submission (Zoom available).", "Singleton"],
-                  ["2:30", "3:00", "Feedback, Reflection, Discussion and Closing (Zoom available)", "Singleton"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social — Report Back from Day 2 hacking sessions.", "Singleton"],
+                  ["10:00", "11:00", "Open Debate: Is BBQS the Future of Brain-Behavior Neuroscience? — 10 min framing of the perspective paper and big question (\"What should BBQS ultimately be for?\"); 30 min moderated open debate, actively inviting opposing views; 20 min audience town hall / open mic, collecting phrases live for the paper.", "Singleton"],
+                  ["11:00", "12:00", "BBQS Working Lunch: Live NeuroHack Labs — wrap-up of deliverables and documentation.", "Atrium"],
+                  ["12:00", "1:45", "Final project reports and parallel session summaries — what's next.", "Singleton"],
+                  ["1:45", "2:30", "BBQS Project Outcomes & Consortium Discussion — communication cadence; cross-species knowledge gaps; onboarding & PI integration for newer investigators (with concrete matchmaking mechanisms); recurring collective troubleshooting / frustrations forum for data, behavior, and devices (Troubleshooting Agent); focused brainstorming on consortium datasets suitable for cross-project analysis; lightweight exchanges and fly-on-the-wall visits between BBQS labs and teams; scientific working groups that build a common language (e.g., social-behavior, acoustic-acquisition) rather than just logistics.", "Singleton"],
+                  ["2:30", "3:00", "Final Goodbyes in the Atrium", "Atrium"],
                 ]}
               />
             </CardContent>
