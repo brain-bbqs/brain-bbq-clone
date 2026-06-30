@@ -162,8 +162,19 @@ const MITWorkshopParticipants = () => {
   );
 
   const isYoung = (p: { role?: string }) => /phd student|ph\.d\.? student|graduate student|grad student|postdoc|post-doc|post doc|junior fellow|trainee|young investigator|fellow\b/i.test(p.role || "");
-  const isPi = (p: { role?: string }) => /\bpi\b|principal investigator|faculty|professor|investigator/i.test(p.role || "");
-  const isNih = (p: { institution?: string }) => /\bnih\b|national institutes of health|nimh|ninds|nida|niaaa|nichd|nia\b/i.test(p.institution || "");
+  const isPi = (p: { role?: string }) => {
+    const r = (p.role || "").toLowerCase();
+    // Exclude young/co/sub-investigators and other non-PI roles
+    if (/young investigator|co-?investigator|sub-?investigator|student|postdoc|post-doc|post doc|trainee|fellow|staff|coordinator|developer|engineer|manager|admin/.test(r)) return false;
+    // Only true PIs / Contact PIs / Faculty
+    return /\bcontact pi\b|\bprincipal investigator\b|\bpi\b|\bmpi\b|\bco-?pi\b|\bfaculty\b|\bprofessor\b/.test(r);
+  };
+  const isNih = (p: { institution?: string; role?: string }) => {
+    const inst = (p.institution || "").toLowerCase();
+    // Strict: must be an NIH institution. Use word boundaries to avoid
+    // false positives like "Pennsylvania" matching "nia".
+    return /(^|[^a-z])nih([^a-z]|$)|national institutes of health|\bnimh\b|\bninds\b|\bnida\b|\bniaaa\b|\bnichd\b|\bnia\b(?!\w)|\bnci\b|\bnhgri\b|\bniddk\b|\bnigms\b|\bnibib\b|\bnimhd\b/.test(inst);
+  };
   const isInPerson = (p: { attendance?: string }) => p.attendance === "In person";
 
   const filtered = useMemo(() => {
