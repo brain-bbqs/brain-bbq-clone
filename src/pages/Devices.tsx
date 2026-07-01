@@ -60,7 +60,6 @@ export default function Devices() {
       const hasPhysicalContext = Boolean(
         r.manufacturer ||
         r.model_name ||
-        r.hardware_label ||
         (r.environment_tags || []).some((tag) => tag !== "computational_only")
       );
       return hasDeviceSignal && (!computationalOnly || hasPhysicalContext);
