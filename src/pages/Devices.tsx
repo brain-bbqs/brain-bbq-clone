@@ -14,6 +14,108 @@ import "@/styles/ag-grid-theme.css";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 
+// Curated "known gotchas" per device class — plain-English things that commonly
+// trip up experimenters, based on shared lab experience. Keys match the
+// `device_class` values produced by the harvester (snake_case).
+const COMMON_ISSUES: Record<string, string[]> = {
+  silicon_probe: [
+    "Shank breakage on insertion — slow descent (<5 µm/s) and pre-thin dura",
+    "Ground/reference loops causing 60 Hz noise",
+    "Channel drift over long recordings; re-reference or Kilosort drift correction",
+  ],
+  neuropixels: [
+    "Headstage overheating in freely-moving rigs — add airflow or duty-cycle",
+    "Reference/ground mis-config produces flat channels",
+    "Probe bending if not perfectly perpendicular to brain surface",
+  ],
+  miniscope: [
+    "GRIN lens focal drift after implantation — re-focus at each session",
+    "Photobleaching with high LED power; keep <0.3 mW/mm²",
+    "Cable torque restricts natural behavior; use commutator",
+  ],
+  two_photon_microscope: [
+    "Z-drift over long sessions — enable online motion correction",
+    "Laser power creep damages tissue; monitor at objective",
+    "PMT saturation in bright expressers",
+  ],
+  eeg: [
+    "Impedance >10 kΩ → noisy channels; re-gel and re-abrade",
+    "Line noise from nearby equipment; notch filter or shielding",
+    "Sweat/movement artifacts in long recordings",
+  ],
+  ieeg: [
+    "Grid migration between imaging and recording — re-localize",
+    "CSF shunting under grid causing signal loss",
+    "Stim artifact bleed into recording channels",
+  ],
+  dbs_lead: [
+    "Lead migration in first 2 weeks post-op",
+    "Impedance changes as scar tissue forms",
+    "Stim-induced side effects need re-programming",
+  ],
+  camera: [
+    "Rolling shutter distorts fast movement — use global shutter for pose tracking",
+    "IR illumination flicker synced to line frequency",
+    "Frame drops at high FPS if disk I/O can't keep up",
+  ],
+  depth_camera: [
+    "IR interference between multiple depth cameras — stagger or time-mux",
+    "Poor depth on dark/reflective fur",
+    "Calibration drift with temperature",
+  ],
+  imu: [
+    "Gyro drift over minutes; fuse with accelerometer/magnetometer",
+    "Magnetometer useless indoors near ferrous metal",
+    "Clock skew vs. other streams — use LSL for sync",
+  ],
+  emg: [
+    "Cross-talk between adjacent muscles",
+    "Electrode lift-off during long sessions",
+    "Motion artifact swamping signal at high forces",
+  ],
+  headstage: [
+    "Connector fatigue after ~50 mating cycles",
+    "Static discharge kills channels — ground yourself",
+    "SPI/serial timing issues at high channel counts",
+  ],
+  behavior_rig: [
+    "Lick-spout capacitance drift over session",
+    "Solenoid click cues the animal — mask with white noise",
+    "Frame timing jitter breaks trial alignment",
+  ],
+  monitor: [
+    "Refresh rate mismatch with stim software drops frames",
+    "Gamma not calibrated → contrast unreliable across labs",
+    "Backlight flicker aliases with camera FPS",
+  ],
+  injector: [
+    "Air bubbles cause volume errors — bleed lines before use",
+    "Backflow up the pipette track; use slow infusion + wait time",
+    "Tip clogging with viscous vectors",
+  ],
+  optical_fiber: [
+    "Coupling losses at rotary joint (~30%)",
+    "Tissue damage from heating at >20 mW/mm²",
+    "Fiber tip contamination reduces output over time",
+  ],
+  daq: [
+    "Ground loops when chaining multiple DAQs",
+    "Sample-clock drift between devices — use shared clock",
+    "Buffer underruns at high channel × rate combinations",
+  ],
+};
+
+function issuesFor(row: DeviceRow): string[] {
+  const cls = (row.device_class || "").toLowerCase();
+  if (COMMON_ISSUES[cls]) return COMMON_ISSUES[cls];
+  // Fuzzy fallback: try to match on label keywords.
+  const hay = `${row.model_name || ""} ${row.hardware_label || ""} ${row.device_label || ""}`.toLowerCase();
+  for (const [key, issues] of Object.entries(COMMON_ISSUES)) {
+    if (hay.includes(key.replace(/_/g, " ")) || hay.includes(key)) return issues;
+  }
+  return [];
+}
+
 interface DeviceRow {
   grant_number: string;
   device_class: string | null;
@@ -176,6 +278,25 @@ export default function Devices() {
               <div className="italic text-muted-foreground/80 leading-snug">"{snippet}"</div>
             )}
           </div>
+        );
+      },
+    },
+    {
+      headerName: "Common problems",
+      headerTooltip: "Known gotchas for this class of device — collected from shared lab experience, not extracted per-paper.",
+      width: 320,
+      sortable: false,
+      filter: false,
+      valueGetter: (p) => (p.data ? issuesFor(p.data).join(" · ") : ""),
+      cellRenderer: (p: any) => {
+        const issues = issuesFor(p.data);
+        if (!issues.length) {
+          return <span className="text-muted-foreground text-xs">no common-issue notes yet</span>;
+        }
+        return (
+          <ul className="text-xs py-1 space-y-1 list-disc pl-4 text-foreground/85 leading-snug">
+            {issues.map((t) => <li key={t}>{t}</li>)}
+          </ul>
         );
       },
     },
