@@ -1,8 +1,8 @@
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageMeta } from "@/components/PageMeta";
 import { SystemAlertsBanner } from "@/components/admin/SystemAlertsBanner";
-import { ShieldCheck, UserPlus, AlertTriangle, FolderPlus, Wallet, Sparkles, Activity, Network, Tags, FileSearch, Radar } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, FolderPlus, Wallet } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AdminAccessRequests from "./AdminAccessRequests";
 import { AddProjectByGrantDialog } from "@/components/admin/AddProjectByGrantDialog";
@@ -10,7 +10,7 @@ import { BudgetsPanel } from "@/components/admin/BudgetsPanel";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-const VALID_TABS = ["alerts", "budgets", "users", "access-requests", "add-project", "harvester"] as const;
+const VALID_TABS = ["alerts", "budgets", "users", "access-requests", "add-project"] as const;
 type TabKey = (typeof VALID_TABS)[number];
 
 export default function AdminConsole() {
@@ -57,10 +57,6 @@ export default function AdminConsole() {
             <FolderPlus className="h-4 w-4" />
             Add Project
           </TabsTrigger>
-          <TabsTrigger value="harvester" className="gap-1.5">
-            <Sparkles className="h-4 w-4" />
-            Harvester
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="alerts" className="mt-0">
@@ -98,40 +94,6 @@ export default function AdminConsole() {
                 </Button>
               }
             />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="harvester" className="mt-0">
-          <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">Knowledge graph harvester</h2>
-              <p className="text-sm text-muted-foreground">
-                Admin shortcuts for the multi-hop methods harvester. All links open in a new tab so you can keep this console handy.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                { to: "/admin/harvester", icon: Sparkles, title: "Harvester control", desc: "Kick off batch runs, manage the queue, pause/resume the background tick." },
-                { to: "/admin/kg-live", icon: Activity, title: "Live graph", desc: "Real-time force-directed view of hops as the harvester discovers nodes." },
-                { to: "/admin/kg-heatmap", icon: Network, title: "KG heatmap", desc: "Grants × hardware, orgs × device-class, translational bridge orgs." },
-                { to: "/admin/kg-curate", icon: Tags, title: "Curate keywords", desc: "Approve novel terms, merge synonyms, fix relationships." },
-                { to: "/grants/methods-evidence", icon: FileSearch, title: "Methods evidence", desc: "Browse extracted device / metric / setting evidence rows." },
-                { to: "/admin/access-requests", icon: Radar, title: "Access requests", desc: "Jump straight to pending consortium access requests." },
-              ].map(({ to, icon: Icon, title, desc }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="group flex gap-3 rounded-md border border-border bg-background p-3 hover:border-primary hover:bg-accent/40 transition-colors"
-                >
-                  <Icon className="h-5 w-5 mt-0.5 text-primary shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-foreground group-hover:text-primary">{title}</div>
-                    <div className="text-xs text-muted-foreground">{desc}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground/70 mt-1">{to}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </div>
         </TabsContent>
       </Tabs>
