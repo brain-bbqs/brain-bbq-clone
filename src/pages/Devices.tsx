@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, Network } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 interface DeviceRow {
@@ -15,7 +16,12 @@ interface DeviceRow {
   evidence_count: number | null;
   confidence_max: number | null;
   sample_pmid: string | null;
+  sample_title: string | null;
   manual_urls: string[] | null;
+  species: string[] | null;
+  environment_tags: string[] | null;
+  sample_use_case: string | null;
+  setting: string | null;
 }
 
 type SortKey = "model_name" | "device_class" | "manufacturer" | "grant_number" | "evidence_count";
@@ -81,11 +87,22 @@ export default function Devices() {
       />
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-1">Devices</h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Every piece of instrumentation identified across BBQS projects — probes, miniscopes, headstages,
-          DBS leads, iEEG grids, behavior rigs — with manufacturer and manual links when available.
-        </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-1">Devices</h1>
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              Every piece of instrumentation identified across BBQS projects — probes, miniscopes, headstages,
+              DBS leads, iEEG grids, behavior rigs — with the species, environment, and use context it was
+              deployed in.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/resources/devices/graph">
+              <Network className="h-4 w-4 mr-2" />
+              View knowledge graph
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex gap-2 items-center">
@@ -106,6 +123,9 @@ export default function Devices() {
                 <SortableTh k="model_name">Device</SortableTh>
                 <SortableTh k="device_class">Class</SortableTh>
                 <SortableTh k="manufacturer">Manufacturer</SortableTh>
+                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Species</th>
+                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Environment</th>
+                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Use context</th>
                 <SortableTh k="grant_number">Grant</SortableTh>
                 <SortableTh k="evidence_count" className="text-right">Evidence</SortableTh>
                 <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Manual</th>
@@ -114,14 +134,14 @@ export default function Devices() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
                     Loading devices…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
                     No devices extracted yet. Check back soon.
                   </td>
                 </tr>
@@ -137,6 +157,33 @@ export default function Devices() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{r.manufacturer || "—"}</td>
+                    <td className="px-3 py-2">
+                      {r.species && r.species.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {r.species.slice(0, 3).map((s) => (
+                            <Badge key={s} variant="secondary" className="text-[10px]">{s.replace(/_/g, " ")}</Badge>
+                          ))}
+                        </div>
+                      ) : <span className="text-muted-foreground text-xs">—</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.environment_tags && r.environment_tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {r.environment_tags.slice(0, 3).map((t) => (
+                            <Badge key={t} variant="outline" className="text-[10px] border-primary/30 text-primary">{t.replace(/_/g, " ")}</Badge>
+                          ))}
+                        </div>
+                      ) : r.setting ? (
+                        <Badge variant="outline" className="text-[10px]">{r.setting}</Badge>
+                      ) : <span className="text-muted-foreground text-xs">—</span>}
+                    </td>
+                    <td className="px-3 py-2 max-w-[280px] text-xs text-muted-foreground italic">
+                      {r.sample_use_case ? (
+                        <span title={r.sample_use_case}>
+                          {r.sample_use_case.length > 120 ? r.sample_use_case.slice(0, 118) + "…" : r.sample_use_case}
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td className="px-3 py-2">
                       <Link to={`/projects/${r.grant_number}/profile`} className="text-primary hover:underline font-mono text-xs">
                         {r.grant_number}
