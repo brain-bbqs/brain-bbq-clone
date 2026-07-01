@@ -219,6 +219,8 @@ async function extractStructured(methods: string, title: string, key: string) {
 - study_arm (one of: animal_model, clinical_translational, computational, unknown)
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
+- environment_tags[] (STRICT vocabulary — ANY of: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, computational_only)
+- use_case (ONE short sentence describing what the device was used to record/stimulate/measure in this study, e.g. "Recorded single-unit activity in hippocampal CA1 during a spatial navigation task.")
 - irb_or_population, quote, confidence(0-1)`;
   const res = await fetch(`${AI}/chat/completions`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
