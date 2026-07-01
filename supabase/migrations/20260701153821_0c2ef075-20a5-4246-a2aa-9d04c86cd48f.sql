@@ -1,0 +1,1 @@
+ALTER TABLE public.grant_methods_evidence ALTER COLUMN match_score TYPE double precision USING match_score::double precision;

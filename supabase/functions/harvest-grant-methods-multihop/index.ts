@@ -230,9 +230,18 @@ async function extractStructured(methods: string, title: string, key: string) {
       response_format: { type: "json_object" },
     }),
   });
-  if (!res.ok) return null;
-  try { return JSON.parse((await res.json())?.choices?.[0]?.message?.content ?? "{}"); }
-  catch { return null; }
+  if (!res.ok) {
+    console.error("[extract] AI gateway not ok", res.status, (await res.text().catch(()=>"" )).slice(0,400));
+    return null;
+  }
+  try {
+    const j = await res.json();
+    const content = j?.choices?.[0]?.message?.content ?? "{}";
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("[extract] JSON parse failed", String(e).slice(0,200));
+    return null;
+  }
 }
 
 // ─────────────────────── Main ───────────────────────
@@ -429,9 +438,16 @@ Deno.serve(async (req) => {
         if (!md) continue;
         const methods = extractMethods(md);
         // Allow short snippets — abstract-only pages are still extractable.
-        if (!methods || methods.length < 120) continue;
+        if (!methods || methods.length < 120) {
+          console.warn("[hop] methods too short", { pmid, mdLen: md.length, methodsLen: methods?.length ?? 0 });
+          continue;
+        }
         const extract = await extractStructured(methods, f.node.label ?? "", aiKey);
-        if (!extract) continue;
+        if (!extract) {
+          console.warn("[hop] extract returned null", { pmid });
+          continue;
+        }
+        console.log("[hop] extracted", { pmid, devices: (extract.device_model ?? []).length, mfrs: (extract.manufacturer ?? []).length });
 
         // Insert traversal path first
         const { data: pathRow } = await supabase.from("grant_methods_traversal_paths").insert({
@@ -444,7 +460,7 @@ Deno.serve(async (req) => {
         // Find source grant from path
         const sourceGrant = [...f.path].reverse().find(s => s.node.type === "grant")?.node;
 
-        const { data: ev } = await supabase.from("grant_methods_evidence").upsert({
+        const { data: ev, error: evErr } = await supabase.from("grant_methods_evidence").upsert({
           seed_grant_number: seedGrantNumber,
           source_grant_number: sourceGrant?.id ?? seedGrantNumber,
           source_grant_title: sourceGrant?.label ?? null,
@@ -479,6 +495,8 @@ Deno.serve(async (req) => {
           extracted_at: new Date().toISOString(),
           discovery_path_id: pathRow?.id ?? null,
         }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();
+        if (evErr) console.error("[hop] evidence upsert failed", { pmid, err: evErr.message, code: (evErr as any).code, details: (evErr as any).details });
+        else console.log("[hop] evidence upserted", { pmid, id: ev?.id });
 
         if (pathRow?.id && ev?.id) {
           await supabase.from("grant_methods_traversal_paths").update({ terminal_evidence_id: ev.id }).eq("id", pathRow.id);
