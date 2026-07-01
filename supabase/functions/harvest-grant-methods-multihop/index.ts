@@ -244,12 +244,12 @@ function extractMethods(md: string): string | null {
   return lines.slice(start, end).join("\n").slice(0, 12000);
 }
 async function extractStructured(methods: string, title: string, key: string, sourceKind = "publication") {
-  const sys = `Extract experimental hardware and methods. Return ONLY JSON. Do not invent product models or manufacturers. If the source is an NIH grant abstract, extract planned/required animal behavior, recording, imaging, stimulation, sensing, or tracking devices from explicit text even when no paper has been published yet.`;
+  const sys = `You extract EVERY piece of experimental hardware mentioned in a neuroscience methods section — including stimulus delivery gear (monitors, speakers, air puffers, LED drivers), acquisition gear (cameras, cameras' sensors, macroscopes, microscopes, headstages, DAQs), behavior gear (treadmills, lickometers, head posts, cranial windows), and clinical devices. Any parenthetical of the form "<product name>, <company>" (e.g. "ProLite E1980, Iiyama" or "pco.edge, PCO" or "Pressure System IIe, Toohey Company") is a device_model + manufacturer pair — you MUST emit BOTH. Return ONLY JSON. Do not invent products; only emit what the text states. Emit MULTIPLE devices per paper. If the source is an NIH grant abstract, extract planned/required devices from explicit text even when no paper has been published yet.`;
   const user = `Source type: ${sourceKind}\nTitle: ${title}\n\nTEXT:\n${methods}\n\nKeys:
-- device_hardware[] (free text list of specific devices/instruments)
-- device_class[] (coarse buckets, ANY of: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, optogenetics, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS, other)
-- device_model[] (specific product/model strings verbatim from the paper, e.g. "Neuropixels 2.0", "Inscopix nVista 3", "Medtronic Percept PC", "Ad-Tech RD10R-SP05X")
-- manufacturer[] (canonical company names, e.g. "IMEC", "Inscopix", "Medtronic", "Ad-Tech", "Blackrock Neurotech", "Neuralynx", "Open Ephys", "PMT Corp", "DIXI Medical")
+- device_hardware[] (free text list of every specific device/instrument named — cameras, monitors, speakers, injectors, macroscopes, probes, treadmills, head posts, silicone tubes, etc.)
+- device_class[] (short lowercase snake_case buckets — reuse when possible: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, macroscope, sCMOS_camera, CCD_camera, LCD_monitor, magnetic_speaker, pressure_injector, air_puffer, optogenetics_led, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS. INVENT new snake_case classes when nothing fits. Emit one class per distinct device.)
+- device_model[] (specific product/model strings verbatim, e.g. "Neuropixels 2.0", "Inscopix nVista 3", "ProLite E1980", "pco.edge", "Pressure System IIe". Include EVERY model named.)
+- manufacturer[] (canonical company names, e.g. "IMEC", "Inscopix", "Iiyama", "PCO", "Toohey Company", "Tucker-Davis Technologies", "Medtronic". Include EVERY company named.)
 - modality[] (ANY of: ephys, imaging, stim, behavior, clinical_recording, neuroimaging)
 - manual_urls[] (URLs to user manuals / datasheets / spec sheets if cited)
 - regulatory (one of: research_use_only, FDA_510k, FDA_PMA, CE_marked, unknown)
@@ -260,8 +260,14 @@ async function extractStructured(methods: string, title: string, key: string, so
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
 - environment_tags[] (FREE-FORM short lowercase snake_case strings. Emit whatever fits. Common examples: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, zoo_enclosure, mri_bore, ambulatory, computational_only. Invent new tags when the paper describes an environment not listed. Max 6 tags.)
-- use_case (ONE short sentence describing what the device was used to record/stimulate/measure in this study, e.g. "Recorded single-unit activity in hippocampal CA1 during a spatial navigation task.")
-- irb_or_population, quote, confidence(0-1)`;
+- use_case (ONE short sentence describing what the devices were used to record/stimulate/measure in this study.)
+- irb_or_population, quote, confidence(0-1)
+
+EXAMPLE — for the passage: "Visual stimuli were presented via LCD monitors (ProLite E1980, Iiyama)... Air puffs were delivered from a pressure injector (Pressure System IIe, Toohey Company)... via a magnetic speaker (Tucker-Davis Technologies)... imaged the two VSFP chromophores via two sCMOS cameras (pco.edge, PCO)..." you MUST emit:
+  device_model: ["ProLite E1980","Pressure System IIe","pco.edge"],
+  manufacturer: ["Iiyama","Toohey Company","Tucker-Davis Technologies","PCO"],
+  device_class: ["LCD_monitor","pressure_injector","magnetic_speaker","sCMOS_camera","macroscope","treadmill"],
+  device_hardware: ["LCD monitor ProLite E1980","pressure injector Pressure System IIe","magnetic speaker","sCMOS camera pco.edge","macroscope tandem lens","treadmill","CCD camera","thinned skull cranial window","head post"].`;
   const res = await fetch(`${AI}/chat/completions`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
