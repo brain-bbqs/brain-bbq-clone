@@ -630,8 +630,17 @@ Deno.serve(async (req) => {
         await tick({ phase: "extracting", current_target: `PMID ${pmid}`, pubs_found: pubsFound, last_message: f.node.label ?? `PMID ${pmid}` });
 
         const url = await pmidToUrl(pmid);
-        let md = await scrapeMd(url);
-        firecrawlCalls++;
+        // Try PubMed Central full-text XML FIRST — free, complete Methods section,
+        // and this is where manufacturer/model parentheticals actually live. Only
+        // fall back to Firecrawl (which usually just gets the abstract page) if
+        // the paper isn't in PMC OA.
+        let md = await fetchPmcFullText(pmid);
+        if (!md || md.length < 500) {
+          md = await scrapeMd(url);
+          firecrawlCalls++;
+        } else {
+          await tick({ current_target: `PMC full-text PMID ${pmid}`, last_message: `PMC full-text PMID ${pmid}` });
+        }
         // Fallback chain: Firecrawl → publication title/abstract from RePORTER payload.
         if (!md || md.length < 200) {
           const fallback = [
