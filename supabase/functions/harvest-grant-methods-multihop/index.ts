@@ -219,6 +219,8 @@ async function extractStructured(methods: string, title: string, key: string) {
 - study_arm (one of: animal_model, clinical_translational, computational, unknown)
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
+- environment_tags[] (STRICT vocabulary — ANY of: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, computational_only)
+- use_case (ONE short sentence describing what the device was used to record/stimulate/measure in this study, e.g. "Recorded single-unit activity in hippocampal CA1 during a spatial navigation task.")
 - irb_or_population, quote, confidence(0-1)`;
   const res = await fetch(`${AI}/chat/completions`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -317,6 +319,18 @@ Deno.serve(async (req) => {
       if (valid.length) validatedHops.push(valid.slice(0, beam));
     }
 
+    // GUARANTEE: seed grant's own publications are always crawled at hop 1.
+    // Otherwise the planner often opens with ["similar_to"] and we never reach
+    // any publication whose chain score survives the threshold. Prepending
+    // "produced" as its own hop ensures every run has at least one paper to
+    // extract from, so evidence rows actually land.
+    if (vocabNames.has("produced")) {
+      const first = validatedHops[0] ?? [];
+      if (!first.includes("produced")) {
+        validatedHops.unshift(["produced"]);
+      }
+    }
+
     // BFS frontier with chain-score pruning
     const seedNode: NodeRef = { type: "grant", id: seed.project_num, label: seed.project_title, text: seedText, payload: seed };
     let frontier: { node: NodeRef; path: Path; chainScore: number }[] = [
@@ -353,7 +367,12 @@ Deno.serve(async (req) => {
           scored.sort((a, b) => b.s - a.s);
           for (const { n, s } of scored.slice(0, beam)) {
             const chain = f.chainScore * s;
-            if (chain < threshold) continue;
+            // Never prune the seed grant's own direct publications — we need
+            // guaranteed evidence to land, and these are as on-topic as it gets.
+            const isSeedProduced = f.node.type === "grant"
+              && f.node.id === seedGrantNumber
+              && rel === "produced";
+            if (!isSeedProduced && chain < threshold) continue;
             visited.add(`${n.type}:${n.id}`);
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
@@ -444,6 +463,8 @@ Deno.serve(async (req) => {
           irb_or_population: extract.irb_or_population ?? null,
           quote: extract.quote ?? null,
           confidence: Number(extract.confidence ?? 0),
+          environment_tags: Array.isArray(extract.environment_tags) ? extract.environment_tags.map(String) : [],
+          use_case: typeof extract.use_case === "string" ? extract.use_case.slice(0, 500) : null,
           extracted_at: new Date().toISOString(),
           discovery_path_id: pathRow?.id ?? null,
         }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();

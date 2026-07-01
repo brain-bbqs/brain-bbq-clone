@@ -45,6 +45,7 @@ import Calendar from "./pages/Calendar";
 import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
 import Devices from "./pages/Devices";
+import DevicesGraph from "./pages/DevicesGraph";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/devices" element={<Devices />} />
+              <Route path="/resources/devices/graph" element={<DevicesGraph />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/auth" element={<Auth />} />
