@@ -212,6 +212,38 @@ async function pmidToUrl(pmid: string): Promise<string> {
   } catch {}
   return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 }
+
+// PubMed Central full-text via NCBI E-utilities. Free, no Firecrawl needed.
+// Returns a Methods-heavy plain-text blob when the paper is in PMC OA.
+async function fetchPmcFullText(pmid: string): Promise<string | null> {
+  try {
+    const linkRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&db=pmc&id=${pmid}&retmode=json`);
+    const linkJson = await linkRes.json();
+    const pmcId = linkJson?.linksets?.[0]?.linksetdbs?.[0]?.links?.[0];
+    if (!pmcId) return null;
+    const xmlRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=${pmcId}&rettype=xml`);
+    if (!xmlRes.ok) return null;
+    const xml = await xmlRes.text();
+    if (!xml || xml.length < 500) return null;
+    // Strip XML/HTML tags → text. Preserve paragraph breaks so extractMethods can find headings.
+    const text = xml
+      .replace(/<sec[^>]*>/gi, "\n\n## ")
+      .replace(/<title[^>]*>/gi, "")
+      .replace(/<\/title>/gi, "\n")
+      .replace(/<p[^>]*>/gi, "\n\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x?[0-9a-f]+;/gi, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return text.length > 500 ? text : null;
+  } catch (e) {
+    console.warn("[pmc] full-text fetch failed", pmid, String(e).slice(0, 200));
+    return null;
+  }
+}
+
 async function scrapeMd(url: string): Promise<string | null> {
   const key = Deno.env.get("FIRECRAWL_API_KEY");
   if (!key) return null;
