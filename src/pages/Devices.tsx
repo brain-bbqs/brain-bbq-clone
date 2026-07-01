@@ -61,7 +61,6 @@ export default function Devices() {
         r.manufacturer ||
         r.model_name ||
         r.hardware_label ||
-        (r.species || []).length ||
         (r.environment_tags || []).some((tag) => tag !== "computational_only")
       );
       return hasDeviceSignal && (!computationalOnly || hasPhysicalContext);
