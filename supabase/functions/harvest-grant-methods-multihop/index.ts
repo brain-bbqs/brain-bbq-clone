@@ -319,6 +319,18 @@ Deno.serve(async (req) => {
       if (valid.length) validatedHops.push(valid.slice(0, beam));
     }
 
+    // GUARANTEE: seed grant's own publications are always crawled at hop 1.
+    // Otherwise the planner often opens with ["similar_to"] and we never reach
+    // any publication whose chain score survives the threshold. Prepending
+    // "produced" as its own hop ensures every run has at least one paper to
+    // extract from, so evidence rows actually land.
+    if (vocabNames.has("produced")) {
+      const first = validatedHops[0] ?? [];
+      if (!first.includes("produced")) {
+        validatedHops.unshift(["produced"]);
+      }
+    }
+
     // BFS frontier with chain-score pruning
     const seedNode: NodeRef = { type: "grant", id: seed.project_num, label: seed.project_title, text: seedText, payload: seed };
     let frontier: { node: NodeRef; path: Path; chainScore: number }[] = [
