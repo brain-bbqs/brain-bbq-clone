@@ -2,11 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Loader2, ExternalLink, Network } from "lucide-react";
+import { ExternalLink, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import "@/styles/ag-grid-theme.css";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCardList } from "@/components/MobileCardList";
 
 interface DeviceRow {
   grant_number: string;
@@ -33,13 +39,11 @@ interface DeviceRow {
   latest_evidence_at?: string | null;
 }
 
-type SortKey = "model_name" | "device_class" | "manufacturer" | "grant_number" | "evidence_count";
-
 export default function Devices() {
   const [rows, setRows] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "evidence_count", dir: "desc" });
+  const [quickFilterText, setQuickFilterText] = useState("");
+  const isMobile = useIsMobile();
 
   const load = async () => {
     setLoading(true);
@@ -83,38 +87,6 @@ export default function Devices() {
     };
   }, []);
 
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    let out = rows;
-    if (needle) {
-      out = out.filter((r) =>
-        [r.device_label, r.hardware_label, r.model_name, r.device_class, r.manufacturer, r.grant_number, r.sample_use_case]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(needle))
-      );
-    }
-    const dir = sort.dir === "asc" ? 1 : -1;
-    return [...out].sort((a, b) => {
-      const av = a[sort.key] ?? "";
-      const bv = b[sort.key] ?? "";
-      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
-      return String(av).localeCompare(String(bv)) * dir;
-    });
-  }, [rows, q, sort]);
-
-  const toggleSort = (key: SortKey) =>
-    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
-
-  const SortableTh = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => (
-    <th
-      className={`text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground cursor-pointer select-none hover:text-foreground ${className}`}
-      onClick={() => toggleSort(k)}
-    >
-      {children}
-      {sort.key === k ? <span className="ml-1">{sort.dir === "asc" ? "▲" : "▼"}</span> : null}
-    </th>
-  );
-
   const deviceName = (r: DeviceRow) =>
     r.device_label || r.model_name || r.hardware_label || (r.device_class ? r.device_class.replace(/_/g, " ") : "Device evidence");
 
@@ -123,6 +95,107 @@ export default function Devices() {
   const physicalRows = rows.filter((r) => !(r.environment_tags || []).includes("computational_only"));
   const modelRows = rows.filter((r) => isModelKnown(r));
   const missingModels = rows.length - modelRows.length;
+
+  const defaultColDef = useMemo<ColDef>(
+    () => ({ sortable: true, resizable: true, filter: true, unSortIcon: true, wrapText: true, autoHeight: true }),
+    []
+  );
+
+  const columnDefs = useMemo<ColDef<DeviceRow>[]>(() => [
+    {
+      headerName: "Device",
+      width: 220,
+      valueGetter: (p) => (p.data ? deviceName(p.data) : ""),
+      cellRenderer: (p: any) => (
+        <div>
+          <div className="font-medium text-foreground leading-snug">{deviceName(p.data)}</div>
+          {!isModelKnown(p.data) && (
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
+              manufacturer/model not reported yet
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      field: "device_class", headerName: "Class", width: 160,
+      cellRenderer: (p: any) => p.value
+        ? <Badge variant="outline" className="text-xs">{String(p.value).replace(/_/g, " ")}</Badge>
+        : <span className="text-muted-foreground text-xs">—</span>,
+    },
+    {
+      field: "manufacturer", headerName: "Manufacturer", width: 160,
+      cellRenderer: (p: any) => p.value || <span className="text-muted-foreground text-xs">—</span>,
+    },
+    {
+      field: "species", headerName: "Species", width: 160,
+      getQuickFilterText: (p) => (p.value || []).join(" "),
+      cellRenderer: (p: any) => (p.value && p.value.length) ? (
+        <div className="flex flex-wrap gap-1">
+          {p.value.slice(0, 3).map((s: string) => (
+            <Badge key={s} variant="secondary" className="text-[10px]">{s.replace(/_/g, " ")}</Badge>
+          ))}
+        </div>
+      ) : <span className="text-muted-foreground text-xs">—</span>,
+    },
+    {
+      field: "environment_tags", headerName: "Environment", width: 180,
+      getQuickFilterText: (p) => (p.value || []).join(" "),
+      cellRenderer: (p: any) => (p.value && p.value.length) ? (
+        <div className="flex flex-wrap gap-1">
+          {p.value.slice(0, 3).map((t: string) => (
+            <Badge key={t} variant="outline" className="text-[10px] border-primary/30 text-primary">{t.replace(/_/g, " ")}</Badge>
+          ))}
+        </div>
+      ) : p.data?.setting ? (
+        <Badge variant="outline" className="text-[10px]">{p.data.setting}</Badge>
+      ) : <span className="text-muted-foreground text-xs">—</span>,
+    },
+    {
+      headerName: "What it means", flex: 1, minWidth: 280,
+      valueGetter: (p) => `${p.data?.sample_use_case ?? ""} ${p.data?.quote ?? ""}`,
+      cellRenderer: (p: any) => (
+        <div className="text-xs text-muted-foreground py-1">
+          {p.data.sample_use_case ? <div>{p.data.sample_use_case}</div> : "—"}
+          {p.data.quote ? <div className="mt-1 italic text-muted-foreground/80">"{p.data.quote}"</div> : null}
+        </div>
+      ),
+    },
+    {
+      field: "grant_number", headerName: "Grant", width: 150,
+      cellRenderer: (p: any) => (
+        <Link to={`/projects/${p.value}/profile`} className="text-primary hover:underline font-mono text-xs">{p.value}</Link>
+      ),
+    },
+    {
+      field: "evidence_count", headerName: "Evidence", width: 110, type: "numericColumn",
+      sort: "desc",
+      cellClass: "text-right tabular-nums",
+    },
+    {
+      headerName: "Source", width: 150, sortable: false, filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col gap-1 py-1">
+          {p.data.source_url && (
+            <a href={p.data.source_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs">
+              <ExternalLink className="h-3 w-3" />
+              {String(p.data.sample_pmid || "").startsWith("PROJECT:") ? "NIH abstract" : "paper"}
+            </a>
+          )}
+          {p.data.manual_urls?.[0] ? (
+            <a href={p.data.manual_urls[0]} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs">
+              <ExternalLink className="h-3 w-3" /> Manual
+            </a>
+          ) : <span className="text-muted-foreground text-[10px]">manual pending</span>}
+          {typeof p.data.min_depth === "number" && (
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              hop {p.data.min_depth} · score {typeof p.data.match_score_max === "number" ? p.data.match_score_max.toFixed(2) : "—"}
+            </span>
+          )}
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -151,13 +224,14 @@ export default function Devices() {
       </div>
 
       <div className="mb-4 flex gap-2 items-center">
-        <Input
-          placeholder="Search device, use context, manufacturer, grant…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="max-w-md"
+        <input
+          type="text"
+          placeholder="Filter by device, manufacturer, species, environment, grant…"
+          value={quickFilterText}
+          onChange={(e) => setQuickFilterText(e.target.value)}
+          className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
         />
-        <span className="text-xs text-muted-foreground">{filtered.length} rows</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{rows.length} rows</span>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-4">
@@ -179,133 +253,38 @@ export default function Devices() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 border-b border-border">
-              <tr>
-                <SortableTh k="model_name">Device</SortableTh>
-                <SortableTh k="device_class">Class</SortableTh>
-                <SortableTh k="manufacturer">Manufacturer</SortableTh>
-                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Species</th>
-                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Environment</th>
-                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">What it means</th>
-                <SortableTh k="grant_number">Grant</SortableTh>
-                <SortableTh k="evidence_count" className="text-right">Evidence</SortableTh>
-                <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                    Loading devices…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
-                    No devices extracted yet. Check back soon.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((r, i) => (
-                  <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="px-3 py-2 font-medium text-foreground">
-                      <div className="max-w-[190px] leading-snug">{deviceName(r)}</div>
-                      {!isModelKnown(r) ? (
-                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
-                          manufacturer/model not reported yet
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      {r.device_class ? (
-                        <Badge variant="outline" className="text-xs">{r.device_class.replace(/_/g, " ")}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">{r.manufacturer || "—"}</td>
-                    <td className="px-3 py-2">
-                      {r.species && r.species.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {r.species.slice(0, 3).map((s) => (
-                            <Badge key={s} variant="secondary" className="text-[10px]">{s.replace(/_/g, " ")}</Badge>
-                          ))}
-                        </div>
-                      ) : <span className="text-muted-foreground text-xs">—</span>}
-                    </td>
-                    <td className="px-3 py-2">
-                      {r.environment_tags && r.environment_tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {r.environment_tags.slice(0, 3).map((t) => (
-                            <Badge key={t} variant="outline" className="text-[10px] border-primary/30 text-primary">{t.replace(/_/g, " ")}</Badge>
-                          ))}
-                        </div>
-                      ) : r.setting ? (
-                        <Badge variant="outline" className="text-[10px]">{r.setting}</Badge>
-                      ) : <span className="text-muted-foreground text-xs">—</span>}
-                    </td>
-                    <td className="px-3 py-2 max-w-[340px] text-xs text-muted-foreground">
-                      {r.sample_use_case ? (
-                        <span title={r.sample_use_case}>
-                          {r.sample_use_case.length > 150 ? r.sample_use_case.slice(0, 148) + "…" : r.sample_use_case}
-                        </span>
-                      ) : "—"}
-                      {r.quote ? (
-                        <div className="mt-1 italic text-muted-foreground/80" title={r.quote}>
-                          “{r.quote.length > 120 ? r.quote.slice(0, 118) + "…" : r.quote}”
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Link to={`/projects/${r.grant_number}/profile`} className="text-primary hover:underline font-mono text-xs">
-                        {r.grant_number}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{r.evidence_count ?? 0}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-col gap-1">
-                      {r.source_url ? (
-                        <a
-                          href={r.source_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1 text-xs"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          {String(r.sample_pmid || "source").startsWith("PROJECT:") ? "NIH abstract" : "paper"}
-                        </a>
-                      ) : null}
-                      {r.manual_urls && r.manual_urls.length > 0 ? (
-                        <a
-                          href={r.manual_urls[0]}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1 text-xs"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Manual
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">manual pending</span>
-                      )}
-                      {typeof r.min_depth === "number" ? (
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          hop {r.min_depth} · score {typeof r.match_score_max === "number" ? r.match_score_max.toFixed(2) : "—"}
-                        </span>
-                      ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {isMobile ? (
+        <MobileCardList
+          items={rows.map((r, i) => ({
+            id: String(i),
+            title: deviceName(r),
+            fields: [
+              { label: "Class", value: r.device_class?.replace(/_/g, " ") || "—" },
+              { label: "Manufacturer", value: r.manufacturer || "—" },
+              { label: "Species", value: (r.species || []).join(", ") || "—" },
+              { label: "Environment", value: (r.environment_tags || []).join(", ") || r.setting || "—" },
+              { label: "Grant", value: r.grant_number },
+              { label: "Evidence", value: String(r.evidence_count ?? 0) },
+            ],
+          }))}
+          emptyMessage={loading ? "Loading devices…" : "No devices extracted yet."}
+        />
+      ) : (
+        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ width: "100%" }}>
+          <AgGridReact<DeviceRow>
+            rowData={rows}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            quickFilterText={quickFilterText}
+            animateRows={true}
+            domLayout="autoHeight"
+            suppressCellFocus={true}
+            enableCellTextSelection={true}
+            headerHeight={40}
+            overlayNoRowsTemplate={loading ? "Loading devices…" : "No devices extracted yet. Check back soon."}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 }
