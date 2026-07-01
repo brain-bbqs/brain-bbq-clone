@@ -148,10 +148,23 @@ export default function Devices() {
               ) : (
                 filtered.map((r, i) => (
                   <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="px-3 py-2 font-medium text-foreground">{r.model_name || <span className="text-muted-foreground italic">unnamed</span>}</td>
+                    <td className="px-3 py-2 font-medium text-foreground">
+                      {r.model_name ? (
+                        r.model_name
+                      ) : r.device_class ? (
+                        <span className="capitalize">{r.device_class.replace(/_/g, " ")}</span>
+                      ) : (
+                        <span className="text-muted-foreground italic">unnamed</span>
+                      )}
+                      {!r.model_name && r.device_class ? (
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
+                          model not reported
+                        </div>
+                      ) : null}
+                    </td>
                     <td className="px-3 py-2">
                       {r.device_class ? (
-                        <Badge variant="outline" className="text-xs">{r.device_class}</Badge>
+                        <Badge variant="outline" className="text-xs">{r.device_class.replace(/_/g, " ")}</Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
