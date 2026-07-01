@@ -82,13 +82,6 @@ const MITWorkshop2026 = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
-                <span className="font-semibold">Note:</span>{" "}
-                <span className="text-muted-foreground">
-                  This is a draft, working agenda. Sessions will remain ongoing and dynamic — expect updates as the workshop approaches and as community input shapes the program.
-                </span>
-              </div>
-
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -116,61 +109,40 @@ const MITWorkshop2026 = () => {
                 </ul>
               </div>
 
-              <div>
-                <h3 className="text-base font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Video className="h-4 w-4 text-primary" /> Pre-Workshop Virtual Session
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  <span className="font-medium text-foreground">Friday, July 10, 2026 · 12–4 PM ET</span> — BBQS Consortium project update.
-                  A representative from each project gives a 5–10 minute presentation; slides shared in Google Drive.
-                  Ahead of the meeting, we will circulate a method to collect and vote on Brainhack ideas (final selection on Day 2).
-                </p>
-                <a
-                  href="https://mit.zoom.us/meeting/register/D-RDlniDRbaPLys9DAdBaA"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                >
-                  Register for the virtual session
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </div>
-
               <AgendaDay
-                title="Day 1 — Wednesday, July 15, 2026"
+                title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers", "Atrium"],
-                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals (TBD-NIH)", "Singleton"],
-                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton"],
-                  ["10:30", "12:00", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton"],
-                  ["12:00", "12:15", "Group Photo", "MIT Main Building & McGovern"],
-                  ["12:15", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium"],
-                  ["2:00", "4:00", "BBQS Project Pitch & Discussion — review proposed ideas & choose parallel sessions; identify volunteers to lead projects; define goals. Groups gather information and share back via slides in the Brainhack 2026 folder. Current projects: Brainhack planning — Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group. New projects can use the Brainhack planning template.", "Singleton"],
-                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas", "Atrium / Seminar 3189"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", ""],
+                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals (TBD-NIH).", "Singleton", "Yes"],
+                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes"],
+                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes"],
+                  ["12:15", "12:30", "Group Photo", "MIT Main Building & McGovern", ""],
+                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", ""],
+                  ["2:00", "4:00", "BBQS Project Pitch (review proposed ideas) & discussion followed by Brainhack sessions. Identify volunteers to lead any new projects; leads set up projects using the Brainhack planning template and post slides. Current themes: Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group.", "Singleton", "Yes"],
+                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", ""],
                 ]}
               />
 
               <AgendaDay
-                title="Day 2 — Thursday, July 16, 2026"
+                title="Day 2 — Thursday, July 16, 2026 · Active Working"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social. (Option A) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B) Pre-voting about data sharing and discussion — Office Hours with WG-ELSI.", "Singleton"],
-                  ["10:00", "11:30", "Report Back from Day 1 hacking sessions", "Singleton"],
-                  ["11:30", "12:30", "(Option A) Build an AI-Powered Agentic Video Data Pipeline: Ingestion, ML Analysis, and Reporting Workshop. (Option B) Write-a-thon for Publication. (Option C) Cross-Species Analytics.", "Singleton / Atrium / Seminar 3189"],
-                  ["12:30", "2:30", "BBQS Projects Working Lunch", "Atrium"],
-                  ["2:30", "4:00", "(Option A — Required PIs) Policy Formation Forum: voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, fireside chats and Speed Dating. (Option C) Continued Hacking.", "Seminar"],
-                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks)", "Atrium"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes"],
+                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes"],
+                  ["11:30", "12:30", "Parallel working sessions: (Option A — Satra) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B — ELSI) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
+                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes"],
+                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
+                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", ""],
                 ]}
               />
 
               <AgendaDay
-                title="Day 3 — Friday, July 17, 2026"
+                title="Day 3 — Friday, July 17, 2026 · Reflection"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Report Back from Day 2 hacking sessions.", "Singleton"],
-                  ["10:00", "11:00", "Open Debate: Is BBQS the Future of Brain-Behavior Neuroscience? — 10 min framing of the perspective paper and big question (\"What should BBQS ultimately be for?\"); 30 min moderated open debate, actively inviting opposing views; 20 min audience town hall / open mic, collecting phrases live for the paper.", "Singleton"],
-                  ["11:00", "12:00", "BBQS Working Lunch: Live NeuroHack Labs — wrap-up of deliverables and documentation.", "Atrium"],
-                  ["12:00", "1:45", "Final project reports and parallel session summaries — what's next.", "Singleton"],
-                  ["1:45", "2:30", "BBQS Project Outcomes & Consortium Discussion — communication cadence; cross-species knowledge gaps; onboarding & PI integration for newer investigators (with concrete matchmaking mechanisms); recurring collective troubleshooting / frustrations forum for data, behavior, and devices (Troubleshooting Agent); focused brainstorming on consortium datasets suitable for cross-project analysis; lightweight exchanges and fly-on-the-wall visits between BBQS labs and teams; scientific working groups that build a common language (e.g., social-behavior, acoustic-acquisition) rather than just logistics.", "Singleton"],
-                  ["2:30", "3:00", "Final Goodbyes in the Atrium", "Atrium"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", ""],
+                  ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
+                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", ""],
+                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes"],
+                  ["2:45", "3:00", "Closing.", "Singleton", "Yes"],
                 ]}
               />
             </CardContent>
@@ -304,7 +276,7 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type AgendaRow = [string, string, string, string];
+type AgendaRow = [string, string, string, string, string];
 
 function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
   return (
@@ -318,15 +290,17 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
               <th className="text-left font-semibold px-3 py-2 w-[80px]">End</th>
               <th className="text-left font-semibold px-3 py-2">Session</th>
               <th className="text-left font-semibold px-3 py-2 w-[180px]">Location</th>
+              <th className="text-left font-semibold px-3 py-2 w-[70px]">Zoom</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(([start, end, session, location], i) => (
+            {rows.map(([start, end, session, location, zoom], i) => (
               <tr key={i} className="border-t border-border align-top">
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{start}</td>
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{end}</td>
                 <td className="px-3 py-2 text-foreground leading-relaxed">{session}</td>
                 <td className="px-3 py-2 text-muted-foreground">{location}</td>
+                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{zoom}</td>
               </tr>
             ))}
           </tbody>
