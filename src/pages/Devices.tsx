@@ -39,12 +39,25 @@ export default function Devices() {
       .select("*")
       .limit(1000);
     if (error) toast.error(error.message);
-    setRows((data as any as DeviceRow[]) || []);
+    setRows(((data as any as DeviceRow[]) || []).filter((r) =>
+      r.model_name || r.manufacturer || (r.device_class && r.device_class !== "unspecified")
+    ));
     setLoading(false);
   };
 
   useEffect(() => {
     load();
+    const channel = supabase
+      .channel("devices-page-evidence-refresh")
+      .on("postgres_changes", { event: "*", schema: "public", table: "grant_methods_evidence" }, () => {
+        load();
+      })
+      .subscribe();
+    const timer = window.setInterval(load, 30000);
+    return () => {
+      window.clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filtered = useMemo(() => {
