@@ -2535,16 +2535,25 @@ export type Database = {
         Row: {
           confidence_max: number | null
           device_class: string | null
+          device_label: string | null
           environment_tags: string[] | null
           evidence_count: number | null
           grant_number: string | null
+          hardware_label: string | null
+          latest_evidence_at: string | null
           manual_urls: string[] | null
           manufacturer: string | null
+          match_score_max: number | null
+          min_depth: number | null
           model_name: string | null
+          quote: string | null
           sample_pmid: string | null
           sample_title: string | null
           sample_use_case: string | null
           setting: string | null
+          source_grant_title: string | null
+          source_org: string | null
+          source_url: string | null
           species: string[] | null
         }
         Relationships: []
