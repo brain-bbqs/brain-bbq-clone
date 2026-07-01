@@ -219,7 +219,7 @@ async function extractStructured(methods: string, title: string, key: string) {
 - study_arm (one of: animal_model, clinical_translational, computational, unknown)
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
-- environment_tags[] (STRICT vocabulary — ANY of: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, computational_only)
+- environment_tags[] (FREE-FORM short lowercase snake_case strings. Emit whatever fits. Common examples: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, zoo_enclosure, mri_bore, ambulatory, computational_only. Invent new tags when the paper describes an environment not listed. Max 6 tags.)
 - use_case (ONE short sentence describing what the device was used to record/stimulate/measure in this study, e.g. "Recorded single-unit activity in hippocampal CA1 during a spatial navigation task.")
 - irb_or_population, quote, confidence(0-1)`;
   const res = await fetch(`${AI}/chat/completions`, {
@@ -276,13 +276,15 @@ Deno.serve(async (req) => {
       await supabase.from("harvester_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);
     };
     let firecrawlCalls = 0, pubsFound = 0, evidenceRows = 0, errors = 0;
+    let similarProjectsVisited = 0;
+    const hopSimilarities: { hop: number; relation: string; scores: number[] }[] = [];
 
     // Load settings + vocabulary
     const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
     const { data: vocab } = await supabase.from("harvester_relations").select("*").eq("enabled", true);
     const vocabNames = new Set((vocab ?? []).map((v: any) => v.name));
     const beam = settings?.beam_width ?? 3;
-    const maxHops = settings?.max_hops ?? 4;
+    const maxHops = settings?.max_hops ?? 5;
     const threshold = settings?.chain_score_threshold ?? 0.15;
     const pubCap = settings?.max_publications_per_seed ?? 120;
 
