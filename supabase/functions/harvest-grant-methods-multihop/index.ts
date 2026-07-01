@@ -367,7 +367,12 @@ Deno.serve(async (req) => {
           scored.sort((a, b) => b.s - a.s);
           for (const { n, s } of scored.slice(0, beam)) {
             const chain = f.chainScore * s;
-            if (chain < threshold) continue;
+            // Never prune the seed grant's own direct publications — we need
+            // guaranteed evidence to land, and these are as on-topic as it gets.
+            const isSeedProduced = f.node.type === "grant"
+              && f.node.id === seedGrantNumber
+              && rel === "produced";
+            if (!isSeedProduced && chain < threshold) continue;
             visited.add(`${n.type}:${n.id}`);
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
