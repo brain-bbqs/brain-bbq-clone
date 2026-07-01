@@ -282,9 +282,9 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
   return (
     <div>
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border/70 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] bg-gradient-to-b from-background to-muted/30 backdrop-blur-sm ring-1 ring-white/40 dark:ring-white/5">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-foreground">
+          <thead className="bg-gradient-to-b from-muted/70 to-muted/30 text-foreground backdrop-blur-sm">
             <tr>
               <th className="text-left font-semibold px-3 py-2 w-[80px]">Start</th>
               <th className="text-left font-semibold px-3 py-2 w-[80px]">End</th>
@@ -295,7 +295,10 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
           </thead>
           <tbody>
             {rows.map(([start, end, session, location, zoom], i) => (
-              <tr key={i} className="border-t border-border align-top">
+              <tr
+                key={i}
+                className="border-t border-border/60 align-top odd:bg-background/60 even:bg-muted/10 hover:bg-primary/[0.04] transition-colors"
+              >
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{start}</td>
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{end}</td>
                 <td className="px-3 py-2 text-foreground leading-relaxed">{session}</td>
