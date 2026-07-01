@@ -367,7 +367,15 @@ Deno.serve(async (req) => {
             scored.push({ n, s });
           }
           scored.sort((a, b) => b.s - a.s);
-          for (const { n, s } of scored.slice(0, beam)) {
+          const kept = scored.slice(0, beam);
+          if (kept.length) {
+            hopSimilarities.push({
+              hop: hopIdx + 1,
+              relation: rel,
+              scores: kept.map(k => Number(k.s.toFixed(3))),
+            });
+          }
+          for (const { n, s } of kept) {
             const chain = f.chainScore * s;
             // Never prune the seed grant's own direct publications — we need
             // guaranteed evidence to land, and these are as on-topic as it gets.
@@ -376,6 +384,7 @@ Deno.serve(async (req) => {
               && rel === "produced";
             if (!isSeedProduced && chain < threshold) continue;
             visited.add(`${n.type}:${n.id}`);
+            if (n.type === "grant" && n.id !== seedGrantNumber) similarProjectsVisited++;
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
             // Write traversal path immediately so KG Live populates (bunny hops here)
@@ -543,7 +552,11 @@ Deno.serve(async (req) => {
     await tick({
       phase: "done", finished_at: new Date().toISOString(),
       pubs_found: pubsFound, evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls, errors,
-      last_message: `Done: ${evidenceRows} evidence rows`,
+      last_message: `Done: ${evidenceRows} rows · ${similarProjectsVisited} similar projects · ${hopSimilarities.length} hops`,
+      hops_taken: hopSimilarities.length,
+      hop_similarities: hopSimilarities,
+      similar_projects_visited: similarProjectsVisited,
+      max_hops_configured: maxHops,
     });
 
     return new Response(JSON.stringify({
