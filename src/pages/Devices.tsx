@@ -4,9 +4,8 @@ import { PageMeta } from "@/components/PageMeta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ExternalLink, RefreshCw } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { useUserTier } from "@/hooks/useUserTier";
 import { Link } from "react-router-dom";
 
 interface DeviceRow {
@@ -23,12 +22,10 @@ interface DeviceRow {
 type SortKey = "model_name" | "device_class" | "manufacturer" | "grant_number" | "evidence_count";
 
 export default function Devices() {
-  const { isAdmin } = useUserTier();
   const [rows, setRows] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "evidence_count", dir: "desc" });
-  const [running, setRunning] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -44,20 +41,6 @@ export default function Devices() {
   useEffect(() => {
     load();
   }, []);
-
-  const runHarvester = async () => {
-    setRunning(true);
-    try {
-      const { error } = await supabase.functions.invoke("harvester-tick", { body: { force: true } });
-      if (error) throw error;
-      toast.success("Harvester run kicked off. Data will appear as it lands.");
-      setTimeout(load, 4000);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to start harvester");
-    } finally {
-      setRunning(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -98,20 +81,12 @@ export default function Devices() {
         description="Hardware, models, manufacturers, and manuals extracted from BBQS grants and their publications."
       />
 
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-1">Devices</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Every piece of instrumentation the harvester has identified across BBQS projects — probes, miniscopes,
-            headstages, DBS leads, iEEG grids, behavior rigs — with manufacturer and manual links when available.
-          </p>
-        </div>
-        {isAdmin && (
-          <Button variant="outline" size="sm" onClick={runHarvester} disabled={running}>
-            {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Run harvester once
-          </Button>
-        )}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-1">Devices</h1>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Every piece of instrumentation identified across BBQS projects — probes, miniscopes, headstages,
+          DBS leads, iEEG grids, behavior rigs — with manufacturer and manual links when available.
+        </p>
       </div>
 
       <div className="mb-4 flex gap-2 items-center">
@@ -148,7 +123,7 @@ export default function Devices() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                    No devices extracted yet. {isAdmin ? "Click \"Run harvester once\" to seed the table." : "Check back soon."}
+                    No devices extracted yet. Check back soon.
                   </td>
                 </tr>
               ) : (
