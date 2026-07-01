@@ -572,6 +572,9 @@ Deno.serve(async (req) => {
               chain_score: chain,
               planner_model: "google/gemini-3-flash-preview",
             });
+            if (n.type === "grant") {
+              await upsertProjectDeviceEvidence(n.payload, hopIdx + 1, chain);
+            }
           }
         }
       }
