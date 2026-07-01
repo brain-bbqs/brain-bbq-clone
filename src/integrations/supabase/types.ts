@@ -946,6 +946,7 @@ export type Database = {
           device_hardware: Json | null
           device_model: string[]
           discovery_path_id: string | null
+          environment_tags: string[]
           extracted_at: string
           id: string
           irb_or_population: string | null
@@ -971,6 +972,7 @@ export type Database = {
           stimulation_params: Json | null
           study_arm: string | null
           subject_n: number | null
+          use_case: string | null
         }
         Insert: {
           analysis_metrics?: Json | null
@@ -982,6 +984,7 @@ export type Database = {
           device_hardware?: Json | null
           device_model?: string[]
           discovery_path_id?: string | null
+          environment_tags?: string[]
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
@@ -1007,6 +1010,7 @@ export type Database = {
           stimulation_params?: Json | null
           study_arm?: string | null
           subject_n?: number | null
+          use_case?: string | null
         }
         Update: {
           analysis_metrics?: Json | null
@@ -1018,6 +1022,7 @@ export type Database = {
           device_hardware?: Json | null
           device_model?: string[]
           discovery_path_id?: string | null
+          environment_tags?: string[]
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
@@ -1043,6 +1048,7 @@ export type Database = {
           stimulation_params?: Json | null
           study_arm?: string | null
           subject_n?: number | null
+          use_case?: string | null
         }
         Relationships: [
           {
@@ -1286,6 +1292,7 @@ export type Database = {
           last_message: string | null
           phase: string
           pubs_found: number
+          retry_after: string | null
           seed_grant: string
           started_at: string
           updated_at: string
@@ -1302,6 +1309,7 @@ export type Database = {
           last_message?: string | null
           phase?: string
           pubs_found?: number
+          retry_after?: string | null
           seed_grant: string
           started_at?: string
           updated_at?: string
@@ -1318,6 +1326,7 @@ export type Database = {
           last_message?: string | null
           phase?: string
           pubs_found?: number
+          retry_after?: string | null
           seed_grant?: string
           started_at?: string
           updated_at?: string
@@ -2514,12 +2523,17 @@ export type Database = {
         Row: {
           confidence_max: number | null
           device_class: string | null
+          environment_tags: string[] | null
           evidence_count: number | null
           grant_number: string | null
           manual_urls: string[] | null
           manufacturer: string | null
           model_name: string | null
           sample_pmid: string | null
+          sample_title: string | null
+          sample_use_case: string | null
+          setting: string | null
+          species: string[] | null
         }
         Relationships: []
       }
