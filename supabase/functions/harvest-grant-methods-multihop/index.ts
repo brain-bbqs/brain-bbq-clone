@@ -208,6 +208,11 @@ async function extractStructured(methods: string, title: string, key: string) {
   const user = `Publication: ${title}\n\nMETHODS:\n${methods}\n\nKeys:
 - device_hardware[] (free text list of specific devices/instruments)
 - device_class[] (coarse buckets, ANY of: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, optogenetics, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS, other)
+- device_model[] (specific product/model strings verbatim from the paper, e.g. "Neuropixels 2.0", "Inscopix nVista 3", "Medtronic Percept PC", "Ad-Tech RD10R-SP05X")
+- manufacturer[] (canonical company names, e.g. "IMEC", "Inscopix", "Medtronic", "Ad-Tech", "Blackrock Neurotech", "Neuralynx", "Open Ephys", "PMT Corp", "DIXI Medical")
+- modality[] (ANY of: ephys, imaging, stim, behavior, clinical_recording, neuroimaging)
+- manual_urls[] (URLs to user manuals / datasheets / spec sheets if cited)
+- regulatory (one of: research_use_only, FDA_510k, FDA_PMA, CE_marked, unknown)
 - species[] (ANY of: mouse, rat, nhp_macaque, nhp_marmoset, human_adult, human_pediatric, human_neonate, other)
 - behavior_paradigm[] (e.g. open_field, head_fixed_treadmill, lick_task, social_interaction, sleep, clinical_outcome_scale, free_behavior, decision_task)
 - subject_n (integer or null)
@@ -423,6 +428,11 @@ Deno.serve(async (req) => {
           methods_snippet: methods.slice(0, 8000),
           device_hardware: extract.device_hardware ?? [],
           device_class: Array.isArray(extract.device_class) ? extract.device_class : [],
+          device_model: Array.isArray(extract.device_model) ? extract.device_model.map(String) : [],
+          manufacturer: Array.isArray(extract.manufacturer) ? extract.manufacturer.map(String) : [],
+          modality: Array.isArray(extract.modality) ? extract.modality.map(String) : [],
+          manual_urls: Array.isArray(extract.manual_urls) ? extract.manual_urls.map(String) : [],
+          regulatory: typeof extract.regulatory === "string" ? extract.regulatory : null,
           species: Array.isArray(extract.species) ? extract.species : [],
           behavior_paradigm: Array.isArray(extract.behavior_paradigm) ? extract.behavior_paradigm : [],
           subject_n: Number.isFinite(Number(extract.subject_n)) ? Number(extract.subject_n) : null,
@@ -445,9 +455,43 @@ Deno.serve(async (req) => {
           await tick({ evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls });
         }
 
+        // Upsert canonical manufacturers + models so they become first-class KG nodes
+        try {
+          const mfrs: string[] = Array.isArray(extract.manufacturer) ? extract.manufacturer.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const models: string[] = Array.isArray(extract.device_model) ? extract.device_model.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const classes: string[] = Array.isArray(extract.device_class) ? extract.device_class.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const manualUrls: string[] = Array.isArray(extract.manual_urls) ? extract.manual_urls.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const mfrIds: Record<string, string> = {};
+          for (const name of mfrs) {
+            const { data: row } = await supabase
+              .from("device_manufacturers")
+              .upsert({ name }, { onConflict: "name" })
+              .select("id").single();
+            if (row?.id) mfrIds[name] = row.id;
+          }
+          for (const model of models) {
+            for (const cls of (classes.length ? classes : ["other"])) {
+              const mfrName = mfrs[0];
+              const payload: any = {
+                manufacturer_id: mfrName ? mfrIds[mfrName] ?? null : null,
+                device_class: cls,
+                model_name: model,
+                manual_urls: manualUrls,
+                confidence: Number(extract.confidence ?? 0),
+                last_verified_at: new Date().toISOString(),
+              };
+              await supabase.from("device_models").upsert(payload, { onConflict: "manufacturer_id,device_class,model_name" });
+            }
+          }
+        } catch (e) {
+          console.error("device canonicalization failed", e);
+        }
+
         // Track novel keywords for curator review
         const kwRows: { term: string; kind: string }[] = [];
         for (const t of (extract.device_class ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "device" });
+        for (const t of (extract.device_model ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 80), kind: "device_model" });
+        for (const t of (extract.manufacturer ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 80), kind: "manufacturer" });
         for (const t of (extract.behavior_paradigm ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "behavior" });
         for (const t of (extract.species ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "species" });
         for (const t of (extract.analysis_metrics ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 60), kind: "analysis" });
