@@ -61,6 +61,46 @@ async function reporterSimilar(coreProjectNum: string, limit: number) {
   });
   return ((await res.json())?.results ?? []).filter((p: any) => p?.project_num !== coreProjectNum).slice(0, limit);
 }
+const STOPWORDS = new Set([
+  "the", "and", "for", "with", "that", "this", "from", "into", "using", "used", "study", "studies",
+  "brain", "behavior", "behaviour", "neural", "development", "project", "research", "effects", "based",
+  "will", "can", "our", "their", "between", "across", "through", "during", "model", "models",
+]);
+function searchTermsFromProject(project: any): string {
+  const text = `${project?.project_title ?? ""} ${project?.abstract_text ?? ""}`.toLowerCase();
+  const words = text.match(/[a-z][a-z-]{3,}/g) ?? [];
+  const counts = new Map<string, number>();
+  for (const raw of words) {
+    const w = raw.replace(/^-|-$/g, "");
+    if (STOPWORDS.has(w)) continue;
+    counts.set(w, (counts.get(w) ?? 0) + 1);
+  }
+  const domainBoost = [
+    "mouse", "mice", "rat", "animal", "animals", "adversity", "resilience", "trauma", "stress",
+    "ethological", "ethologically", "tracking", "video", "home", "cage", "social", "open", "field",
+    "wearable", "sensor", "device", "recording", "imaging", "optogenetic", "photometry", "miniscope",
+  ].filter((t) => text.includes(t));
+  const ranked = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([w]) => w)
+    .filter((w) => !domainBoost.includes(w));
+  return [...domainBoost, ...ranked].slice(0, 10).join(" ");
+}
+async function reporterRelatedProjects(project: any, limit: number) {
+  const query = searchTermsFromProject(project);
+  if (!query) return [];
+  const res = await fetch(`${REPORTER}/projects/search`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      criteria: { advanced_text_search: { operator: "or", search_field: "all", search_text: query } },
+      limit: limit + 5, offset: 0,
+    }),
+  });
+  const seedIds = new Set([project?.project_num, project?.core_project_num].filter(Boolean));
+  return ((await res.json())?.results ?? [])
+    .filter((p: any) => !seedIds.has(p?.project_num) && !seedIds.has(p?.core_project_num))
+    .slice(0, limit);
+}
 async function reporterPubs(coreProjectNum: string, limit: number) {
   const res = await fetch(`${REPORTER}/publications/search`, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -86,8 +126,8 @@ async function expandNeighbors(node: NodeRef, relation: string, settings: any, o
     case "similar_to": {
       if (node.type !== "grant") return [];
       const core = node.payload?.core_project_num ?? node.id;
-      await onCall?.(`RePORTER: similar_to ${core}`);
-      const sims = await reporterSimilar(core, M);
+      await onCall?.(`RePORTER: related projects for ${core}`);
+      const sims = node.payload ? await reporterRelatedProjects(node.payload, M) : await reporterSimilar(core, M);
       return sims.map((p: any) => ({
         type: "grant", id: p.project_num,
         label: p.project_title,
@@ -203,9 +243,9 @@ function extractMethods(md: string): string | null {
   }
   return lines.slice(start, end).join("\n").slice(0, 12000);
 }
-async function extractStructured(methods: string, title: string, key: string) {
-  const sys = `Extract experimental hardware and methods. Return ONLY JSON.`;
-  const user = `Publication: ${title}\n\nMETHODS:\n${methods}\n\nKeys:
+async function extractStructured(methods: string, title: string, key: string, sourceKind = "publication") {
+  const sys = `Extract experimental hardware and methods. Return ONLY JSON. Do not invent product models or manufacturers. If the source is an NIH grant abstract, extract planned/required animal behavior, recording, imaging, stimulation, sensing, or tracking devices from explicit text even when no paper has been published yet.`;
+  const user = `Source type: ${sourceKind}\nTitle: ${title}\n\nTEXT:\n${methods}\n\nKeys:
 - device_hardware[] (free text list of specific devices/instruments)
 - device_class[] (coarse buckets, ANY of: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, optogenetics, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS, other)
 - device_model[] (specific product/model strings verbatim from the paper, e.g. "Neuropixels 2.0", "Inscopix nVista 3", "Medtronic Percept PC", "Ad-Tech RD10R-SP05X")
