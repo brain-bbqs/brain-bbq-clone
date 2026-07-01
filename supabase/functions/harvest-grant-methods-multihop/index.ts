@@ -284,6 +284,70 @@ async function extractStructured(methods: string, title: string, key: string, so
   }
 }
 
+function asStrings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((v) => String(v).trim()).filter(Boolean) : [];
+}
+function uniqueStrings(...groups: string[][]): string[] {
+  return Array.from(new Set(groups.flat().map((v) => v.trim()).filter(Boolean)));
+}
+function inferProjectDeviceHints(project: any) {
+  const text = `${project?.project_title ?? ""}\n${project?.abstract_text ?? ""}`.toLowerCase();
+  const deviceClass: string[] = [];
+  const modality: string[] = [];
+  const species: string[] = [];
+  const behavior: string[] = [];
+  const env: string[] = [];
+  const hardware: string[] = [];
+  if (/\bmice\b|\bmouse\b|murine/.test(text)) species.push("mouse");
+  if (/\brats?\b/.test(text)) species.push("rat");
+  if (/\bmonkey\b|macaque|marmoset|non[- ]?human primate/.test(text)) species.push(text.includes("marmoset") ? "nhp_marmoset" : "nhp_macaque");
+  if (/\bhuman\b|children|adolescents|patients|participants/.test(text)) species.push("human_adult");
+  if (/video|camera|tracking|pose|behavioral? tracking|etholog|behavior/.test(text)) {
+    deviceClass.push("video_tracking");
+    modality.push("behavior");
+    hardware.push("animal behavior tracking system");
+  }
+  if (/home cage|home-cage/.test(text)) env.push("home_cage");
+  if (/open field|arena|freely moving|free behavior|naturalistic|etholog/.test(text)) env.push("freely_moving_arena");
+  if (/head[- ]?fixed/.test(text)) { deviceClass.push("head_fixed_rig"); env.push("head_fixed_rig"); }
+  if (/treadmill/.test(text)) { deviceClass.push("treadmill"); env.push("treadmill_rig"); }
+  if (/lick|water restriction|reward/.test(text)) deviceClass.push("lickometer");
+  if (/miniscope|calcium imaging/.test(text)) { deviceClass.push("miniscope"); modality.push("imaging"); }
+  if (/fiber photometry|photometry/.test(text)) { deviceClass.push("fiber_photometry"); modality.push("imaging"); }
+  if (/two[- ]?photon|2-photon/.test(text)) { deviceClass.push("two_photon_imaging"); modality.push("imaging"); }
+  if (/neuropixels|silicon probe|electrophysiology|ephys/.test(text)) { deviceClass.push("silicon_probe"); modality.push("ephys"); }
+  if (/optogen/.test(text)) { deviceClass.push("optogenetics"); modality.push("stim"); }
+  if (/fmri|mri/.test(text)) { deviceClass.push("fMRI"); modality.push("neuroimaging"); env.push("mri_bore"); }
+  if (/wearable|actigraph|accelerometer/.test(text)) { deviceClass.push("wearable_actigraphy"); modality.push("behavior"); env.push("home_wearable"); }
+  if (/social/.test(text)) behavior.push("social_interaction");
+  if (/open field/.test(text)) behavior.push("open_field");
+  if (/sleep/.test(text)) behavior.push("sleep");
+  if (/decision/.test(text)) behavior.push("decision_task");
+  if (/adversity|resilience|trauma|stress/.test(text)) behavior.push("developmental_adversity");
+  return {
+    device_hardware: uniqueStrings(hardware),
+    device_class: uniqueStrings(deviceClass),
+    modality: uniqueStrings(modality),
+    species: uniqueStrings(species),
+    behavior_paradigm: uniqueStrings(behavior),
+    environment_tags: uniqueStrings(env.length ? env : deviceClass.length ? ["animal_behavior"] : []),
+  };
+}
+function mergeExtract(llm: any, hints: any) {
+  return {
+    ...(llm ?? {}),
+    device_hardware: uniqueStrings(asStrings(llm?.device_hardware), asStrings(hints.device_hardware)),
+    device_class: uniqueStrings(asStrings(llm?.device_class), asStrings(hints.device_class)),
+    device_model: uniqueStrings(asStrings(llm?.device_model)),
+    manufacturer: uniqueStrings(asStrings(llm?.manufacturer)),
+    modality: uniqueStrings(asStrings(llm?.modality), asStrings(hints.modality)),
+    manual_urls: uniqueStrings(asStrings(llm?.manual_urls)),
+    species: uniqueStrings(asStrings(llm?.species), asStrings(hints.species)),
+    behavior_paradigm: uniqueStrings(asStrings(llm?.behavior_paradigm), asStrings(hints.behavior_paradigm)),
+    environment_tags: uniqueStrings(asStrings(llm?.environment_tags), asStrings(hints.environment_tags)),
+  };
+}
+
 // ─────────────────────── Main ───────────────────────
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
@@ -327,6 +391,66 @@ Deno.serve(async (req) => {
     let firecrawlCalls = 0, pubsFound = 0, evidenceRows = 0, errors = 0;
     let similarProjectsVisited = 0;
     const hopSimilarities: { hop: number; relation: string; scores: number[] }[] = [];
+    const upsertProjectDeviceEvidence = async (project: any, depth: number, chainScore: number, pathId: string | null = null) => {
+      const projectNum = project?.project_num ?? project?.core_project_num;
+      const abstract = String(project?.abstract_text ?? "").trim();
+      if (!projectNum || abstract.length < 120) return false;
+      const title = String(project?.project_title ?? projectNum);
+      const hints = inferProjectDeviceHints(project);
+      const llm = await extractStructured(abstract.slice(0, 9000), title, aiKey, "NIH grant abstract");
+      const extract = mergeExtract(llm, hints);
+      const hasDeviceSignal = extract.device_class.length || extract.device_model.length || extract.manufacturer.length || extract.device_hardware.length;
+      if (!hasDeviceSignal) return false;
+      const useCase = typeof llm?.use_case === "string" && llm.use_case.trim()
+        ? llm.use_case.slice(0, 500)
+        : `Planned ${extract.device_class.map((d: string) => d.replace(/_/g, " ")).slice(0, 2).join(" and ")} for ${extract.species.join("/") || "study subjects"}.`;
+      const syntheticPmid = `PROJECT:${projectNum}`;
+      const { data: ev, error: evErr } = await supabase.from("grant_methods_evidence").upsert({
+        seed_grant_number: seedGrantNumber,
+        source_grant_number: projectNum,
+        source_grant_title: title,
+        source_org: project?.organization?.org_name ?? null,
+        source_org_type: project?.organization?.org_type ?? null,
+        depth,
+        match_score: chainScore,
+        pmid: syntheticPmid,
+        publication_title: `${title} — NIH project abstract`,
+        publication_year: Number(project?.fy) || null,
+        source_url: `https://reporter.nih.gov/project-details/${encodeURIComponent(projectNum)}`,
+        methods_snippet: abstract.slice(0, 8000),
+        device_hardware: extract.device_hardware,
+        device_class: extract.device_class,
+        device_model: extract.device_model,
+        manufacturer: extract.manufacturer,
+        modality: extract.modality,
+        manual_urls: extract.manual_urls,
+        regulatory: typeof llm?.regulatory === "string" ? llm.regulatory : "unknown",
+        species: extract.species,
+        behavior_paradigm: extract.behavior_paradigm,
+        subject_n: Number.isFinite(Number(llm?.subject_n)) ? Number(llm.subject_n) : null,
+        study_arm: typeof llm?.study_arm === "string" ? llm.study_arm : (extract.species.includes("mouse") || extract.species.includes("rat") ? "animal_model" : "unknown"),
+        stimulation_params: llm?.stimulation_params ?? {},
+        recording_params: llm?.recording_params ?? {},
+        analysis_metrics: Array.isArray(llm?.analysis_metrics) ? llm.analysis_metrics : [],
+        setting: typeof llm?.setting === "string" ? llm.setting : (extract.species.includes("mouse") || extract.species.includes("rat") ? "animal" : "unknown"),
+        irb_or_population: typeof llm?.irb_or_population === "string" ? llm.irb_or_population : null,
+        quote: typeof llm?.quote === "string" ? llm.quote : abstract.slice(0, 500),
+        confidence: Math.max(Number(llm?.confidence ?? 0.55), hints.device_class.length ? 0.65 : 0.4),
+        environment_tags: extract.environment_tags,
+        use_case: useCase,
+        extracted_at: new Date().toISOString(),
+        discovery_path_id: pathId,
+      }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();
+      if (evErr) {
+        errors++;
+        console.error("[project] evidence upsert failed", { projectNum, err: evErr.message, code: (evErr as any).code, details: (evErr as any).details });
+        return false;
+      }
+      evidenceRows++;
+      await tick({ evidence_rows: evidenceRows, last_message: `Captured devices from NIH project ${projectNum}` });
+      console.log("[project] evidence upserted", { projectNum, id: ev?.id, classes: extract.device_class });
+      return true;
+    };
 
     // Load settings + vocabulary
     const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
@@ -351,6 +475,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "seed embedding failed" }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
+    await upsertProjectDeviceEvidence(seed, 0, 1);
 
     // Plan
     await tick({ phase: "hopping", last_message: "Planning hops", current_hop: 0 });
