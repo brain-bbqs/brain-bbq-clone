@@ -1288,12 +1288,16 @@ export type Database = {
           evidence_rows: number
           finished_at: string | null
           firecrawl_calls: number
+          hop_similarities: Json | null
+          hops_taken: number | null
           id: string
           last_message: string | null
+          max_hops_configured: number | null
           phase: string
           pubs_found: number
           retry_after: string | null
           seed_grant: string
+          similar_projects_visited: number | null
           started_at: string
           updated_at: string
         }
@@ -1305,12 +1309,16 @@ export type Database = {
           evidence_rows?: number
           finished_at?: string | null
           firecrawl_calls?: number
+          hop_similarities?: Json | null
+          hops_taken?: number | null
           id?: string
           last_message?: string | null
+          max_hops_configured?: number | null
           phase?: string
           pubs_found?: number
           retry_after?: string | null
           seed_grant: string
+          similar_projects_visited?: number | null
           started_at?: string
           updated_at?: string
         }
@@ -1322,12 +1330,16 @@ export type Database = {
           evidence_rows?: number
           finished_at?: string | null
           firecrawl_calls?: number
+          hop_similarities?: Json | null
+          hops_taken?: number | null
           id?: string
           last_message?: string | null
+          max_hops_configured?: number | null
           phase?: string
           pubs_found?: number
           retry_after?: string | null
           seed_grant?: string
+          similar_projects_visited?: number | null
           started_at?: string
           updated_at?: string
         }

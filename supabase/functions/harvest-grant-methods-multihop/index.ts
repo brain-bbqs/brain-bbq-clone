@@ -219,7 +219,7 @@ async function extractStructured(methods: string, title: string, key: string) {
 - study_arm (one of: animal_model, clinical_translational, computational, unknown)
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
-- environment_tags[] (STRICT vocabulary — ANY of: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, computational_only)
+- environment_tags[] (FREE-FORM short lowercase snake_case strings. Emit whatever fits. Common examples: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, zoo_enclosure, mri_bore, ambulatory, computational_only. Invent new tags when the paper describes an environment not listed. Max 6 tags.)
 - use_case (ONE short sentence describing what the device was used to record/stimulate/measure in this study, e.g. "Recorded single-unit activity in hippocampal CA1 during a spatial navigation task.")
 - irb_or_population, quote, confidence(0-1)`;
   const res = await fetch(`${AI}/chat/completions`, {
@@ -276,13 +276,15 @@ Deno.serve(async (req) => {
       await supabase.from("harvester_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);
     };
     let firecrawlCalls = 0, pubsFound = 0, evidenceRows = 0, errors = 0;
+    let similarProjectsVisited = 0;
+    const hopSimilarities: { hop: number; relation: string; scores: number[] }[] = [];
 
     // Load settings + vocabulary
     const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
     const { data: vocab } = await supabase.from("harvester_relations").select("*").eq("enabled", true);
     const vocabNames = new Set((vocab ?? []).map((v: any) => v.name));
     const beam = settings?.beam_width ?? 3;
-    const maxHops = settings?.max_hops ?? 4;
+    const maxHops = settings?.max_hops ?? 5;
     const threshold = settings?.chain_score_threshold ?? 0.15;
     const pubCap = settings?.max_publications_per_seed ?? 120;
 
@@ -365,7 +367,15 @@ Deno.serve(async (req) => {
             scored.push({ n, s });
           }
           scored.sort((a, b) => b.s - a.s);
-          for (const { n, s } of scored.slice(0, beam)) {
+          const kept = scored.slice(0, beam);
+          if (kept.length) {
+            hopSimilarities.push({
+              hop: hopIdx + 1,
+              relation: rel,
+              scores: kept.map(k => Number(k.s.toFixed(3))),
+            });
+          }
+          for (const { n, s } of kept) {
             const chain = f.chainScore * s;
             // Never prune the seed grant's own direct publications — we need
             // guaranteed evidence to land, and these are as on-topic as it gets.
@@ -374,6 +384,7 @@ Deno.serve(async (req) => {
               && rel === "produced";
             if (!isSeedProduced && chain < threshold) continue;
             visited.add(`${n.type}:${n.id}`);
+            if (n.type === "grant" && n.id !== seedGrantNumber) similarProjectsVisited++;
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
             // Write traversal path immediately so KG Live populates (bunny hops here)
@@ -541,7 +552,11 @@ Deno.serve(async (req) => {
     await tick({
       phase: "done", finished_at: new Date().toISOString(),
       pubs_found: pubsFound, evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls, errors,
-      last_message: `Done: ${evidenceRows} evidence rows`,
+      last_message: `Done: ${evidenceRows} rows · ${similarProjectsVisited} similar projects · ${hopSimilarities.length} hops`,
+      hops_taken: hopSimilarities.length,
+      hop_similarities: hopSimilarities,
+      similar_projects_visited: similarProjectsVisited,
+      max_hops_configured: maxHops,
     });
 
     return new Response(JSON.stringify({
