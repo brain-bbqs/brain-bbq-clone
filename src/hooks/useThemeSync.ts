@@ -30,7 +30,18 @@ export function useThemeSync() {
       if (cancelled) return;
       const pref = (data as any)?.theme_preference as "light" | "dark" | "system" | undefined;
       hydrated.current = user.id;
-      if (pref && pref !== theme) setTheme(pref);
+      // If the remote value is the untouched default ('system') but the user
+      // has already made an explicit local choice, prefer the local choice
+      // and push it up. Otherwise, adopt the remote preference.
+      const localExplicit = typeof window !== "undefined" && !!localStorage.getItem("bbqs-theme");
+      if (!pref || (pref === "system" && localExplicit && theme !== "system")) {
+        await supabase
+          .from("profiles")
+          .update({ theme_preference: theme } as any)
+          .eq("id", user.id);
+      } else if (pref !== theme) {
+        setTheme(pref);
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
