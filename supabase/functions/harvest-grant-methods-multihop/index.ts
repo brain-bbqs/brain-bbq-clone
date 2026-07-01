@@ -61,6 +61,46 @@ async function reporterSimilar(coreProjectNum: string, limit: number) {
   });
   return ((await res.json())?.results ?? []).filter((p: any) => p?.project_num !== coreProjectNum).slice(0, limit);
 }
+const STOPWORDS = new Set([
+  "the", "and", "for", "with", "that", "this", "from", "into", "using", "used", "study", "studies",
+  "brain", "behavior", "behaviour", "neural", "development", "project", "research", "effects", "based",
+  "will", "can", "our", "their", "between", "across", "through", "during", "model", "models",
+]);
+function searchTermsFromProject(project: any): string {
+  const text = `${project?.project_title ?? ""} ${project?.abstract_text ?? ""}`.toLowerCase();
+  const words = text.match(/[a-z][a-z-]{3,}/g) ?? [];
+  const counts = new Map<string, number>();
+  for (const raw of words) {
+    const w = raw.replace(/^-|-$/g, "");
+    if (STOPWORDS.has(w)) continue;
+    counts.set(w, (counts.get(w) ?? 0) + 1);
+  }
+  const domainBoost = [
+    "mouse", "mice", "rat", "animal", "animals", "adversity", "resilience", "trauma", "stress",
+    "ethological", "ethologically", "tracking", "video", "home", "cage", "social", "open", "field",
+    "wearable", "sensor", "device", "recording", "imaging", "optogenetic", "photometry", "miniscope",
+  ].filter((t) => text.includes(t));
+  const ranked = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([w]) => w)
+    .filter((w) => !domainBoost.includes(w));
+  return [...domainBoost, ...ranked].slice(0, 10).join(" ");
+}
+async function reporterRelatedProjects(project: any, limit: number) {
+  const query = searchTermsFromProject(project);
+  if (!query) return [];
+  const res = await fetch(`${REPORTER}/projects/search`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      criteria: { advanced_text_search: { operator: "or", search_field: "all", search_text: query } },
+      limit: limit + 5, offset: 0,
+    }),
+  });
+  const seedIds = new Set([project?.project_num, project?.core_project_num].filter(Boolean));
+  return ((await res.json())?.results ?? [])
+    .filter((p: any) => !seedIds.has(p?.project_num) && !seedIds.has(p?.core_project_num))
+    .slice(0, limit);
+}
 async function reporterPubs(coreProjectNum: string, limit: number) {
   const res = await fetch(`${REPORTER}/publications/search`, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -86,8 +126,8 @@ async function expandNeighbors(node: NodeRef, relation: string, settings: any, o
     case "similar_to": {
       if (node.type !== "grant") return [];
       const core = node.payload?.core_project_num ?? node.id;
-      await onCall?.(`RePORTER: similar_to ${core}`);
-      const sims = await reporterSimilar(core, M);
+      await onCall?.(`RePORTER: related projects for ${core}`);
+      const sims = node.payload ? await reporterRelatedProjects(node.payload, M) : await reporterSimilar(core, M);
       return sims.map((p: any) => ({
         type: "grant", id: p.project_num,
         label: p.project_title,
@@ -172,6 +212,38 @@ async function pmidToUrl(pmid: string): Promise<string> {
   } catch {}
   return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 }
+
+// PubMed Central full-text via NCBI E-utilities. Free, no Firecrawl needed.
+// Returns a Methods-heavy plain-text blob when the paper is in PMC OA.
+async function fetchPmcFullText(pmid: string): Promise<string | null> {
+  try {
+    const linkRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&db=pmc&id=${pmid}&retmode=json`);
+    const linkJson = await linkRes.json();
+    const pmcId = linkJson?.linksets?.[0]?.linksetdbs?.[0]?.links?.[0];
+    if (!pmcId) return null;
+    const xmlRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=${pmcId}&rettype=xml`);
+    if (!xmlRes.ok) return null;
+    const xml = await xmlRes.text();
+    if (!xml || xml.length < 500) return null;
+    // Strip XML/HTML tags → text. Preserve paragraph breaks so extractMethods can find headings.
+    const text = xml
+      .replace(/<sec[^>]*>/gi, "\n\n## ")
+      .replace(/<title[^>]*>/gi, "")
+      .replace(/<\/title>/gi, "\n")
+      .replace(/<p[^>]*>/gi, "\n\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x?[0-9a-f]+;/gi, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return text.length > 500 ? text : null;
+  } catch (e) {
+    console.warn("[pmc] full-text fetch failed", pmid, String(e).slice(0, 200));
+    return null;
+  }
+}
+
 async function scrapeMd(url: string): Promise<string | null> {
   const key = Deno.env.get("FIRECRAWL_API_KEY");
   if (!key) return null;
@@ -203,18 +275,31 @@ function extractMethods(md: string): string | null {
   }
   return lines.slice(start, end).join("\n").slice(0, 12000);
 }
-async function extractStructured(methods: string, title: string, key: string) {
-  const sys = `Extract experimental hardware and methods. Return ONLY JSON.`;
-  const user = `Publication: ${title}\n\nMETHODS:\n${methods}\n\nKeys:
-- device_hardware[] (free text list of specific devices/instruments)
-- device_class[] (coarse buckets, ANY of: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, optogenetics, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS, other)
+async function extractStructured(methods: string, title: string, key: string, sourceKind = "publication") {
+  const sys = `You extract EVERY piece of experimental hardware mentioned in a neuroscience methods section — including stimulus delivery gear (monitors, speakers, air puffers, LED drivers), acquisition gear (cameras, cameras' sensors, macroscopes, microscopes, headstages, DAQs), behavior gear (treadmills, lickometers, head posts, cranial windows), and clinical devices. Any parenthetical of the form "<product name>, <company>" (e.g. "ProLite E1980, Iiyama" or "pco.edge, PCO" or "Pressure System IIe, Toohey Company") is a device_model + manufacturer pair — you MUST emit BOTH. Return ONLY JSON. Do not invent products; only emit what the text states. Emit MULTIPLE devices per paper. If the source is an NIH grant abstract, extract planned/required devices from explicit text even when no paper has been published yet.`;
+  const user = `Source type: ${sourceKind}\nTitle: ${title}\n\nTEXT:\n${methods}\n\nKeys:
+- device_hardware[] (free text list of every specific device/instrument named — cameras, monitors, speakers, injectors, macroscopes, probes, treadmills, head posts, silicone tubes, etc.)
+- device_class[] (short lowercase snake_case buckets — reuse when possible: ephys_headstage, silicon_probe, miniscope, fiber_photometry, two_photon_imaging, macroscope, sCMOS_camera, CCD_camera, LCD_monitor, magnetic_speaker, pressure_injector, air_puffer, optogenetics_led, iEEG_clinical, sEEG_clinical, DBS_clinical, EEG_scalp, MEG, fMRI, wearable_actigraphy, head_fixed_rig, freely_moving_rig, lickometer, treadmill, video_tracking, ultrasound_neuromod, TMS, tFUS. INVENT new snake_case classes when nothing fits. Emit one class per distinct device.)
+- device_model[] (specific product/model strings verbatim, e.g. "Neuropixels 2.0", "Inscopix nVista 3", "ProLite E1980", "pco.edge", "Pressure System IIe". Include EVERY model named.)
+- manufacturer[] (canonical company names, e.g. "IMEC", "Inscopix", "Iiyama", "PCO", "Toohey Company", "Tucker-Davis Technologies", "Medtronic". Include EVERY company named.)
+- modality[] (ANY of: ephys, imaging, stim, behavior, clinical_recording, neuroimaging)
+- manual_urls[] (URLs to user manuals / datasheets / spec sheets if cited)
+- regulatory (one of: research_use_only, FDA_510k, FDA_PMA, CE_marked, unknown)
 - species[] (ANY of: mouse, rat, nhp_macaque, nhp_marmoset, human_adult, human_pediatric, human_neonate, other)
 - behavior_paradigm[] (e.g. open_field, head_fixed_treadmill, lick_task, social_interaction, sleep, clinical_outcome_scale, free_behavior, decision_task)
 - subject_n (integer or null)
 - study_arm (one of: animal_model, clinical_translational, computational, unknown)
 - stimulation_params{}, recording_params{}, analysis_metrics[]
 - setting (ICU|outpatient|clinical_trial|independent_hospital|naturalistic|animal|unknown)
-- irb_or_population, quote, confidence(0-1)`;
+- environment_tags[] (FREE-FORM short lowercase snake_case strings. Emit whatever fits. Common examples: operating_room, ICU, outpatient_clinic, home_wearable, home_cage, head_fixed_rig, freely_moving_arena, open_field, treadmill_rig, water_maze, virtual_reality, sleep_lab, field_recording, wildlife_collar, zoo_enclosure, mri_bore, ambulatory, computational_only. Invent new tags when the paper describes an environment not listed. Max 6 tags.)
+- use_case (ONE short sentence describing what the devices were used to record/stimulate/measure in this study.)
+- irb_or_population, quote, confidence(0-1)
+
+EXAMPLE — for the passage: "Visual stimuli were presented via LCD monitors (ProLite E1980, Iiyama)... Air puffs were delivered from a pressure injector (Pressure System IIe, Toohey Company)... via a magnetic speaker (Tucker-Davis Technologies)... imaged the two VSFP chromophores via two sCMOS cameras (pco.edge, PCO)..." you MUST emit:
+  device_model: ["ProLite E1980","Pressure System IIe","pco.edge"],
+  manufacturer: ["Iiyama","Toohey Company","Tucker-Davis Technologies","PCO"],
+  device_class: ["LCD_monitor","pressure_injector","magnetic_speaker","sCMOS_camera","macroscope","treadmill"],
+  device_hardware: ["LCD monitor ProLite E1980","pressure injector Pressure System IIe","magnetic speaker","sCMOS camera pco.edge","macroscope tandem lens","treadmill","CCD camera","thinned skull cranial window","head post"].`;
   const res = await fetch(`${AI}/chat/completions`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -223,9 +308,82 @@ async function extractStructured(methods: string, title: string, key: string) {
       response_format: { type: "json_object" },
     }),
   });
-  if (!res.ok) return null;
-  try { return JSON.parse((await res.json())?.choices?.[0]?.message?.content ?? "{}"); }
-  catch { return null; }
+  if (!res.ok) {
+    console.error("[extract] AI gateway not ok", res.status, (await res.text().catch(()=>"" )).slice(0,400));
+    return null;
+  }
+  try {
+    const j = await res.json();
+    const content = j?.choices?.[0]?.message?.content ?? "{}";
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("[extract] JSON parse failed", String(e).slice(0,200));
+    return null;
+  }
+}
+
+function asStrings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((v) => String(v).trim()).filter(Boolean) : [];
+}
+function uniqueStrings(...groups: string[][]): string[] {
+  return Array.from(new Set(groups.flat().map((v) => v.trim()).filter(Boolean)));
+}
+function inferProjectDeviceHints(project: any) {
+  const text = `${project?.project_title ?? ""}\n${project?.abstract_text ?? ""}`.toLowerCase();
+  const deviceClass: string[] = [];
+  const modality: string[] = [];
+  const species: string[] = [];
+  const behavior: string[] = [];
+  const env: string[] = [];
+  const hardware: string[] = [];
+  if (/\bmice\b|\bmouse\b|murine/.test(text)) species.push("mouse");
+  if (/\brats?\b/.test(text)) species.push("rat");
+  if (/\bmonkey\b|macaque|marmoset|non[- ]?human primate/.test(text)) species.push(text.includes("marmoset") ? "nhp_marmoset" : "nhp_macaque");
+  if (/\bhuman\b|children|adolescents|patients|participants/.test(text)) species.push("human_adult");
+  if (/video|camera|tracking|pose|behavioral? tracking|etholog|behavior/.test(text)) {
+    deviceClass.push("video_tracking");
+    modality.push("behavior");
+    hardware.push("animal behavior tracking system");
+  }
+  if (/home cage|home-cage/.test(text)) env.push("home_cage");
+  if (/open field|arena|freely moving|free behavior|naturalistic|etholog/.test(text)) env.push("freely_moving_arena");
+  if (/head[- ]?fixed/.test(text)) { deviceClass.push("head_fixed_rig"); env.push("head_fixed_rig"); }
+  if (/treadmill/.test(text)) { deviceClass.push("treadmill"); env.push("treadmill_rig"); }
+  if (/lick|water restriction|reward/.test(text)) deviceClass.push("lickometer");
+  if (/miniscope|calcium imaging/.test(text)) { deviceClass.push("miniscope"); modality.push("imaging"); }
+  if (/fiber photometry|photometry/.test(text)) { deviceClass.push("fiber_photometry"); modality.push("imaging"); }
+  if (/two[- ]?photon|2-photon/.test(text)) { deviceClass.push("two_photon_imaging"); modality.push("imaging"); }
+  if (/neuropixels|silicon probe|electrophysiology|ephys/.test(text)) { deviceClass.push("silicon_probe"); modality.push("ephys"); }
+  if (/optogen/.test(text)) { deviceClass.push("optogenetics"); modality.push("stim"); }
+  if (/fmri|mri/.test(text)) { deviceClass.push("fMRI"); modality.push("neuroimaging"); env.push("mri_bore"); }
+  if (/wearable|actigraph|accelerometer/.test(text)) { deviceClass.push("wearable_actigraphy"); modality.push("behavior"); env.push("home_wearable"); }
+  if (/social/.test(text)) behavior.push("social_interaction");
+  if (/open field/.test(text)) behavior.push("open_field");
+  if (/sleep/.test(text)) behavior.push("sleep");
+  if (/decision/.test(text)) behavior.push("decision_task");
+  if (/adversity|resilience|trauma|stress/.test(text)) behavior.push("developmental_adversity");
+  return {
+    device_hardware: uniqueStrings(hardware),
+    device_class: uniqueStrings(deviceClass),
+    modality: uniqueStrings(modality),
+    species: uniqueStrings(species),
+    behavior_paradigm: uniqueStrings(behavior),
+    environment_tags: uniqueStrings(env.length ? env : deviceClass.length ? ["animal_behavior"] : []),
+  };
+}
+function mergeExtract(llm: any, hints: any) {
+  return {
+    ...(llm ?? {}),
+    device_hardware: uniqueStrings(asStrings(llm?.device_hardware), asStrings(hints.device_hardware)),
+    device_class: uniqueStrings(asStrings(llm?.device_class), asStrings(hints.device_class)),
+    device_model: uniqueStrings(asStrings(llm?.device_model)),
+    manufacturer: uniqueStrings(asStrings(llm?.manufacturer)),
+    modality: uniqueStrings(asStrings(llm?.modality), asStrings(hints.modality)),
+    manual_urls: uniqueStrings(asStrings(llm?.manual_urls)),
+    species: uniqueStrings(asStrings(llm?.species), asStrings(hints.species)),
+    behavior_paradigm: uniqueStrings(asStrings(llm?.behavior_paradigm), asStrings(hints.behavior_paradigm)),
+    environment_tags: uniqueStrings(asStrings(llm?.environment_tags), asStrings(hints.environment_tags)),
+  };
 }
 
 // ─────────────────────── Main ───────────────────────
@@ -269,13 +427,75 @@ Deno.serve(async (req) => {
       await supabase.from("harvester_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);
     };
     let firecrawlCalls = 0, pubsFound = 0, evidenceRows = 0, errors = 0;
+    let similarProjectsVisited = 0;
+    const hopSimilarities: { hop: number; relation: string; scores: number[] }[] = [];
+    const upsertProjectDeviceEvidence = async (project: any, depth: number, chainScore: number, pathId: string | null = null) => {
+      const projectNum = project?.project_num ?? project?.core_project_num;
+      const abstract = String(project?.abstract_text ?? "").trim();
+      if (!projectNum || abstract.length < 120) return false;
+      const title = String(project?.project_title ?? projectNum);
+      const hints = inferProjectDeviceHints(project);
+      const llm = await extractStructured(abstract.slice(0, 9000), title, aiKey, "NIH grant abstract");
+      const extract = mergeExtract(llm, hints);
+      const hasDeviceSignal = extract.device_class.length || extract.device_model.length || extract.manufacturer.length || extract.device_hardware.length;
+      if (!hasDeviceSignal) return false;
+      const useCase = typeof llm?.use_case === "string" && llm.use_case.trim()
+        ? llm.use_case.slice(0, 500)
+        : `Planned ${extract.device_class.map((d: string) => d.replace(/_/g, " ")).slice(0, 2).join(" and ")} for ${extract.species.join("/") || "study subjects"}.`;
+      const syntheticPmid = `PROJECT:${projectNum}`;
+      const { data: ev, error: evErr } = await supabase.from("grant_methods_evidence").upsert({
+        seed_grant_number: seedGrantNumber,
+        source_grant_number: projectNum,
+        source_grant_title: title,
+        source_org: project?.organization?.org_name ?? null,
+        source_org_type: project?.organization?.org_type ?? null,
+        depth,
+        match_score: chainScore,
+        pmid: syntheticPmid,
+        publication_title: `${title} — NIH project abstract`,
+        publication_year: Number(project?.fy) || null,
+        source_url: `https://reporter.nih.gov/project-details/${encodeURIComponent(projectNum)}`,
+        methods_snippet: abstract.slice(0, 8000),
+        device_hardware: extract.device_hardware,
+        device_class: extract.device_class,
+        device_model: extract.device_model,
+        manufacturer: extract.manufacturer,
+        modality: extract.modality,
+        manual_urls: extract.manual_urls,
+        regulatory: typeof llm?.regulatory === "string" ? llm.regulatory : "unknown",
+        species: extract.species,
+        behavior_paradigm: extract.behavior_paradigm,
+        subject_n: Number.isFinite(Number(llm?.subject_n)) ? Number(llm.subject_n) : null,
+        study_arm: typeof llm?.study_arm === "string" ? llm.study_arm : (extract.species.includes("mouse") || extract.species.includes("rat") ? "animal_model" : "unknown"),
+        stimulation_params: llm?.stimulation_params ?? {},
+        recording_params: llm?.recording_params ?? {},
+        analysis_metrics: Array.isArray(llm?.analysis_metrics) ? llm.analysis_metrics : [],
+        setting: typeof llm?.setting === "string" ? llm.setting : (extract.species.includes("mouse") || extract.species.includes("rat") ? "animal" : "unknown"),
+        irb_or_population: typeof llm?.irb_or_population === "string" ? llm.irb_or_population : null,
+        quote: typeof llm?.quote === "string" ? llm.quote : abstract.slice(0, 500),
+        confidence: Math.max(Number(llm?.confidence ?? 0.55), hints.device_class.length ? 0.65 : 0.4),
+        environment_tags: extract.environment_tags,
+        use_case: useCase,
+        extracted_at: new Date().toISOString(),
+        discovery_path_id: pathId,
+      }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();
+      if (evErr) {
+        errors++;
+        console.error("[project] evidence upsert failed", { projectNum, err: evErr.message, code: (evErr as any).code, details: (evErr as any).details });
+        return false;
+      }
+      evidenceRows++;
+      await tick({ evidence_rows: evidenceRows, last_message: `Captured devices from NIH project ${projectNum}` });
+      console.log("[project] evidence upserted", { projectNum, id: ev?.id, classes: extract.device_class });
+      return true;
+    };
 
     // Load settings + vocabulary
     const { data: settings } = await supabase.from("harvester_settings").select("*").eq("id", 1).single();
     const { data: vocab } = await supabase.from("harvester_relations").select("*").eq("enabled", true);
     const vocabNames = new Set((vocab ?? []).map((v: any) => v.name));
     const beam = settings?.beam_width ?? 3;
-    const maxHops = settings?.max_hops ?? 4;
+    const maxHops = settings?.max_hops ?? 5;
     const threshold = settings?.chain_score_threshold ?? 0.15;
     const pubCap = settings?.max_publications_per_seed ?? 120;
 
@@ -293,6 +513,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "seed embedding failed" }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
     }
+    await upsertProjectDeviceEvidence(seed, 0, 1);
 
     // Plan
     await tick({ phase: "hopping", last_message: "Planning hops", current_hop: 0 });
@@ -310,6 +531,18 @@ Deno.serve(async (req) => {
         }
       }
       if (valid.length) validatedHops.push(valid.slice(0, beam));
+    }
+
+    // GUARANTEE: seed grant's own publications are always crawled at hop 1.
+    // Otherwise the planner often opens with ["similar_to"] and we never reach
+    // any publication whose chain score survives the threshold. Prepending
+    // "produced" as its own hop ensures every run has at least one paper to
+    // extract from, so evidence rows actually land.
+    if (vocabNames.has("produced")) {
+      const first = validatedHops[0] ?? [];
+      if (!first.includes("produced")) {
+        validatedHops.unshift(["produced"]);
+      }
     }
 
     // BFS frontier with chain-score pruning
@@ -346,10 +579,24 @@ Deno.serve(async (req) => {
             scored.push({ n, s });
           }
           scored.sort((a, b) => b.s - a.s);
-          for (const { n, s } of scored.slice(0, beam)) {
+          const kept = scored.slice(0, beam);
+          if (kept.length) {
+            hopSimilarities.push({
+              hop: hopIdx + 1,
+              relation: rel,
+              scores: kept.map(k => Number(k.s.toFixed(3))),
+            });
+          }
+          for (const { n, s } of kept) {
             const chain = f.chainScore * s;
-            if (chain < threshold) continue;
+            // Never prune the seed grant's own direct publications — we need
+            // guaranteed evidence to land, and these are as on-topic as it gets.
+            const isSeedProduced = f.node.type === "grant"
+              && f.node.id === seedGrantNumber
+              && rel === "produced";
+            if (!isSeedProduced && chain < threshold) continue;
             visited.add(`${n.type}:${n.id}`);
+            if (n.type === "grant" && n.id !== seedGrantNumber) similarProjectsVisited++;
             const newPath: Path = [...f.path, { node: n, relation_in: rel, hop: hopIdx + 1, score: s }];
             nextFrontier.push({ node: n, path: newPath, chainScore: chain });
             // Write traversal path immediately so KG Live populates (bunny hops here)
@@ -363,6 +610,9 @@ Deno.serve(async (req) => {
               chain_score: chain,
               planner_model: "google/gemini-3-flash-preview",
             });
+            if (n.type === "grant") {
+              await upsertProjectDeviceEvidence(n.payload, hopIdx + 1, chain);
+            }
           }
         }
       }
@@ -380,8 +630,17 @@ Deno.serve(async (req) => {
         await tick({ phase: "extracting", current_target: `PMID ${pmid}`, pubs_found: pubsFound, last_message: f.node.label ?? `PMID ${pmid}` });
 
         const url = await pmidToUrl(pmid);
-        let md = await scrapeMd(url);
-        firecrawlCalls++;
+        // Try PubMed Central full-text XML FIRST — free, complete Methods section,
+        // and this is where manufacturer/model parentheticals actually live. Only
+        // fall back to Firecrawl (which usually just gets the abstract page) if
+        // the paper isn't in PMC OA.
+        let md = await fetchPmcFullText(pmid);
+        if (!md || md.length < 500) {
+          md = await scrapeMd(url);
+          firecrawlCalls++;
+        } else {
+          await tick({ current_target: `PMC full-text PMID ${pmid}`, last_message: `PMC full-text PMID ${pmid}` });
+        }
         // Fallback chain: Firecrawl → publication title/abstract from RePORTER payload.
         if (!md || md.length < 200) {
           const fallback = [
@@ -394,9 +653,16 @@ Deno.serve(async (req) => {
         if (!md) continue;
         const methods = extractMethods(md);
         // Allow short snippets — abstract-only pages are still extractable.
-        if (!methods || methods.length < 120) continue;
+        if (!methods || methods.length < 120) {
+          console.warn("[hop] methods too short", { pmid, mdLen: md.length, methodsLen: methods?.length ?? 0 });
+          continue;
+        }
         const extract = await extractStructured(methods, f.node.label ?? "", aiKey);
-        if (!extract) continue;
+        if (!extract) {
+          console.warn("[hop] extract returned null", { pmid });
+          continue;
+        }
+        console.log("[hop] extracted", { pmid, devices: (extract.device_model ?? []).length, mfrs: (extract.manufacturer ?? []).length });
 
         // Insert traversal path first
         const { data: pathRow } = await supabase.from("grant_methods_traversal_paths").insert({
@@ -409,7 +675,7 @@ Deno.serve(async (req) => {
         // Find source grant from path
         const sourceGrant = [...f.path].reverse().find(s => s.node.type === "grant")?.node;
 
-        const { data: ev } = await supabase.from("grant_methods_evidence").upsert({
+        const { data: ev, error: evErr } = await supabase.from("grant_methods_evidence").upsert({
           seed_grant_number: seedGrantNumber,
           source_grant_number: sourceGrant?.id ?? seedGrantNumber,
           source_grant_title: sourceGrant?.label ?? null,
@@ -423,6 +689,11 @@ Deno.serve(async (req) => {
           methods_snippet: methods.slice(0, 8000),
           device_hardware: extract.device_hardware ?? [],
           device_class: Array.isArray(extract.device_class) ? extract.device_class : [],
+          device_model: Array.isArray(extract.device_model) ? extract.device_model.map(String) : [],
+          manufacturer: Array.isArray(extract.manufacturer) ? extract.manufacturer.map(String) : [],
+          modality: Array.isArray(extract.modality) ? extract.modality.map(String) : [],
+          manual_urls: Array.isArray(extract.manual_urls) ? extract.manual_urls.map(String) : [],
+          regulatory: typeof extract.regulatory === "string" ? extract.regulatory : null,
           species: Array.isArray(extract.species) ? extract.species : [],
           behavior_paradigm: Array.isArray(extract.behavior_paradigm) ? extract.behavior_paradigm : [],
           subject_n: Number.isFinite(Number(extract.subject_n)) ? Number(extract.subject_n) : null,
@@ -434,9 +705,13 @@ Deno.serve(async (req) => {
           irb_or_population: extract.irb_or_population ?? null,
           quote: extract.quote ?? null,
           confidence: Number(extract.confidence ?? 0),
+          environment_tags: Array.isArray(extract.environment_tags) ? extract.environment_tags.map(String) : [],
+          use_case: typeof extract.use_case === "string" ? extract.use_case.slice(0, 500) : null,
           extracted_at: new Date().toISOString(),
           discovery_path_id: pathRow?.id ?? null,
         }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();
+        if (evErr) console.error("[hop] evidence upsert failed", { pmid, err: evErr.message, code: (evErr as any).code, details: (evErr as any).details });
+        else console.log("[hop] evidence upserted", { pmid, id: ev?.id });
 
         if (pathRow?.id && ev?.id) {
           await supabase.from("grant_methods_traversal_paths").update({ terminal_evidence_id: ev.id }).eq("id", pathRow.id);
@@ -445,9 +720,43 @@ Deno.serve(async (req) => {
           await tick({ evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls });
         }
 
+        // Upsert canonical manufacturers + models so they become first-class KG nodes
+        try {
+          const mfrs: string[] = Array.isArray(extract.manufacturer) ? extract.manufacturer.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const models: string[] = Array.isArray(extract.device_model) ? extract.device_model.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const classes: string[] = Array.isArray(extract.device_class) ? extract.device_class.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const manualUrls: string[] = Array.isArray(extract.manual_urls) ? extract.manual_urls.map((m: any) => String(m).trim()).filter(Boolean) : [];
+          const mfrIds: Record<string, string> = {};
+          for (const name of mfrs) {
+            const { data: row } = await supabase
+              .from("device_manufacturers")
+              .upsert({ name }, { onConflict: "name" })
+              .select("id").single();
+            if (row?.id) mfrIds[name] = row.id;
+          }
+          for (const model of models) {
+            for (const cls of (classes.length ? classes : ["other"])) {
+              const mfrName = mfrs[0];
+              const payload: any = {
+                manufacturer_id: mfrName ? mfrIds[mfrName] ?? null : null,
+                device_class: cls,
+                model_name: model,
+                manual_urls: manualUrls,
+                confidence: Number(extract.confidence ?? 0),
+                last_verified_at: new Date().toISOString(),
+              };
+              await supabase.from("device_models").upsert(payload, { onConflict: "manufacturer_id,device_class,model_name" });
+            }
+          }
+        } catch (e) {
+          console.error("device canonicalization failed", e);
+        }
+
         // Track novel keywords for curator review
         const kwRows: { term: string; kind: string }[] = [];
         for (const t of (extract.device_class ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "device" });
+        for (const t of (extract.device_model ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 80), kind: "device_model" });
+        for (const t of (extract.manufacturer ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 80), kind: "manufacturer" });
         for (const t of (extract.behavior_paradigm ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "behavior" });
         for (const t of (extract.species ?? [])) kwRows.push({ term: String(t).toLowerCase(), kind: "species" });
         for (const t of (extract.analysis_metrics ?? [])) kwRows.push({ term: String(t).toLowerCase().slice(0, 60), kind: "analysis" });
@@ -476,7 +785,11 @@ Deno.serve(async (req) => {
     await tick({
       phase: "done", finished_at: new Date().toISOString(),
       pubs_found: pubsFound, evidence_rows: evidenceRows, firecrawl_calls: firecrawlCalls, errors,
-      last_message: `Done: ${evidenceRows} evidence rows`,
+      last_message: `Done: ${evidenceRows} rows · ${similarProjectsVisited} similar projects · ${hopSimilarities.length} hops`,
+      hops_taken: hopSimilarities.length,
+      hop_similarities: hopSimilarities,
+      similar_projects_visited: similarProjectsVisited,
+      max_hops_configured: maxHops,
     });
 
     return new Response(JSON.stringify({

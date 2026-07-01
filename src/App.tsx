@@ -44,10 +44,8 @@ import JobBoard from "./pages/JobBoard";
 import Calendar from "./pages/Calendar";
 import AdminConsole from "./pages/AdminConsole";
 import RequestAccess from "./pages/RequestAccess";
-import AdminHarvester from "./pages/AdminHarvester";
-import AdminKgHeatmap from "./pages/AdminKgHeatmap";
-import AdminKgLive from "./pages/AdminKgLive";
-import AdminKgCurate from "./pages/AdminKgCurate";
+import Devices from "./pages/Devices";
+import DevicesGraph from "./pages/DevicesGraph";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +69,8 @@ const App = () => (
               <Route path="/mit-workshop-2026/participants" element={<MITWorkshopParticipants />} />
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
+              <Route path="/resources/devices" element={<Devices />} />
+              <Route path="/resources/devices/graph" element={<DevicesGraph />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/auth" element={<Auth />} />
@@ -98,10 +98,10 @@ const App = () => (
               <Route path="/cross-species-synchronization" element={<CrossSpeciesSynchronization />} />
               <Route path="/grants/:grantNumber/methods-evidence" element={<GrantMethodsEvidence />} />
               <Route path="/admin" element={<AdminConsole />} />
-              <Route path="/admin/harvester" element={<AdminHarvester />} />
-              <Route path="/admin/kg-heatmap" element={<AdminKgHeatmap />} />
-              <Route path="/admin/kg-live" element={<AdminKgLive />} />
-              <Route path="/admin/kg-curate" element={<AdminKgCurate />} />
+              <Route path="/admin/harvester" element={<Navigate to="/resources/devices" replace />} />
+              <Route path="/admin/kg-heatmap" element={<Navigate to="/resources/devices" replace />} />
+              <Route path="/admin/kg-live" element={<Navigate to="/resources/devices" replace />} />
+              <Route path="/admin/kg-curate" element={<Navigate to="/resources/devices" replace />} />
               <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
               <Route path="/admin/access-requests" element={<Navigate to="/admin?tab=access-requests" replace />} />
               <Route path="/datasets" element={<Navigate to="/resources" replace />} />

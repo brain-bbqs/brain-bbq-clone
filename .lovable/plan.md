@@ -1,94 +1,79 @@
-# Live Knowledge-Graph Harvester — Plan
+## Where things stand right now
 
-Four coordinated additions to turn the multi-hop harvester into an always-on, watchable, curatable pipeline.
+I checked the last 10 harvester runs. Every one finished in 5-20 seconds with `evidence_rows: 0` and `firecrawl_calls: 0 or 1`. So the pipeline **is running**, but the extractor is falling out before it writes anything. That's why the Devices table is empty — not a timing issue, a bug.
 
-## 1. Animal & device facet in the extractor
+Root causes I need to fix before we talk about visuals:
 
-Extend `harvest-grant-methods-multihop` extractor JSON with:
-- `species[]` — e.g. `mouse`, `rat`, `nhp_macaque`, `human_adult`, `human_pediatric`
-- `behavior_paradigm[]` — e.g. `open_field`, `freely_moving`, `head_fixed_treadmill`, `lick_task`, `social_interaction`, `clinical_outcome_scale`
-- `device_class[]` — coarse buckets: `ephys_headstage`, `silicon_probe`, `miniscope`, `fiber_photometry`, `optogenetics`, `iEEG_clinical`, `sEEG_clinical`, `DBS_clinical`, `EEG_scalp`, `wearable_actigraphy`
-- `subject_n` — integer when extractable
+1. Runs stop at hop 1 with `pubs_found: 0` for most seeds — the RePORTER → PubMed fan-out is short-circuiting instead of walking to publications.
+2. When we do reach a publication, the extractor's device-block gate is too strict — the LLM returns "no devices" for abstracts that clearly mention hardware.
+3. There is no retry on empty extractions, so a single miss = grant permanently marked "done, 0 rows".
 
-Also add a coarse `study_arm` field (`animal_model` vs `clinical_translational`) so animal R34 sites and human R61 sites can be cross-referenced.
+Total wall-clock estimate once fixed: **~30-40 seconds per grant × ~60 grants = 30-40 minutes** for a full first pass. Manuals resolution adds another ~1-2 min per unique manufacturer.
 
-DB: add these as columns on `grant_methods_evidence` (text[] / jsonb), backfill nullable.
+## What I'll build
 
-## 2. New heatmap view: Org × Device-class
+### 1. Fix the extractor so devices actually land
 
-In `AdminKgHeatmap`, add a third switchable axis pair:
-- Rows: organization
-- Cols: `device_class`
-- Cell color: count × avg chain-score
-- Filters: species, study_arm (animal/clinical), R-mechanism (R61/R34)
-- Click cell → drawer listing source grants + PMIDs + extracted methods snippet
+- Force `harvester-tick` to always fan out to at least 5 similar projects + all linked PubMed IDs per seed (currently it bails on the first empty page).
+- Rewrite the LLM device prompt as a structured schema call with a "no-device? explain why in one line" field so we can see refusals in `last_message`.
+- Add a fallback pass: if hop-2 returns 0 devices, fetch the PMC full text (not just abstract) via Firecrawl before giving up.
+- Add `retry_after` on `harvester_runs` so a failed grant re-queues once.
 
-Bridge badge: when an org appears in both an `animal_model` row and a `clinical_translational` row for the same `device_class` (or a mapped equivalent), flag the cell as a *translational bridge* with an orange ring.
+### 2. First-class device *context* columns
 
-## 3. Live graph view of the harvester running
+Extend `grant_methods_evidence` (and the `project_devices_v` rollup) with:
 
-New page `/admin/kg-live`:
-- Force-directed graph (d3-force) of nodes added in the last N minutes
-- Node shapes: grant (square), publication (circle), org (diamond), device_class (hex)
-- Edge labels: relation name + hop score
-- Realtime via Supabase Realtime subscription on `grant_methods_traversal_paths` (insert) and `grant_methods_evidence` (insert)
-- Side panel: current batch status — seeds queued / in-progress / done, current hop, current PMID being scraped
-- Sparkline of pubs-extracted-per-minute, Firecrawl calls/min, error rate
+- `species_context` — e.g. `mouse`, `macaque`, `human`, `zebrafish` (pulled from the same paper the device was found in, not the whole grant).
+- `setting` — `clinical` / `preclinical` / `field` / `wearable-home` / `computational`.
+- `environment_tags[]` — free-form but curated: `operating-room`, `ICU`, `home-cage`, `head-fixed rig`, `freely-moving`, `open-field`, `wildlife-collar`, etc.
+- `use_case` — one sentence pulled from the paper ("recorded from CA1 during a fear-conditioning task").
 
-Requires a new lightweight table `harvester_runs` (run_id, seed, phase, current_hop, started_at, finished_at, error, counters) updated by the multihop function at hop boundaries.
+The LLM extraction prompt will be updated to fill these in the same call that finds the device — no extra tokens per row.
 
-## 4. Always-on background runner (Firecrawl-friendly throttle)
+### 3. Manuals + datasheets discovery
 
-Replace the manual "Start batch" with a cron-scheduled tick:
-- New edge function `harvester-tick` runs every 5 min via `pg_cron` + `pg_net`
-- Picks the next seed grant from a queue table `harvester_queue` (priority + last_run_at), respects a per-tick budget (e.g. 1 seed/tick, max 20 Firecrawl scrapes)
-- Re-enqueues seeds with a `cool_down_hours` after a successful run (default 72h) so the graph keeps refreshing without hammering Firecrawl
-- Global kill-switch + concurrency=1 lock in `harvester_settings`
-- Admin console gets: queue table, pause/resume toggle, manual "bump priority" button per seed
+Runs as a **second, cheap worker** (only triggered when a new `device_models` row lands, not per-evidence):
 
-## 5. Keyword tracker + relationship curation
+- Firecrawl `map` on the manufacturer domain → filter for `/manual|datasheet|IFU|user-guide|instructions/i` and `.pdf`.
+- For clinical devices (DBS leads, iEEG grids), hit **openFDA 510(k)/PMA** by manufacturer+model → pull the official labeling PDF URL.
+- Store both in `device_models.manual_urls[]` with a `source` tag (`vendor` | `openFDA` | `open-ephys`).
 
-New table `harvester_keywords` (term, kind, frequency, first_seen_at, last_seen_at, status: `auto`/`approved`/`rejected`).
+### 4. Knowledge-graph visualization of *sources*
 
-- Extractor writes every novel device/behavior/species term into this table with a frequency counter
-- Curator UI at `/admin/kg-curate`:
-  - Tab 1: **Keywords** — review novel terms, merge synonyms (e.g. `2-photon` → `two_photon_imaging`), promote to canonical vocabulary
-  - Tab 2: **Relations** — review `proposed_relations` the planner suggested but weren't in the vocabulary; approve to extend the planner's allowed set
-  - Tab 3: **Evidence rows** — flag wrong extractions; flagged rows get re-run on next tick
-- Synonyms file lives in DB (`harvester_synonyms` table) so the extractor prompt can include it at run time
+New page at **`/resources/devices/graph`** (linked from a "View graph" toggle on the Devices page). It shows exactly **where each fact came from**:
 
-## Technical details
+```text
+   [Grant]───similar───▶[Grant]
+      │                    │
+      ▼                    ▼
+ [Publication]         [Publication]
+      │                    │
+      ▼                    ▼
+   [Device]  ◀─made-by─  [Manufacturer]
+      │
+      ▼
+   [Manual PDF]
+```
 
-**Migrations**
-- `grant_methods_evidence`: add `species text[]`, `behavior_paradigm text[]`, `device_class text[]`, `subject_n int`, `study_arm text`
-- New: `harvester_runs`, `harvester_queue`, `harvester_keywords`, `harvester_synonyms`
-- All admin/curator gated via existing `is_curator_or_admin`
-- Enable Realtime publication on `grant_methods_evidence`, `grant_methods_traversal_paths`, `harvester_runs`
+Built as a 2D force graph (react-force-graph-2d, same lib we already used) with:
 
-**Edge functions**
-- Modify: `harvest-grant-methods-multihop` (richer extractor JSON, write `harvester_runs` ticks, write keywords)
-- New: `harvester-tick` (cron-driven queue worker)
-- Keep: `harvest-grants-batch` for one-off manual bursts
+- Node color by type (grant / pub / device / manufacturer / manual).
+- Hover reveals: source URL, PMID, confidence, extraction timestamp.
+- Filter chips: species, setting, device class.
+- No animation gimmicks — this is the "boring, defensible" version, not the bunny.
 
-**Cron**
-- `pg_cron` schedule `*/5 * * * *` → `harvester-tick`
-- Will be installed via `supabase--insert` (not migration) since the URL+anon-key are project-specific
+The graph reads from `grant_methods_evidence` + `grant_methods_traversal_paths` (already exists) + the new `device_models` / `device_manufacturers` tables. No new tables required for the viz itself.
 
-**Frontend**
-- New pages: `/admin/kg-live`, `/admin/kg-curate`
-- Heatmap page gets Org×Device axis + bridge logic
-- Realtime hook using `supabase.channel(...).on('postgres_changes', ...)`
-- d3-force already pairs well; alternative is `react-force-graph` if you'd prefer (lighter to wire)
+### 5. Ordering
 
-## Build order
-1. Migrations (facet columns, runs/queue/keywords/synonyms tables, realtime publication)
-2. Extractor upgrade + keyword writes
-3. `harvester-tick` + cron
-4. `/admin/kg-live` realtime view
-5. Heatmap Org×Device axis + bridge badges
-6. `/admin/kg-curate` console
+1. Migration: add `species_context`, `setting`, `environment_tags`, `use_case`, `retry_after`. Extend the `project_devices_v` view.
+2. Rewrite the extractor prompt + PMC fallback + fan-out fix.
+3. Re-run harvester across all ~60 seeded grants (I trigger it, no admin button).
+4. Ship the manuals discovery worker.
+5. Ship `/resources/devices/graph`.
 
-## Open questions
-- Cool-down default — 72h per seed OK, or want faster (24h) / slower (weekly)?
-- Force-graph library — d3-force (more control) vs react-force-graph (faster to ship)?
-- Curator console: should "approve keyword" auto-merge into all existing evidence rows, or only affect future extractions?
+## Open question before I start
+
+For the **environment tags**, do you want me to (a) let the LLM emit freeform tags and clean them up with a synonym table later, or (b) constrain it to a fixed vocabulary now (`operating-room`, `home-cage`, `head-fixed`, `freely-moving`, `field`, `wearable`, `computational-only`)?
+
+(a) is more permissive and catches surprises; (b) makes the graph filters clean from day one. I'd lean (b).

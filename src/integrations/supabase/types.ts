@@ -504,6 +504,98 @@ export type Database = {
           },
         ]
       }
+      device_manufacturers: {
+        Row: {
+          aliases: string[]
+          country: string | null
+          created_at: string
+          homepage_url: string | null
+          id: string
+          last_crawled_at: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          country?: string | null
+          created_at?: string
+          homepage_url?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          country?: string | null
+          created_at?: string
+          homepage_url?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      device_models: {
+        Row: {
+          aliases: string[]
+          confidence: number | null
+          created_at: string
+          device_class: string
+          first_seen_at: string
+          id: string
+          last_verified_at: string | null
+          manual_urls: string[]
+          manufacturer_id: string | null
+          model_name: string
+          product_url: string | null
+          regulatory: string | null
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          confidence?: number | null
+          created_at?: string
+          device_class: string
+          first_seen_at?: string
+          id?: string
+          last_verified_at?: string | null
+          manual_urls?: string[]
+          manufacturer_id?: string | null
+          model_name: string
+          product_url?: string | null
+          regulatory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          confidence?: number | null
+          created_at?: string
+          device_class?: string
+          first_seen_at?: string
+          id?: string
+          last_verified_at?: string | null
+          manual_urls?: string[]
+          manufacturer_id?: string | null
+          model_name?: string
+          product_url?: string | null
+          regulatory?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_models_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "device_manufacturers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edit_history: {
         Row: {
           chat_context: Json | null
@@ -852,17 +944,23 @@ export type Database = {
           depth: number
           device_class: string[] | null
           device_hardware: Json | null
+          device_model: string[]
           discovery_path_id: string | null
+          environment_tags: string[]
           extracted_at: string
           id: string
           irb_or_population: string | null
+          manual_urls: string[]
+          manufacturer: string[]
           match_score: number | null
           methods_snippet: string | null
+          modality: string[]
           pmid: string | null
           publication_title: string | null
           publication_year: number | null
           quote: string | null
           recording_params: Json | null
+          regulatory: string | null
           seed_grant_number: string
           setting: string | null
           source_grant_number: string
@@ -874,6 +972,7 @@ export type Database = {
           stimulation_params: Json | null
           study_arm: string | null
           subject_n: number | null
+          use_case: string | null
         }
         Insert: {
           analysis_metrics?: Json | null
@@ -883,17 +982,23 @@ export type Database = {
           depth?: number
           device_class?: string[] | null
           device_hardware?: Json | null
+          device_model?: string[]
           discovery_path_id?: string | null
+          environment_tags?: string[]
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
+          manual_urls?: string[]
+          manufacturer?: string[]
           match_score?: number | null
           methods_snippet?: string | null
+          modality?: string[]
           pmid?: string | null
           publication_title?: string | null
           publication_year?: number | null
           quote?: string | null
           recording_params?: Json | null
+          regulatory?: string | null
           seed_grant_number: string
           setting?: string | null
           source_grant_number: string
@@ -905,6 +1010,7 @@ export type Database = {
           stimulation_params?: Json | null
           study_arm?: string | null
           subject_n?: number | null
+          use_case?: string | null
         }
         Update: {
           analysis_metrics?: Json | null
@@ -914,17 +1020,23 @@ export type Database = {
           depth?: number
           device_class?: string[] | null
           device_hardware?: Json | null
+          device_model?: string[]
           discovery_path_id?: string | null
+          environment_tags?: string[]
           extracted_at?: string
           id?: string
           irb_or_population?: string | null
+          manual_urls?: string[]
+          manufacturer?: string[]
           match_score?: number | null
           methods_snippet?: string | null
+          modality?: string[]
           pmid?: string | null
           publication_title?: string | null
           publication_year?: number | null
           quote?: string | null
           recording_params?: Json | null
+          regulatory?: string | null
           seed_grant_number?: string
           setting?: string | null
           source_grant_number?: string
@@ -936,6 +1048,7 @@ export type Database = {
           stimulation_params?: Json | null
           study_arm?: string | null
           subject_n?: number | null
+          use_case?: string | null
         }
         Relationships: [
           {
@@ -1175,11 +1288,16 @@ export type Database = {
           evidence_rows: number
           finished_at: string | null
           firecrawl_calls: number
+          hop_similarities: Json | null
+          hops_taken: number | null
           id: string
           last_message: string | null
+          max_hops_configured: number | null
           phase: string
           pubs_found: number
+          retry_after: string | null
           seed_grant: string
+          similar_projects_visited: number | null
           started_at: string
           updated_at: string
         }
@@ -1191,11 +1309,16 @@ export type Database = {
           evidence_rows?: number
           finished_at?: string | null
           firecrawl_calls?: number
+          hop_similarities?: Json | null
+          hops_taken?: number | null
           id?: string
           last_message?: string | null
+          max_hops_configured?: number | null
           phase?: string
           pubs_found?: number
+          retry_after?: string | null
           seed_grant: string
+          similar_projects_visited?: number | null
           started_at?: string
           updated_at?: string
         }
@@ -1207,11 +1330,16 @@ export type Database = {
           evidence_rows?: number
           finished_at?: string | null
           firecrawl_calls?: number
+          hop_similarities?: Json | null
+          hops_taken?: number | null
           id?: string
           last_message?: string | null
+          max_hops_configured?: number | null
           phase?: string
           pubs_found?: number
+          retry_after?: string | null
           seed_grant?: string
+          similar_projects_visited?: number | null
           started_at?: string
           updated_at?: string
         }
@@ -2402,6 +2530,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_devices_v: {
+        Row: {
+          confidence_max: number | null
+          device_class: string | null
+          device_label: string | null
+          environment_tags: string[] | null
+          evidence_count: number | null
+          grant_number: string | null
+          hardware_label: string | null
+          latest_evidence_at: string | null
+          manual_urls: string[] | null
+          manufacturer: string | null
+          match_score_max: number | null
+          min_depth: number | null
+          model_name: string | null
+          quote: string | null
+          sample_pmid: string | null
+          sample_title: string | null
+          sample_use_case: string | null
+          setting: string | null
+          source_grant_title: string | null
+          source_org: string | null
+          source_url: string | null
+          species: string[] | null
+        }
+        Relationships: []
       }
       public_jobs: {
         Row: {
