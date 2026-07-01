@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
   const { data: models, error } = await supabase
     .from("device_models")
-    .select("id,model_name,device_class,manual_urls,manufacturer_id,device_manufacturers(name,homepage)")
+    .select("id,model_name,device_class,manual_urls,manufacturer_id,device_manufacturers(name)")
     .or("manual_urls.is.null,manual_urls.eq.{}")
     .limit(limit);
 
@@ -108,8 +108,7 @@ Deno.serve(async (req) => {
 
   for (const m of models || []) {
     const mfrName: string | undefined = (m as any).device_manufacturers?.name;
-    const homepage: string | undefined = (m as any).device_manufacturers?.homepage;
-    const domain = homepage || (mfrName ? guessDomain(mfrName) : null);
+    const domain = mfrName ? guessDomain(mfrName) : null;
 
     const urls = new Set<string>();
     if (domain) {
