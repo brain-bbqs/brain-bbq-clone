@@ -458,6 +458,8 @@ Deno.serve(async (req) => {
           irb_or_population: extract.irb_or_population ?? null,
           quote: extract.quote ?? null,
           confidence: Number(extract.confidence ?? 0),
+          environment_tags: Array.isArray(extract.environment_tags) ? extract.environment_tags.map(String) : [],
+          use_case: typeof extract.use_case === "string" ? extract.use_case.slice(0, 500) : null,
           extracted_at: new Date().toISOString(),
           discovery_path_id: pathRow?.id ?? null,
         }, { onConflict: "seed_grant_number,source_grant_number,pmid" }).select("id").single();
