@@ -152,14 +152,32 @@ export default function Devices() {
       ) : <span className="text-muted-foreground text-xs">—</span>,
     },
     {
-      headerName: "What it means", flex: 1, minWidth: 280,
+      headerName: "How it's used in this project",
+      headerTooltip: "Plain-English summary of how this device shows up in the grant/paper, plus the exact snippet we pulled it from.",
+      flex: 1, minWidth: 300,
       valueGetter: (p) => `${p.data?.sample_use_case ?? ""} ${p.data?.quote ?? ""}`,
-      cellRenderer: (p: any) => (
-        <div className="text-xs text-muted-foreground py-1">
-          {p.data.sample_use_case ? <div>{p.data.sample_use_case}</div> : "—"}
-          {p.data.quote ? <div className="mt-1 italic text-muted-foreground/80">"{p.data.quote}"</div> : null}
-        </div>
-      ),
+      cellRenderer: (p: any) => {
+        const useCase: string = p.data?.sample_use_case || "";
+        const raw: string = (p.data?.quote || "").replace(/\s+/g, " ").trim();
+        // Trim to first sentence or ~200 chars so the row stays readable.
+        let snippet = raw;
+        if (snippet.length > 220) {
+          const cut = snippet.slice(0, 220);
+          const lastStop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+          snippet = (lastStop > 80 ? cut.slice(0, lastStop + 1) : cut) + "…";
+        }
+        if (!useCase && !snippet) {
+          return <span className="text-muted-foreground text-xs">not yet summarized</span>;
+        }
+        return (
+          <div className="text-xs py-1 space-y-1">
+            {useCase && <div className="text-foreground/90 leading-snug">{useCase}</div>}
+            {snippet && (
+              <div className="italic text-muted-foreground/80 leading-snug">"{snippet}"</div>
+            )}
+          </div>
+        );
+      },
     },
     {
       field: "grant_number", headerName: "Grant", width: 150,
