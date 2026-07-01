@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -278,33 +278,131 @@ export default MITWorkshop2026;
 
 type AgendaRow = [string, string, string, string, string];
 
+// Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
+function parseTime(t: string, isAfternoon: boolean): { minutes: number; label: string } {
+  const [h, m] = t.split(":").map(Number);
+  const hour24 = isAfternoon && h < 8 ? h + 12 : h;
+  const minutes = hour24 * 60 + (m || 0);
+  const suffix = hour24 >= 12 ? "PM" : "AM";
+  const h12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  const label = `${h12}:${String(m || 0).padStart(2, "0")} ${suffix}`;
+  return { minutes, label };
+}
+
+function formatDuration(mins: number): string {
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
+type SessionKind = {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  dot: string; // tailwind bg color for accent bar
+  tint: string; // subtle background tint
+};
+
+const KINDS: Record<string, SessionKind> = {
+  coffee:   { key: "coffee",   label: "Social",       icon: Coffee,       dot: "bg-amber-500",     tint: "bg-amber-500/5" },
+  talk:     { key: "talk",     label: "Talk",         icon: Presentation, dot: "bg-primary",       tint: "bg-primary/5" },
+  lunch:    { key: "lunch",    label: "Lunch",        icon: Utensils,     dot: "bg-orange-500",    tint: "bg-orange-500/5" },
+  photo:    { key: "photo",    label: "Group Photo",  icon: Camera,       dot: "bg-sky-500",       tint: "bg-sky-500/5" },
+  hack:     { key: "hack",     label: "Brainhack",    icon: Sparkles,     dot: "bg-violet-500",    tint: "bg-violet-500/5" },
+  poster:   { key: "poster",   label: "Posters",      icon: Users,        dot: "bg-emerald-500",   tint: "bg-emerald-500/5" },
+  policy:   { key: "policy",   label: "Policy",       icon: Vote,         dot: "bg-rose-500",      tint: "bg-rose-500/5" },
+  townhall: { key: "townhall", label: "Open Mic",     icon: MessageCircle, dot: "bg-indigo-500",   tint: "bg-indigo-500/5" },
+  closing:  { key: "closing",  label: "Closing",      icon: PartyPopper,  dot: "bg-pink-500",      tint: "bg-pink-500/5" },
+};
+
+function classifySession(text: string): SessionKind {
+  const t = text.toLowerCase();
+  if (t.includes("coffee") || t.includes("morning social")) return KINDS.coffee;
+  if (t.includes("closing")) return KINDS.closing;
+  if (t.includes("group photo")) return KINDS.photo;
+  if (t.includes("lunch")) return KINDS.lunch;
+  if (t.includes("poster")) return KINDS.poster;
+  if (t.includes("policy") || t.includes("voting")) return KINDS.policy;
+  if (t.includes("open mic") || t.includes("town hall")) return KINDS.townhall;
+  if (t.includes("brainhack") || t.includes("hack")) return KINDS.hack;
+  return KINDS.talk;
+}
+
+// Rows before this index are AM; from this index onward, times < 8 are PM.
+// We detect the crossover per-day using the first row whose start time is smaller than the previous row.
+function withAmPm(rows: AgendaRow[]) {
+  let afternoon = false;
+  let prev = -1;
+  return rows.map((row) => {
+    const [startStr, endStr] = row;
+    const startH = parseInt(startStr.split(":")[0], 10);
+    if (startH < prev) afternoon = true;
+    prev = startH;
+    const start = parseTime(startStr, afternoon);
+    // End might also be afternoon even if start was AM (e.g., 10:30 → 12:15)
+    const endH = parseInt(endStr.split(":")[0], 10);
+    const endAfternoon = afternoon || (endH < startH);
+    const end = parseTime(endStr, endAfternoon);
+    return { row, start, end, duration: Math.max(1, end.minutes - start.minutes) };
+  });
+}
+
 function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
+  const items = withAmPm(rows);
   return (
     <div>
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-foreground">
-            <tr>
-              <th className="text-left font-semibold px-3 py-2 w-[80px]">Start</th>
-              <th className="text-left font-semibold px-3 py-2 w-[80px]">End</th>
-              <th className="text-left font-semibold px-3 py-2">Session</th>
-              <th className="text-left font-semibold px-3 py-2 w-[180px]">Location</th>
-              <th className="text-left font-semibold px-3 py-2 w-[70px]">Zoom</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(([start, end, session, location, zoom], i) => (
-              <tr key={i} className="border-t border-border align-top">
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{start}</td>
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{end}</td>
-                <td className="px-3 py-2 text-foreground leading-relaxed">{session}</td>
-                <td className="px-3 py-2 text-muted-foreground">{location}</td>
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{zoom}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
+        {items.map(({ row, start, end, duration }, i) => {
+          const [, , session, location, zoom] = row;
+          const kind = classifySession(session);
+          const Icon = kind.icon;
+          return (
+            <div
+              key={i}
+              className={`group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 hover:bg-primary/[0.03] transition-colors ${kind.tint}`}
+            >
+              {/* Accent bar */}
+              <span className={`absolute left-0 top-0 bottom-0 w-1 ${kind.dot}`} aria-hidden />
+
+              {/* Time column */}
+              <div className="sm:w-[130px] shrink-0 pl-2">
+                <div className="flex items-center gap-1.5 text-foreground font-semibold text-sm tabular-nums">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  {start.label}
+                </div>
+                <div className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                  → {end.label}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-1">
+                  {formatDuration(duration)}
+                </div>
+              </div>
+
+              {/* Session content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <Badge variant="secondary" className="gap-1 text-[10px] font-medium">
+                    <Icon className="h-3 w-3" />
+                    {kind.label}
+                  </Badge>
+                  {zoom && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-primary/30 text-primary">
+                      <Video className="h-3 w-3" />
+                      Zoom
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">{session}</p>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span>{location}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
