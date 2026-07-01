@@ -49,14 +49,8 @@ const mainItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
-  {
-    title: "Resources",
-    url: "/resources",
-    icon: Database,
-    children: [
-      { title: "Devices", url: "/resources/devices", icon: Database },
-    ],
-  },
+  { title: "Resources", url: "/resources", icon: Database },
+  { title: "Devices", url: "/resources/devices", icon: FlaskConical },
 ];
 
 const knowledgeBaseItems: NavItem[] = [
