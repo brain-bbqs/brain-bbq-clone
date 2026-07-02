@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark" style="color-scheme: dark;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,6 +14,21 @@
     <meta name="author" content="BBQS Consortium" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://app.brain-bbqs.org/" />
+
+    <!-- Apply saved theme before paint to prevent light flash. Default = dark. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('bbqs-theme') || 'dark';
+          var resolved = t === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : t;
+          var root = document.documentElement;
+          root.classList.toggle('dark', resolved === 'dark');
+          root.style.colorScheme = resolved;
+        } catch (e) {}
+      })();
+    </script>
 
     <meta property="og:site_name" content="BrainBBQS" />
     <meta property="og:title" content="BrainBBQS — Brain Behavior Quantification and Synchronization Consortium" />
