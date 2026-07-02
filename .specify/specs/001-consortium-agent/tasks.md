@@ -3,6 +3,8 @@
 > Contributors: PRs against this file welcome. Each task should be small enough to land in one PR.
 
 ## Foundation
+- [x] Draft spec + plan + task breakdown
+- [x] Define `agent_events` schema shape
 - [ ] Add `agent_events` table + RLS + admin-only read policy
 - [ ] Add `member_agent_consent` table + per-user RLS
 - [ ] Add Profile UI for consent toggles
