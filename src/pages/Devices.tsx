@@ -206,27 +206,26 @@ export default function Devices() {
   const columnDefs = useMemo<ColDef<DeviceRow>[]>(() => [
     {
       headerName: "Device",
-      width: 220,
+      minWidth: 280,
+      flex: 1.2,
       valueGetter: (p) => (p.data ? deviceName(p.data) : ""),
       cellRenderer: (p: any) => (
-        <div>
-          <div className="font-medium text-foreground leading-snug">{deviceName(p.data)}</div>
+        <div className="py-1">
+          <div className="text-sm font-semibold text-foreground leading-snug">{deviceName(p.data)}</div>
           {!isModelKnown(p.data) && (
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
-              manufacturer/model not reported yet
-            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5 italic">— model TBD</div>
           )}
         </div>
       ),
     },
     {
-      field: "device_class", headerName: "Class", width: 160,
+      field: "device_class", headerName: "Class", width: 140,
       cellRenderer: (p: any) => p.value
         ? <Badge variant="outline" className="text-xs">{String(p.value).replace(/_/g, " ")}</Badge>
         : <span className="text-muted-foreground text-xs">—</span>,
     },
     {
-      field: "manufacturer", headerName: "Manufacturer", width: 160,
+      field: "manufacturer", headerName: "Manufacturer", width: 140,
       cellRenderer: (p: any) => p.value || <span className="text-muted-foreground text-xs">—</span>,
     },
     {
