@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Database, Search, X } from "lucide-react";
 import { DOMAINS, RELATIONS, TABLES, type DomainKey } from "@/data/data-model-schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GitBranch, Sparkles, Waypoints, Cpu } from "lucide-react";
 
 // ---- Layout: cluster tables by domain into a grid of boxes ----
 
@@ -399,7 +401,197 @@ export default function DataModel() {
           Postgres foreign-key constraints aren't enforced on most edges — relations are inferred from column naming
           (<code className="font-mono">*_id</code>) and RLS logic.
         </p>
+
+        <KnowledgeGraphHopping />
       </div>
     </>
+  );
+}
+
+// ---- Knowledge graph hopping / discovery algorithms ----
+
+function KnowledgeGraphHopping() {
+  return (
+    <section className="mt-8 space-y-4">
+      <div className="flex items-center gap-2">
+        <Waypoints className="h-5 w-5 text-primary" />
+        <h2 className="text-xl font-semibold tracking-tight">Knowledge Graph Hopping</h2>
+        <Badge variant="outline" className="text-[10px]">discovery layer</Badge>
+      </div>
+      <p className="text-sm text-muted-foreground max-w-3xl">
+        Because <code className="font-mono">resources</code> is a single hub and almost every edge
+        is a UUID pointer or a row in <code className="font-mono">resource_links</code>, we can
+        traverse the graph in <em>hops</em> — following relationships from a starting node outward
+        to surface non-obvious connections. This is where new science comes from: a device used in
+        one grant turns out to share a modality with a publication from a different lab studying a
+        different species.
+      </p>
+
+      <Tabs defaultValue="hops" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+          <TabsTrigger value="hops" className="text-xs">Hop patterns</TabsTrigger>
+          <TabsTrigger value="algos" className="text-xs">Algorithms</TabsTrigger>
+          <TabsTrigger value="devices" className="text-xs">Devices example</TabsTrigger>
+          <TabsTrigger value="stack" className="text-xs">Stack</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="hops" className="mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <HopCard
+              n={1}
+              title="1-hop · direct edges"
+              body="Given a device, follow resource_links to its manuals, the grants that use it, and the publications that cite it. Cheap SQL join, no inference."
+            />
+            <HopCard
+              n={2}
+              title="2-hop · shared neighbors"
+              body="From device → grants → other devices used by those same grants. Surfaces the practical 'rig' — devices that tend to co-appear even without an explicit relation."
+            />
+            <HopCard
+              n={3}
+              title="3-hop · cross-domain bridges"
+              body="Device → grant → species → other devices used on that species elsewhere. This is where we find candidate transfers across labs and across model organisms."
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="algos" className="mt-4 space-y-3">
+          <AlgoRow
+            icon={<Sparkles className="h-4 w-4" />}
+            name="Jaccard co-occurrence"
+            where="suggest-related edge function"
+            body="Already live for projects. Compares species / sensor / modality / method vocab sets between two nodes. score = |A ∩ B| / |A ∪ B|. Averaged across fields; threshold 0.15 writes suggestions to metadata.related_project_ids."
+          />
+          <AlgoRow
+            icon={<GitBranch className="h-4 w-4" />}
+            name="Personalized PageRank (planned)"
+            where="over resources + resource_links"
+            body="Seed a random walk from one device node, weight edges by link kind (uses > cites > mentions), read off the top-N stationary probabilities. Good for 'what is closest in graph-distance to this device' without hand-picking a hop count."
+          />
+          <AlgoRow
+            icon={<Cpu className="h-4 w-4" />}
+            name="Vector-similarity fallback"
+            where="pgvector on resource embeddings"
+            body="When there are no graph edges yet — a brand-new device manual, a newly ingested publication — cosine-similarity on the embedding surfaces likely neighbors. The unified learning loop then promotes confirmed matches to real resource_links rows so the next PageRank pass sees them."
+          />
+          <AlgoRow
+            icon={<Waypoints className="h-4 w-4" />}
+            name="Ontology-mediated bridging"
+            where="ontology approval + metadata.vocab"
+            body="Once a curator approves a canonical term (e.g. 'Neuropixels 2.0' aliases 'NP2'), every resource tagged with either form collapses to one graph node. That single approval can create dozens of new 2-hop paths overnight."
+          />
+        </TabsContent>
+
+        <TabsContent value="devices" className="mt-4">
+          <Card>
+            <CardContent className="pt-4 space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Concrete run against the devices sub-graph. Starting node:
+                <code className="mx-1 font-mono">Neuropixels 2.0</code>.
+              </p>
+              <pre className="text-[11px] font-mono bg-muted/40 rounded-md p-3 overflow-x-auto leading-relaxed">
+{`hop 1  Neuropixels 2.0
+       ├── manual        → imec quickstart PDF          (resource_links: has_manual)
+       ├── used_by       → grant R01-NS-12345           (resource_links: uses_device)
+       └── used_by       → grant U19-…-99887
+
+hop 2  grant R01-NS-12345
+       ├── studies       → Mus musculus                 (projects.study_species)
+       ├── uses_device   → Miniscope v4                 ← co-rig candidate
+       └── produces      → dandiset:000409              (ember_dandisets)
+
+hop 3  Mus musculus
+       └── used_in       → grant R21-…-55221 (other lab)
+             └── uses_device → 2p mesoscope             ← cross-lab transfer
+                                                          candidate for
+                                                          Neuropixels 2.0 users`}
+              </pre>
+              <p className="text-xs text-muted-foreground">
+                The <code className="font-mono">2p mesoscope</code> node is 3 hops from Neuropixels
+                but never appears in the same grant — that's the kind of edge the recommender is
+                meant to surface, and the kind of relationship a curator confirms once and then
+                exists as a first-class <code className="font-mono">resource_links</code> row forever.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stack" className="mt-4">
+          <Card>
+            <CardContent className="pt-4 text-sm space-y-2">
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li>
+                  <span className="font-medium text-foreground">Storage:</span> Postgres +
+                  pgvector. Graph lives in <code className="font-mono">resources</code> +
+                  <code className="font-mono"> resource_links</code>; embeddings on
+                  <code className="font-mono"> resources.embedding</code>.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Traversal:</span> recursive CTEs
+                  for bounded k-hop queries; edge functions materialize expensive walks nightly.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Scoring:</span> Jaccard today,
+                  Personalized PageRank + embedding cosine next.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Human loop:</span> ontology
+                  approval collapses aliases; curator sign-off promotes suggestions from
+                  <code className="font-mono"> metadata.related_*</code> to real link rows.
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </section>
+  );
+}
+
+function HopCard({ n, title, body }: { n: number; title: string; body: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold"
+            style={{ background: "hsl(38 90% 50% / 0.15)", color: "hsl(38 90% 40%)" }}
+          >
+            {n}
+          </span>
+          <h4 className="text-sm font-semibold">{title}</h4>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">{body}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AlgoRow({
+  icon,
+  name,
+  where,
+  body,
+}: {
+  icon: React.ReactNode;
+  name: string;
+  where: string;
+  body: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 rounded-md bg-primary/10 p-1.5 text-primary">{icon}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-sm font-semibold">{name}</h4>
+              <code className="text-[10px] font-mono text-muted-foreground">{where}</code>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{body}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
