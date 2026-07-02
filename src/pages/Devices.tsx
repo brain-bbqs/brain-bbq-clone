@@ -206,27 +206,26 @@ export default function Devices() {
   const columnDefs = useMemo<ColDef<DeviceRow>[]>(() => [
     {
       headerName: "Device",
-      width: 220,
+      minWidth: 280,
+      flex: 1.2,
       valueGetter: (p) => (p.data ? deviceName(p.data) : ""),
       cellRenderer: (p: any) => (
-        <div>
-          <div className="font-medium text-foreground leading-snug">{deviceName(p.data)}</div>
+        <div className="py-1">
+          <div className="text-sm font-semibold text-foreground leading-snug">{deviceName(p.data)}</div>
           {!isModelKnown(p.data) && (
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">
-              manufacturer/model not reported yet
-            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5 italic">— model TBD</div>
           )}
         </div>
       ),
     },
     {
-      field: "device_class", headerName: "Class", width: 160,
+      field: "device_class", headerName: "Class", width: 140,
       cellRenderer: (p: any) => p.value
         ? <Badge variant="outline" className="text-xs">{String(p.value).replace(/_/g, " ")}</Badge>
         : <span className="text-muted-foreground text-xs">—</span>,
     },
     {
-      field: "manufacturer", headerName: "Manufacturer", width: 160,
+      field: "manufacturer", headerName: "Manufacturer", width: 140,
       cellRenderer: (p: any) => p.value || <span className="text-muted-foreground text-xs">—</span>,
     },
     {
@@ -337,7 +336,7 @@ export default function Devices() {
   ], []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full px-4 sm:px-6 py-8">
       <PageMeta
         title="Devices — Instruments used across BBQS projects"
         description="Hardware, models, manufacturers, and manuals extracted from BBQS grants and their publications."
@@ -409,7 +408,7 @@ export default function Devices() {
           emptyMessage={loading ? "Loading devices…" : "No devices extracted yet."}
         />
       ) : (
-        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ width: "100%" }}>
+        <div className="ag-theme-alpine rounded-lg border border-border overflow-x-auto" style={{ width: "100%" }}>
           <AgGridReact<DeviceRow>
             rowData={rows}
             columnDefs={columnDefs}

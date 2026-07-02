@@ -22,7 +22,9 @@ import {
   FlaskConical,
   Hotel,
   ShieldCheck,
+  ScrollText,
   Plane,
+  CheckSquare,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -83,7 +85,10 @@ const conferencesItems: NavItem[] = [
 ];
 
 const engineeringItems: NavItem[] = [
-  { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
+  { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Constitution", url: "/constitution", icon: ScrollText },
+  { title: "Data Model", url: "/data-model", icon: Database },
+  { title: "Ontology Approval", url: "/ontology-approval", icon: CheckSquare, adminOnly: true },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
   { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];

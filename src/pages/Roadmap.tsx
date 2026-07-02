@@ -31,6 +31,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeCard } from "@/components/roadmap/ThemeCard";
+import { ThemeDrawer } from "@/components/roadmap/ThemeDrawer";
+import { ConstitutionPanel } from "@/components/roadmap/ConstitutionPanel";
+import { RoadmapTimeline } from "@/components/roadmap/RoadmapTimeline";
+import {
+  ROADMAP_THEMES,
+  STATUS_LABEL,
+  type RoadmapTheme,
+  type ThemeStatus,
+} from "@/data/roadmap-themes";
 
 interface RoadmapMilestone {
   id: number;
@@ -433,6 +444,7 @@ function TypeSection({
 export default function Roadmap() {
   const [filter, setFilter] = useState<IssueType>("all");
   const [search, setSearch] = useState("");
+  const [activeTheme, setActiveTheme] = useState<RoadmapTheme | null>(null);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["roadmap"],
@@ -471,13 +483,41 @@ export default function Roadmap() {
       ? (["feature", "bug", "task"] as const)
       : ([filter] as const);
 
+  const openIssuesByLabel = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const issue of issues) {
+      if (issue.state !== "open") continue;
+      for (const l of issue.labels || []) {
+        map.set(l.name.toLowerCase(), (map.get(l.name.toLowerCase()) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [issues]);
+
+  const themesByStatus: Record<ThemeStatus, typeof ROADMAP_THEMES> = {
+    now: ROADMAP_THEMES.filter((t) => t.status === "now"),
+    next: ROADMAP_THEMES.filter((t) => t.status === "next"),
+    later: ROADMAP_THEMES.filter((t) => t.status === "later"),
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Development Roadmap</h1>
+          <div className="flex items-start justify-between mb-2 gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-bold">Development Roadmap</h1>
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wide border-primary/40 text-primary">
+                  Public · Open source
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                What we're building, in the open. Every theme below has a public Spec, Plan,
+                and Tasks file — PRs from anyone welcome.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -504,120 +544,113 @@ export default function Roadmap() {
           </div>
         </div>
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="space-y-4 animate-pulse">
-            <div className="rounded-xl border p-6">
-              <div className="h-6 bg-muted rounded w-48 mb-4" />
-              <div className="h-2 bg-muted rounded w-full mb-6" />
-              <div className="flex justify-between">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex flex-col items-center">
-                    <div className="w-8 h-8 bg-muted rounded-full" />
-                    <div className="h-4 bg-muted rounded w-16 mt-3" />
+        <Tabs defaultValue="themes" className="mb-6">
+          <TabsList>
+            <TabsTrigger value="themes">Themes</TabsTrigger>
+            <TabsTrigger value="constitution">Constitution</TabsTrigger>
+            <TabsTrigger value="execution">Execution (GitHub)</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="themes" className="mt-6 space-y-8">
+            <RoadmapTimeline
+              openIssuesByLabel={openIssuesByLabel}
+              onOpenTheme={(t) => setActiveTheme(t)}
+            />
+          </TabsContent>
+
+          <TabsContent value="constitution" className="mt-6">
+            <ConstitutionPanel />
+          </TabsContent>
+
+          <TabsContent value="execution" className="mt-6">
+            {isLoading && (
+              <div className="space-y-4 animate-pulse">
+                <div className="rounded-xl border p-6">
+                  <div className="h-6 bg-muted rounded w-48 mb-4" />
+                  <div className="h-2 bg-muted rounded w-full mb-6" />
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className="text-center py-12 rounded-lg border">
+                <p className="text-destructive mb-4">
+                  {error instanceof Error ? error.message : "Failed to load roadmap"}
+                </p>
+                <Button variant="outline" onClick={() => refetch()}>
+                  Try again
+                </Button>
+              </div>
+            )}
+            {data && (
+              <>
+                <MilestoneTimeline milestones={milestones} />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Circle className="w-3 h-3 text-primary" />
+                      {openCount} Open
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+                      {closedCount} Closed
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-lg border p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-muted rounded-md" />
-                  <div className="flex-1">
-                    <div className="h-5 bg-muted rounded w-24 mb-1" />
-                    <div className="h-3 bg-muted rounded w-16" />
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-[220px] hidden sm:block">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search issues…"
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={filter} onValueChange={(v) => setFilter(v as IssueType)}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="feature">Features</SelectItem>
+                        <SelectItem value="bug">Bugs</SelectItem>
+                        <SelectItem value="task">Tasks</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div className="text-center py-12 rounded-lg border">
-            <p className="text-destructive mb-4">
-              {error instanceof Error ? error.message : "Failed to load roadmap"}
-            </p>
-            <Button variant="outline" onClick={() => refetch()}>
-              Try again
-            </Button>
-          </div>
-        )}
-
-        {/* Content */}
-        {data && (
-          <>
-            {/* Milestone Timeline */}
-            <MilestoneTimeline milestones={milestones} />
-
-            {/* Filters */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Circle className="w-3 h-3 text-primary" />
-                  {openCount} Open
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
-                  {closedCount} Closed
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="relative w-[220px] hidden sm:block">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search issues…"
-                    className="pl-9"
-                  />
+                <div className="space-y-4">
+                  {typesToShow.map((type) => (
+                    <TypeSection
+                      key={type}
+                      type={type}
+                      issues={groupedIssues[type]}
+                      defaultOpen={filter !== "all" || type === "feature"}
+                      allowEmpty={filter === "all" || filter === type}
+                    />
+                  ))}
+                  {visibleIssues.length === 0 && (
+                    <div className="text-center py-12 rounded-lg border">
+                      <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h2 className="text-xl font-semibold mb-2">No matching issues</h2>
+                      <p className="text-muted-foreground">Try clearing your search or adjusting the type filter.</p>
+                    </div>
+                  )}
                 </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
 
-                <Select
-                  value={filter}
-                  onValueChange={(v) => setFilter(v as IssueType)}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="feature">Features</SelectItem>
-                    <SelectItem value="bug">Bugs</SelectItem>
-                    <SelectItem value="task">Tasks</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        <ThemeDrawer
+          theme={activeTheme}
+          onOpenChange={(o) => !o && setActiveTheme(null)}
+          openIssuesCount={
+            activeTheme
+              ? openIssuesByLabel.get(activeTheme.githubLabel.toLowerCase()) ?? 0
+              : 0
+          }
+        />
 
-            {/* Issue Sections */}
-            <div className="space-y-4">
-              {typesToShow.map((type) => (
-                <TypeSection
-                  key={type}
-                  type={type}
-                  issues={groupedIssues[type]}
-                  defaultOpen={filter !== "all" || type === "feature"}
-                  allowEmpty={filter === "all" || filter === type}
-                />
-              ))}
-
-              {visibleIssues.length === 0 && (
-                <div className="text-center py-12 rounded-lg border">
-                  <ListTodo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold mb-2">
-                    No matching issues
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Try clearing your search or adjusting the type filter.
-                  </p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
