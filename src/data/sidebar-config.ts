@@ -84,6 +84,7 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Data Model", url: "/data-model", icon: Database },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
   { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];
