@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeCard } from "@/components/roadmap/ThemeCard";
 import { ThemeDrawer } from "@/components/roadmap/ThemeDrawer";
 import { ConstitutionPanel } from "@/components/roadmap/ConstitutionPanel";
+import { RoadmapTimeline } from "@/components/roadmap/RoadmapTimeline";
 import {
   ROADMAP_THEMES,
   STATUS_LABEL,
@@ -501,7 +502,7 @@ export default function Roadmap() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start justify-between mb-2 gap-4 flex-wrap">
@@ -551,26 +552,10 @@ export default function Roadmap() {
           </TabsList>
 
           <TabsContent value="themes" className="mt-6 space-y-8">
-            {(["now", "next", "later"] as const).map((status) => (
-              <section key={status}>
-                <div className="flex items-baseline gap-3 mb-3">
-                  <h2 className="text-lg font-semibold">{STATUS_LABEL[status]}</h2>
-                  <span className="text-xs text-muted-foreground">
-                    {themesByStatus[status].length} theme{themesByStatus[status].length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {themesByStatus[status].map((theme) => (
-                    <ThemeCard
-                      key={theme.id}
-                      theme={theme}
-                      openIssuesCount={openIssuesByLabel.get(theme.githubLabel.toLowerCase()) ?? 0}
-                      onOpen={() => setActiveTheme(theme)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+            <RoadmapTimeline
+              openIssuesByLabel={openIssuesByLabel}
+              onOpenTheme={(t) => setActiveTheme(t)}
+            />
           </TabsContent>
 
           <TabsContent value="constitution" className="mt-6">
