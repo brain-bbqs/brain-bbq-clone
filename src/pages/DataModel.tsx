@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -152,11 +152,10 @@ export default function DataModel() {
   const initialNodes = useMemo(() => layoutNodes(activeDomains), [activeDomains]);
   const initialEdges = useMemo(() => buildEdges(activeDomains, selected), [activeDomains, selected]);
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Recompute when filters change
-  useMemo(() => {
+  useEffect(() => {
     setEdges(buildEdges(activeDomains, selected));
   }, [activeDomains, selected, setEdges]);
 
