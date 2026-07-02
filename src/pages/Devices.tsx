@@ -336,7 +336,7 @@ export default function Devices() {
   ], []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full px-4 sm:px-6 py-8">
       <PageMeta
         title="Devices — Instruments used across BBQS projects"
         description="Hardware, models, manufacturers, and manuals extracted from BBQS grants and their publications."
@@ -408,7 +408,7 @@ export default function Devices() {
           emptyMessage={loading ? "Loading devices…" : "No devices extracted yet."}
         />
       ) : (
-        <div className="ag-theme-alpine rounded-lg border border-border overflow-hidden" style={{ width: "100%" }}>
+        <div className="ag-theme-alpine rounded-lg border border-border overflow-x-auto" style={{ width: "100%" }}>
           <AgGridReact<DeviceRow>
             rowData={rows}
             columnDefs={columnDefs}
