@@ -47,6 +47,7 @@ import RequestAccess from "./pages/RequestAccess";
 import Devices from "./pages/Devices";
 import DevicesGraph from "./pages/DevicesGraph";
 import DataModel from "./pages/DataModel";
+import Constitution from "./pages/Constitution";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/data-model" element={<DataModel />} />
+              <Route path="/constitution" element={<Constitution />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/publications" element={<Publications />} />
