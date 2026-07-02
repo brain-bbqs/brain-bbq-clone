@@ -35,6 +35,7 @@ const DOMAIN_ORDER: DomainKey[] = [
   "knowledge",
   "auth",
   "ops",
+  "agent",
 ];
 
 const DOMAIN_COLS = 4;
@@ -213,6 +214,25 @@ export default function DataModel() {
             <span className="mx-1 font-medium text-foreground">edges</span> (UUID foreign keys + join tables).
             Click a table to inspect its connections.
           </p>
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground max-w-3xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="h-2 w-2 rounded-full" style={{ background: "hsl(265 80% 65%)" }} />
+              <span className="font-medium text-foreground">Two Supabase projects, one graph</span>
+            </div>
+            <p>
+              The <span className="font-medium text-foreground">Knowledge Graph</span> lives in
+              project <code className="font-mono">vpexxhfpvghlejljwpvt</code> (this app). The
+              conversational agent at <code className="font-mono">agent.brain-bbqs.org</code> runs
+              on a separate project (<code className="font-mono">srcxgglijkhxggyauajc</code>) with
+              its own <code className="font-mono">agent.*</code> tables shown in the purple domain
+              below. The bridge is{" "}
+              <code className="font-mono">agent.resource_embeddings.source_id</code> →{" "}
+              <code className="font-mono">resources.id</code>: the agent embeds KG rows into its
+              own vector store, and proposed edits round-trip back through{" "}
+              <code className="font-mono">agent.pending_writes</code> and{" "}
+              <code className="font-mono">agent.audit_log</code> (which mirrors upstream audit ids).
+            </p>
+          </div>
         </header>
 
         {/* Controls */}
