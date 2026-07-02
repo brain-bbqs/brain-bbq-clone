@@ -83,7 +83,7 @@ const conferencesItems: NavItem[] = [
 ];
 
 const engineeringItems: NavItem[] = [
-  { title: "Roadmap", url: "/roadmap", icon: Map, authRequired: true },
+  { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
   { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];
