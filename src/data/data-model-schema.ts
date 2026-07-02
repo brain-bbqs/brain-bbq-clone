@@ -142,6 +142,23 @@ export const TABLES: TableNode[] = [
   { name: "search_queries", domain: "ops", cols: 5 },
   { name: "state_privacy_rules", domain: "ops", cols: 9 },
   { name: "system_alerts", domain: "ops", cols: 19 },
+
+  // Agent DB (separate Supabase project — srcxgglijkhxggyauajc)
+  { name: "agent.conversations", domain: "agent", cols: 10, hub: true, note: "Top-level chat thread. Owns persona, user_role, ego_context." },
+  { name: "agent.messages", domain: "agent", cols: 6, note: "Turn-by-turn chat messages inside a conversation." },
+  { name: "agent.message_embeddings", domain: "agent", cols: 5, note: "Dual embeddings (MiniLM + SPECTER2) per message for semantic recall." },
+  { name: "agent.resource_embeddings", domain: "agent", cols: 13, hub: true, note: "Cross-project bridge. source_id points at a KG row (usually resources.id) so the agent can retrieve KG entities by vector similarity." },
+  { name: "agent.pending_writes", domain: "agent", cols: 15, note: "Agent-proposed edits queued for human review before hitting the KG." },
+  { name: "agent.audit_log", domain: "agent", cols: 15, note: "Everything the agent did — actions, targets, upstream sync ids back to KG audit." },
+  { name: "agent.workflows", domain: "agent", cols: 10 },
+  { name: "agent.workflow_steps", domain: "agent", cols: 10 },
+  { name: "agent.workflow_runs", domain: "agent", cols: 11 },
+  { name: "agent.workflow_step_events", domain: "agent", cols: 9 },
+  { name: "agent.voice_sessions", domain: "agent", cols: 16, note: "ElevenLabs voice call metadata; conversation_id joins back to agent.conversations." },
+  { name: "agent.voice_turns", domain: "agent", cols: 14, note: "Per-utterance voice turns with dual embeddings + audio pointer." },
+  { name: "agent.user_voice_profile", domain: "agent", cols: 13, note: "Rolling per-user voice memory: interests, species, projects, preferences." },
+  { name: "agent.profiles", domain: "agent", cols: 5 },
+  { name: "agent.consortium_settings", domain: "agent", cols: 5 },
 ];
 
 // Inferred from *_id column naming (no FK constraints in DB — convention only).
@@ -199,4 +216,26 @@ export const RELATIONS: RelEdge[] = [
 
   // Harvester
   { from: "harvester_queue", to: "harvester_runs", via: "last_run_id" },
+
+  // Agent DB internal edges
+  { from: "agent.messages", to: "agent.conversations", via: "conversation_id" },
+  { from: "agent.message_embeddings", to: "agent.messages", via: "message_id" },
+  { from: "agent.pending_writes", to: "agent.conversations", via: "conversation_id" },
+  { from: "agent.pending_writes", to: "agent.messages", via: "proposed_by_message_id" },
+  { from: "agent.audit_log", to: "agent.conversations", via: "conversation_id" },
+  { from: "agent.audit_log", to: "agent.messages", via: "message_id" },
+  { from: "agent.audit_log", to: "agent.pending_writes", via: "pending_write_id" },
+  { from: "agent.audit_log", to: "agent.workflow_runs", via: "workflow_run_id" },
+  { from: "agent.workflow_steps", to: "agent.workflows", via: "workflow_id" },
+  { from: "agent.workflow_runs", to: "agent.workflows", via: "workflow_id" },
+  { from: "agent.workflow_runs", to: "agent.workflow_steps", via: "current_step_id" },
+  { from: "agent.workflow_runs", to: "agent.conversations", via: "conversation_id" },
+  { from: "agent.workflow_step_events", to: "agent.workflow_runs", via: "run_id" },
+  { from: "agent.workflow_step_events", to: "agent.workflow_steps", via: "to_step_id" },
+  { from: "agent.voice_sessions", to: "agent.conversations", via: "conversation_id" },
+  { from: "agent.voice_turns", to: "agent.voice_sessions", via: "session_id" },
+
+  // Cross-project bridge: agent → KG. Not a Postgres FK — source_id is text,
+  // resolved by the retriever to a row in the KG's resources table.
+  { from: "agent.resource_embeddings", to: "resources", via: "source_id (cross-project)" },
 ];
