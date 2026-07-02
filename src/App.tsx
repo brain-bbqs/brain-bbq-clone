@@ -48,6 +48,7 @@ import Devices from "./pages/Devices";
 import DevicesGraph from "./pages/DevicesGraph";
 import DataModel from "./pages/DataModel";
 import Constitution from "./pages/Constitution";
+import OntologyApproval from "./pages/OntologyApproval";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/data-model" element={<DataModel />} />
               <Route path="/constitution" element={<Constitution />} />
+              <Route path="/ontology-approval" element={<OntologyApproval />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/publications" element={<Publications />} />
