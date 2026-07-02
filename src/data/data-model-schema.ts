@@ -10,7 +10,8 @@ export type DomainKey =
   | "devices"
   | "knowledge"
   | "auth"
-  | "ops";
+  | "ops"
+  | "agent";
 
 export interface TableNode {
   name: string;
@@ -67,6 +68,12 @@ export const DOMAINS: Record<DomainKey, { label: string; color: string; descript
     label: "Analytics & Ops",
     color: "hsl(45 90% 45%)",
     description: "Pageviews, budgets, Lovable usage, funding opportunities, system alerts.",
+  },
+  agent: {
+    label: "Agent DB (agent.brain-bbqs.org)",
+    color: "hsl(265 80% 65%)",
+    description:
+      "SEPARATE Supabase project (srcxgglijkhxggyauajc) powering the conversational agent at agent.brain-bbqs.org. Owns its own conversations, embeddings, voice sessions, workflows, and audit trail. Links back into the KG through resource_embeddings.source_id → KG resources.id.",
   },
 };
 
