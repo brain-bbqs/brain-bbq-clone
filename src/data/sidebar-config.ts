@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   ScrollText,
   Plane,
+  CheckSquare,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -87,6 +88,7 @@ const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Constitution", url: "/constitution", icon: ScrollText },
   { title: "Data Model", url: "/data-model", icon: Database },
+  { title: "Ontology Approval", url: "/ontology-approval", icon: CheckSquare },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
   { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];
