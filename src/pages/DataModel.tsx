@@ -35,6 +35,7 @@ const DOMAIN_ORDER: DomainKey[] = [
   "knowledge",
   "auth",
   "ops",
+  "agent",
 ];
 
 const DOMAIN_COLS = 4;
