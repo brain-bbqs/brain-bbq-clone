@@ -36,11 +36,18 @@ export function AdminPendingBanner() {
           .from("access_requests")
           .select("id", { count: "exact", head: true })
           .eq("status", "pending"),
+        // Only flag REAL anomalies: a member who has SIGNED IN (user_id set) but
+        // whose elevated pending_role was never applied+cleared. A pending_role on a
+        // member who hasn't signed in yet (user_id null) is normal — it auto-applies
+        // on their first Globus sign-in and needs no admin action, so it must not
+        // show as a "pending role request" ghost (they're listed under User Roles as
+        // "Awaiting first sign-in" instead). 2026-07-01.
         supabase
           .from("investigators")
           .select("id", { count: "exact", head: true })
           .not("pending_role", "is", null)
-          .neq("pending_role", "member"),
+          .neq("pending_role", "member")
+          .not("user_id", "is", null),
         isAdmin
           ? supabase
               .from("system_alerts")
