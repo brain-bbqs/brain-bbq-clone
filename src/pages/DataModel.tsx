@@ -22,7 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Database, Search, X } from "lucide-react";
 import { DOMAINS, RELATIONS, TABLES, type DomainKey } from "@/data/data-model-schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GitBranch, Sparkles, Waypoints, Cpu } from "lucide-react";
+import { GitBranch, Sparkles, Waypoints, Cpu, Copy, Check } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 // ---- Layout: cluster tables by domain into a grid of boxes ----
 
@@ -423,8 +424,77 @@ export default function DataModel() {
         </p>
 
         <KnowledgeGraphHopping />
+        <TextSnapshot />
       </div>
     </>
+  );
+}
+
+// ---- Plain-text / copy-paste snapshot of the whole model ----
+
+function buildTextSnapshot(): string {
+  const lines: string[] = [];
+  lines.push("BBQS Data Model — plain-text snapshot");
+  lines.push(`${TABLES.length} tables · ${RELATIONS.length} relations`);
+  lines.push("");
+  for (const key of DOMAIN_ORDER) {
+    const domain = DOMAINS[key];
+    const tables = TABLES.filter((t) => t.domain === key);
+    if (tables.length === 0) continue;
+    lines.push(`## ${domain.label}`);
+    lines.push(domain.description);
+    lines.push("");
+    for (const t of tables) {
+      lines.push(`- ${t.name}${t.hub ? " [HUB]" : ""} (${t.cols} cols)`);
+      if (t.note) lines.push(`    note: ${t.note}`);
+      const rels = RELATIONS.filter((r) => r.from === t.name);
+      for (const r of rels) {
+        lines.push(`    → ${r.to} via ${r.via}`);
+      }
+    }
+    lines.push("");
+  }
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+function TextSnapshot() {
+  const text = useMemo(() => buildTextSnapshot(), []);
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({ title: "Copied", description: "Data model copied to clipboard." });
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast({ title: "Copy failed", description: "Select the text manually.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <section className="mt-8 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Database className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold tracking-tight">Text Snapshot</h2>
+          <Badge variant="outline" className="text-[10px]">copy-paste</Badge>
+        </div>
+        <Button size="sm" variant="outline" onClick={onCopy} className="gap-1.5">
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? "Copied" : "Copy all"}
+        </Button>
+      </div>
+      <p className="text-sm text-muted-foreground max-w-3xl">
+        Plain-text view of every domain, table, and relation — safe to paste into email, Slack,
+        docs, or an LLM prompt.
+      </p>
+      <pre
+        className="max-h-[520px] overflow-auto rounded-lg border bg-muted/30 p-4 text-xs leading-relaxed font-mono whitespace-pre select-all"
+      >
+        {text}
+      </pre>
+    </section>
   );
 }
 
