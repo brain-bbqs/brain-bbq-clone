@@ -547,7 +547,7 @@ export default function Roadmap() {
         <Tabs defaultValue="themes" className="mb-6">
           <TabsList>
             <TabsTrigger value="themes">Themes</TabsTrigger>
-            <TabsTrigger value="constitution">Constitution</TabsTrigger>
+            <TabsTrigger value="constitution">AI Constitution</TabsTrigger>
             <TabsTrigger value="execution">Execution (GitHub)</TabsTrigger>
           </TabsList>
 
