@@ -644,6 +644,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                         <TableHead>Emails</TableHead>
                         <TableHead>Investigator linked</TableHead>
                         <TableHead>Current tier</TableHead>
+                        <TableHead>Last login</TableHead>
                         <TableHead className="text-right">Change role</TableHead>
                         <TableHead className="text-right w-[80px]">Delete</TableHead>
                       </TableRow>
@@ -651,7 +652,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                     <TableBody>
                       {filteredSignedIn.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             No users found.
                           </TableCell>
                         </TableRow>
@@ -711,6 +712,17 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                               <Badge variant="outline" className={meta.color}>
                                 T{meta.tier} · {meta.label}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                              {u.last_sign_in_at
+                                ? new Date(u.last_sign_in_at).toLocaleString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "Never"}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="inline-flex items-center gap-2">
