@@ -110,8 +110,9 @@ const MITWorkshop2026 = () => {
                 </ul>
               </div>
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
+                menuDay="Day 1 — Wed, Jul 15"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
                   ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
@@ -124,8 +125,9 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
+                menuDay="Day 2 — Thu, Jul 16"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
                   ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
@@ -136,8 +138,9 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
+                menuDay="Day 3 — Fri, Jul 17"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
@@ -150,8 +153,6 @@ const MITWorkshop2026 = () => {
           </Card>
 
           <SpeakersCard />
-
-          <MenuCard />
 
           <Card>
             <CardHeader>
