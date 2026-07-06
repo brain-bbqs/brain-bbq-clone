@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic } from "lucide-react";
+import { useState } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -112,41 +113,45 @@ const MITWorkshop2026 = () => {
               <AgendaDay
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", ""],
-                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals (TBD-NIH).", "Singleton", "Yes"],
-                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes"],
-                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
+                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
+                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes", undefined, "Satra Ghosh (MIT)"],
+                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes", undefined, "BBQS project leads (round-robin)"],
                   ["12:15", "12:30", "Group Photo", "MIT Main Building & McGovern", ""],
-                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", ""],
+                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", "", "d1-lunch"],
                   ["2:00", "4:00", "BBQS Project Pitch (review proposed ideas) & discussion followed by Brainhack sessions. Identify volunteers to lead any new projects; leads set up projects using the Brainhack planning template and post slides. Current themes: Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group.", "Singleton", "Yes"],
-                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", ""],
+                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", "", "d1-happy"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes"],
-                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes"],
-                  ["11:30", "12:30", "Parallel working sessions: (Option A — Satra) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B — ELSI) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
-                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes"],
-                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
-                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", ""],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
+                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
+                  ["11:30", "12:30", "Parallel working sessions: (Option A) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "A: Satra Ghosh · B: WG-ELSI chairs"],
+                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes", "d2-lunch"],
+                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "PI representatives · YI unconference lead: TBD"],
+                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", ""],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
-                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", ""],
-                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes"],
-                  ["2:45", "3:00", "Closing.", "Singleton", "Yes"],
+                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
+                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
+                  ["2:45", "3:00", "Closing.", "Singleton", "Yes", undefined, "BBQS organizers"],
                 ]}
               />
             </CardContent>
           </Card>
+
+          <SpeakersCard />
+
+          <MenuCard />
 
           <Card>
             <CardHeader>
@@ -276,7 +281,38 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type AgendaRow = [string, string, string, string, string];
+type AgendaRow = [string, string, string, string, string, string?, string?];
+// [startTime, endTime, description, location, zoom, mealKey?, speaker?]
+
+type Meal = {
+  key: string;
+  day: string;
+  label: string;
+  time: string;
+  items: string[];
+};
+
+export const WORKSHOP_MENU: Meal[] = [
+  { key: "d1-coffee-am", day: "Day 1 — Wed, Jul 15", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
+  { key: "d1-coffee-mid", day: "Day 1 — Wed, Jul 15", label: "Coffee & Tea Service",    time: "11:45 AM", items: ["Freshly brewed coffee", "Assorted teas"] },
+  { key: "d1-lunch",   day: "Day 1 — Wed, Jul 15", label: "BYO — Greek Mediterranean Feast", time: "11:45 AM",
+    items: ["Greek Chicken", "Greek Steak Tips", "Falafel", "Lemon Rice", "Roasted Veggies", "Lettuce", "Assorted Toppings", "Dessert"] },
+  { key: "d1-happy",   day: "Day 1 — Wed, Jul 15", label: "Happy Hour Reception", time: "3:15 PM",
+    items: ["Charcuterie & Cheese Platter, Fruit & Crostini", "Veggie Platter — Hummus & Tzatziki, Pita Chips", "Spinach & Artichoke Dip, Pita Chips", "Pastry Cups with Cheese & Fig", "Veggie Samosas", "Stuffed Mushrooms", "Burger Sliders", "Chicken Skewers", "Steak Skewers", "Shrimp Skewers", "Cookies & Brownies"] },
+
+  { key: "d2-coffee-am", day: "Day 2 — Thu, Jul 16", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
+  { key: "d2-coffee-mid", day: "Day 2 — Thu, Jul 16", label: "Coffee & Tea Service",    time: "11:45 AM", items: ["Freshly brewed coffee", "Assorted teas"] },
+  { key: "d2-lunch",   day: "Day 2 — Thu, Jul 16", label: "Italian Feast", time: "11:45 AM",
+    items: ["Meatballs", "Chicken Cutlet", "Chicken Piccata", "Broccoli Alfredo", "Roasted Veggies", "Pasta", "Marinara", "Salads", "Garlic Bread", "Dessert"] },
+  { key: "d2-happy",   day: "Day 2 — Thu, Jul 16", label: "Happy Hour Reception", time: "3:45 PM",
+    items: ["Charcuterie & Cheese Platter, Fruit & Crostini", "Veggie Platter — Hummus & Tzatziki, Pita Chips", "Spinach & Artichoke Dip, Pita Chips", "Pastry Cups with Cheese & Fig", "Veggie Samosas", "Cheese Arancini Balls", "Chicken Sliders", "Vegan Sliders", "BBQ Chicken Skewers", "Steak Skewers", "Shrimp Cocktail", "Cookies & Brownies"] },
+
+  { key: "d3-coffee-am", day: "Day 3 — Fri, Jul 17", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
+  { key: "d3-lunch",   day: "Day 3 — Fri, Jul 17", label: "BYO Burrito Bowl", time: "10:45 AM",
+    items: ["Chicken Chipotle", "Taco Beef", "Grilled Shrimp", "Vegan Taco Meat", "Rice", "Black Beans", "Assorted Toppings", "Dessert"] },
+];
+
+const MEAL_BY_KEY: Record<string, Meal> = Object.fromEntries(WORKSHOP_MENU.map((m) => [m.key, m]));
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
 function parseTime(t: string, isAfternoon: boolean): { minutes: number; label: string } {
@@ -355,9 +391,10 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
-          const [, , session, location, zoom] = row;
+          const [, , session, location, zoom, mealKey, speaker] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
+          const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
           return (
             <div
               key={i}
@@ -393,17 +430,145 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                       Zoom
                     </Badge>
                   )}
+                  {meal && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300">
+                      <ChefHat className="h-3 w-3" />
+                      {meal.label}
+                    </Badge>
+                  )}
+                  {speaker && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-primary/30 text-primary">
+                      <Mic className="h-3 w-3" />
+                      {speaker}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">{session}</p>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span>{location}</span>
                 </div>
+                {meal && (
+                  <details className="mt-2 group/menu">
+                    <summary className="cursor-pointer text-xs text-orange-700 dark:text-orange-300 hover:underline inline-flex items-center gap-1">
+                      <Utensils className="h-3 w-3" />
+                      View menu ({meal.items.length} items)
+                    </summary>
+                    <ul className="mt-2 ml-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+                      {meal.items.map((it) => <li key={it}>{it}</li>)}
+                    </ul>
+                  </details>
+                )}
               </div>
             </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+// -------------------- Speakers card --------------------
+
+type SpeakerEntry = { name: string; affiliation?: string; role: string; when: string };
+
+const SPEAKERS: SpeakerEntry[] = [
+  { name: "TBD", affiliation: "NIH",  role: "Introduction — Scientific & Technological Goals", when: "Wed Jul 15 · 10:00 AM" },
+  { name: "Satra Ghosh", affiliation: "MIT", role: "Highlight: Last Year's BBQS Consortia — What's New?", when: "Wed Jul 15 · 10:15 AM" },
+  { name: "BBQS Project Leads", role: "Data Pipeline Blitz (round-robin)", when: "Wed Jul 15 · 10:30 AM" },
+  { name: "Brainhack Session Leads", role: "Report Back from Day 1", when: "Thu Jul 16 · 10:00 AM" },
+  { name: "Satra Ghosh", affiliation: "MIT", role: "Option A — AI Literacy to Liability", when: "Thu Jul 16 · 11:30 AM" },
+  { name: "WG-ELSI Chairs", role: "Option B — Office Hours, pre-voting data-sharing discussion", when: "Thu Jul 16 · 11:30 AM" },
+  { name: "Consortium PIs", role: "Policy Formation Forum — voting + Grants/Budgets", when: "Thu Jul 16 · 2:30 PM" },
+  { name: "Young Investigator lead (TBD)", role: "Young Investigator unconference", when: "Thu Jul 16 · 2:30 PM" },
+  { name: "Brainhack Leads · Open Mic", role: "Final project reports & town hall", when: "Fri Jul 17 · 12:30 PM" },
+];
+
+function SpeakersCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Mic className="h-5 w-5 text-primary" />
+          Speakers & Talks
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground mb-4">
+          Confirmed and placeholder speakers by agenda slot. TBD slots will be filled as they're confirmed —
+          if you're presenting and don't see your name, let the organizers know.
+        </p>
+        <ul className="divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden">
+          {SPEAKERS.map((s, i) => (
+            <li key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 hover:bg-muted/40">
+              <div className="sm:w-56 shrink-0">
+                <div className="text-sm font-medium text-foreground">{s.name}</div>
+                {s.affiliation && <div className="text-xs text-muted-foreground">{s.affiliation}</div>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-foreground">{s.role}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {s.when}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+// -------------------- Menu card --------------------
+
+function MenuCard() {
+  const [openDay, setOpenDay] = useState<string | null>("Day 1 — Wed, Jul 15");
+  const days = Array.from(new Set(WORKSHOP_MENU.map((m) => m.day)));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <ChefHat className="h-5 w-5 text-primary" />
+          Catering Menu
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground mb-4">
+          Provided by <a href="https://cloud9corporatecatering.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Golden Star Natural Foods (Cloud 9 Corporate Catering)</a>.
+          Menu items also appear inline in the agenda — expand any meal card there to see what's served.
+          Please let the organizers know of allergies or dietary needs in advance.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {days.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setOpenDay(openDay === d ? null : d)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${openDay === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border text-foreground"}`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {WORKSHOP_MENU.filter((m) => !openDay || m.day === openDay).map((meal) => (
+            <div key={meal.key} className="rounded-lg border border-border/70 p-4 bg-gradient-to-b from-background to-muted/20">
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">{meal.label}</div>
+                  <div className="text-xs text-muted-foreground">{meal.day} · {meal.time}</div>
+                </div>
+                <Badge variant="outline" className="text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300 gap-1">
+                  <Utensils className="h-3 w-3" /> {meal.items.length} items
+                </Badge>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+                {meal.items.map((it) => <li key={it}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
