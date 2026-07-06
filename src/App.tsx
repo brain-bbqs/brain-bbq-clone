@@ -13,6 +13,8 @@ import SFN2025 from "./pages/SFN2025";
 import MITWorkshop2026 from "./pages/MITWorkshop2026";
 import MITWorkshopTravel from "./pages/MITWorkshopTravel";
 import MITWorkshopParticipants from "./pages/MITWorkshopParticipants";
+import MITWorkshopMenu from "./pages/MITWorkshopMenu";
+import MITWorkshopSpeakers from "./pages/MITWorkshopSpeakers";
 import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
@@ -70,6 +72,8 @@ const App = () => (
               <Route path="/mit-workshop-2026" element={<MITWorkshop2026 />} />
               <Route path="/mit-workshop-2026/travel" element={<MITWorkshopTravel />} />
               <Route path="/mit-workshop-2026/participants" element={<MITWorkshopParticipants />} />
+              <Route path="/mit-workshop-2026/speakers" element={<MITWorkshopSpeakers />} />
+              <Route path="/mit-workshop-2026/menu" element={<MITWorkshopMenu />} />
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/devices" element={<Devices />} />
