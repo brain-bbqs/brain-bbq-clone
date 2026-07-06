@@ -9,8 +9,8 @@ import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
 
 /** Layout tuning (SVG user units). */
-const COLS = 3;
-const ROWS = 3;
+const COLS = 5;
+const ROWS = 2;
 const CELL_W = 260;
 const CELL_H = 240;
 const MARGIN_X = 60;
