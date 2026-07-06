@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -53,6 +53,34 @@ const MITWorkshop2026 = () => {
 
         {/* Content */}
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+          {/* Sub-page navigator */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
+              { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
+              { to: "/mit-workshop-2026/speakers", label: "Speakers & Talks", desc: "Program & speakers", icon: Mic },
+              { to: "/mit-workshop-2026/menu", label: "Menu", desc: "Daily catering & meals", icon: ChefHat },
+              { to: "/mit-workshop-2026/seating", label: "Seating Chart", desc: "Floor plan & tables", icon: LayoutGrid },
+            ].map(({ to, label, desc, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">{label}</div>
+                  <div className="text-xs text-muted-foreground">{desc}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
