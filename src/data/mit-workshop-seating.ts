@@ -30,8 +30,8 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Álvaro Vega-Hidalgo", institution: "University of Michigan", role: "Postdoc/Grad", domain: "A/C" },
       { name: "Wan Chen Lin", institution: "UC Berkeley", role: "Postdoc/Grad", domain: "D" },
       { name: "Crystal Lantz", institution: "NIH BRAIN Initiative", role: "NIH Program", domain: "NIH" },
-      { name: "Cody Baker", institution: "Dartmouth College", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Jyl Boline", institution: "Informed Minds", role: "Project Manager (EMBER)", domain: "ADMIN" },
+      { name: "Open seat" },
     ],
   },
   {
@@ -80,6 +80,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Yvonne Bennett", institution: "NIH/NIMH", role: "NIH Program", domain: "NIH" },
       { name: "Yaroslav Halchenko", institution: "Dartmouth / DANDI", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Darrell De Freitas", institution: "University of Pennsylvania", role: "Infra (EMBER)", domain: "F" },
+      { name: "Suliman Sharif", institution: "MIT", role: "Organizer / Admin", domain: "ADMIN" },
     ],
   },
   {
@@ -96,6 +97,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Jongwoon Kim", institution: "Columbia University", role: "Postdoc/Grad", domain: "D" },
       { name: "Lizzy Ankudowich", institution: "NIMH/BRAIN", role: "NIH Program", domain: "NIH" },
       { name: "Han Yi", institution: "JHU APL", role: "Infra (BARD.CC)", domain: "F" },
+      { name: "Satrajit Ghosh", institution: "MIT", role: "PI (EMBER)", domain: "F" },
     ],
   },
   {
@@ -126,7 +128,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Dmitry Batenkov", institution: "Basis Research Institute", role: "Research Staff" },
       { name: "Nishant Rao", institution: "Yale University", role: "Research Staff" },
       { name: "Melissa Kline Struhl", institution: "MIT", role: "Research Staff" },
-      { name: "Satrajit Ghosh", institution: "MIT", role: "PI (EMBER)", domain: "F" },
+      { name: "Nader Nikbakht", institution: "MIT", role: "Research Staff", domain: "F" },
       { name: "Ming Zhan", institution: "NIDA/NIH", role: "NIH Program (Bridge)", domain: "NIH" },
     ],
   },
@@ -142,7 +144,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Sofia Juliani", institution: "Carnegie Mellon University", role: "Postdoc/Grad" },
       { name: "Brendan Ito", institution: "NYU Grossman School of Medicine", role: "Postdoc/Grad", domain: "E" },
       { name: "Jane Wang", institution: "Cornell University", role: "PI/Co-I", domain: "A" },
-      { name: "Nader Nikbakht", institution: "MIT", role: "Research Staff", domain: "F" },
+      { name: "Cody Baker", institution: "Dartmouth College", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Nima Dehghani", institution: "MIT", role: "Infra (BARD.CC)", domain: "F" },
     ],
   },
@@ -158,8 +160,8 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Brock Wester", institution: "JHU APL", role: "PI (BARD.CC)", domain: "F" },
       { name: "Nicole Tregoning", institution: "Johns Hopkins University", role: "Research Staff (BARD.CC)", domain: "F" },
       { name: "Deepa Purushothaman", institution: "Yale University", role: "Postdoc/Grad" },
-      { name: "Suliman Sharif", institution: "MIT", role: "Organizer / Admin", domain: "ADMIN" },
       { name: "Yankun Xu", institution: "Duke University", role: "Postdoc/Grad", domain: "D" },
+      { name: "Open seat" },
     ],
   },
   {
