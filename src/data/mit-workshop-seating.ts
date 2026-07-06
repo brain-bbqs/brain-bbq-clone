@@ -161,7 +161,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Nicole Tregoning", institution: "Johns Hopkins University", role: "Research Staff (BARD.CC)", domain: "F" },
       { name: "Deepa Purushothaman", institution: "Yale University", role: "Postdoc/Grad" },
       { name: "Yankun Xu", institution: "Duke University", role: "Postdoc/Grad", domain: "D" },
-      { name: "Open seat" },
+      { name: "Tek Raj Chhetri", institution: "MIT", role: "Postdoc/Grad" },
     ],
   },
   {
@@ -171,12 +171,10 @@ export const SEATING_PLAN: SeatingTable[] = [
     seats: [
       { name: "Parastoo Azizeddin", institution: "University of Southern California", role: "Postdoc/Grad", domain: "D" },
       { name: "Yibei Chen", institution: "MIT", role: "Postdoc/Grad" },
-      { name: "Tek Raj Chhetri", institution: "MIT", role: "Postdoc/Grad" },
       { name: "Thomas Heeps", institution: "University of Florida", role: "Undergraduate" },
       { name: "Yunsoo Kim", institution: "Stony Brook University Hospital", role: "Postdoc/Grad" },
       { name: "Tyler Albarran", institution: "Georgia Tech", role: "Postdoc/Grad" },
       { name: "Tristan Daniel", institution: "Georgia Tech", role: "Postdoc/Grad" },
-      { name: "Open seat" },
       { name: "Open seat" },
     ],
   },
