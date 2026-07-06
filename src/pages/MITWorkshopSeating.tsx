@@ -1,92 +1,75 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutGrid, Printer, Utensils, Loader2 } from "lucide-react";
+import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
-import { supabase } from "@/integrations/supabase/client";
 
-type Participant = { name: string; institution?: string; role?: string };
+/** Layout tuning (SVG user units). */
+const COLS = 3;
+const ROWS = 3;
+const CELL_W = 260;
+const CELL_H = 240;
+const MARGIN_X = 60;
+const MARGIN_TOP = 130; // room for stage
+const MARGIN_BOTTOM = 80; // room for entrance
+const TABLE_R = 46;
+const SEAT_R = 16;
+const SEAT_ORBIT = TABLE_R + 22;
 
-const normName = (s: string) => (s || "").toLowerCase().replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
+const SVG_W = MARGIN_X * 2 + CELL_W * COLS;
+const SVG_H = MARGIN_TOP + MARGIN_BOTTOM + CELL_H * ROWS;
+
+function seatPosition(index: number, total: number, cx: number, cy: number) {
+  // Distribute seats evenly around the table, starting at the top.
+  const angle = (2 * Math.PI * index) / total - Math.PI / 2;
+  return { x: cx + SEAT_ORBIT * Math.cos(angle), y: cy + SEAT_ORBIT * Math.sin(angle), angle };
+}
+
+function tableCenter(idx: number) {
+  const col = idx % COLS;
+  const row = Math.floor(idx / COLS);
+  return {
+    cx: MARGIN_X + CELL_W * col + CELL_W / 2,
+    cy: MARGIN_TOP + CELL_H * row + CELL_H / 2,
+  };
+}
 
 export default function MITWorkshopSeating() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [fetching, setFetching] = useState(true);
+  const [selected, setSelected] = useState<{ table: SeatingTable; seat: Seat; index: number } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      setFetching(true);
-      try {
-        const { data } = await supabase.functions.invoke("mit-workshop-participants");
-        if (data?.participants) setParticipants(data.participants);
-      } catch (e) {
-        console.error("Failed to fetch participants:", e);
-      } finally {
-        setFetching(false);
-      }
-    })();
-  }, [user]);
-
-  // Merge the seeded plan with live registrations, auto-filling open seats.
-  const { plan, filled, overflow } = useMemo(() => {
-    const seededNames = new Set<string>();
-    SEATING_PLAN.forEach((t) => t.seats.forEach((s) => { if (s.name !== "Open seat") seededNames.add(normName(s.name)); }));
-
-    const unseated: Seat[] = participants
-      .filter((p) => p.name && !seededNames.has(normName(p.name)))
-      .map((p) => ({ name: p.name, institution: p.institution, role: p.role }));
-
-    // Deep clone plan
-    const cloned: SeatingTable[] = SEATING_PLAN.map((t) => ({ ...t, seats: t.seats.map((s) => ({ ...s })) }));
-
-    // Fill open seats round-robin across tables to keep them balanced.
-    let guard = 0;
-    while (unseated.length && guard++ < 1000) {
-      let placed = false;
-      for (const t of cloned) {
-        const idx = t.seats.findIndex((s) => s.name === "Open seat");
-        if (idx >= 0 && unseated.length) {
-          t.seats[idx] = unseated.shift()!;
-          placed = true;
-        }
-      }
-      if (!placed) break;
-    }
-
-    const filledCount = cloned.reduce((n, t) => n + t.seats.filter((s) => s.name !== "Open seat").length, 0);
-    return { plan: cloned, filled: filledCount, overflow: unseated };
-  }, [participants]);
-
   if (loading || !user) return null;
+
+  const filled = SEATING_PLAN.reduce(
+    (n, t) => n + t.seats.filter((s) => s.name !== "Open seat").length,
+    0,
+  );
 
   return (
     <>
       <PageMeta
-        title="MIT Workshop 2026 – Seating Chart | BBQS"
-        description="Themed table assignments for the BBQS MIT Workshop, July 15-17, 2026."
+        title="MIT Workshop 2026 – Seating Floor Plan | BBQS"
+        description="Interactive floor plan of themed tables for the BBQS MIT Workshop, July 15-17, 2026."
       />
-      <div className="container max-w-6xl mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-6 print:py-2 print:px-0">
+      <div className="container max-w-7xl mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-6 print:py-2 print:px-0">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 print:gap-1">
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <LayoutGrid className="h-7 w-7 text-primary" /> Seating Chart
+              <LayoutGrid className="h-7 w-7 text-primary" /> Seating Floor Plan
             </h1>
             <p className="text-muted-foreground">
-              2<sup>nd</sup> Annual BBQS Workshop · MIT · July 15–17, 2026 ·{" "}
+              2<sup>nd</sup> Annual BBQS Workshop · MIT McGovern Institute · July 15–17, 2026 ·{" "}
               <span className="font-medium text-foreground">
                 {TABLE_COUNT} tables · {SEATS_PER_TABLE} seats each · {filled}/{TOTAL_SEATS} assigned
-                {fetching && <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin" />}
               </span>
             </p>
           </div>
@@ -96,66 +79,262 @@ export default function MITWorkshopSeating() {
         </div>
 
         <p className="text-xs text-muted-foreground print:hidden">
-          Tables are grouped by scientific theme to promote cross-project discussion. Registered attendees not in the seed roster are auto-assigned round-robin to keep tables balanced at {SEATS_PER_TABLE} seats. Open seats will fill as more people register (target: {TOTAL_SEATS}).
-          {overflow.length > 0 && (
-            <span className="block mt-1 text-orange-600 dark:text-orange-400">
-              {overflow.length} registered attendee{overflow.length === 1 ? "" : "s"} beyond {TOTAL_SEATS} seats — add another table or reassign.
-            </span>
-          )}
+          Click any seat to view the attendee's details. Assignments are managed manually — open seats fill as you place people. Tables are grouped by scientific theme.
         </p>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 print:grid-cols-2 print:gap-2">
-          {plan.map((table) => {
-            const assigned = table.seats.filter((s) => s.name !== "Open seat").length;
-            return (
-              <Card key={table.number} className="border-primary/20 break-inside-avoid print:shadow-none print:border">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                        {table.number}
-                      </span>
-                      <span className="truncate">{table.theme}</span>
-                    </CardTitle>
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
-                      {assigned}/{SEATS_PER_TABLE}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Domains: {table.domains}</p>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ol className="space-y-1.5">
-                    {table.seats.map((seat, i) => (
-                      <li
-                        key={i}
-                        className={`flex items-start gap-2 text-xs border-b border-border/40 pb-1.5 last:border-0 ${
-                          seat.name === "Open seat" ? "text-muted-foreground/60 italic" : ""
-                        }`}
+        {/* Floor plan */}
+        <Card className="border-primary/20 overflow-hidden print:shadow-none">
+          <CardContent className="p-3 sm:p-4 bg-[hsl(var(--muted))]/40">
+            <div className="w-full overflow-x-auto">
+              <svg
+                viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                className="w-full h-auto min-w-[720px] max-w-full"
+                role="img"
+                aria-label="Workshop seating floor plan"
+              >
+                {/* Room outline */}
+                <rect
+                  x={20}
+                  y={20}
+                  width={SVG_W - 40}
+                  height={SVG_H - 40}
+                  rx={18}
+                  fill="hsl(var(--background))"
+                  stroke="hsl(var(--border))"
+                  strokeWidth={2}
+                />
+
+                {/* Stage / podium */}
+                <g>
+                  <rect
+                    x={SVG_W / 2 - 180}
+                    y={40}
+                    width={360}
+                    height={56}
+                    rx={8}
+                    fill="hsl(var(--primary))"
+                    opacity={0.12}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={1.5}
+                  />
+                  <text
+                    x={SVG_W / 2}
+                    y={73}
+                    textAnchor="middle"
+                    className="fill-primary font-semibold"
+                    style={{ fontSize: 16 }}
+                  >
+                    STAGE / PODIUM
+                  </text>
+                </g>
+
+                {/* Entrance */}
+                <g>
+                  <rect
+                    x={SVG_W / 2 - 60}
+                    y={SVG_H - 60}
+                    width={120}
+                    height={26}
+                    rx={4}
+                    fill="hsl(var(--muted))"
+                    stroke="hsl(var(--border))"
+                  />
+                  <text
+                    x={SVG_W / 2}
+                    y={SVG_H - 42}
+                    textAnchor="middle"
+                    className="fill-muted-foreground"
+                    style={{ fontSize: 11, letterSpacing: 1 }}
+                  >
+                    ENTRANCE
+                  </text>
+                </g>
+
+                {/* Tables */}
+                {SEATING_PLAN.map((table, tIdx) => {
+                  const { cx, cy } = tableCenter(tIdx);
+                  return (
+                    <g key={table.number}>
+                      {/* Table circle */}
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={TABLE_R}
+                        fill="hsl(var(--card))"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                      />
+                      <text
+                        x={cx}
+                        y={cy - 6}
+                        textAnchor="middle"
+                        className="fill-foreground font-bold"
+                        style={{ fontSize: 18 }}
                       >
-                        <span className="w-5 shrink-0 tabular-nums text-muted-foreground">{i + 1}.</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium text-foreground truncate">
-                            {seat.name}
-                            {seat.role && (
-                              <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">· {seat.role}</span>
-                            )}
-                          </div>
-                          {seat.institution && (
-                            <div className="text-[11px] text-muted-foreground truncate">{seat.institution}</div>
-                          )}
-                          {seat.dietary && (
-                            <div className="text-[10px] text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-0.5">
-                              <Utensils className="h-2.5 w-2.5" /> {seat.dietary}
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </CardContent>
-              </Card>
-            );
-          })}
+                        T{table.number}
+                      </text>
+                      <text
+                        x={cx}
+                        y={cy + 12}
+                        textAnchor="middle"
+                        className="fill-muted-foreground"
+                        style={{ fontSize: 9 }}
+                      >
+                        {table.domains}
+                      </text>
+                      {/* Table label under */}
+                      <text
+                        x={cx}
+                        y={cy + CELL_H / 2 - 12}
+                        textAnchor="middle"
+                        className="fill-foreground"
+                        style={{ fontSize: 10, fontWeight: 500 }}
+                      >
+                        {table.theme.length > 32 ? table.theme.slice(0, 30) + "…" : table.theme}
+                      </text>
+
+                      {/* Seats */}
+                      {table.seats.map((seat, sIdx) => {
+                        const { x, y } = seatPosition(sIdx, SEATS_PER_TABLE, cx, cy);
+                        const open = seat.name === "Open seat";
+                        const isSelected =
+                          selected?.table.number === table.number && selected?.index === sIdx;
+                        const initials = open
+                          ? "+"
+                          : seat.name
+                              .split(/\s+/)
+                              .slice(0, 2)
+                              .map((p) => p[0])
+                              .join("")
+                              .toUpperCase();
+                        return (
+                          <g
+                            key={sIdx}
+                            className="cursor-pointer"
+                            onClick={() => setSelected({ table, seat, index: sIdx })}
+                          >
+                            <title>
+                              {open ? `Table ${table.number} — Seat ${sIdx + 1} (open)` : `${seat.name}${seat.institution ? " · " + seat.institution : ""}`}
+                            </title>
+                            <circle
+                              cx={x}
+                              cy={y}
+                              r={SEAT_R}
+                              fill={open ? "hsl(var(--muted))" : "hsl(var(--primary))"}
+                              fillOpacity={open ? 0.5 : 0.9}
+                              stroke={isSelected ? "hsl(var(--ring))" : "hsl(var(--border))"}
+                              strokeWidth={isSelected ? 3 : 1.5}
+                            />
+                            <text
+                              x={x}
+                              y={y + 4}
+                              textAnchor="middle"
+                              style={{ fontSize: 10, fontWeight: 600 }}
+                              className={open ? "fill-muted-foreground" : "fill-primary-foreground"}
+                            >
+                              {initials}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block w-3 h-3 rounded-full bg-primary" /> Assigned
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block w-3 h-3 rounded-full bg-muted border border-border" /> Open seat
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Presentation className="h-3.5 w-3.5" /> Stage at top of room
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <DoorOpen className="h-3.5 w-3.5" /> Entrance at bottom
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detail panel + full roster below */}
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Card className="border-primary/20 h-fit lg:sticky lg:top-4 print:hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Seat details</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              {selected ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">Table {selected.table.number}</Badge>
+                    <Badge variant="outline">Seat {selected.index + 1}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{selected.table.theme}</div>
+                  <div className="pt-2 border-t border-border/60">
+                    <div className="font-semibold text-foreground">{selected.seat.name}</div>
+                    {selected.seat.institution && (
+                      <div className="text-xs text-muted-foreground">{selected.seat.institution}</div>
+                    )}
+                    {selected.seat.role && (
+                      <div className="text-xs text-muted-foreground">Role: {selected.seat.role}</div>
+                    )}
+                    {selected.seat.grants && (
+                      <div className="text-xs text-muted-foreground">Grants: {selected.seat.grants}</div>
+                    )}
+                    {selected.seat.dietary && (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1">
+                        <Utensils className="h-3 w-3" /> {selected.seat.dietary}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Click a seat on the floor plan to see attendee details.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Compact roster per table for quick scanning */}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {SEATING_PLAN.map((table) => {
+              const assigned = table.seats.filter((s) => s.name !== "Open seat").length;
+              return (
+                <Card key={table.number} className="border-primary/20 break-inside-avoid print:shadow-none print:border">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                          {table.number}
+                        </span>
+                        <span className="truncate">{table.theme}</span>
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">
+                        {assigned}/{SEATS_PER_TABLE}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ol className="space-y-0.5 text-[11px]">
+                      {table.seats.map((seat, i) => (
+                        <li
+                          key={i}
+                          className={`flex gap-1.5 ${seat.name === "Open seat" ? "text-muted-foreground/60 italic" : "text-foreground"}`}
+                        >
+                          <span className="w-4 shrink-0 tabular-nums text-muted-foreground">{i + 1}.</span>
+                          <span className="truncate">{seat.name}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </>
