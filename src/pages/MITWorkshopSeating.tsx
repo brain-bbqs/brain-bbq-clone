@@ -353,18 +353,18 @@ export default function MITWorkshopSeating() {
 
         {/* Compact roster per table for quick scanning — full-width, balanced grid */}
         <div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {SEATING_PLAN.map((table) => {
               const assigned = table.seats.filter((s) => s.name !== "Open seat").length;
               return (
                 <Card key={table.number} className="border-primary/20 break-inside-avoid print:shadow-none print:border">
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-sm flex items-start gap-2 min-w-0 flex-1">
+                        <span className="inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-full bg-primary text-primary-foreground text-xs font-bold">
                           {table.number}
                         </span>
-                        <span className="truncate">{table.theme}</span>
+                        <span className="leading-snug break-words">{table.theme}</span>
                       </CardTitle>
                       <Badge variant="secondary" className="text-[10px] shrink-0">
                         {assigned}/{SEATS_PER_TABLE}
