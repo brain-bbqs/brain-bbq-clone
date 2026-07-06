@@ -181,7 +181,7 @@ export const SEATING_PLAN: SeatingTable[] = [
 ];
 
 export const TABLE_COUNT = SEATING_PLAN.length;
-export const SEATS_PER_TABLE = 10;
+export const SEATS_PER_TABLE = 9;
 export const TOTAL_SEATS = TABLE_COUNT * SEATS_PER_TABLE;
 export const FILLED_SEATS = SEATING_PLAN.reduce(
   (sum, t) => sum + t.seats.filter((s) => s.name !== "Open seat").length,
