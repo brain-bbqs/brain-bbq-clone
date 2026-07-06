@@ -23,6 +23,11 @@ import {
 
 type Status = "pending" | "approved" | "dismissed";
 
+// The onboarding agent (shares the *.brain-bbqs.org Supabase session cookie, so an
+// admin clicking through lands already signed in). `?ask=<text>` pre-fills its
+// composer — see the agent route's validateSearch.
+const AGENT_URL = "https://agent.brain-bbqs.org";
+
 interface AccessRequest {
   id: string;
   email: string;
@@ -37,17 +42,6 @@ interface AccessRequest {
   institution?: string | null;
 }
 
-interface NameCollision {
-  request: AccessRequest;
-  existing: {
-    id: string;
-    name: string;
-    email: string | null;
-    secondary_emails: string[] | null;
-  };
-  email: string;
-}
-
 interface AdminAccessRequestsProps {
   embedded?: boolean;
 }
@@ -56,7 +50,6 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
   const tier = useUserTier();
   const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [collision, setCollision] = useState<NameCollision | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<AccessRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
@@ -122,153 +115,50 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
       const name = (r.full_name || r.globus_name || r.email.split("@")[0] || "Unknown").trim();
       const email = r.email.toLowerCase();
 
-      // 1. Match by email (primary or secondary)
+      // Already on the roster (primary OR secondary email)? Then they can already
+      // sign in via Globus — no onboarding needed. Just approve + notify.
       const { data: existingByEmail } = await supabase
         .from("investigators")
         .select("id, name")
         .or(`email.ilike.${email},secondary_emails.cs.{${email}}`)
         .maybeSingle();
 
-      let alreadyListed = !!existingByEmail;
-      const existingName = existingByEmail?.name as string | undefined;
-
-      if (!existingByEmail) {
-        // 2. Try insert; on name collision, prompt curator
-        const { error: invErr } = await supabase
-          .from("investigators")
-          .insert({ name, email });
-
-        if (invErr) {
-          const isNameDup =
-            invErr.code === "23505" &&
-            (invErr.message?.includes("investigators_name_key") ||
-              invErr.message?.toLowerCase().includes("name"));
-
-          if (isNameDup) {
-            const { data: nameMatch } = await supabase
-              .from("investigators")
-              .select("id, name, email, secondary_emails")
-              .ilike("name", name)
-              .maybeSingle();
-
-            if (nameMatch) {
-              setCollision({ request: r, existing: nameMatch, email });
-              setBusyId(null);
-              return;
-            }
-          }
-          throw invErr;
-        }
+      if (existingByEmail) {
+        const existingName = (existingByEmail.name as string | undefined) || name;
+        const { error } = await supabase
+          .from("access_requests")
+          .update({
+            status: "approved",
+            reviewed_at: new Date().toISOString(),
+            review_notes: `Already listed as "${existingName}" in investigators directory`,
+          })
+          .eq("id", r.id);
+        if (error) throw error;
+        toast.success(`Approved — email already linked to "${existingName}"`);
+        await sendApprovalEmail(
+          email,
+          existingName,
+          `Your email is already linked to the investigator profile "${existingName}".`,
+        );
+        queryClient.invalidateQueries({ queryKey: ["access-requests"] });
+        return;
       }
 
-      const { error } = await supabase
-        .from("access_requests")
-        .update({
-          status: "approved",
-          reviewed_at: new Date().toISOString(),
-          review_notes: alreadyListed
-            ? `Already listed as "${existingName}" in investigators directory`
-            : "Added to investigators directory",
-        })
-        .eq("id", r.id);
-      if (error) throw error;
-
-      toast.success(
-        alreadyListed
-          ? `Approved — email already linked to "${existingName}"`
-          : "Approved and invited. They can sign in via Globus now.",
+      // Not on the roster → hand off to the agent's onboarding workflow, which is
+      // the SINGLE provisioning path: it creates the investigator profile properly
+      // (mailing lists + welcome email + role), reconciles against any existing
+      // profile, AND auto-clears this pending request on completion (agent
+      // workflow.ts Step 1b). We deliberately do NOT bare-insert an investigators
+      // row or pre-approve here — that produced half-provisioned members (a row but
+      // no lists / welcome / role), which is exactly what this replaces.
+      const url = `${AGENT_URL}/?ask=${encodeURIComponent(`Onboard ${name} (${email})`)}`;
+      window.open(url, "_blank", "noopener");
+      toast.info(
+        "Opening onboarding in the agent — complete the workflow there. This request clears automatically once they're provisioned.",
       );
-      await sendApprovalEmail(
-        email,
-        alreadyListed ? (existingName || name) : name,
-        alreadyListed
-          ? `Your email is already linked to the investigator profile "${existingName}".`
-          : "You've been added to the investigators directory.",
-      );
-      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message ?? "Failed to approve and invite");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const linkAsSecondaryEmail = async () => {
-    if (!collision) return;
-    const { request, existing, email } = collision;
-    setBusyId(request.id);
-    try {
-      const current = existing.secondary_emails ?? [];
-      const next = Array.from(new Set([...current.map((e) => e.toLowerCase()), email]));
-
-      const { error: updErr } = await supabase
-        .from("investigators")
-        .update({ secondary_emails: next })
-        .eq("id", existing.id);
-      if (updErr) throw updErr;
-
-      const { error } = await supabase
-        .from("access_requests")
-        .update({
-          status: "approved",
-          reviewed_at: new Date().toISOString(),
-          review_notes: `Linked ${email} as secondary email on existing investigator "${existing.name}"`,
-        })
-        .eq("id", request.id);
-      if (error) throw error;
-
-      toast.success(`Linked ${email} to "${existing.name}". They can sign in via Globus now.`);
-      await sendApprovalEmail(
-        email,
-        existing.name,
-        `Your email has been linked to the existing investigator profile "${existing.name}".`,
-      );
-      setCollision(null);
-      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message ?? "Failed to link secondary email");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const createWithDisambiguatedName = async () => {
-    if (!collision) return;
-    const { request, email } = collision;
-    setBusyId(request.id);
-    try {
-      const baseName = (request.full_name || request.globus_name || email.split("@")[0]).trim();
-      const institution = request.institution?.trim();
-      const disambiguated = institution ? `${baseName} (${institution})` : `${baseName} (${email})`;
-
-      const { error: invErr } = await supabase
-        .from("investigators")
-        .insert({ name: disambiguated, email });
-      if (invErr) throw invErr;
-
-      const { error } = await supabase
-        .from("access_requests")
-        .update({
-          status: "approved",
-          reviewed_at: new Date().toISOString(),
-          review_notes: `Added to investigators as "${disambiguated}" (name collision resolved)`,
-        })
-        .eq("id", request.id);
-      if (error) throw error;
-
-      toast.success(`Added as "${disambiguated}". They can sign in via Globus now.`);
-      await sendApprovalEmail(
-        email,
-        disambiguated,
-        `You've been added to the investigators directory as "${disambiguated}".`,
-      );
-      setCollision(null);
-      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message ?? "Failed to create investigator");
+      toast.error(err.message ?? "Failed to start onboarding");
     } finally {
       setBusyId(null);
     }
@@ -419,10 +309,10 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
               variant="default"
               onClick={() => approveAndInvite(r)}
               disabled={busyId === r.id}
-              title="Adds the person to the investigators directory and marks the request approved. They can then sign in via Globus."
+              title="If already on the roster, approves + notifies. Otherwise opens the onboarding agent pre-filled to fully provision them (mailing lists + welcome + role); this request clears automatically when onboarding completes."
             >
               <Check className="h-3.5 w-3.5 mr-1" />
-              Approve & invite
+              Approve & onboard
             </Button>
             <Button
               size="sm"
@@ -451,9 +341,9 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
         )}
         <p className="text-sm text-muted-foreground">
           Sign-up requests from the public form and Globus sign-in attempts from people whose
-          email isn't on the consortium roster. "Approve &amp; invite" adds them to the
-          investigators directory automatically — the next time they sign in via Globus, they'll
-          get in.
+          email isn't on the consortium roster. "Approve &amp; onboard" opens the onboarding
+          agent pre-filled to fully provision them (mailing lists, welcome email, and role) — the
+          single provisioning path. This request clears automatically once onboarding completes.
         </p>
       </div>
 
@@ -502,9 +392,10 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
                 Awaiting decision
               </CardTitle>
               <CardDescription>
-                Click <strong>Approve &amp; invite</strong> to add the person to the{" "}
-                <code className="font-mono">investigators</code> directory and mark the request
-                approved. They can then sign in via Globus.
+                Click <strong>Approve &amp; onboard</strong> to open the onboarding agent
+                pre-filled with <code className="font-mono">Onboard &lt;name&gt; (&lt;email&gt;)</code>.
+                Complete the workflow there to provision the member; this request clears
+                automatically on completion.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -655,82 +546,6 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!collision} onOpenChange={(open) => !open && setCollision(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-accent-foreground" />
-              Name already exists in directory
-            </DialogTitle>
-            <DialogDescription>
-              An investigator with this name is already in the consortium roster. Choose how to
-              resolve this so the requester can sign in.
-            </DialogDescription>
-          </DialogHeader>
-
-          {collision && (
-            <div className="space-y-3 text-sm">
-              <div className="rounded-md border border-border bg-muted/40 p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                  Existing investigator
-                </div>
-                <div className="font-medium text-foreground">{collision.existing.name}</div>
-                <div className="text-xs text-muted-foreground break-all">
-                  Primary: {collision.existing.email || "—"}
-                </div>
-                {collision.existing.secondary_emails &&
-                  collision.existing.secondary_emails.length > 0 && (
-                    <div className="text-xs text-muted-foreground break-all">
-                      Secondary: {collision.existing.secondary_emails.join(", ")}
-                    </div>
-                  )}
-              </div>
-
-              <div className="rounded-md border border-border bg-muted/40 p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                  Requester
-                </div>
-                <div className="font-medium text-foreground">
-                  {collision.request.full_name || collision.request.globus_name || "—"}
-                </div>
-                <div className="text-xs text-muted-foreground break-all">{collision.email}</div>
-                {collision.request.institution && (
-                  <div className="text-xs text-muted-foreground break-all">
-                    {collision.request.institution}
-                  </div>
-                )}
-              </div>
-
-              <p className="text-xs text-muted-foreground pt-1">
-                If this is the <strong>same person</strong> using a different email, link the
-                email as a secondary sign-in method. If they're a <strong>different person</strong>{" "}
-                who happens to share the name, create a separate row with a disambiguated name.
-              </p>
-            </div>
-          )}
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCollision(null)}
-              disabled={!!busyId}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={createWithDisambiguatedName}
-              disabled={!!busyId}
-            >
-              Different person — create new
-            </Button>
-            <Button onClick={linkAsSecondaryEmail} disabled={!!busyId}>
-              {busyId && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
-              Same person — link email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
