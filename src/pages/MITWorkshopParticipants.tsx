@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, X, Download } from "lucide-react";
+import { Users, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, MapPin, GraduationCap, Building2, Award, X, Download, Printer } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -293,14 +293,24 @@ const MITWorkshopParticipants = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => window.print()}
+                  disabled={sorted.length === 0}
+                  className="gap-2 print:hidden"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={downloadCsv}
                   disabled={sorted.length === 0}
-                  className="gap-2"
+                  className="gap-2 print:hidden"
                 >
                   <Download className="h-4 w-4" />
                   {selected.size > 0 ? `Download CSV (${selected.size})` : "Download CSV"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2">
+                <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2 print:hidden">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Refresh
                 </Button>
