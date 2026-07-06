@@ -198,32 +198,57 @@ export default function MITWorkshopSeating() {
                       />
                       <text
                         x={cx}
-                        y={cy - 6}
+                        y={cy - 4}
                         textAnchor="middle"
                         className="fill-foreground font-bold"
-                        style={{ fontSize: 18 }}
+                        style={{ fontSize: 22 }}
                       >
                         T{table.number}
                       </text>
                       <text
                         x={cx}
-                        y={cy + 12}
+                        y={cy + 16}
                         textAnchor="middle"
                         className="fill-muted-foreground"
-                        style={{ fontSize: 9 }}
+                        style={{ fontSize: 10, letterSpacing: 0.5 }}
                       >
                         {table.domains}
                       </text>
-                      {/* Table label under */}
-                      <text
-                        x={cx}
-                        y={cy + CELL_H / 2 - 12}
-                        textAnchor="middle"
-                        className="fill-foreground"
-                        style={{ fontSize: 10, fontWeight: 500 }}
-                      >
-                        {table.theme.length > 32 ? table.theme.slice(0, 30) + "…" : table.theme}
-                      </text>
+                      {/* Theme label under table — larger, wrapped, on a subtle pill */}
+                      {(() => {
+                        const lines = wrapTheme(table.theme);
+                        const labelY = cy + SEAT_ORBIT + SEAT_R + 22;
+                        const pillH = lines.length === 2 ? 42 : 26;
+                        const pillW = Math.min(CELL_W - 24, 260);
+                        return (
+                          <g>
+                            <rect
+                              x={cx - pillW / 2}
+                              y={labelY - 16}
+                              width={pillW}
+                              height={pillH}
+                              rx={pillH / 2}
+                              fill="hsl(var(--primary))"
+                              fillOpacity={0.1}
+                              stroke="hsl(var(--primary))"
+                              strokeOpacity={0.35}
+                              strokeWidth={1}
+                            />
+                            {lines.map((line, i) => (
+                              <text
+                                key={i}
+                                x={cx}
+                                y={labelY + (lines.length === 2 ? i * 14 : 2)}
+                                textAnchor="middle"
+                                className="fill-foreground"
+                                style={{ fontSize: 13, fontWeight: 600 }}
+                              >
+                                {line}
+                              </text>
+                            ))}
+                          </g>
+                        );
+                      })()}
 
                       {/* Seats */}
                       {table.seats.map((seat, sIdx) => {
