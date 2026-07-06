@@ -47,6 +47,7 @@ interface SignedInUserRow {
   email: string;
   full_name: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
   role: AssignableRole;
   is_linked_investigator: boolean;
   investigator_id: string | null;
