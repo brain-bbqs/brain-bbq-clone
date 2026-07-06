@@ -15,6 +15,7 @@ import MITWorkshopTravel from "./pages/MITWorkshopTravel";
 import MITWorkshopParticipants from "./pages/MITWorkshopParticipants";
 import MITWorkshopMenu from "./pages/MITWorkshopMenu";
 import MITWorkshopSpeakers from "./pages/MITWorkshopSpeakers";
+import MITWorkshopSeating from "./pages/MITWorkshopSeating";
 import WorkingGroups from "./pages/WorkingGroups";
 import Resources from "./pages/Resources";
 import Announcements from "./pages/Announcements";
@@ -74,6 +75,7 @@ const App = () => (
               <Route path="/mit-workshop-2026/participants" element={<MITWorkshopParticipants />} />
               <Route path="/mit-workshop-2026/speakers" element={<MITWorkshopSpeakers />} />
               <Route path="/mit-workshop-2026/menu" element={<MITWorkshopMenu />} />
+              <Route path="/mit-workshop-2026/seating" element={<MITWorkshopSeating />} />
               <Route path="/working-groups" element={<WorkingGroups />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/devices" element={<Devices />} />

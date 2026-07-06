@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LogIn, LogOut, PanelLeftClose, X } from "lucide-react";
+import { LogIn, LogOut, PanelLeftClose, X, ChevronDown, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,11 @@ export function AppSidebar() {
                 <Link to={item.url} onClick={handleNavClick}>
                   <item.icon className="h-5 w-5" />
                   <span className="text-base">{item.title}</span>
+                  {item.children && item.children.length > 0 && (
+                    currentPath.startsWith(item.url)
+                      ? <ChevronDown className="ml-auto h-4 w-4 opacity-70" />
+                      : <ChevronRight className="ml-auto h-4 w-4 opacity-70" />
+                  )}
                 </Link>
               ) : (
                 <a
