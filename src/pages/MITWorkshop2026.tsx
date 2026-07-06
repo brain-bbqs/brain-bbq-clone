@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic } from "lucide-react";
-import { useState } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -52,7 +51,7 @@ const MITWorkshop2026 = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+        <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -110,8 +109,9 @@ const MITWorkshop2026 = () => {
                 </ul>
               </div>
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
+                menuDay="Day 1 — Wed, Jul 15"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
                   ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
@@ -124,8 +124,9 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
+                menuDay="Day 2 — Thu, Jul 16"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
                   ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
@@ -136,8 +137,9 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDay
+              <AgendaDayWithMenu
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
+                menuDay="Day 3 — Fri, Jul 17"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
@@ -150,8 +152,6 @@ const MITWorkshop2026 = () => {
           </Card>
 
           <SpeakersCard />
-
-          <MenuCard />
 
           <Card>
             <CardHeader>
@@ -519,56 +519,32 @@ function SpeakersCard() {
   );
 }
 
-// -------------------- Menu card --------------------
+// -------------------- Agenda + Menu side-by-side --------------------
 
-function MenuCard() {
-  const [openDay, setOpenDay] = useState<string | null>("Day 1 — Wed, Jul 15");
-  const days = Array.from(new Set(WORKSHOP_MENU.map((m) => m.day)));
+function AgendaDayWithMenu({ title, menuDay, rows }: { title: string; menuDay: string; rows: AgendaRow[] }) {
+  const meals = WORKSHOP_MENU.filter((m) => m.day === menuDay);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <ChefHat className="h-5 w-5 text-primary" />
-          Catering Menu
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-xs text-muted-foreground mb-4">
-          Provided by <a href="https://cloud9corporatecatering.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Golden Star Natural Foods (Cloud 9 Corporate Catering)</a>.
-          Menu items also appear inline in the agenda — expand any meal card there to see what's served.
-          Please let the organizers know of allergies or dietary needs in advance.
-        </p>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {days.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setOpenDay(openDay === d ? null : d)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${openDay === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border text-foreground"}`}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-4">
-          {WORKSHOP_MENU.filter((m) => !openDay || m.day === openDay).map((meal) => (
-            <div key={meal.key} className="rounded-lg border border-border/70 p-4 bg-gradient-to-b from-background to-muted/20">
-              <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                <div>
-                  <div className="text-sm font-semibold text-foreground">{meal.label}</div>
-                  <div className="text-xs text-muted-foreground">{meal.day} · {meal.time}</div>
-                </div>
-                <Badge variant="outline" className="text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300 gap-1">
-                  <Utensils className="h-3 w-3" /> {meal.items.length} items
-                </Badge>
-              </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2">
+        <AgendaDay title={title} rows={rows} />
+      </div>
+      <aside className="lg:col-span-1">
+        <div className="lg:sticky lg:top-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ChefHat className="h-4 w-4 text-orange-500" />
+            Menu for this day
+          </div>
+          {meals.map((meal) => (
+            <div key={meal.key} className="rounded-lg border border-border/70 p-3 bg-orange-500/[0.04]">
+              <div className="text-xs font-semibold text-foreground">{meal.label}</div>
+              <div className="text-[11px] text-muted-foreground mb-2">{meal.time}</div>
+              <ul className="text-xs text-muted-foreground space-y-0.5 list-disc pl-4">
                 {meal.items.map((it) => <li key={it}>{it}</li>)}
               </ul>
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </aside>
+    </div>
   );
 }
