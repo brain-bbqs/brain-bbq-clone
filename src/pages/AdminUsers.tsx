@@ -47,6 +47,7 @@ interface SignedInUserRow {
   email: string;
   full_name: string | null;
   created_at: string;
+  last_sign_in_at: string | null;
   role: AssignableRole;
   is_linked_investigator: boolean;
   investigator_id: string | null;
@@ -134,6 +135,12 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
         if (i.user_id) investigatorByUserId.set(i.user_id, i);
       });
 
+      const lastLoginMap = new Map<string, string | null>();
+      const { data: lastLogins } = await supabase.rpc("admin_get_last_logins");
+      (lastLogins ?? []).forEach((r: any) => {
+        lastLoginMap.set(r.user_id, r.last_sign_in_at);
+      });
+
       const signedIn: SignedInUserRow[] = (profilesRes.data ?? []).map((p: any) => {
         const inv = investigatorByUserId.get(p.id);
         return {
@@ -142,6 +149,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
           email: p.email,
           full_name: p.full_name,
           created_at: p.created_at,
+          last_sign_in_at: lastLoginMap.get(p.id) ?? null,
           role: roleMap.get(p.id) ?? "member",
           is_linked_investigator: !!inv,
           investigator_id: inv?.id ?? null,
@@ -636,6 +644,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                         <TableHead>Emails</TableHead>
                         <TableHead>Investigator linked</TableHead>
                         <TableHead>Current tier</TableHead>
+                        <TableHead>Last login</TableHead>
                         <TableHead className="text-right">Change role</TableHead>
                         <TableHead className="text-right w-[80px]">Delete</TableHead>
                       </TableRow>
@@ -643,7 +652,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                     <TableBody>
                       {filteredSignedIn.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             No users found.
                           </TableCell>
                         </TableRow>
@@ -703,6 +712,17 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
                               <Badge variant="outline" className={meta.color}>
                                 T{meta.tier} · {meta.label}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                              {u.last_sign_in_at
+                                ? new Date(u.last_sign_in_at).toLocaleString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "Never"}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="inline-flex items-center gap-2">

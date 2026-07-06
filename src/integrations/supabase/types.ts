@@ -2626,6 +2626,13 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_last_logins: {
+        Args: never
+        Returns: {
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
       decrement_vote_count: {
         Args: { _suggestion_id: string }
         Returns: undefined
