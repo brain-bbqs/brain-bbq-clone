@@ -2417,6 +2417,8 @@ export type Database = {
           id: string | null
           institution: string | null
           name: string | null
+          onboarding_checklist: Json | null
+          onboarding_completed_at: string | null
           orcid: string | null
           profile_url: string | null
           research_areas: string[] | null
@@ -2434,6 +2436,8 @@ export type Database = {
           id?: string | null
           institution?: string | null
           name?: string | null
+          onboarding_checklist?: Json | null
+          onboarding_completed_at?: string | null
           orcid?: string | null
           profile_url?: string | null
           research_areas?: string[] | null
@@ -2451,6 +2455,8 @@ export type Database = {
           id?: string | null
           institution?: string | null
           name?: string | null
+          onboarding_checklist?: Json | null
+          onboarding_completed_at?: string | null
           orcid?: string | null
           profile_url?: string | null
           research_areas?: string[] | null
