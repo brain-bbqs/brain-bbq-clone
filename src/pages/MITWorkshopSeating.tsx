@@ -1,20 +1,72 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutGrid, Printer, Utensils } from "lucide-react";
+import { LayoutGrid, Printer, Utensils, Loader2 } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { SEATING_PLAN, TABLE_COUNT, SEATS_PER_TABLE, TOTAL_SEATS, FILLED_SEATS } from "@/data/mit-workshop-seating";
+import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
+import { supabase } from "@/integrations/supabase/client";
+
+type Participant = { name: string; institution?: string; role?: string };
+
+const normName = (s: string) => (s || "").toLowerCase().replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
 
 export default function MITWorkshopSeating() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setFetching(true);
+      try {
+        const { data } = await supabase.functions.invoke("mit-workshop-participants");
+        if (data?.participants) setParticipants(data.participants);
+      } catch (e) {
+        console.error("Failed to fetch participants:", e);
+      } finally {
+        setFetching(false);
+      }
+    })();
+  }, [user]);
+
+  // Merge the seeded plan with live registrations, auto-filling open seats.
+  const { plan, filled, overflow } = useMemo(() => {
+    const seededNames = new Set<string>();
+    SEATING_PLAN.forEach((t) => t.seats.forEach((s) => { if (s.name !== "Open seat") seededNames.add(normName(s.name)); }));
+
+    const unseated: Seat[] = participants
+      .filter((p) => p.name && !seededNames.has(normName(p.name)))
+      .map((p) => ({ name: p.name, institution: p.institution, role: p.role }));
+
+    // Deep clone plan
+    const cloned: SeatingTable[] = SEATING_PLAN.map((t) => ({ ...t, seats: t.seats.map((s) => ({ ...s })) }));
+
+    // Fill open seats round-robin across tables to keep them balanced.
+    let guard = 0;
+    while (unseated.length && guard++ < 1000) {
+      let placed = false;
+      for (const t of cloned) {
+        const idx = t.seats.findIndex((s) => s.name === "Open seat");
+        if (idx >= 0 && unseated.length) {
+          t.seats[idx] = unseated.shift()!;
+          placed = true;
+        }
+      }
+      if (!placed) break;
+    }
+
+    const filledCount = cloned.reduce((n, t) => n + t.seats.filter((s) => s.name !== "Open seat").length, 0);
+    return { plan: cloned, filled: filledCount, overflow: unseated };
+  }, [participants]);
 
   if (loading || !user) return null;
 
@@ -33,7 +85,8 @@ export default function MITWorkshopSeating() {
             <p className="text-muted-foreground">
               2<sup>nd</sup> Annual BBQS Workshop · MIT · July 15–17, 2026 ·{" "}
               <span className="font-medium text-foreground">
-                {TABLE_COUNT} tables · {SEATS_PER_TABLE} seats each · {FILLED_SEATS}/{TOTAL_SEATS} assigned
+                {TABLE_COUNT} tables · {SEATS_PER_TABLE} seats each · {filled}/{TOTAL_SEATS} assigned
+                {fetching && <Loader2 className="inline-block ml-2 h-3 w-3 animate-spin" />}
               </span>
             </p>
           </div>
@@ -43,11 +96,16 @@ export default function MITWorkshopSeating() {
         </div>
 
         <p className="text-xs text-muted-foreground print:hidden">
-          Tables are grouped by scientific theme to promote cross-project discussion. Open seats will be filled as more attendees register.
+          Tables are grouped by scientific theme to promote cross-project discussion. Registered attendees not in the seed roster are auto-assigned round-robin to keep tables balanced at {SEATS_PER_TABLE} seats. Open seats will fill as more people register (target: {TOTAL_SEATS}).
+          {overflow.length > 0 && (
+            <span className="block mt-1 text-orange-600 dark:text-orange-400">
+              {overflow.length} registered attendee{overflow.length === 1 ? "" : "s"} beyond {TOTAL_SEATS} seats — add another table or reassign.
+            </span>
+          )}
         </p>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 print:grid-cols-2 print:gap-2">
-          {SEATING_PLAN.map((table) => {
+          {plan.map((table) => {
             const assigned = table.seats.filter((s) => s.name !== "Open seat").length;
             return (
               <Card key={table.number} className="border-primary/20 break-inside-avoid print:shadow-none print:border">
