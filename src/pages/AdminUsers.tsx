@@ -78,6 +78,8 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
   const tierInfo = useUserTier();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [tierFilter, setTierFilter] = useState<AssignableRole | "invited" | null>(null);
+  const [activeTab, setActiveTab] = useState<"signed_in" | "invited">("signed_in");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [addEmail, setAddEmail] = useState("");
@@ -178,13 +180,17 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
 
   const filteredSignedIn = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return signedIn;
-    return signedIn.filter(
+    let rows = signedIn;
+    if (tierFilter && tierFilter !== "invited") {
+      rows = rows.filter((u) => u.role === tierFilter);
+    }
+    if (!q) return rows;
+    return rows.filter(
       (u) =>
         u.email.toLowerCase().includes(q) ||
         (u.full_name ?? "").toLowerCase().includes(q),
     );
-  }, [signedIn, search]);
+  }, [signedIn, search, tierFilter]);
 
   const filteredInvited = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -571,8 +577,28 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
         {(["admin", "curator", "member"] as AssignableRole[]).map((r) => {
           const meta = TIER_META[r];
           const Icon = meta.icon;
+          const active = tierFilter === r;
           return (
-            <Card key={r}>
+            <Card
+              key={r}
+              role="button"
+              tabIndex={0}
+              aria-pressed={active}
+              onClick={() => {
+                setTierFilter(active ? null : r);
+                setActiveTab("signed_in");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setTierFilter(active ? null : r);
+                  setActiveTab("signed_in");
+                }
+              }}
+              className={`cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm ${
+                active ? "border-primary ring-2 ring-primary/30" : ""
+              }`}
+            >
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 text-muted-foreground" />
@@ -587,7 +613,27 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
             </Card>
           );
         })}
-        <Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          aria-pressed={tierFilter === "invited"}
+          onClick={() => {
+            const next = tierFilter === "invited" ? null : "invited";
+            setTierFilter(next);
+            setActiveTab(next === "invited" ? "invited" : "signed_in");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              const next = tierFilter === "invited" ? null : "invited";
+              setTierFilter(next);
+              setActiveTab(next === "invited" ? "invited" : "signed_in");
+            }
+          }}
+          className={`cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm ${
+            tierFilter === "invited" ? "border-primary ring-2 ring-primary/30" : ""
+          }`}
+        >
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
@@ -602,6 +648,24 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
         </Card>
       </div>
 
+      {tierFilter && (
+        <div className="mb-4 flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Filtered by:</span>
+          <Badge variant="secondary" className="gap-1">
+            {tierFilter === "invited"
+              ? "Invited (not signed in)"
+              : `Tier ${TIER_META[tierFilter].tier} — ${TIER_META[tierFilter].label}`}
+            <button
+              onClick={() => setTierFilter(null)}
+              className="ml-1 hover:text-foreground"
+              aria-label="Clear filter"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
+
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -612,7 +676,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
         />
       </div>
 
-      <Tabs defaultValue="signed_in">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "signed_in" | "invited")}>
         <TabsList>
           <TabsTrigger value="signed_in">
             Signed-in users ({filteredSignedIn.length})
