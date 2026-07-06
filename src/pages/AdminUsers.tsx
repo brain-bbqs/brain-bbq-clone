@@ -134,6 +134,12 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
         if (i.user_id) investigatorByUserId.set(i.user_id, i);
       });
 
+      const lastLoginMap = new Map<string, string | null>();
+      const { data: lastLogins } = await supabase.rpc("admin_get_last_logins");
+      (lastLogins ?? []).forEach((r: any) => {
+        lastLoginMap.set(r.user_id, r.last_sign_in_at);
+      });
+
       const signedIn: SignedInUserRow[] = (profilesRes.data ?? []).map((p: any) => {
         const inv = investigatorByUserId.get(p.id);
         return {
@@ -142,6 +148,7 @@ export default function AdminUsers({ embedded = false }: AdminUsersProps = {}) {
           email: p.email,
           full_name: p.full_name,
           created_at: p.created_at,
+          last_sign_in_at: lastLoginMap.get(p.id) ?? null,
           role: roleMap.get(p.id) ?? "member",
           is_linked_investigator: !!inv,
           investigator_id: inv?.id ?? null,
