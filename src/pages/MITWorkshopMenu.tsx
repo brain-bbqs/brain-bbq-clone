@@ -1,10 +1,16 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, Coffee, UtensilsCrossed, Wine, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChefHat, Coffee, UtensilsCrossed, Wine, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { WORKSHOP_MENU, type Meal } from "@/data/mit-workshop-2026";
 import coffeeImg from "@/assets/menu-coffee.jpg";
 import greekImg from "@/assets/menu-greek.jpg";
@@ -12,54 +18,52 @@ import italianImg from "@/assets/menu-italian.jpg";
 import burritoImg from "@/assets/menu-burrito.jpg";
 import happyHourImg from "@/assets/menu-happyhour.jpg";
 
-const DAYS = [
-  { key: "Day 1 — Wed, Jul 15", label: "Day 1", date: "Wed · Jul 15" },
-  { key: "Day 2 — Thu, Jul 16", label: "Day 2", date: "Thu · Jul 16" },
-  { key: "Day 3 — Fri, Jul 17", label: "Day 3", date: "Fri · Jul 17" },
-];
-
-const MEAL_ART: Record<string, { img: string; icon: typeof Coffee; tag: string; accent: string }> = {
-  "d1-coffee-am": { img: coffeeImg, icon: Coffee, tag: "Morning", accent: "from-amber-500/60 to-transparent" },
-  "d1-lunch":     { img: greekImg,   icon: UtensilsCrossed, tag: "Lunch · 12:30", accent: "from-orange-500/70 to-transparent" },
-  "d1-happy":     { img: happyHourImg, icon: Wine, tag: "Evening", accent: "from-rose-500/60 to-transparent" },
-  "d2-coffee-am": { img: coffeeImg, icon: Coffee, tag: "Morning", accent: "from-amber-500/60 to-transparent" },
-  "d2-lunch":     { img: italianImg, icon: UtensilsCrossed, tag: "Lunch · 12:30", accent: "from-orange-500/70 to-transparent" },
-  "d2-happy":     { img: happyHourImg, icon: Wine, tag: "Evening", accent: "from-rose-500/60 to-transparent" },
-  "d3-coffee-am": { img: coffeeImg, icon: Coffee, tag: "Morning", accent: "from-amber-500/60 to-transparent" },
-  "d3-lunch":     { img: burritoImg, icon: UtensilsCrossed, tag: "Lunch · 12:30", accent: "from-orange-500/70 to-transparent" },
+type DayPanel = {
+  key: string;
+  label: string;
+  date: string;
+  heroImg: string;
+  heroTitle: string;
 };
 
-function MealCard({ meal }: { meal: Meal }) {
+const DAYS: DayPanel[] = [
+  { key: "Day 1 — Wed, Jul 15", label: "Day 1", date: "Wednesday · July 15", heroImg: greekImg, heroTitle: "Greek Mediterranean Feast" },
+  { key: "Day 2 — Thu, Jul 16", label: "Day 2", date: "Thursday · July 16",  heroImg: italianImg, heroTitle: "Italian Feast" },
+  { key: "Day 3 — Fri, Jul 17", label: "Day 3", date: "Friday · July 17",   heroImg: burritoImg, heroTitle: "BYO Burrito Bowl" },
+];
+
+const MEAL_ART: Record<string, { img: string; icon: typeof Coffee; tag: string }> = {
+  "d1-coffee-am": { img: coffeeImg,   icon: Coffee,          tag: "Morning" },
+  "d1-lunch":     { img: greekImg,    icon: UtensilsCrossed, tag: "Lunch · 12:30" },
+  "d1-happy":     { img: happyHourImg, icon: Wine,           tag: "Happy Hour" },
+  "d2-coffee-am": { img: coffeeImg,   icon: Coffee,          tag: "Morning" },
+  "d2-lunch":     { img: italianImg,  icon: UtensilsCrossed, tag: "Lunch · 12:30" },
+  "d2-happy":     { img: happyHourImg, icon: Wine,           tag: "Happy Hour" },
+  "d3-coffee-am": { img: coffeeImg,   icon: Coffee,          tag: "Morning" },
+  "d3-lunch":     { img: burritoImg,  icon: UtensilsCrossed, tag: "Lunch · 12:30" },
+};
+
+function MealBlock({ meal }: { meal: Meal }) {
   const art = MEAL_ART[meal.key];
   const Icon = art?.icon ?? UtensilsCrossed;
   return (
-    <Card className="overflow-hidden border-border/60 group hover:border-primary/40 transition-colors">
-      {art?.img && (
-        <div className="relative h-40 overflow-hidden">
-          <img
-            src={art.img}
-            alt={meal.label}
-            loading="lazy"
-            width={1024}
-            height={1024}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className={`absolute inset-0 bg-gradient-to-t ${art.accent} mix-blend-multiply opacity-40`} />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
-          <Badge className="absolute top-2 right-2 bg-background/80 backdrop-blur text-foreground border-border/60">
-            {art.tag}
-          </Badge>
-          <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-md">
-              <Icon className="h-3.5 w-3.5" />
-            </span>
-            <h3 className="text-sm font-semibold text-foreground drop-shadow-sm leading-tight">
-              {meal.label}
-            </h3>
-          </div>
-        </div>
-      )}
-      <CardContent className="pt-3 pb-4">
+    <div className="grid sm:grid-cols-[180px_1fr] gap-4 rounded-xl border border-border/60 overflow-hidden bg-card/40 hover:border-primary/40 transition-colors">
+      <div className="relative h-40 sm:h-full min-h-[140px]">
+        <img
+          src={art?.img}
+          alt={meal.label}
+          loading="lazy"
+          width={1024}
+          height={1024}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/90 sm:from-transparent via-card/20 sm:via-transparent to-transparent" />
+        <Badge className="absolute top-2 left-2 bg-background/80 backdrop-blur text-foreground border-border/60 gap-1">
+          <Icon className="h-3 w-3" /> {art?.tag}
+        </Badge>
+      </div>
+      <div className="p-4 pt-0 sm:pt-4">
+        <h3 className="text-base font-semibold text-foreground mb-2">{meal.label}</h3>
         <ul className="flex flex-wrap gap-1.5">
           {meal.items.map((item) => (
             <li
@@ -70,18 +74,56 @@ function MealCard({ meal }: { meal: Meal }) {
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+function DayPanelCard({ day }: { day: DayPanel }) {
+  const meals = WORKSHOP_MENU.filter((m) => m.day === day.key);
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm">
+      {/* Day hero */}
+      <div className="relative h-48 sm:h-56">
+        <img
+          src={day.heroImg}
+          alt={day.heroTitle}
+          width={1024}
+          height={1024}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          <div className="text-xs uppercase tracking-widest text-primary font-semibold">{day.date}</div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow-sm">{day.label}</h2>
+          <p className="text-sm text-muted-foreground mt-1">Featured lunch: {day.heroTitle}</p>
+        </div>
+      </div>
+      {/* Meals */}
+      <div className="p-4 sm:p-5 space-y-3">
+        {meals.map((meal) => <MealBlock key={meal.key} meal={meal} />)}
+      </div>
+    </div>
   );
 }
 
 export default function MITWorkshopMenu() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => { api.off("select", onSelect); };
+  }, [api]);
 
   if (loading || !user) return null;
 
@@ -91,49 +133,79 @@ export default function MITWorkshopMenu() {
         title="MIT Workshop 2026 – Menu | BBQS"
         description="Catering menu for the BBQS MIT Workshop, July 15-17, 2026."
       />
-      <div className="container max-w-6xl mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-8">
-        {/* Hero */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/60">
-          <img
-            src={greekImg}
-            alt="Workshop catering"
-            width={1024}
-            height={1024}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
-          <div className="relative px-6 py-8 sm:px-10 sm:py-12">
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary font-semibold mb-3">
-              <ChefHat className="h-4 w-4" /> Catering
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground max-w-xl">
-              Workshop Menu
+      <div className="container max-w-5xl mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ChefHat className="h-7 w-7 text-primary" /> Workshop Menu
             </h1>
-            <p className="mt-2 text-muted-foreground max-w-xl">
-              2<sup>nd</sup> Annual BBQS Workshop · MIT · July 15–17, 2026. Three days of themed lunches,
-              happy-hour receptions, and all-day coffee & tea.
+            <p className="text-muted-foreground text-sm">
+              2<sup>nd</sup> Annual BBQS Workshop · MIT · July 15–17, 2026 · Slide between days
             </p>
+          </div>
+          {/* Day pills / navigation */}
+          <div className="flex items-center gap-1.5">
+            {DAYS.map((d, i) => (
+              <button
+                key={d.key}
+                onClick={() => api?.scrollTo(i)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  current === i
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent text-muted-foreground border-border/60 hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Day sections */}
-        {DAYS.map((day) => {
-          const meals = WORKSHOP_MENU.filter((m) => m.day === day.key);
-          return (
-            <section key={day.key} className="space-y-3">
-              <div className="flex items-baseline justify-between border-b border-border/60 pb-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  {day.label}
-                </h2>
-                <span className="text-xs text-muted-foreground">{day.date}</span>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {meals.map((meal) => <MealCard key={meal.key} meal={meal} />)}
-              </div>
-            </section>
-          );
-        })}
+        {/* Sliding day panels */}
+        <div className="relative">
+          <Carousel setApi={setApi} opts={{ align: "start", loop: false }} className="w-full">
+            <CarouselContent className="-ml-4">
+              {DAYS.map((day) => (
+                <CarouselItem key={day.key} className="pl-4 basis-full">
+                  <DayPanelCard day={day} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+
+          {/* Prev / Next */}
+          <div className="flex items-center justify-between mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => api?.scrollPrev()}
+              disabled={current === 0}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" /> Previous day
+            </Button>
+            <div className="flex items-center gap-2">
+              {DAYS.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    current === i ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                  }`}
+                />
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => api?.scrollNext()}
+              disabled={current === DAYS.length - 1}
+              className="gap-1"
+            >
+              Next day <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </>
   );
