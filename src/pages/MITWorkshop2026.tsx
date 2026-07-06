@@ -391,9 +391,10 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
-          const [, , session, location, zoom] = row;
+          const [, , session, location, zoom, mealKey, speaker] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
+          const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
           return (
             <div
               key={i}
@@ -429,17 +430,145 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                       Zoom
                     </Badge>
                   )}
+                  {meal && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300">
+                      <ChefHat className="h-3 w-3" />
+                      {meal.label}
+                    </Badge>
+                  )}
+                  {speaker && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-primary/30 text-primary">
+                      <Mic className="h-3 w-3" />
+                      {speaker}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">{session}</p>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span>{location}</span>
                 </div>
+                {meal && (
+                  <details className="mt-2 group/menu">
+                    <summary className="cursor-pointer text-xs text-orange-700 dark:text-orange-300 hover:underline inline-flex items-center gap-1">
+                      <Utensils className="h-3 w-3" />
+                      View menu ({meal.items.length} items)
+                    </summary>
+                    <ul className="mt-2 ml-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+                      {meal.items.map((it) => <li key={it}>{it}</li>)}
+                    </ul>
+                  </details>
+                )}
               </div>
             </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+// -------------------- Speakers card --------------------
+
+type SpeakerEntry = { name: string; affiliation?: string; role: string; when: string };
+
+const SPEAKERS: SpeakerEntry[] = [
+  { name: "TBD", affiliation: "NIH",  role: "Introduction — Scientific & Technological Goals", when: "Wed Jul 15 · 10:00 AM" },
+  { name: "Satra Ghosh", affiliation: "MIT", role: "Highlight: Last Year's BBQS Consortia — What's New?", when: "Wed Jul 15 · 10:15 AM" },
+  { name: "BBQS Project Leads", role: "Data Pipeline Blitz (round-robin)", when: "Wed Jul 15 · 10:30 AM" },
+  { name: "Brainhack Session Leads", role: "Report Back from Day 1", when: "Thu Jul 16 · 10:00 AM" },
+  { name: "Satra Ghosh", affiliation: "MIT", role: "Option A — AI Literacy to Liability", when: "Thu Jul 16 · 11:30 AM" },
+  { name: "WG-ELSI Chairs", role: "Option B — Office Hours, pre-voting data-sharing discussion", when: "Thu Jul 16 · 11:30 AM" },
+  { name: "Consortium PIs", role: "Policy Formation Forum — voting + Grants/Budgets", when: "Thu Jul 16 · 2:30 PM" },
+  { name: "Young Investigator lead (TBD)", role: "Young Investigator unconference", when: "Thu Jul 16 · 2:30 PM" },
+  { name: "Brainhack Leads · Open Mic", role: "Final project reports & town hall", when: "Fri Jul 17 · 12:30 PM" },
+];
+
+function SpeakersCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Mic className="h-5 w-5 text-primary" />
+          Speakers & Talks
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground mb-4">
+          Confirmed and placeholder speakers by agenda slot. TBD slots will be filled as they're confirmed —
+          if you're presenting and don't see your name, let the organizers know.
+        </p>
+        <ul className="divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden">
+          {SPEAKERS.map((s, i) => (
+            <li key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 hover:bg-muted/40">
+              <div className="sm:w-56 shrink-0">
+                <div className="text-sm font-medium text-foreground">{s.name}</div>
+                {s.affiliation && <div className="text-xs text-muted-foreground">{s.affiliation}</div>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-foreground">{s.role}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {s.when}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+// -------------------- Menu card --------------------
+
+function MenuCard() {
+  const [openDay, setOpenDay] = useState<string | null>("Day 1 — Wed, Jul 15");
+  const days = Array.from(new Set(WORKSHOP_MENU.map((m) => m.day)));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <ChefHat className="h-5 w-5 text-primary" />
+          Catering Menu
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground mb-4">
+          Provided by <a href="https://cloud9corporatecatering.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Golden Star Natural Foods (Cloud 9 Corporate Catering)</a>.
+          Menu items also appear inline in the agenda — expand any meal card there to see what's served.
+          Please let the organizers know of allergies or dietary needs in advance.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {days.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setOpenDay(openDay === d ? null : d)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${openDay === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border text-foreground"}`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-4">
+          {WORKSHOP_MENU.filter((m) => !openDay || m.day === openDay).map((meal) => (
+            <div key={meal.key} className="rounded-lg border border-border/70 p-4 bg-gradient-to-b from-background to-muted/20">
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">{meal.label}</div>
+                  <div className="text-xs text-muted-foreground">{meal.day} · {meal.time}</div>
+                </div>
+                <Badge variant="outline" className="text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300 gap-1">
+                  <Utensils className="h-3 w-3" /> {meal.items.length} items
+                </Badge>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+                {meal.items.map((it) => <li key={it}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
