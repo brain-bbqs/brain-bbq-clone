@@ -318,46 +318,42 @@ export default function MITWorkshopSeating() {
           </CardContent>
         </Card>
 
-        {/* Detail panel + full roster below */}
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <Card className="border-primary/20 h-fit lg:sticky lg:top-4 print:hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Seat details</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              {selected ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Table {selected.table.number}</Badge>
-                    <Badge variant="outline">Seat {selected.index + 1}</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{selected.table.theme}</div>
-                  <div className="pt-2 border-t border-border/60">
-                    <div className="font-semibold text-foreground">{selected.seat.name}</div>
-                    {selected.seat.institution && (
-                      <div className="text-xs text-muted-foreground">{selected.seat.institution}</div>
-                    )}
-                    {selected.seat.role && (
-                      <div className="text-xs text-muted-foreground">Role: {selected.seat.role}</div>
-                    )}
-                    {selected.seat.grants && (
-                      <div className="text-xs text-muted-foreground">Grants: {selected.seat.grants}</div>
-                    )}
-                    {selected.seat.dietary && (
-                      <div className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1 mt-1">
-                        <Utensils className="h-3 w-3" /> {selected.seat.dietary}
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">Click a seat on the floor plan to see attendee details.</p>
+        {/* Seat details — inline banner above roster, only when a seat is picked */}
+        {selected && (
+          <Card className="border-primary/40 bg-primary/5 print:hidden">
+            <CardContent className="p-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant="secondary">Table {selected.table.number}</Badge>
+                <Badge variant="outline">Seat {selected.index + 1}</Badge>
+                <span className="text-xs text-muted-foreground">{selected.table.theme}</span>
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-foreground">{selected.seat.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {[selected.seat.institution, selected.seat.role].filter(Boolean).join(" · ")}
+                  {selected.seat.grants ? ` · ${selected.seat.grants}` : ""}
+                </div>
+              </div>
+              {selected.seat.dietary && (
+                <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                  <Utensils className="h-3 w-3" /> {selected.seat.dietary}
+                </span>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto text-xs"
+                onClick={() => setSelected(null)}
+              >
+                Close
+              </Button>
             </CardContent>
           </Card>
+        )}
 
-          {/* Compact roster per table for quick scanning */}
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {/* Compact roster per table for quick scanning — full-width, balanced grid */}
+        <div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {SEATING_PLAN.map((table) => {
               const assigned = table.seats.filter((s) => s.name !== "Open seat").length;
               return (
