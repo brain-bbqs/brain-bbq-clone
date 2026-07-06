@@ -9,7 +9,7 @@ export default function Constitution() {
   return (
     <>
       <PageMeta
-        title="Constitution · BBQS Engineering"
+        title="AI Constitution · BBQS Engineering"
         description="The principles every BBQS roadmap item, spec, and pull request must uphold. Public, versioned, and amendable by PR."
       />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 space-y-6">
@@ -19,7 +19,7 @@ export default function Constitution() {
               <ScrollText className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Constitution</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">AI Constitution</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Principles every roadmap item, spec, and PR must uphold.
               </p>

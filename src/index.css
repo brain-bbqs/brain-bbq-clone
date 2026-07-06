@@ -123,3 +123,23 @@
     background-color: hsl(var(--sidebar-primary));
   }
 }
+
+@media print {
+  /* Hide app chrome when printing */
+  [data-sidebar],
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  body, html {
+    background: white !important;
+  }
+  main, [role="main"] {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  a { color: inherit; text-decoration: none; }
+  .shadow, .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
+  .border { border-color: #ddd !important; }
+}

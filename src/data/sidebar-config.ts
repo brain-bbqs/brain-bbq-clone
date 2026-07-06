@@ -25,6 +25,9 @@ import {
   ScrollText,
   Plane,
   CheckSquare,
+  Mic,
+  ChefHat,
+  LayoutGrid,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -79,6 +82,9 @@ const conferencesItems: NavItem[] = [
     children: [
       { title: "Travel & Hotel", url: "/mit-workshop-2026/travel", icon: Plane, authRequired: true },
       { title: "Participants", url: "/mit-workshop-2026/participants", icon: Users, authRequired: true },
+      { title: "Speakers & Talks", url: "/mit-workshop-2026/speakers", icon: Mic, authRequired: true },
+      { title: "Menu", url: "/mit-workshop-2026/menu", icon: ChefHat, authRequired: true },
+      { title: "Seating Chart", url: "/mit-workshop-2026/seating", icon: LayoutGrid, authRequired: true },
     ],
   },
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
@@ -86,7 +92,7 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "Constitution", url: "/constitution", icon: ScrollText },
+  { title: "AI Constitution", url: "/constitution", icon: ScrollText },
   { title: "Data Model", url: "/data-model", icon: Database },
   { title: "Ontology Approval", url: "/ontology-approval", icon: CheckSquare, adminOnly: true },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },

@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
+import { MEAL_BY_KEY } from "@/data/mit-workshop-2026";
 
 const MITWorkshop2026 = () => {
   const { user } = useAuth();
@@ -51,7 +52,35 @@ const MITWorkshop2026 = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+        <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+          {/* Sub-page navigator */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
+              { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
+              { to: "/mit-workshop-2026/speakers", label: "Speakers & Talks", desc: "Program & speakers", icon: Mic },
+              { to: "/mit-workshop-2026/menu", label: "Menu", desc: "Daily catering & meals", icon: ChefHat },
+              { to: "/mit-workshop-2026/seating", label: "Seating Chart", desc: "Floor plan & tables", icon: LayoutGrid },
+            ].map(({ to, label, desc, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">{label}</div>
+                  <div className="text-xs text-muted-foreground">{desc}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -112,37 +141,37 @@ const MITWorkshop2026 = () => {
               <AgendaDay
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", ""],
-                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals (TBD-NIH).", "Singleton", "Yes"],
-                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? (Satra Ghosh). Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes"],
-                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes"],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
+                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
+                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes", undefined, "Satra Ghosh (MIT)"],
+                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes", undefined, "BBQS project leads (round-robin)"],
                   ["12:15", "12:30", "Group Photo", "MIT Main Building & McGovern", ""],
-                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", ""],
+                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", "", "d1-lunch"],
                   ["2:00", "4:00", "BBQS Project Pitch (review proposed ideas) & discussion followed by Brainhack sessions. Identify volunteers to lead any new projects; leads set up projects using the Brainhack planning template and post slides. Current themes: Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group.", "Singleton", "Yes"],
-                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", ""],
+                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", "", "d1-happy"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes"],
-                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes"],
-                  ["11:30", "12:30", "Parallel working sessions: (Option A — Satra) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B — ELSI) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
-                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes"],
-                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes"],
-                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", ""],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
+                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
+                  ["11:30", "12:30", "Parallel working sessions: (Option A) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "A: Satra Ghosh · B: WG-ELSI chairs"],
+                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes", "d2-lunch"],
+                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "PI representatives · YI unconference lead: TBD"],
+                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
                 ]}
               />
 
               <AgendaDay
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
                 rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", ""],
+                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
-                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", ""],
-                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes"],
-                  ["2:45", "3:00", "Closing.", "Singleton", "Yes"],
+                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
+                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
+                  ["2:45", "3:00", "Closing.", "Singleton", "Yes", undefined, "BBQS organizers"],
                 ]}
               />
             </CardContent>
@@ -276,7 +305,8 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type AgendaRow = [string, string, string, string, string];
+type AgendaRow = [string, string, string, string, string, string?, string?];
+// [startTime, endTime, description, location, zoom, mealKey?, speaker?]
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
 function parseTime(t: string, isAfternoon: boolean): { minutes: number; label: string } {
@@ -355,9 +385,10 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
-          const [, , session, location, zoom] = row;
+          const [, , session, location, zoom, mealKey, speaker] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
+          const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
           return (
             <div
               key={i}
@@ -393,12 +424,35 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                       Zoom
                     </Badge>
                   )}
+                  {meal && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300">
+                      <ChefHat className="h-3 w-3" />
+                      {meal.label}
+                    </Badge>
+                  )}
+                  {speaker && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-primary/30 text-primary">
+                      <Mic className="h-3 w-3" />
+                      {speaker}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">{session}</p>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span>{location}</span>
                 </div>
+                {meal && (
+                  <details className="mt-2 group/menu">
+                    <summary className="cursor-pointer text-xs text-orange-700 dark:text-orange-300 hover:underline inline-flex items-center gap-1">
+                      <Utensils className="h-3 w-3" />
+                      View menu ({meal.items.length} items)
+                    </summary>
+                    <ul className="mt-2 ml-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground list-disc pl-5">
+                      {meal.items.map((it) => <li key={it}>{it}</li>)}
+                    </ul>
+                  </details>
+                )}
               </div>
             </div>
           );
@@ -407,3 +461,4 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
     </div>
   );
 }
+
