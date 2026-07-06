@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
+import { MEAL_BY_KEY } from "@/data/mit-workshop-2026";
 
 const MITWorkshop2026 = () => {
   const { user } = useAuth();
@@ -109,9 +110,8 @@ const MITWorkshop2026 = () => {
                 </ul>
               </div>
 
-              <AgendaDayWithMenu
+              <AgendaDay
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
-                menuDay="Day 1 — Wed, Jul 15"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
                   ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
@@ -124,9 +124,8 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDayWithMenu
+              <AgendaDay
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
-                menuDay="Day 2 — Thu, Jul 16"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
                   ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
@@ -137,9 +136,8 @@ const MITWorkshop2026 = () => {
                 ]}
               />
 
-              <AgendaDayWithMenu
+              <AgendaDay
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
-                menuDay="Day 3 — Fri, Jul 17"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
@@ -150,8 +148,6 @@ const MITWorkshop2026 = () => {
               />
             </CardContent>
           </Card>
-
-          <SpeakersCard />
 
           <Card>
             <CardHeader>
@@ -283,36 +279,6 @@ export default MITWorkshop2026;
 
 type AgendaRow = [string, string, string, string, string, string?, string?];
 // [startTime, endTime, description, location, zoom, mealKey?, speaker?]
-
-type Meal = {
-  key: string;
-  day: string;
-  label: string;
-  time: string;
-  items: string[];
-};
-
-export const WORKSHOP_MENU: Meal[] = [
-  { key: "d1-coffee-am", day: "Day 1 — Wed, Jul 15", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
-  { key: "d1-coffee-mid", day: "Day 1 — Wed, Jul 15", label: "Coffee & Tea Service",    time: "11:45 AM", items: ["Freshly brewed coffee", "Assorted teas"] },
-  { key: "d1-lunch",   day: "Day 1 — Wed, Jul 15", label: "BYO — Greek Mediterranean Feast", time: "11:45 AM",
-    items: ["Greek Chicken", "Greek Steak Tips", "Falafel", "Lemon Rice", "Roasted Veggies", "Lettuce", "Assorted Toppings", "Dessert"] },
-  { key: "d1-happy",   day: "Day 1 — Wed, Jul 15", label: "Happy Hour Reception", time: "3:15 PM",
-    items: ["Charcuterie & Cheese Platter, Fruit & Crostini", "Veggie Platter — Hummus & Tzatziki, Pita Chips", "Spinach & Artichoke Dip, Pita Chips", "Pastry Cups with Cheese & Fig", "Veggie Samosas", "Stuffed Mushrooms", "Burger Sliders", "Chicken Skewers", "Steak Skewers", "Shrimp Skewers", "Cookies & Brownies"] },
-
-  { key: "d2-coffee-am", day: "Day 2 — Thu, Jul 16", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
-  { key: "d2-coffee-mid", day: "Day 2 — Thu, Jul 16", label: "Coffee & Tea Service",    time: "11:45 AM", items: ["Freshly brewed coffee", "Assorted teas"] },
-  { key: "d2-lunch",   day: "Day 2 — Thu, Jul 16", label: "Italian Feast", time: "11:45 AM",
-    items: ["Meatballs", "Chicken Cutlet", "Chicken Piccata", "Broccoli Alfredo", "Roasted Veggies", "Pasta", "Marinara", "Salads", "Garlic Bread", "Dessert"] },
-  { key: "d2-happy",   day: "Day 2 — Thu, Jul 16", label: "Happy Hour Reception", time: "3:45 PM",
-    items: ["Charcuterie & Cheese Platter, Fruit & Crostini", "Veggie Platter — Hummus & Tzatziki, Pita Chips", "Spinach & Artichoke Dip, Pita Chips", "Pastry Cups with Cheese & Fig", "Veggie Samosas", "Cheese Arancini Balls", "Chicken Sliders", "Vegan Sliders", "BBQ Chicken Skewers", "Steak Skewers", "Shrimp Cocktail", "Cookies & Brownies"] },
-
-  { key: "d3-coffee-am", day: "Day 3 — Fri, Jul 17", label: "Coffee & Tea Service",     time: "8:00 AM",  items: ["Freshly brewed coffee", "Assorted teas"] },
-  { key: "d3-lunch",   day: "Day 3 — Fri, Jul 17", label: "BYO Burrito Bowl", time: "10:45 AM",
-    items: ["Chicken Chipotle", "Taco Beef", "Grilled Shrimp", "Vegan Taco Meat", "Rice", "Black Beans", "Assorted Toppings", "Dessert"] },
-];
-
-const MEAL_BY_KEY: Record<string, Meal> = Object.fromEntries(WORKSHOP_MENU.map((m) => [m.key, m]));
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
 function parseTime(t: string, isAfternoon: boolean): { minutes: number; label: string } {
@@ -468,83 +434,3 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
   );
 }
 
-// -------------------- Speakers card --------------------
-
-type SpeakerEntry = { name: string; affiliation?: string; role: string; when: string };
-
-const SPEAKERS: SpeakerEntry[] = [
-  { name: "TBD", affiliation: "NIH",  role: "Introduction — Scientific & Technological Goals", when: "Wed Jul 15 · 10:00 AM" },
-  { name: "Satra Ghosh", affiliation: "MIT", role: "Highlight: Last Year's BBQS Consortia — What's New?", when: "Wed Jul 15 · 10:15 AM" },
-  { name: "BBQS Project Leads", role: "Data Pipeline Blitz (round-robin)", when: "Wed Jul 15 · 10:30 AM" },
-  { name: "Brainhack Session Leads", role: "Report Back from Day 1", when: "Thu Jul 16 · 10:00 AM" },
-  { name: "Satra Ghosh", affiliation: "MIT", role: "Option A — AI Literacy to Liability", when: "Thu Jul 16 · 11:30 AM" },
-  { name: "WG-ELSI Chairs", role: "Option B — Office Hours, pre-voting data-sharing discussion", when: "Thu Jul 16 · 11:30 AM" },
-  { name: "Consortium PIs", role: "Policy Formation Forum — voting + Grants/Budgets", when: "Thu Jul 16 · 2:30 PM" },
-  { name: "Young Investigator lead (TBD)", role: "Young Investigator unconference", when: "Thu Jul 16 · 2:30 PM" },
-  { name: "Brainhack Leads · Open Mic", role: "Final project reports & town hall", when: "Fri Jul 17 · 12:30 PM" },
-];
-
-function SpeakersCard() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <Mic className="h-5 w-5 text-primary" />
-          Speakers & Talks
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-xs text-muted-foreground mb-4">
-          Confirmed and placeholder speakers by agenda slot. TBD slots will be filled as they're confirmed —
-          if you're presenting and don't see your name, let the organizers know.
-        </p>
-        <ul className="divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden">
-          {SPEAKERS.map((s, i) => (
-            <li key={i} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 hover:bg-muted/40">
-              <div className="sm:w-56 shrink-0">
-                <div className="text-sm font-medium text-foreground">{s.name}</div>
-                {s.affiliation && <div className="text-xs text-muted-foreground">{s.affiliation}</div>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground">{s.role}</div>
-                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> {s.when}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  );
-}
-
-// -------------------- Agenda + Menu side-by-side --------------------
-
-function AgendaDayWithMenu({ title, menuDay, rows }: { title: string; menuDay: string; rows: AgendaRow[] }) {
-  const meals = WORKSHOP_MENU.filter((m) => m.day === menuDay);
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2">
-        <AgendaDay title={title} rows={rows} />
-      </div>
-      <aside className="lg:col-span-1">
-        <div className="lg:sticky lg:top-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <ChefHat className="h-4 w-4 text-orange-500" />
-            Menu for this day
-          </div>
-          {meals.map((meal) => (
-            <div key={meal.key} className="rounded-lg border border-border/70 p-3 bg-orange-500/[0.04]">
-              <div className="text-xs font-semibold text-foreground">{meal.label}</div>
-              <div className="text-[11px] text-muted-foreground mb-2">{meal.time}</div>
-              <ul className="text-xs text-muted-foreground space-y-0.5 list-disc pl-4">
-                {meal.items.map((it) => <li key={it}>{it}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </aside>
-    </div>
-  );
-}
