@@ -5,12 +5,14 @@
  */
 export function isPreviewMode(): boolean {
   try {
-    if (!import.meta.env.DEV || typeof window === "undefined") {
-      return false;
-    }
-
+    if (typeof window === "undefined") return false;
     const host = window.location.hostname;
-    return host === "localhost" || host === "127.0.0.1";
+    // Local dev
+    if (import.meta.env.DEV && (host === "localhost" || host === "127.0.0.1")) return true;
+    // Lovable preview / sandbox hosts (e.g. id-preview--xxx.lovable.app, *.sandbox.lovable.dev)
+    if (host.endsWith(".lovable.app") && host.includes("preview")) return true;
+    if (host.endsWith(".sandbox.lovable.dev")) return true;
+    return false;
   } catch {
     return false;
   }
