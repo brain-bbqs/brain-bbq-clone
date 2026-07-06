@@ -10,7 +10,7 @@ export function ConstitutionPanel() {
           <ScrollText className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Constitution</h2>
+          <h2 className="text-lg font-semibold">AI Constitution</h2>
           <p className="text-sm text-muted-foreground">
             Principles every roadmap item, spec, and PR must uphold. Public and versioned in{" "}
             <code className="text-xs">.specify/memory/constitution.md</code>.
