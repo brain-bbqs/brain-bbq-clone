@@ -8,20 +8,20 @@ import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation } from "lucide-re
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
 
-/** Layout tuning (SVG user units). */
-const COLS = 5;
-const ROWS = 2;
-const CELL_W = 260;
-const CELL_H = 240;
+/** Layout tuning (SVG user units). 4-4-2 row layout. */
+const ROW_LAYOUT = [4, 4, 2];
+const CELL_W = 320;
+const CELL_H = 300;
 const MARGIN_X = 60;
-const MARGIN_TOP = 130; // room for stage
-const MARGIN_BOTTOM = 80; // room for entrance
-const TABLE_R = 46;
-const SEAT_R = 16;
-const SEAT_ORBIT = TABLE_R + 22;
+const MARGIN_TOP = 140; // room for stage
+const MARGIN_BOTTOM = 90; // room for entrance
+const TABLE_R = 58;
+const SEAT_R = 20;
+const SEAT_ORBIT = TABLE_R + 28;
 
-const SVG_W = MARGIN_X * 2 + CELL_W * COLS;
-const SVG_H = MARGIN_TOP + MARGIN_BOTTOM + CELL_H * ROWS;
+const MAX_COLS = Math.max(...ROW_LAYOUT);
+const SVG_W = MARGIN_X * 2 + CELL_W * MAX_COLS;
+const SVG_H = MARGIN_TOP + MARGIN_BOTTOM + CELL_H * ROW_LAYOUT.length;
 
 function seatPosition(index: number, total: number, cx: number, cy: number) {
   // Distribute seats evenly around the table, starting at the top.
@@ -30,12 +30,44 @@ function seatPosition(index: number, total: number, cx: number, cy: number) {
 }
 
 function tableCenter(idx: number) {
-  const col = idx % COLS;
-  const row = Math.floor(idx / COLS);
+  // Walk ROW_LAYOUT to find (row, col) for a linear table index.
+  let remaining = idx;
+  let row = 0;
+  for (; row < ROW_LAYOUT.length; row++) {
+    if (remaining < ROW_LAYOUT[row]) break;
+    remaining -= ROW_LAYOUT[row];
+  }
+  const col = remaining;
+  const rowCount = ROW_LAYOUT[row];
+  // Center each row horizontally within the SVG.
+  const rowWidth = CELL_W * rowCount;
+  const rowStart = (SVG_W - rowWidth) / 2;
   return {
-    cx: MARGIN_X + CELL_W * col + CELL_W / 2,
+    cx: rowStart + CELL_W * col + CELL_W / 2,
     cy: MARGIN_TOP + CELL_H * row + CELL_H / 2,
   };
+}
+
+/** Wrap a theme into up to two lines that fit under a table. */
+function wrapTheme(theme: string, maxCharsPerLine = 26): string[] {
+  const words = theme.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const w of words) {
+    if ((current + " " + w).trim().length > maxCharsPerLine) {
+      if (current) lines.push(current);
+      current = w;
+    } else {
+      current = (current + " " + w).trim();
+    }
+    if (lines.length === 1 && (current + " ").length > maxCharsPerLine) {
+      // second line — keep and stop
+      lines.push(current);
+      return lines;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, 2);
 }
 
 export default function MITWorkshopSeating() {
@@ -166,32 +198,57 @@ export default function MITWorkshopSeating() {
                       />
                       <text
                         x={cx}
-                        y={cy - 6}
+                        y={cy - 4}
                         textAnchor="middle"
                         className="fill-foreground font-bold"
-                        style={{ fontSize: 18 }}
+                        style={{ fontSize: 22 }}
                       >
                         T{table.number}
                       </text>
                       <text
                         x={cx}
-                        y={cy + 12}
+                        y={cy + 16}
                         textAnchor="middle"
                         className="fill-muted-foreground"
-                        style={{ fontSize: 9 }}
+                        style={{ fontSize: 10, letterSpacing: 0.5 }}
                       >
                         {table.domains}
                       </text>
-                      {/* Table label under */}
-                      <text
-                        x={cx}
-                        y={cy + CELL_H / 2 - 12}
-                        textAnchor="middle"
-                        className="fill-foreground"
-                        style={{ fontSize: 10, fontWeight: 500 }}
-                      >
-                        {table.theme.length > 32 ? table.theme.slice(0, 30) + "…" : table.theme}
-                      </text>
+                      {/* Theme label under table — larger, wrapped, on a subtle pill */}
+                      {(() => {
+                        const lines = wrapTheme(table.theme);
+                        const labelY = cy + SEAT_ORBIT + SEAT_R + 22;
+                        const pillH = lines.length === 2 ? 42 : 26;
+                        const pillW = Math.min(CELL_W - 24, 260);
+                        return (
+                          <g>
+                            <rect
+                              x={cx - pillW / 2}
+                              y={labelY - 16}
+                              width={pillW}
+                              height={pillH}
+                              rx={pillH / 2}
+                              fill="hsl(var(--primary))"
+                              fillOpacity={0.1}
+                              stroke="hsl(var(--primary))"
+                              strokeOpacity={0.35}
+                              strokeWidth={1}
+                            />
+                            {lines.map((line, i) => (
+                              <text
+                                key={i}
+                                x={cx}
+                                y={labelY + (lines.length === 2 ? i * 14 : 2)}
+                                textAnchor="middle"
+                                className="fill-foreground"
+                                style={{ fontSize: 13, fontWeight: 600 }}
+                              >
+                                {line}
+                              </text>
+                            ))}
+                          </g>
+                        );
+                      })()}
 
                       {/* Seats */}
                       {table.seats.map((seat, sIdx) => {
