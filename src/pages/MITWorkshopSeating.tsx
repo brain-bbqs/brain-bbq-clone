@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation, Info } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
 
@@ -97,6 +98,32 @@ export default function MITWorkshopSeating() {
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <LayoutGrid className="h-7 w-7 text-primary" /> Seating Floor Plan
+              <HoverCard openDelay={100} closeDelay={100}>
+                <HoverCardTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="About the seating floor plan"
+                    className="inline-flex items-center justify-center h-6 w-6 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors print:hidden"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80 text-sm" side="bottom" align="start">
+                  <div className="space-y-2">
+                    <div className="font-semibold text-foreground">About this floor plan</div>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Each circle is a themed table seating up to {SEATS_PER_TABLE} people, grouped by
+                      scientific focus — Brainhack topics, cross-consortium bridges, and young-investigator
+                      tracks. The stage sits at the top of the room and the entrance at the bottom.
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Click any seat to see who is assigned. Dimmed seats are still open — assignments are
+                      curated manually so PIs, trainees, infra leads, and NIH program officers are mixed
+                      intentionally across each table.
+                    </p>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
             </h1>
             <p className="text-muted-foreground">
               2<sup>nd</sup> Annual BBQS Workshop · MIT McGovern Institute · July 15–17, 2026 ·{" "}
