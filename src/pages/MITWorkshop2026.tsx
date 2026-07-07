@@ -54,14 +54,33 @@ const MITWorkshop2026 = () => {
         {/* Content */}
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
           {/* Sub-page navigator */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
               { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
               { to: "/mit-workshop-2026/speakers", label: "Speakers & Talks", desc: "Program & speakers", icon: Mic },
               { to: "/mit-workshop-2026/menu", label: "Menu", desc: "Daily catering & meals", icon: ChefHat },
               { to: "/mit-workshop-2026/seating", label: "Seating Chart", desc: "Floor plan & tables", icon: LayoutGrid },
+              { to: "#logistics", label: "Wi-Fi & Logistics", desc: "Rooms, Wi-Fi, Zoom, Slack", icon: Wifi },
             ].map(({ to, label, desc, icon: Icon }) => (
+              (to.startsWith("#") ? (
+                <a
+                  key={to}
+                  href={to}
+                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{label}</div>
+                    <div className="text-xs text-muted-foreground">{desc}</div>
+                  </div>
+                </a>
+              ) : (
               <Link
                 key={to}
                 to={to}
@@ -78,6 +97,7 @@ const MITWorkshop2026 = () => {
                   <div className="text-xs text-muted-foreground">{desc}</div>
                 </div>
               </Link>
+              ))
             ))}
           </div>
 
@@ -115,15 +135,6 @@ const MITWorkshop2026 = () => {
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Unconference, working meeting, and hackathon — open to the full BBQS Consortium and collaborators. Coding is <span className="font-medium text-foreground">not</span> a requirement.
-                  {" "}For some local-to-MIT history, see the{" "}
-                  <a
-                    href="https://en.wikipedia.org/wiki/Tech_Model_Railroad_Club"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    Tech Model Railroad Club
-                  </a>.
                 </p>
               </div>
 
@@ -204,7 +215,7 @@ const MITWorkshop2026 = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="logistics">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <MapPin className="h-5 w-5 text-primary" />
