@@ -5,7 +5,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, DollarSign, Calendar, AlertCircle, Plus } from "lucide-react";
+import { ExternalLink, DollarSign, Calendar, AlertCircle, Plus, BookOpen } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { PageMeta } from "@/components/PageMeta";
 import { FundingDetailPanel } from "@/components/funding/FundingDetailPanel";
@@ -279,7 +279,19 @@ export default function FundingOpportunities() {
             <h1 className="text-3xl font-bold text-foreground">
               Grants & Funding Opportunities
             </h1>
-            {isCurator && (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline">
+                <a
+                  href="https://www.thetransmitter.org/neuroscience-grants-funding-finder/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Resources: Transmitter Funding Finder
+                  <ExternalLink className="ml-2 h-3.5 w-3.5" />
+                </a>
+              </Button>
+              {isCurator && (
               <AddFundingOpportunityDialog
                 onCreated={fetchData}
                 trigger={
@@ -289,7 +301,8 @@ export default function FundingOpportunities() {
                   </Button>
                 }
               />
-            )}
+              )}
+            </div>
           </div>
           <p className="text-muted-foreground max-w-3xl">
             Active and upcoming NIH funding opportunities relevant to BBQS consortium members.
