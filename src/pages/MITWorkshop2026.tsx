@@ -54,14 +54,33 @@ const MITWorkshop2026 = () => {
         {/* Content */}
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
           {/* Sub-page navigator */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
               { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
               { to: "/mit-workshop-2026/speakers", label: "Speakers & Talks", desc: "Program & speakers", icon: Mic },
               { to: "/mit-workshop-2026/menu", label: "Menu", desc: "Daily catering & meals", icon: ChefHat },
               { to: "/mit-workshop-2026/seating", label: "Seating Chart", desc: "Floor plan & tables", icon: LayoutGrid },
+              { to: "#logistics", label: "Wi-Fi & Logistics", desc: "Rooms, Wi-Fi, Zoom, Slack", icon: Wifi },
             ].map(({ to, label, desc, icon: Icon }) => (
+              (to.startsWith("#") ? (
+                <a
+                  key={to}
+                  href={to}
+                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{label}</div>
+                    <div className="text-xs text-muted-foreground">{desc}</div>
+                  </div>
+                </a>
+              ) : (
               <Link
                 key={to}
                 to={to}
@@ -78,6 +97,7 @@ const MITWorkshop2026 = () => {
                   <div className="text-xs text-muted-foreground">{desc}</div>
                 </div>
               </Link>
+              ))
             ))}
           </div>
 
@@ -115,15 +135,6 @@ const MITWorkshop2026 = () => {
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Unconference, working meeting, and hackathon — open to the full BBQS Consortium and collaborators. Coding is <span className="font-medium text-foreground">not</span> a requirement.
-                  {" "}For some local-to-MIT history, see the{" "}
-                  <a
-                    href="https://en.wikipedia.org/wiki/Tech_Model_Railroad_Club"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    Tech Model Railroad Club
-                  </a>.
                 </p>
               </div>
 
@@ -204,6 +215,35 @@ const MITWorkshop2026 = () => {
             </CardContent>
           </Card>
 
+          <Card id="logistics">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <MapPin className="h-5 w-5 text-primary" />
+                Event Location & Rooms
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-3 leading-relaxed">
+              <p>
+                <span className="font-semibold text-foreground">Building 46</span> — MIT Brain &amp; Cognitive Sciences Complex.
+                Entrances on both <span className="text-foreground">Main St</span> and <span className="text-foreground">Vassar St</span> should be open throughout the day.{" "}
+                <a
+                  href="https://whereis.mit.edu/?go=46"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  View on MIT map
+                </a>.
+              </p>
+              <p>The event will take place in:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><span className="font-medium text-foreground">Singleton Auditorium</span> (46-3002)</li>
+                <li><span className="font-medium text-foreground">Seminar Room</span> 46-3189</li>
+                <li><span className="font-medium text-foreground">Atrium</span></li>
+              </ul>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -227,7 +267,16 @@ const MITWorkshop2026 = () => {
                 <li className="flex items-start gap-2">
                   <Wifi className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
-                    <span className="font-medium text-foreground">Wi-Fi:</span>{" "}
+                    <span className="font-medium text-foreground">Wi-Fi — Eduroam:</span>{" "}
+                    If your home institution participates in Eduroam, sign in with your home credentials to connect at MIT.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Wifi className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    <span className="font-medium text-foreground">Wi-Fi — MIT GUEST:</span>{" "}
+                    Connect and enter your email or mobile number. Without SMS/email access (e.g. international travelers),
+                    choose <span className="text-foreground">"Request Access from Sponsor"</span> and enter your MIT host's email.{" "}
                     <a href="https://ist.mit.edu/start-guests" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
                       ist.mit.edu/start-guests
                     </a>
@@ -243,11 +292,28 @@ const MITWorkshop2026 = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    <span className="font-medium text-foreground">Slack:</span>{" "}
+                    You should have received an invitation to the BBQS Slack workspace. If not, please fill in the onboarding form.
+                    Sign in with your guest account (unless you are at MIT):{" "}
+                    <a href="https://mit-brain-bbqs.slack.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                      mit-brain-bbqs.slack.com
+                    </a>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
                   <ExternalLink className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
-                    <span className="font-medium text-foreground">Website:</span>{" "}
+                    <span className="font-medium text-foreground">Website & Calendar:</span>{" "}
                     <a href="https://brain-bbqs.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                       brain-bbqs.org
+                    </a>{" "}·{" "}
+                    <a href="https://brain-bbqs.org/calendar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      calendar
+                    </a>{" "}·{" "}
+                    <a href="https://youtube.com/@brain-bbqs" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      YouTube
                     </a>
                   </span>
                 </li>
