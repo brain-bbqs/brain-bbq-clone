@@ -9,12 +9,15 @@ import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation, Info } from "luc
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
 
-/** Layout tuning (SVG user units). 4-4-2 row layout. */
-const ROW_LAYOUT = [4, 4, 2];
-const CELL_W = 320;
-const CELL_H = 300;
-const MARGIN_X = 60;
-const MARGIN_TOP = 140; // room for stage
+/** Layout tuning (SVG user units).
+ *  McGovern Institute 3rd-floor Atrium — long rectangular room, stage on the
+ *  short (north) end, entrance on the opposite short end. Tables run down the
+ *  length of the room in two columns. */
+const ROW_LAYOUT = [2, 2, 2, 2, 2];
+const CELL_W = 360;
+const CELL_H = 260;
+const MARGIN_X = 80;
+const MARGIN_TOP = 150; // room for stage on short end
 const MARGIN_BOTTOM = 90; // room for entrance
 const TABLE_R = 58;
 const SEAT_R = 20;
