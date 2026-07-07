@@ -115,15 +115,6 @@ const MITWorkshop2026 = () => {
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Unconference, working meeting, and hackathon — open to the full BBQS Consortium and collaborators. Coding is <span className="font-medium text-foreground">not</span> a requirement.
-                  {" "}For some local-to-MIT history, see the{" "}
-                  <a
-                    href="https://en.wikipedia.org/wiki/Tech_Model_Railroad_Club"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    Tech Model Railroad Club
-                  </a>.
                 </p>
               </div>
 
