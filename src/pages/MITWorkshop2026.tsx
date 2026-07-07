@@ -207,6 +207,35 @@ const MITWorkshop2026 = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
+                <MapPin className="h-5 w-5 text-primary" />
+                Event Location & Rooms
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-3 leading-relaxed">
+              <p>
+                <span className="font-semibold text-foreground">Building 46</span> — MIT Brain &amp; Cognitive Sciences Complex.
+                Entrances on both <span className="text-foreground">Main St</span> and <span className="text-foreground">Vassar St</span> should be open throughout the day.{" "}
+                <a
+                  href="https://whereis.mit.edu/?go=46"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  View on MIT map
+                </a>.
+              </p>
+              <p>The event will take place in:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><span className="font-medium text-foreground">Singleton Auditorium</span> (46-3002)</li>
+                <li><span className="font-medium text-foreground">Seminar Room</span> 46-3189</li>
+                <li><span className="font-medium text-foreground">Atrium</span></li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Link2 className="h-5 w-5 text-primary" />
                 Key Links & Logistics
               </CardTitle>
@@ -227,7 +256,16 @@ const MITWorkshop2026 = () => {
                 <li className="flex items-start gap-2">
                   <Wifi className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
-                    <span className="font-medium text-foreground">Wi-Fi:</span>{" "}
+                    <span className="font-medium text-foreground">Wi-Fi — Eduroam:</span>{" "}
+                    If your home institution participates in Eduroam, sign in with your home credentials to connect at MIT.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Wifi className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    <span className="font-medium text-foreground">Wi-Fi — MIT GUEST:</span>{" "}
+                    Connect and enter your email or mobile number. Without SMS/email access (e.g. international travelers),
+                    choose <span className="text-foreground">"Request Access from Sponsor"</span> and enter your MIT host's email.{" "}
                     <a href="https://ist.mit.edu/start-guests" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
                       ist.mit.edu/start-guests
                     </a>
@@ -243,11 +281,28 @@ const MITWorkshop2026 = () => {
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    <span className="font-medium text-foreground">Slack:</span>{" "}
+                    You should have received an invitation to the BBQS Slack workspace. If not, please fill in the onboarding form.
+                    Sign in with your guest account (unless you are at MIT):{" "}
+                    <a href="https://mit-brain-bbqs.slack.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                      mit-brain-bbqs.slack.com
+                    </a>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
                   <ExternalLink className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
-                    <span className="font-medium text-foreground">Website:</span>{" "}
+                    <span className="font-medium text-foreground">Website & Calendar:</span>{" "}
                     <a href="https://brain-bbqs.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                       brain-bbqs.org
+                    </a>{" "}·{" "}
+                    <a href="https://brain-bbqs.org/calendar/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      calendar
+                    </a>{" "}·{" "}
+                    <a href="https://youtube.com/@brain-bbqs" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      YouTube
                     </a>
                   </span>
                 </li>
