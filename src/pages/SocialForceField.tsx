@@ -20,7 +20,7 @@ function LayerStackDiagram({
 }) {
   // Isometric parameters
   const W = 560;
-  const H = 320;
+  const H = 360;
   const cx = W / 2;
   const gridN = 6;              // 6x6 cells per plane
   const cell = 26;              // cell size in "plane" units
@@ -28,10 +28,10 @@ function LayerStackDiagram({
   // Isometric projection (2:1)
   const iso = (x: number, y: number, z: number) => ({
     x: cx + (x - y) * (cell * 0.9),
-    y: 80 + (x + y) * (cell * 0.45) - z,
+    y: 190 + (x + y) * (cell * 0.45) - z,
   });
   // Layers stacked top-down: macro (top) → meso → micro (bottom)
-  const zOffsets = [0, 90, 180]; // top, middle, bottom
+  const zOffsets = [140, 70, 0]; // top, middle, bottom (index matches layers order)
 
   const renderPlane = (zPix: number, tint: string, score: number) => {
     const lines: JSX.Element[] = [];
