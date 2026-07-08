@@ -170,14 +170,14 @@ const MITWorkshop2026 = () => {
                   ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
                   ["11:30", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
                     { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
-                    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Atrium", speaker: "WG-ELSI chairs" },
-                    { label: "Option C", title: "Brainhack working sessions.", location: "Seminar 3189" },
+                    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
+                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
                   ]],
                   ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
                   ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
                     { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
-                    { label: "Option B", title: "Young Investigator-led unconference.", location: "Atrium", speaker: "Megan Peters" },
-                    { label: "Option C", title: "Brainhack working sessions.", location: "Seminar 3189" },
+                    { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
+                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
                   ]],
                   ["3:00", "4:00", "Grants and Budgets discussion.", "Singleton", "Yes", undefined, "NIH representatives"],
                   ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
@@ -191,7 +191,7 @@ const MITWorkshop2026 = () => {
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
                   ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
                   ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
-                  ["2:45", "3:00", "Closing.", "Singleton", "Yes", undefined, "BBQS organizers"],
+                  ["2:45", "3:00", "Closing remarks.", "Singleton", "Yes", undefined, "Sully"],
                 ]}
               />
             </CardContent>
