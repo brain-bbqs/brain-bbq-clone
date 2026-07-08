@@ -1,140 +1,87 @@
-# Public Developer Roadmap (Spec-Kit style) + Devices Readability Fix
+# Social Force Field — Visualization & Measurement Plan
 
-Two parts:
-1. Extend `/roadmap` into a **public, open-source, Spec-Kit-structured** developer roadmap — anyone can read without signing in, and every roadmap item is expressed as a Spec-Kit artifact chain (Constitution → Spec → Plan → Tasks) so external contributors can pick it up cleanly.
-2. Fix the Devices "Device" column so it's actually readable.
+Goal: turn the three-layer framework (Interactional / Cognitive / Relational) into a real, measurable dashboard grounded in the literature, using signals already flowing through the BBQS platform. **Plan only — no implementation until approved.**
 
 ---
 
-## Part 1 — Public Developer Roadmap, Spec-Kit style
+## 1. Framing (theory → layer → what we actually observe)
 
-### Goal
-`/roadmap` becomes the canonical open surface for where BBQS is going. Three lenses on one page:
-- **Constitution** — the governing principles every roadmap item must respect (open source, cross-species, evidence-linked, member privacy, agent transparency).
-- **Themes / Specs** — curated pillars of work, each rendered as a mini spec (what & why, not how).
-- **Live execution** — GitHub milestones + issues (already wired through the `github-roadmap` edge function), auto-linked to each spec by label.
-
-The `/roadmap` route is **already public** (no `ProtectedRoute` wrapper in `src/App.tsx` line 75). We'll add an explicit "Public · Open source" header + ensure `robots` allows indexing.
-
-### Spec-Kit adoption (lightweight, in-repo)
-
-We adopt Spec Kit's artifact shape without adding the CLI. Everything lives in-repo as plain markdown + one TS data file so the roadmap page can render it, and external contributors can PR against the same files.
-
-```text
-.specify/
-├── memory/
-│   └── constitution.md              ← project-wide principles (rendered on /roadmap)
-└── specs/
-    ├── 001-consortium-agent/
-    │   ├── spec.md                  ← what & why
-    │   ├── plan.md                  ← tech approach
-    │   └── tasks.md                 ← actionable checklist
-    ├── 002-knowledge-graph-enrichment/
-    ├── 003-communication-cadence-forum/
-    ├── 004-brainkb-federation/
-    ├── 005-ai-playwright-qa/
-    └── 006-species-enrichment/
-src/data/roadmap-themes.ts           ← index: id, title, status, pillar, specPath, githubLabel
-```
-
-Each folder is one roadmap theme. The roadmap page renders the index cards and, on click, deep-links to the corresponding markdown (rendered client-side via `react-markdown`, which is already used elsewhere in the app).
-
-### Constitution (draft — `.specify/memory/constitution.md`)
-
-Five principles governing every roadmap item:
-1. **Open by default** — code, specs, tasks, and roadmap are public; no login required to read.
-2. **Evidence-linked** — every claim, device, connection, or AI response cites its source (grant, publication, forum post).
-3. **Cross-species and translational** — features that only serve one species must justify why.
-4. **Member privacy and consent** — agent outputs about people require opt-in and are auditable.
-5. **Agent transparency** — any AI-authored artifact (email reply, newsletter, forum suggestion) is labeled and human-ratifiable.
-
-### Roadmap themes → Spec-Kit folders
-
-| # | Theme | Pillar | Status |
+| Layer | Scale | Construct | Observable in BBQS |
 |---|---|---|---|
-| 001 | Consortium Agent (onboarding/off-boarding, monthly newsletter, cross-member connection finder, meeting knowledge graph, email triage) | Agent | now |
-| 002 | Knowledge Graph Enrichment (device troubleshooting + manuals, "how to build the rig" recipes for R61/R34, per-species behavior/vocalizations) | Knowledge Graph | now |
-| 003 | Communication Cadence — in-site Forum with optional AI co-responder | Comms | next |
-| 004 | Merge BBQS graph into BrainKB (federation) | Knowledge Graph | next |
-| 005 | AI-Playwright QA runner (interoperable spec format, per-PR site consistency) | Engineering | now |
-| 006 | Species enrichment (behavior, sounds, datasets, ethograms) | Knowledge Graph | later |
+| **Interactional** | Micro | Shared language: lexical alignment, "conceptual pacts", novel device/neuromod vocabulary | `entity_comments`, `feature_suggestions`, `curation_audit_log` free text, assistant chat logs, **published abstracts (`publications`)**, **GitHub issue/PR text** (via existing connector) |
+| **Cognitive** | Meso | Shared attention & shared mental models | Co-viewing / co-commenting on `resources`, working-group topic overlap, ontology-decision agreement, `resource_links` density |
+| **Relational** | Macro | Group identity & social cohesion | Pronoun/function-word ratios, co-PI graph (`grant_investigators`), workshop retention, in-group vs. out-group linguistic style toward AI agents |
 
-Each folder ships with a starter `spec.md` + `plan.md` + empty `tasks.md`. Contributors extend `tasks.md` via PR; the roadmap page shows task counts and completion progress.
+Shared language sits at the bottom and propagates upward — new terms coined at the micro layer become the vocabulary of shared mental models (meso) and then anchor group identity (macro).
 
-### Page layout (`src/pages/Roadmap.tsx` extension)
+---
+
+## 2. Parameters we can capture today (no new instrumentation)
+
+**Interactional** — corpus = internal text + published abstracts + GitHub issues/PRs:
+- Novel-term detection: extend the Ontology Approval candidate-term pipeline.
+- Pairwise lexical alignment: cosine similarity of author term vectors, rolling window.
+- Conceptual-pact detection: novel term reused by ≥3 authors within 14 days.
+
+**Cognitive:**
+- Co-attention graph from analytics + `entity_comments` on shared `resources`.
+- Working-group topic overlap (Jaccard on keyword sets from grants + publications).
+- Curation agreement rate (ontology + pending-change decisions).
+
+**Relational:**
+- Pronoun / function-word ratios (we/us/our vs. I/you/they) — Tausczik & Pennebaker signal.
+- Co-investigator network cohesion (clustering coefficient, bridging ties).
+- **AI-as-teammate delta**: live comparison of linguistic register when addressing human collaborators vs. the NeuroMCP / metadata / EMBER agents.
+- Workshop retention across MIT 2026 / SFN 2025 rosters.
+
+**Deferred (flag, don't build):** Zoom transcripts, Slack/Discord, timestamped shared-doc edits.
+
+---
+
+## 3. Metrics per layer (v1 target set)
+
+**Interactional** — novel-term birth rate · lexical alignment score · conceptual-pact count.
+**Cognitive** — co-attention density · WG topic overlap · curation agreement rate.
+**Relational** — inclusive-pronoun ratio · cross-lab collaboration index · AI-as-teammate register delta.
+
+Each metric gets: definition, source table(s), refresh trigger, stable ID for sparkline rendering.
+
+---
+
+## 4. Visualization
+
+Replace the three flat cards with a stacked, animated three-layer field, bottom-up:
 
 ```text
-┌──────────────────────────────────────────────────────────┐
-│ Roadmap                         [Public · Open source]   │
-│ What we're building, in the open. PRs welcome.           │
-├──────────────────────────────────────────────────────────┤
-│ Tabs: [ Constitution ] [ Themes ] [ Milestones ] [Issues]│
-├──────────────────────────────────────────────────────────┤
-│ Constitution tab:                                        │
-│   renders .specify/memory/constitution.md                │
-│                                                          │
-│ Themes tab (default):                                    │
-│   Now / Next / Later columns                             │
-│   Each card:                                             │
-│     • pillar chip (Agent / KG / Comms / Engineering)     │
-│     • title + one-line summary                           │
-│     • n open GitHub issues (auto-matched by label)       │
-│     • [Spec] [Plan] [Tasks] deep links                   │
-│   Click card → drawer renders the three markdown files   │
-│                                                          │
-│ Milestones / Issues tabs: unchanged (live GitHub data)   │
-└──────────────────────────────────────────────────────────┘
+┌─ Relational (Macro) ─── cohesion halo, pronoun ribbons ──┐
+├─ Cognitive (Meso) ── shared-attention constellation ─────┤
+└─ Interactional (Micro) ── lexical particles, new terms ──┘
 ```
 
-### Files to add / change
-
-**New**
-- `.specify/memory/constitution.md`
-- `.specify/specs/001-consortium-agent/{spec,plan,tasks}.md`
-- `.specify/specs/002-knowledge-graph-enrichment/{spec,plan,tasks}.md`
-- `.specify/specs/003-communication-cadence-forum/{spec,plan,tasks}.md`
-- `.specify/specs/004-brainkb-federation/{spec,plan,tasks}.md`
-- `.specify/specs/005-ai-playwright-qa/{spec,plan,tasks}.md`
-- `.specify/specs/006-species-enrichment/{spec,plan,tasks}.md`
-- `src/data/roadmap-themes.ts` — index metadata (id, title, pillar, status, specPath, githubLabel)
-- `src/components/roadmap/ConstitutionPanel.tsx`
-- `src/components/roadmap/ThemeCard.tsx`
-- `src/components/roadmap/ThemeDrawer.tsx` — renders spec/plan/tasks tabs
-- `src/components/roadmap/PillarBadge.tsx`
-
-**Changed**
-- `src/pages/Roadmap.tsx` — add Constitution + Themes tabs, keep Milestones + Issues tabs, add public/open-source header
-- `vite.config.ts` — ensure `.specify/**/*.md` is importable as `?raw` (Vite supports this natively; no config change likely needed)
-
-**Untouched**
-- Auth: `/roadmap` is already public
-- `github-roadmap` edge function: unchanged
-- No DB changes
-
-### Out of scope (this ticket ships the roadmap, not the features it describes)
-Actually building the agent, forum, BrainKB federation, or Playwright QA runner. Each theme's `tasks.md` seeds the follow-up work; roadmap items get implemented in later PRs following `/speckit.implement`-style execution.
+- **Hero:** ambient looping video that echoes real BBQS motifs — mouse / macaque / zebrafish / songbird silhouettes, Neuropixels / miniscope / 2P mesoscope shapes, brain-region contours — resolving into the three stacked layers. (Generated: `src/assets/social-force-field-hero.mp4.asset.json`.)
+- **Interactional diagram:** word-velocity cloud — novel terms glow on arrival, fade as they normalize.
+- **Cognitive diagram:** force-directed graph of entities co-attended within a window.
+- **Relational diagram:** chord diagram of cross-lab ties + pronoun-ratio gauge + AI-vs-human register delta.
 
 ---
 
-## Part 2 — Devices "Device" column readability
+## 5. Build order (for later approval)
 
-Screenshot shows the Device column at ~220px with a 3-line uppercase "MANUFACTURER/MODEL NOT REPORTED YET" caption dominating the tile.
-
-Changes in `src/pages/Devices.tsx`:
-- Device column: `width: 220` → `minWidth: 280, flex: 1.2` (breathes and grows).
-- Replace the 3-line uppercase caption with a compact one-line muted chip: `— model TBD`.
-- Bump device name to `text-sm font-semibold text-foreground`.
-- Trim `Class` (140) and `Manufacturer` (140) to give the Device column its space.
-
-Purely presentational. No data or business-logic changes.
+1. Freeze metric definitions in `src/data/social-force-field.ts` (typed catalog, no live data yet).
+2. Drop the BBQS-motif hero video into the page header.
+3. Ship the three static-but-well-designed layer diagrams (reuse `SynergyNetwork`, `MarrChordDiagram`; add a word-velocity component).
+4. Wire **Interactional** first — reuses ontology candidate-term pipeline + `entity_comments` + publications + GitHub issue ingest.
+5. Wire **Cognitive** next — co-attention query on analytics + entity_comments.
+6. Wire **Relational** last — pronoun classifier edge function + co-PI graph + AI-vs-human register delta (live).
+7. Keep the page admin-only (already gated).
 
 ---
 
-## Technical notes
+## 6. Decisions (locked in)
 
-- Roadmap route already public — `src/App.tsx:75`.
-- Markdown files imported with Vite `?raw`: `import constitution from "../../.specify/memory/constitution.md?raw"`.
-- `react-markdown` is already in the dependency tree (used by other pages).
-- Theme ↔ issue linking is client-side: `theme.githubLabel` matched against `issue.labels[].name` from the existing edge function response.
-- All new components use shadcn primitives and semantic tokens (no hardcoded colors).
-- `.specify/` folder is committed to the repo so the roadmap is versioned alongside code.
+1. **Corpus scope (Interactional):** consortium-internal text + published abstracts + GitHub issue/PR text.
+2. **Hero visual:** ambient video that visually echoes real BBQS motifs (not abstract).
+3. **AI-as-teammate metric:** in-scope from v1, no ELSI hold.
+4. **Refresh cadence:** **live** — metrics recompute on write (short debounce), not nightly.
+
+Next step (awaiting go-ahead): turn §5 steps 1–3 into a concrete task list.
