@@ -28,6 +28,7 @@ import {
   Mic,
   ChefHat,
   LayoutGrid,
+  Waves,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
