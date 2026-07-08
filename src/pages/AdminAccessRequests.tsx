@@ -139,59 +139,84 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
     }
   };
 
-  const approveAndInvite = async (r: AccessRequest) => {
+  // "Approve" — LIGHTWEIGHT site access. Not everyone who signs in is a consortium
+  // member; some just need to browse the KG site as a tier-3 member via their Globus
+  // account. The Globus gate (email_is_consortium_member) only lets an email in if it
+  // exists on an investigators record, so we create a MINIMAL one (name+email). This
+  // is deliberately NOT onboarding: no mailing lists, no welcome email, no grant/role
+  // — that's "Approve & onboard". Tier defaults to member (tier 3).
+  const approveForBrowsing = async (r: AccessRequest) => {
     setBusyId(r.id);
     try {
       const name = (r.full_name || r.globus_name || r.email.split("@")[0] || "Unknown").trim();
       const email = r.email.toLowerCase();
 
-      // Already on the roster (primary OR secondary email)? Then they can already
-      // sign in via Globus — no onboarding needed. Just approve + notify.
+      // Already on the roster (primary OR secondary email)? Then they can already sign in.
       const { data: existingByEmail } = await supabase
         .from("investigators")
         .select("id, name")
         .or(`email.ilike.${email},secondary_emails.cs.{${email}}`)
         .maybeSingle();
 
-      if (existingByEmail) {
-        const existingName = (existingByEmail.name as string | undefined) || name;
-        const { error } = await supabase
-          .from("access_requests")
-          .update({
-            status: "approved",
-            reviewed_at: new Date().toISOString(),
-            review_notes: `Already listed as "${existingName}" in investigators directory`,
-          })
-          .eq("id", r.id);
-        if (error) throw error;
-        toast.success(`Approved — email already linked to "${existingName}"`);
-        await sendApprovalEmail(
-          email,
-          existingName,
-          `Your email is already linked to the investigator profile "${existingName}".`,
-        );
-        queryClient.invalidateQueries({ queryKey: ["access-requests"] });
-        return;
+      let listedName = (existingByEmail?.name as string | undefined) ?? name;
+
+      if (!existingByEmail) {
+        const { error: invErr } = await supabase.from("investigators").insert({ name, email });
+        if (invErr) {
+          // Unique-NAME collision (a different person shares the name): disambiguate
+          // with the email so the browse record is still created — no dialog, and
+          // "Approve & onboard" can reconcile names later if needed.
+          const isNameDup = invErr.code === "23505" && !(invErr.message ?? "").toLowerCase().includes("email");
+          if (isNameDup) {
+            const disambiguated = `${name} (${email})`;
+            const { error: retryErr } = await supabase.from("investigators").insert({ name: disambiguated, email });
+            if (retryErr) throw retryErr;
+            listedName = disambiguated;
+          } else {
+            throw invErr;
+          }
+        }
       }
 
-      // Not on the roster → hand off to the agent's onboarding workflow, which is
-      // the SINGLE provisioning path: it creates the investigator profile properly
-      // (mailing lists + welcome email + role), reconciles against any existing
-      // profile, AND auto-clears this pending request on completion (agent
-      // workflow.ts Step 1b). We deliberately do NOT bare-insert an investigators
-      // row or pre-approve here — that produced half-provisioned members (a row but
-      // no lists / welcome / role), which is exactly what this replaces.
-      const url = `${AGENT_URL}/?ask=${encodeURIComponent(`Onboard ${name} (${email})`)}`;
-      window.open(url, "_blank", "noopener");
-      toast.info(
-        "Opening onboarding in the agent — complete the workflow there. This request clears automatically once they're provisioned.",
+      const { error } = await supabase
+        .from("access_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          review_notes: existingByEmail
+            ? `Site access — already listed as "${listedName}" (tier 3)`
+            : `Site access granted as "${listedName}" — tier 3, browse-only (not onboarded)`,
+        })
+        .eq("id", r.id);
+      if (error) throw error;
+
+      toast.success(`Approved for site access — ${listedName} can sign in via Globus (tier 3).`);
+      await sendApprovalEmail(
+        email,
+        listedName,
+        "You've been granted access to the BBQS knowledge graph site — sign in with your Globus account to browse.",
       );
+      queryClient.invalidateQueries({ queryKey: ["access-requests"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message ?? "Failed to start onboarding");
+      toast.error(err.message ?? "Failed to approve site access");
     } finally {
       setBusyId(null);
     }
+  };
+
+  // "Approve & onboard" — FULL provisioning. Always hands off to the agent's onboarding
+  // workflow (the single provisioning path: mailing lists + welcome + role), which
+  // live-checks/reconciles an existing member and auto-clears this pending request on
+  // completion (agent workflow.ts Step 1b). No DB write here — onboarding owns it.
+  const approveAndOnboard = (r: AccessRequest) => {
+    const name = (r.full_name || r.globus_name || r.email.split("@")[0] || "Unknown").trim();
+    const email = r.email.toLowerCase();
+    const url = `${AGENT_URL}/?ask=${encodeURIComponent(`Onboard ${name} (${email})`)}`;
+    window.open(url, "_blank", "noopener");
+    toast.info(
+      "Opening full onboarding in the agent — complete the workflow there. This request clears automatically once they're provisioned.",
+    );
   };
 
   const revokeAccess = async (r: AccessRequest) => {
@@ -336,12 +361,22 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
             )}
             <Button
               size="sm"
-              variant="default"
-              onClick={() => approveAndInvite(r)}
+              variant="outline"
+              onClick={() => approveForBrowsing(r)}
               disabled={busyId === r.id}
-              title="If already on the roster, approves + notifies. Otherwise opens the onboarding agent pre-filled to fully provision them (mailing lists + welcome + role); this request clears automatically when onboarding completes."
+              title="Grant lightweight site access: creates a minimal record so they can sign in via Globus and browse the site as a tier-3 member. Does NOT run consortium onboarding (no mailing lists / welcome / role)."
             >
               <Check className="h-3.5 w-3.5 mr-1" />
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => approveAndOnboard(r)}
+              disabled={busyId === r.id}
+              title="Open the onboarding agent pre-filled to FULLY provision them (mailing lists + welcome + role). This request clears automatically when onboarding completes."
+            >
+              <UserPlus className="h-3.5 w-3.5 mr-1" />
               Approve & onboard
             </Button>
             <Button
@@ -371,9 +406,11 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
         )}
         <p className="text-sm text-muted-foreground">
           Sign-up requests from the public form and Globus sign-in attempts from people whose
-          email isn't on the consortium roster. "Approve &amp; onboard" opens the onboarding
-          agent pre-filled to fully provision them (mailing lists, welcome email, and role) — the
-          single provisioning path. This request clears automatically once onboarding completes.
+          email isn't on the consortium roster. <strong>Approve</strong> grants lightweight
+          tier-3 site access (they can sign in via Globus and browse — for people who aren't
+          consortium members). <strong>Approve &amp; onboard</strong> opens the agent to fully
+          provision a consortium member (mailing lists, welcome email, role) and auto-clears the
+          request when done.
         </p>
       </div>
 
@@ -422,10 +459,11 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
                 Awaiting decision
               </CardTitle>
               <CardDescription>
-                Click <strong>Approve &amp; onboard</strong> to open the onboarding agent
-                pre-filled with <code className="font-mono">Onboard &lt;name&gt; (&lt;email&gt;)</code>.
-                Complete the workflow there to provision the member; this request clears
-                automatically on completion.
+                <strong>Approve</strong> = lightweight tier-3 site access (Globus sign-in +
+                browse; for non–consortium-members). <strong>Approve &amp; onboard</strong>
+                opens the agent pre-filled with{" "}
+                <code className="font-mono">Onboard &lt;name&gt; (&lt;email&gt;)</code> to fully
+                provision a consortium member; that request clears automatically on completion.
               </CardDescription>
             </CardHeader>
             <CardContent>
