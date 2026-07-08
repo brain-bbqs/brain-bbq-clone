@@ -52,6 +52,7 @@ import DevicesGraph from "./pages/DevicesGraph";
 import DataModel from "./pages/DataModel";
 import Constitution from "./pages/Constitution";
 import OntologyApproval from "./pages/OntologyApproval";
+import SocialForceField from "./pages/SocialForceField";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/data-model" element={<DataModel />} />
               <Route path="/constitution" element={<Constitution />} />
               <Route path="/ontology-approval" element={<OntologyApproval />} />
+              <Route path="/social-force-field" element={<SocialForceField />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/request-access" element={<RequestAccess />} />
               <Route path="/publications" element={<Publications />} />

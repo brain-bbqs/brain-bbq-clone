@@ -28,6 +28,7 @@ import {
   Mic,
   ChefHat,
   LayoutGrid,
+  Waves,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -95,6 +96,7 @@ const engineeringItems: NavItem[] = [
   { title: "AI Constitution", url: "/constitution", icon: ScrollText },
   { title: "Data Model", url: "/data-model", icon: Database },
   { title: "Ontology Approval", url: "/ontology-approval", icon: CheckSquare, adminOnly: true },
+  { title: "Social Force Field", url: "/social-force-field", icon: Waves, adminOnly: true },
   { title: "Give Feedback", url: "/suggest-feature", icon: Lightbulb },
   { title: "Admin Console", url: "/admin", icon: ShieldCheck, adminOnly: true },
 ];
