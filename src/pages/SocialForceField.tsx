@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Users, Brain, MessageSquare, Lock, Layers } from "lucide-react";
-import PageMeta from "@/components/PageMeta";
+import { PageMeta } from "@/components/PageMeta";
 
 type Layer = {
   key: "relational" | "cognitive" | "interactional";
