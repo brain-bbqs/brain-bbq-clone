@@ -31,7 +31,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Wan Chen Lin", institution: "UC Berkeley", role: "Postdoc/Grad", domain: "D" },
       { name: "Crystal Lantz", institution: "NIH BRAIN Initiative", role: "NIH Program", domain: "NIH" },
       { name: "Jyl Boline", institution: "Informed Minds", role: "Project Manager (EMBER)", domain: "ADMIN" },
-      { name: "Open seat" },
+      { name: "Hongli Wang", institution: "UC Berkeley", role: "Postdoc/Grad", domain: "D" },
     ],
   },
   {
@@ -48,6 +48,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "J. Adam Noah", institution: "Yale School of Medicine", role: "Co-I/Research Staff", domain: "A" },
       { name: "Holly Moore", institution: "NIDA", role: "NIH Program", domain: "NIH" },
       { name: "Rahul Hingorani", institution: "JHU APL", role: "Infra (BARD.CC)", domain: "F" },
+      { name: "Luke Bloy", institution: "CHOP", role: "Research Staff", domain: "D" },
     ],
   },
   {
@@ -162,6 +163,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Deepa Purushothaman", institution: "Yale University", role: "Postdoc/Grad" },
       { name: "Yankun Xu", institution: "Duke University", role: "Postdoc/Grad", domain: "D" },
       { name: "Tek Raj Chhetri", institution: "MIT", role: "Postdoc/Grad" },
+      { name: "Dorota Jarecka", institution: "MIT", role: "Infra (EMBER)", domain: "F" },
     ],
   },
   {
@@ -175,7 +177,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Yunsoo Kim", institution: "Stony Brook University Hospital", role: "Postdoc/Grad" },
       { name: "Tyler Albarran", institution: "Georgia Tech", role: "Postdoc/Grad" },
       { name: "Tristan Daniel", institution: "Georgia Tech", role: "Postdoc/Grad" },
-      { name: "Open seat" },
+      { name: "Varun Thvar", institution: "MIT", role: "Visiting Undergrad" },
     ],
   },
 ];
