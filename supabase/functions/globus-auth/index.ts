@@ -258,11 +258,26 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Check if user exists (by canonical email)
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(
-        (u: any) => u.email?.toLowerCase() === canonicalEmail.toLowerCase()
-      );
+      // Check if user exists (by canonical email). listUsers() is paginated —
+      // default perPage is ~50, so with >50 members we MUST walk every page or
+      // we'll miss existing users and then fail with email_exists on createUser.
+      const canonicalLower = canonicalEmail.toLowerCase();
+      let existingUser: any = undefined;
+      const perPage = 1000;
+      for (let page = 1; page <= 50; page++) {
+        const { data: pageData, error: listErr } =
+          await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (listErr) {
+          console.error("listUsers error on page", page, listErr);
+          break;
+        }
+        const users = pageData?.users ?? [];
+        existingUser = users.find(
+          (u: any) => u.email?.toLowerCase() === canonicalLower,
+        );
+        if (existingUser) break;
+        if (users.length < perPage) break; // last page
+      }
 
       let userId: string;
 
@@ -297,12 +312,22 @@ Deno.serve(async (req) => {
         });
 
         if (createError) {
-          console.error("Create user error:", createError);
-          return await errorRedirectAndNotify("create_user_failed", email, name, {
-            error: createError.message,
-          });
+          // Race / pagination miss: if the user actually exists, recover by
+          // signing them in instead of failing the whole flow.
+          const code = (createError as any).code || "";
+          if (code === "email_exists" || /already been registered/i.test(createError.message)) {
+            // Fall through to generateLink below using canonicalEmail.
+            console.warn("createUser reported email_exists; proceeding with magic link for", canonicalEmail);
+            userId = ""; // unused downstream
+          } else {
+            console.error("Create user error:", createError);
+            return await errorRedirectAndNotify("create_user_failed", email, name, {
+              error: createError.message,
+            });
+          }
+        } else {
+          userId = newUser.user.id;
         }
-        userId = newUser.user.id;
       }
 
       // Generate magic link using canonical email
