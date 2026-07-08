@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
           </p>
           ${note ? `<p style="background: #fff; padding: 12px; border-left: 3px solid #f5b942; font-size: 14px;"><strong>Note from the curator:</strong><br/>${note}</p>` : ""}
           <p style="font-size: 13px; color: #666; margin-top: 24px;">
-            If you have trouble signing in, reply to this email and we'll help you out.
+            If you have trouble signing in, email <a href="mailto:dcaic-admin@brain-bbqs.org">dcaic-admin@brain-bbqs.org</a> and we'll help you out.
           </p>
           <p style="font-size: 13px; color: #666;">— The BBQS Admin team</p>
         </div>

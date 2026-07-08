@@ -131,6 +131,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Melissa Kline Struhl", institution: "MIT", role: "Research Staff" },
       { name: "Nader Nikbakht", institution: "MIT", role: "Research Staff", domain: "F" },
       { name: "Ming Zhan", institution: "NIDA/NIH", role: "NIH Program (Bridge)", domain: "NIH" },
+      { name: "Dorota Jarecka", institution: "MIT", role: "Infra (EMBER)", domain: "F" },
     ],
   },
   {
@@ -163,7 +164,6 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Deepa Purushothaman", institution: "Yale University", role: "Postdoc/Grad" },
       { name: "Yankun Xu", institution: "Duke University", role: "Postdoc/Grad", domain: "D" },
       { name: "Tek Raj Chhetri", institution: "MIT", role: "Postdoc/Grad" },
-      { name: "Dorota Jarecka", institution: "MIT", role: "Infra (EMBER)", domain: "F" },
     ],
   },
   {

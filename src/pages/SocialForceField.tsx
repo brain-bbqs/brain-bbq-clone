@@ -10,7 +10,93 @@ import {
   TrendingUp, TrendingDown, Minus, Info,
 } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import heroVideo from "@/assets/social-force-field-hero.mp4.asset.json";
+
+// Simple isometric 3-plane diagram — one grid per layer, stacked.
+// No gloss: monochrome strokes, current text color, labeled with the layer's math signal.
+function LayerStackDiagram({
+  layers,
+}: {
+  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string }[];
+}) {
+  // Isometric parameters
+  const W = 560;
+  const H = 360;
+  const cx = W / 2;
+  const gridN = 6;              // 6x6 cells per plane
+  const cell = 26;              // cell size in "plane" units
+  const planeW = gridN * cell;  // 156
+  // Isometric projection (2:1)
+  const iso = (x: number, y: number, z: number) => ({
+    x: cx + (x - y) * (cell * 0.9),
+    y: 190 + (x + y) * (cell * 0.45) - z,
+  });
+  // Layers stacked top-down: macro (top) → meso → micro (bottom)
+  const zOffsets = [140, 70, 0]; // top, middle, bottom (index matches layers order)
+
+  const renderPlane = (zPix: number, tint: string, score: number) => {
+    const lines: JSX.Element[] = [];
+    for (let i = 0; i <= gridN; i++) {
+      const a = iso(i, 0, zPix);
+      const b = iso(i, gridN, zPix);
+      const c = iso(0, i, zPix);
+      const d = iso(gridN, i, zPix);
+      lines.push(
+        <line key={`v${i}-${zPix}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={tint} strokeWidth={0.75} opacity={0.55} />,
+        <line key={`h${i}-${zPix}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className={tint} strokeWidth={0.75} opacity={0.55} />
+      );
+    }
+    // Score marker — a single filled cell at position proportional to score
+    const s = Math.max(0, Math.min(100, score)) / 100;
+    const gx = Math.round(s * gridN);
+    const gy = Math.round((1 - s) * gridN);
+    const p1 = iso(gx, gy, zPix);
+    const p2 = iso(gx + 1, gy, zPix);
+    const p3 = iso(gx + 1, gy + 1, zPix);
+    const p4 = iso(gx, gy + 1, zPix);
+    return (
+      <g>
+        {lines}
+        <polygon
+          points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
+          className={tint}
+          fillOpacity={0.5}
+          strokeOpacity={0.9}
+        />
+      </g>
+    );
+  };
+
+  return (
+    <div className="rounded-xl border bg-card/40 p-6">
+      <div className="grid gap-6 md:grid-cols-[1fr_minmax(0,220px)] items-center">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto text-muted-foreground" aria-hidden="true">
+          {/* Vertical guide connecting planes */}
+          <line
+            x1={cx} y1={iso(gridN / 2, gridN / 2, zOffsets[0]).y}
+            x2={cx} y2={iso(gridN / 2, gridN / 2, zOffsets[2]).y}
+            stroke="currentColor" strokeDasharray="2 3" opacity={0.3}
+          />
+          {layers.map((l, i) => (
+            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score)}</g>
+          ))}
+        </svg>
+        <ol className="space-y-3 text-sm">
+          {layers.map((l) => (
+            <li key={l.key} className="flex items-start gap-2">
+              <span className={`mt-1 h-2 w-2 rounded-sm ${l.tint.replace("stroke-", "bg-")}`} />
+              <div className="min-w-0">
+                <div className="font-medium">
+                  {l.title} <span className="text-muted-foreground font-normal">· {l.scale}</span>
+                </div>
+                <div className="text-xs text-muted-foreground font-mono">{l.formula}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
 
 type Trend = "up" | "down" | "flat";
 type Metric = {
@@ -267,24 +353,42 @@ export default function SocialForceField() {
           <Layers className="h-4 w-4" />
           <span>Engineering · Admin</span>
         </div>
-        <div className="relative overflow-hidden rounded-xl border">
-          <video
-            src={heroVideo.url}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-56 md:h-72 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 space-y-2">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
-            <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-              Three stacked layers — interactional, cognitive, relational — measuring whether the
-              BBQS consortium is coalescing. Higher and rising is good.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
+          <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
+            Three stacked layers — interactional, cognitive, relational — measuring whether the
+            BBQS consortium is coalescing. Higher and rising is good.
+          </p>
         </div>
+
+        <LayerStackDiagram
+          layers={[
+            {
+              key: "relational",
+              title: "Relational",
+              scale: "Macro",
+              score: avg(LAYERS.find((l) => l.key === "relational")!.metrics.map((m) => m.score)),
+              formula: "R = f(cohesion, cross-lab ties)",
+              tint: "stroke-amber-500",
+            },
+            {
+              key: "cognitive",
+              title: "Cognitive",
+              scale: "Meso",
+              score: avg(LAYERS.find((l) => l.key === "cognitive")!.metrics.map((m) => m.score)),
+              formula: "C = J(attention, mental models)",
+              tint: "stroke-sky-500",
+            },
+            {
+              key: "interactional",
+              title: "Interactional",
+              scale: "Micro",
+              score: avg(LAYERS.find((l) => l.key === "interactional")!.metrics.map((m) => m.score)),
+              formula: "I = Σ align(term_i, term_j)",
+              tint: "stroke-violet-500",
+            },
+          ]}
+        />
 
         {/* Field strength + per-layer summary */}
         <div className="grid gap-3 md:grid-cols-4">
