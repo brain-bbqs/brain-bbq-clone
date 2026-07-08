@@ -168,9 +168,18 @@ const MITWorkshop2026 = () => {
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
                   ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
-                  ["11:30", "12:30", "Parallel working sessions: (Option A) From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents. (Option B) Office Hours with WG-ELSI; pre-voting discussion about data sharing. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "A: Satra Ghosh · B: WG-ELSI chairs"],
-                  ["12:30", "2:30", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes", "d2-lunch"],
-                  ["2:30", "4:00", "Parallel working sessions: (PIs Required) Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance, followed by a Grants and Budgets discussion. (Option B) Young Investigator-led unconference, TOPIC TBD. (Option C) Brainhack working sessions.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, "PI representatives · YI unconference lead: TBD"],
+                  ["11:30", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+                    { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
+                    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
+                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
+                  ]],
+                  ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
+                  ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+                    { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
+                    { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
+                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
+                  ]],
+                  ["3:00", "4:00", "Grants and Budgets discussion.", "Singleton", "Yes", undefined, "NIH representatives"],
                   ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
                 ]}
               />
@@ -182,7 +191,7 @@ const MITWorkshop2026 = () => {
                   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
                   ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
                   ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
-                  ["2:45", "3:00", "Closing.", "Singleton", "Yes", undefined, "BBQS organizers"],
+                  ["2:45", "3:00", "Closing remarks.", "Singleton", "Yes", undefined, "Sully"],
                 ]}
               />
             </CardContent>
@@ -371,8 +380,9 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type AgendaRow = [string, string, string, string, string, string?, string?];
-// [startTime, endTime, description, location, zoom, mealKey?, speaker?]
+type ParallelOption = { label: string; title: string; location?: string; speaker?: string };
+type AgendaRow = [string, string, string, string, string, string?, string?, ParallelOption[]?];
+// [startTime, endTime, description, location, zoom, mealKey?, speaker?, parallelOptions?]
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
 function parseTime(t: string, isAfternoon: boolean): { minutes: number; label: string } {
@@ -451,7 +461,7 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
       <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
-          const [, , session, location, zoom, mealKey, speaker] = row;
+          const [, , session, location, zoom, mealKey, speaker, options] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
           const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
@@ -484,6 +494,12 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                     <Icon className="h-3 w-3" />
                     {kind.label}
                   </Badge>
+                  {options && options.length > 0 && (
+                    <Badge variant="outline" className="gap-1 text-[10px] border-violet-500/40 text-violet-700 dark:text-violet-300">
+                      <Sparkles className="h-3 w-3" />
+                      {options.length} parallel options
+                    </Badge>
+                  )}
                   {zoom && (
                     <Badge variant="outline" className="gap-1 text-[10px] border-primary/30 text-primary">
                       <Video className="h-3 w-3" />
@@ -504,6 +520,37 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                   )}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed">{session}</p>
+                {options && options.length > 0 && (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                    {options.map((opt) => (
+                      <div
+                        key={opt.label}
+                        className="rounded-lg border border-violet-500/30 bg-violet-500/[0.04] p-3 flex flex-col gap-1.5"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[10px] font-semibold border-violet-500/50 text-violet-700 dark:text-violet-300">
+                            {opt.label}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-foreground leading-snug">{opt.title}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-auto">
+                          {opt.location && (
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {opt.location}
+                            </span>
+                          )}
+                          {opt.speaker && (
+                            <span className="inline-flex items-center gap-1">
+                              <Mic className="h-3 w-3" />
+                              {opt.speaker}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span>{location}</span>
