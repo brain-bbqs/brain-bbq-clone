@@ -1,263 +1,105 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
-import {
-  Users, Brain, MessageSquare, Lock, Layers,
-  TrendingUp, TrendingDown, Minus, Info,
-} from "lucide-react";
+import { MessageSquare, Lock, Layers, TrendingUp, TrendingDown, Minus, Info, MousePointerClick, Eye, Users as UsersIcon } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
+import { useAuth } from "@/contexts/AuthContext";
+import { isPreviewMode } from "@/lib/preview-mode";
 
-// Simple isometric 3-plane diagram — one grid per layer, stacked.
-// No gloss: monochrome strokes, current text color, labeled with the layer's math signal.
-function LayerStackDiagram({
-  layers,
-}: {
-  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string }[];
-}) {
-  // Isometric parameters
+// Isometric single-plane grid — the "base social layer".
+// Each cell = one page in the app; brightness = click intensity (14d).
+function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: string[] }) {
   const W = 560;
-  const H = 360;
+  const H = 300;
   const cx = W / 2;
-  const gridN = 6;              // 6x6 cells per plane
-  const cell = 26;              // cell size in "plane" units
-  const planeW = gridN * cell;  // 156
-  // Isometric projection (2:1)
-  const iso = (x: number, y: number, z: number) => ({
+  const gridN = 6;
+  const cell = 28;
+  const iso = (x: number, y: number) => ({
     x: cx + (x - y) * (cell * 0.9),
-    y: 190 + (x + y) * (cell * 0.45) - z,
+    y: 150 + (x + y) * (cell * 0.45),
   });
-  // Layers stacked top-down: macro (top) → meso → micro (bottom)
-  const zOffsets = [140, 70, 0]; // top, middle, bottom (index matches layers order)
-
-  const renderPlane = (zPix: number, tint: string, score: number) => {
-    const lines: JSX.Element[] = [];
-    for (let i = 0; i <= gridN; i++) {
-      const a = iso(i, 0, zPix);
-      const b = iso(i, gridN, zPix);
-      const c = iso(0, i, zPix);
-      const d = iso(gridN, i, zPix);
-      lines.push(
-        <line key={`v${i}-${zPix}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={tint} strokeWidth={0.75} opacity={0.55} />,
-        <line key={`h${i}-${zPix}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className={tint} strokeWidth={0.75} opacity={0.55} />
+  const lines: JSX.Element[] = [];
+  for (let i = 0; i <= gridN; i++) {
+    const a = iso(i, 0), b = iso(i, gridN), c = iso(0, i), d = iso(gridN, i);
+    lines.push(
+      <line key={`v${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
+      <line key={`h${i}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
+    );
+  }
+  const cells: JSX.Element[] = [];
+  for (let gy = 0; gy < gridN; gy++) {
+    for (let gx = 0; gx < gridN; gx++) {
+      const idx = gy * gridN + gx;
+      const v = heatmap[idx] ?? 0;
+      if (v <= 0) continue;
+      const p1 = iso(gx, gy), p2 = iso(gx + 1, gy), p3 = iso(gx + 1, gy + 1), p4 = iso(gx, gy + 1);
+      cells.push(
+        <polygon
+          key={`c-${idx}`}
+          points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
+          className="fill-violet-500 stroke-violet-400"
+          fillOpacity={0.15 + v * 0.75}
+          strokeOpacity={0.5}
+        >
+          <title>{labels[idx] ?? ""}</title>
+        </polygon>,
       );
     }
-    // Score marker — a single filled cell at position proportional to score
-    const s = Math.max(0, Math.min(100, score)) / 100;
-    const gx = Math.round(s * gridN);
-    const gy = Math.round((1 - s) * gridN);
-    const p1 = iso(gx, gy, zPix);
-    const p2 = iso(gx + 1, gy, zPix);
-    const p3 = iso(gx + 1, gy + 1, zPix);
-    const p4 = iso(gx, gy + 1, zPix);
-    return (
-      <g>
-        {lines}
-        <polygon
-          points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
-          className={tint}
-          fillOpacity={0.5}
-          strokeOpacity={0.9}
-        />
-      </g>
-    );
-  };
-
+  }
   return (
     <div className="rounded-xl border bg-card/40 p-6">
-      <div className="grid gap-6 md:grid-cols-[1fr_minmax(0,220px)] items-center">
+      <div className="grid gap-6 md:grid-cols-[1fr_minmax(0,240px)] items-center">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto text-muted-foreground" aria-hidden="true">
-          {/* Vertical guide connecting planes */}
-          <line
-            x1={cx} y1={iso(gridN / 2, gridN / 2, zOffsets[0]).y}
-            x2={cx} y2={iso(gridN / 2, gridN / 2, zOffsets[2]).y}
-            stroke="currentColor" strokeDasharray="2 3" opacity={0.3}
-          />
-          {layers.map((l, i) => (
-            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score)}</g>
-          ))}
+          {lines}
+          {cells}
         </svg>
-        <ol className="space-y-3 text-sm">
-          {layers.map((l) => (
-            <li key={l.key} className="flex items-start gap-2">
-              <span className={`mt-1 h-2 w-2 rounded-sm ${l.tint.replace("stroke-", "bg-")}`} />
-              <div className="min-w-0">
-                <div className="font-medium">
-                  {l.title} <span className="text-muted-foreground font-normal">· {l.scale}</span>
-                </div>
-                <div className="text-xs text-muted-foreground font-mono">{l.formula}</div>
-              </div>
-            </li>
-          ))}
-        </ol>
+        <div className="text-sm space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-sm bg-violet-500" />
+            <span className="font-medium">Interactional · Micro</span>
+          </div>
+          <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) all-time</p>
+          <p className="text-xs text-muted-foreground">
+            The base social layer. Each cell is one page in the app; brightness reflects total
+            click activity since tracking began. Hover a cell to see the page.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
 type Trend = "up" | "down" | "flat";
-type Metric = {
-  id: string;
-  name: string;
-  description: string;
-  score: number;      // 0-100
-  delta: number;      // % vs. last window
-  trend: Trend;
-  source: string;
-  sparkline: number[]; // 12 points, 0-100
-};
-
-type Layer = {
-  key: "interactional" | "cognitive" | "relational";
-  scale: "Micro" | "Meso" | "Macro";
-  title: string;
-  subtitle: string;
-  narrative: string;
-  icon: typeof Users;
-  ring: string;   // ring/border tint
-  bg: string;     // gradient tint
-  dot: string;    // colored dot for sparkline
-  metrics: Metric[];
-};
-
-// v1 catalog — seed values derived from current consortium activity.
-// These become live once the pipelines in .lovable/plan.md land.
-const LAYERS: Layer[] = [
-  {
-    key: "interactional",
-    scale: "Micro",
-    title: "Interactional",
-    subtitle: "Shared language · lexical alignment · conceptual pacts",
-    narrative:
-      "Individual exchanges — messages, PRs, GitHub issues, published abstracts — where new device/neuromod vocabulary is coined and reused.",
-    icon: MessageSquare,
-    ring: "border-violet-500/40",
-    bg: "from-violet-500/10 to-transparent",
-    dot: "stroke-violet-400",
-    metrics: [
-      {
-        id: "novel-term-rate",
-        name: "Novel-term birth rate",
-        description: "New terms/week entering the consortium corpus (comments · PRs · issues · abstracts).",
-        score: 62, delta: +8, trend: "up",
-        source: "ontology-candidates · entity_comments · publications · github",
-        sparkline: [40, 44, 41, 48, 52, 50, 55, 58, 56, 59, 60, 62],
-      },
-      {
-        id: "lexical-alignment",
-        name: "Lexical alignment score",
-        description: "Mean pairwise cosine of author term vectors, 30-day rolling window.",
-        score: 58, delta: +5, trend: "up",
-        source: "entity_comments · assistant chat · github",
-        sparkline: [45, 46, 48, 47, 50, 52, 53, 55, 54, 56, 57, 58],
-      },
-      {
-        id: "conceptual-pacts",
-        name: "Conceptual pacts",
-        description: "Novel terms reused by ≥3 authors within 14 days — Brennan & Clark signal.",
-        score: 41, delta: +12, trend: "up",
-        source: "derived from novel-term events",
-        sparkline: [22, 24, 26, 28, 30, 33, 35, 34, 37, 39, 40, 41],
-      },
-    ],
-  },
-  {
-    key: "cognitive",
-    scale: "Meso",
-    title: "Cognitive",
-    subtitle: "Shared attention · shared mental models",
-    narrative:
-      "Convergence on what is salient — which projects, resources, species and devices the consortium co-attends to and agrees about.",
-    icon: Brain,
-    ring: "border-sky-500/40",
-    bg: "from-sky-500/10 to-transparent",
-    dot: "stroke-sky-400",
-    metrics: [
-      {
-        id: "coattention-density",
-        name: "Co-attention density",
-        description: "Edges / possible edges in the co-viewing + co-commenting graph on shared resources.",
-        score: 54, delta: +3, trend: "up",
-        source: "analytics_pageviews · entity_comments · resources",
-        sparkline: [42, 44, 45, 47, 46, 48, 50, 51, 52, 52, 53, 54],
-      },
-      {
-        id: "wg-topic-overlap",
-        name: "Working-group topic overlap",
-        description: "Jaccard similarity on keyword sets across working groups (grants + publications).",
-        score: 47, delta: -2, trend: "down",
-        source: "grants · publications · working_group_chairs",
-        sparkline: [50, 51, 52, 51, 50, 49, 49, 48, 49, 48, 47, 47],
-      },
-      {
-        id: "curation-agreement",
-        name: "Curation agreement rate",
-        description: "Share of ontology / pending-change decisions that converge without revert.",
-        score: 71, delta: +1, trend: "flat",
-        source: "curation_audit_log · ontology decisions",
-        sparkline: [66, 67, 68, 68, 69, 70, 70, 71, 70, 71, 71, 71],
-      },
-    ],
-  },
-  {
-    key: "relational",
-    scale: "Macro",
-    title: "Relational",
-    subtitle: "Group identity · social cohesion",
-    narrative:
-      "Consortium-wide identity: who feels like an in-group teammate, how AI agents are addressed vs. humans, and how tightly labs are bound.",
-    icon: Users,
-    ring: "border-amber-500/40",
-    bg: "from-amber-500/10 to-transparent",
-    dot: "stroke-amber-400",
-    metrics: [
-      {
-        id: "inclusive-pronoun-ratio",
-        name: "Inclusive-pronoun ratio",
-        description: "(we + our + us) / total pronouns — Tausczik & Pennebaker cohesion marker.",
-        score: 63, delta: +4, trend: "up",
-        source: "entity_comments · assistant chat · github",
-        sparkline: [55, 56, 57, 58, 59, 60, 60, 61, 62, 62, 63, 63],
-      },
-      {
-        id: "cross-lab-index",
-        name: "Cross-lab collaboration index",
-        description: "Bridging ties in the co-PI graph — how often labs share investigators on grants.",
-        score: 49, delta: +2, trend: "up",
-        source: "grant_investigators · organizations",
-        sparkline: [43, 44, 44, 45, 46, 46, 47, 47, 48, 48, 49, 49],
-      },
-      {
-        id: "ai-teammate-delta",
-        name: "AI-as-teammate register delta",
-        description: "Live linguistic-style distance between messages to humans vs. to agents. Lower = more integrated.",
-        score: 38, delta: -6, trend: "down",
-        source: "assistant chat logs (NeuroMCP · metadata · EMBER)",
-        sparkline: [50, 49, 48, 47, 45, 44, 43, 42, 41, 40, 39, 38],
-      },
-    ],
-  },
-];
-
-function avg(nums: number[]) {
-  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+function TrendPill({ trend, delta }: { trend: Trend; delta: number }) {
+  const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const cls =
+    trend === "up" ? "text-emerald-500 bg-emerald-500/10"
+    : trend === "down" ? "text-rose-500 bg-rose-500/10"
+    : "text-muted-foreground bg-muted/50";
+  const sign = delta > 0 ? "+" : "";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+      <Icon className="h-3 w-3" />
+      {sign}{delta}%
+    </span>
+  );
 }
 
 function Sparkline({ points, className }: { points: number[]; className?: string }) {
-  const w = 120, h = 32, pad = 2;
-  const max = Math.max(...points), min = Math.min(...points);
+  const w = 140, h = 36, pad = 2;
+  const max = Math.max(...points, 1), min = Math.min(...points);
   const range = Math.max(1, max - min);
-  const step = (w - pad * 2) / (points.length - 1);
-  const d = points
-    .map((v, i) => {
-      const x = pad + i * step;
-      const y = h - pad - ((v - min) / range) * (h - pad * 2);
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const step = (w - pad * 2) / Math.max(1, points.length - 1);
+  const d = points.map((v, i) => {
+    const x = pad + i * step;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className={className} aria-hidden="true">
       <path d={d} fill="none" strokeWidth={1.5} className="stroke-current" />
@@ -265,51 +107,84 @@ function Sparkline({ points, className }: { points: number[]; className?: string
   );
 }
 
-function TrendPill({ trend, delta }: { trend: Trend; delta: number }) {
-  const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
-  const cls =
-    trend === "up"
-      ? "text-emerald-500 bg-emerald-500/10"
-      : trend === "down"
-      ? "text-rose-500 bg-rose-500/10"
-      : "text-muted-foreground bg-muted/50";
-  const sign = delta > 0 ? "+" : "";
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
-      <Icon className="h-3 w-3" />
-      {sign}
-      {delta}%
-    </span>
-  );
-}
-
-function MetricCard({ metric, sparkColor }: { metric: Metric; sparkColor: string }) {
+function StatCard({
+  icon: Icon, label, value, delta, spark, hint,
+}: { icon: typeof Eye; label: string; value: string; delta: number; spark: number[]; hint?: string }) {
+  const trend: Trend = delta > 2 ? "up" : delta < -2 ? "down" : "flat";
   return (
     <div className="rounded-lg border bg-card/40 p-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="text-sm font-medium leading-tight">{metric.name}</div>
-          <div className="text-xs text-muted-foreground">{metric.description}</div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Icon className="h-4 w-4" />
+          <span>{label}</span>
         </div>
-        <TrendPill trend={metric.trend} delta={metric.delta} />
+        <TrendPill trend={trend} delta={delta} />
       </div>
       <div className="flex items-end justify-between gap-3">
-        <div>
-          <div className="text-2xl font-semibold tabular-nums">{metric.score}</div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">score / 100</div>
-        </div>
-        <Sparkline points={metric.sparkline} className={sparkColor} />
+        <div className="text-3xl font-semibold tabular-nums">{value}</div>
+        <Sparkline points={spark} className="text-violet-400" />
       </div>
-      <Progress value={metric.score} className="h-1.5" />
-      <div className="text-[10px] text-muted-foreground truncate">Source: {metric.source}</div>
+      {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
 }
 
+type Row = { path?: string | null; session_id?: string | null; user_id?: string | null; created_at: string; element_tag?: string | null; element_text?: string | null };
+
+type Data = {
+  clicks: number;
+  pageviews: number;
+  sessions: number;
+  users: number;
+  clickSpark: number[];
+  pvSpark: number[];
+  sessionSpark: number[];
+  clickDelta: number;
+  pvDelta: number;
+  sessionDelta: number;
+  userDelta: number;
+  topPages: { path: string; views: number; clicks: number }[];
+  topClickTargets: { text: string; count: number }[];
+  tagBreakdown: { tag: string; count: number }[];
+  heatmap: number[];
+  heatmapLabels: string[];
+  firstSeen: string | null;
+};
+
+const dayBuckets = (rows: Row[], days: number) => {
+  const buckets = new Array(days).fill(0);
+  const now = Date.now();
+  for (const r of rows) {
+    const idx = days - 1 - Math.floor((now - new Date(r.created_at).getTime()) / 86_400_000);
+    if (idx >= 0 && idx < days) buckets[idx]++;
+  }
+  return buckets;
+};
+
+const uniqueDayBuckets = (rows: Row[], days: number) => {
+  const seen: Array<Set<string>> = Array.from({ length: days }, () => new Set());
+  const now = Date.now();
+  for (const r of rows) {
+    const idx = days - 1 - Math.floor((now - new Date(r.created_at).getTime()) / 86_400_000);
+    const id = r.user_id || r.session_id;
+    if (idx >= 0 && idx < days && id) seen[idx].add(id);
+  }
+  return seen.map((s) => s.size);
+};
+
+const pct = (curr: number, prev: number) => {
+  if (prev === 0) return curr > 0 ? 100 : 0;
+  return Math.round(((curr - prev) / prev) * 100);
+};
+
 export default function SocialForceField() {
   const { isAdmin, isCurator, isLoading } = useUserTier();
+  const { session } = useAuth();
   const navigate = useNavigate();
   const allowed = isAdmin || isCurator;
+  const previewWithoutSession = isPreviewMode() && !session;
+  const [data, setData] = useState<Data | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !allowed) {
@@ -318,11 +193,127 @@ export default function SocialForceField() {
     }
   }, [isLoading, allowed, navigate]);
 
-  const layerAverages = useMemo(
-    () => LAYERS.map((l) => ({ key: l.key, title: l.title, avg: avg(l.metrics.map((m) => m.score)) })),
-    []
-  );
-  const fieldStrength = avg(layerAverages.map((l) => l.avg));
+  useEffect(() => {
+    if (!allowed) return;
+    let cancelled = false;
+
+    // Page through all rows in the table (RLS + PostgREST caps returns; we page in 1k chunks).
+    const fetchAll = async <T,>(table: string, cols: string): Promise<T[]> => {
+      const pageSize = 1000;
+      const out: T[] = [];
+      for (let from = 0; from < 200000; from += pageSize) {
+        const { data, error } = await supabase
+          .from(table as any)
+          .select(cols)
+          .order("created_at", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        out.push(...(data as T[]));
+        if (data.length < pageSize) break;
+      }
+      return out;
+    };
+
+    (async () => {
+      try {
+        setLoadError(null);
+        const [clicks, pvs] = await Promise.all([
+          fetchAll<Row>("analytics_clicks", "path, session_id, user_id, created_at, element_tag, element_text"),
+          fetchAll<Row>("analytics_pageviews", "path, session_id, user_id, created_at"),
+        ]);
+        if (cancelled) return;
+
+        // Determine full history window in days for the sparkline
+        const all = [...clicks, ...pvs];
+        const firstTs = all.reduce((min, r) => Math.min(min, new Date(r.created_at).getTime()), Date.now());
+        const days = Math.max(14, Math.min(180, Math.ceil((Date.now() - firstTs) / 86_400_000) + 1));
+        const clickSpark = dayBuckets(clicks, days);
+        const pvSpark = dayBuckets(pvs, days);
+        const sessionSpark = uniqueDayBuckets(all, days);
+
+        // Week-over-week delta (last 7d vs previous 7d)
+        const w = 7 * 86_400_000;
+        const now = Date.now();
+        const inRange = (r: Row, a: number, b: number) => {
+          const t = new Date(r.created_at).getTime();
+          return t >= a && t < b;
+        };
+        const cLast = clicks.filter((r) => inRange(r, now - w, now)).length;
+        const cPrevCount = clicks.filter((r) => inRange(r, now - 2 * w, now - w)).length;
+        const pLast = pvs.filter((r) => inRange(r, now - w, now)).length;
+        const pPrevCount = pvs.filter((r) => inRange(r, now - 2 * w, now - w)).length;
+        const sLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.session_id).filter(Boolean)).size;
+        const sPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.session_id).filter(Boolean)).size;
+        const uLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.user_id).filter(Boolean)).size;
+        const uPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.user_id).filter(Boolean)).size;
+
+        const sessions = new Set(all.map((r) => r.session_id).filter(Boolean)).size;
+        const users = new Set(all.map((r) => r.user_id).filter(Boolean)).size;
+
+        // Top pages (by views), enriched with click counts
+        const pvByPath = new Map<string, number>();
+        pvs.forEach((r) => { const p = r.path || "/"; pvByPath.set(p, (pvByPath.get(p) ?? 0) + 1); });
+        const clicksByPath = new Map<string, number>();
+        clicks.forEach((r) => { const p = r.path || "/"; clicksByPath.set(p, (clicksByPath.get(p) ?? 0) + 1); });
+
+        const topPages = [...pvByPath.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 12)
+          .map(([path, views]) => ({ path, views, clicks: clicksByPath.get(path) ?? 0 }));
+
+        // Top click targets by element_text
+        const byText = new Map<string, number>();
+        clicks.forEach((r) => {
+          const t = (r.element_text || "").trim();
+          if (!t) return;
+          byText.set(t, (byText.get(t) ?? 0) + 1);
+        });
+        const topClickTargets = [...byText.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([text, count]) => ({ text, count }));
+
+        // Tag breakdown
+        const byTag = new Map<string, number>();
+        clicks.forEach((r) => { const t = r.element_tag || "other"; byTag.set(t, (byTag.get(t) ?? 0) + 1); });
+        const tagBreakdown = [...byTag.entries()].sort((a, b) => b[1] - a[1]).map(([tag, count]) => ({ tag, count }));
+
+        // Heatmap — top 36 paths by clicks, mapped left→right, top→bottom
+        const sortedClicks = [...clicksByPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 36);
+        const maxCount = sortedClicks[0]?.[1] ?? 1;
+        const heatmap = new Array(36).fill(0);
+        const heatmapLabels = new Array(36).fill("");
+        sortedClicks.forEach(([path, count], i) => {
+          heatmap[i] = Math.max(0, Math.min(1, count / maxCount));
+          heatmapLabels[i] = `${path} — ${count} clicks`;
+        });
+
+        setData({
+          clicks: clicks.length,
+          pageviews: pvs.length,
+          sessions,
+          users,
+          clickSpark, pvSpark, sessionSpark,
+          clickDelta: pct(cLast, cPrevCount),
+          pvDelta: pct(pLast, pPrevCount),
+          sessionDelta: pct(sLast, sPrev),
+          userDelta: pct(uLast, uPrev),
+          topPages, topClickTargets, tagBreakdown,
+          heatmap, heatmapLabels,
+          firstSeen: all.length ? new Date(firstTs).toISOString() : null,
+        });
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "Analytics data could not be loaded.";
+        setData(null);
+        setLoadError(message);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [allowed]);
+
+  const maxTopPageViews = useMemo(() => Math.max(1, ...(data?.topPages.map((p) => p.views) ?? [1])), [data]);
+  const maxTopClick = useMemo(() => Math.max(1, ...(data?.topClickTargets.map((t) => t.count) ?? [1])), [data]);
+  const totalTagged = useMemo(() => (data?.tagBreakdown ?? []).reduce((a, b) => a + b.count, 0), [data]);
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading…</div>;
 
@@ -332,22 +323,19 @@ export default function SocialForceField() {
         <Alert>
           <Lock className="h-4 w-4" />
           <AlertTitle>Administrators only</AlertTitle>
-          <AlertDescription>
-            The Social Force Field is restricted to consortium administrators. Redirecting…
-          </AlertDescription>
+          <AlertDescription>The Social Force Field is restricted to consortium administrators. Redirecting…</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-10 max-w-6xl">
+    <div className="p-6 md:p-8 space-y-8 max-w-6xl">
       <PageMeta
         title="Social Force Field — BBQS"
-        description="Admin view: three-layer measurement of consortium social dynamics — interactional, cognitive, relational."
+        description="Admin view: the base interactional layer — real website analytics from the consortium platform."
       />
 
-      {/* Hero */}
       <header className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Layers className="h-4 w-4" />
@@ -355,141 +343,194 @@ export default function SocialForceField() {
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-            Three stacked layers — interactional, cognitive, relational — measuring whether the
-            BBQS consortium is coalescing. Higher and rising is good.
+        <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
+          The base social layer — <span className="font-medium text-foreground">Interactional</span>.
+          This is where people first meet the platform: which pages they load, what they click,
+          and how often they come back. Cognitive and Relational layers will land as the pipelines
+          mature.
+        </p>
+        {data?.firstSeen && (
+          <p className="text-xs text-muted-foreground">
+            All-time analytics since {new Date(data.firstSeen).toLocaleDateString()} · week-over-week deltas
+          </p>
+        )}
+        {previewWithoutSession && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Preview is not signed in</AlertTitle>
+            <AlertDescription>
+              The database already contains historical analytics, but this preview is using a fake admin
+              shell without a real Supabase session. Sign in with an admin or curator account to read the
+              analytics rows here.
+            </AlertDescription>
+          </Alert>
+        )}
+        {loadError && !previewWithoutSession && (
+          <Alert variant="destructive">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Analytics could not be loaded</AlertTitle>
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        )}
+        </div>
+
+        <BaseLayerDiagram
+          heatmap={data?.heatmap ?? new Array(36).fill(0)}
+          labels={data?.heatmapLabels ?? new Array(36).fill("")}
+        />
+      </header>
+
+      {/* Layer header */}
+      <section className="space-y-4">
+        <div className="rounded-xl border border-violet-500/40 bg-gradient-to-br from-violet-500/10 to-transparent p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg border bg-background/60 p-2">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold">Interactional</h2>
+                  <Badge variant="outline">Micro layer</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">System interactions · clicks · navigation · attention</p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground max-w-3xl">
+            Live analytics from <code className="text-xs">analytics_pageviews</code> and{" "}
+            <code className="text-xs">analytics_clicks</code>. Everything on this page reflects
+            actual visitor behavior since tracking began.
           </p>
         </div>
 
-        <LayerStackDiagram
-          layers={[
-            {
-              key: "relational",
-              title: "Relational",
-              scale: "Macro",
-              score: avg(LAYERS.find((l) => l.key === "relational")!.metrics.map((m) => m.score)),
-              formula: "R = f(cohesion, cross-lab ties)",
-              tint: "stroke-amber-500",
-            },
-            {
-              key: "cognitive",
-              title: "Cognitive",
-              scale: "Meso",
-              score: avg(LAYERS.find((l) => l.key === "cognitive")!.metrics.map((m) => m.score)),
-              formula: "C = J(attention, mental models)",
-              tint: "stroke-sky-500",
-            },
-            {
-              key: "interactional",
-              title: "Interactional",
-              scale: "Micro",
-              score: avg(LAYERS.find((l) => l.key === "interactional")!.metrics.map((m) => m.score)),
-              formula: "I = Σ align(term_i, term_j)",
-              tint: "stroke-violet-500",
-            },
-          ]}
-        />
-
-        {/* Field strength + per-layer summary */}
+        {/* Top-line stats */}
         <div className="grid gap-3 md:grid-cols-4">
-          <Card className="md:col-span-1 bg-gradient-to-br from-primary/10 to-transparent">
+          <StatCard
+            icon={Eye} label="Page views (all-time)"
+            value={(data?.pageviews ?? 0).toLocaleString()}
+            delta={data?.pvDelta ?? 0}
+            spark={data?.pvSpark ?? new Array(14).fill(0)}
+            hint="Route loads · WoW delta"
+          />
+          <StatCard
+            icon={MousePointerClick} label="Clicks (all-time)"
+            value={(data?.clicks ?? 0).toLocaleString()}
+            delta={data?.clickDelta ?? 0}
+            spark={data?.clickSpark ?? new Array(14).fill(0)}
+            hint="Links, buttons, tracked elements · WoW delta"
+          />
+          <StatCard
+            icon={UsersIcon} label="Sessions (all-time)"
+            value={(data?.sessions ?? 0).toLocaleString()}
+            delta={data?.sessionDelta ?? 0}
+            spark={data?.sessionSpark ?? new Array(14).fill(0)}
+            hint="Distinct browser sessions · WoW delta"
+          />
+          <StatCard
+            icon={UsersIcon} label="Signed-in users (all-time)"
+            value={(data?.users ?? 0).toLocaleString()}
+            delta={data?.userDelta ?? 0}
+            spark={data?.sessionSpark ?? new Array(14).fill(0)}
+            hint="Unique user_id values · WoW delta"
+          />
+        </div>
+
+        {/* Top pages + top click targets */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Field strength</CardDescription>
-              <CardTitle className="text-4xl tabular-nums">{fieldStrength}</CardTitle>
+              <CardTitle className="text-base">Top pages by views</CardTitle>
+              <CardDescription>All-time · every route people have visited</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Progress value={fieldStrength} className="h-2" />
-              <div className="mt-2 text-xs text-muted-foreground">
-                Composite of all three layers.
-              </div>
+            <CardContent className="space-y-2">
+              {(data?.topPages ?? []).map((p) => (
+                <div key={p.path} className="space-y-1">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate font-mono text-xs">{p.path}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {p.views.toLocaleString()} views · {p.clicks.toLocaleString()} clicks
+                    </span>
+                  </div>
+                  <Progress value={(p.views / maxTopPageViews) * 100} className="h-1.5" />
+                </div>
+              ))}
+              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
+              {data && data.topPages.length === 0 && (
+                <div className="text-sm text-muted-foreground">No page views yet.</div>
+              )}
             </CardContent>
           </Card>
-          {layerAverages.map((l) => (
-            <Card key={l.key}>
-              <CardHeader className="pb-2">
-                <CardDescription>{l.title}</CardDescription>
-                <CardTitle className="text-3xl tabular-nums">{l.avg}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Progress value={l.avg} className="h-2" />
-              </CardContent>
-            </Card>
-          ))}
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Most-clicked things</CardTitle>
+              <CardDescription>All-time · by element text</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {(data?.topClickTargets ?? []).map((t) => (
+                <div key={t.text} className="space-y-1">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate">{t.text}</span>
+                    <span className="text-muted-foreground tabular-nums">{t.count.toLocaleString()}</span>
+                  </div>
+                  <Progress value={(t.count / maxTopClick) * 100} className="h-1.5" />
+                </div>
+              ))}
+              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
+              {data && data.topClickTargets.length === 0 && (
+                <div className="text-sm text-muted-foreground">No click labels captured.</div>
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Interaction shape */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Interaction shape</CardTitle>
+            <CardDescription>Where the clicks go — link vs. button vs. other</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data && totalTagged > 0 ? (
+              <div className="space-y-3">
+                <div className="flex h-3 w-full overflow-hidden rounded-full border">
+                  {data.tagBreakdown.map((t, i) => {
+                    const w = (t.count / totalTagged) * 100;
+                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
+                    return <div key={t.tag} className={colors[i % colors.length]} style={{ width: `${w}%` }} title={`${t.tag}: ${t.count}`} />;
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                  {data.tagBreakdown.map((t, i) => {
+                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
+                    const pctVal = Math.round((t.count / totalTagged) * 100);
+                    return (
+                      <div key={t.tag} className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-sm ${colors[i % colors.length]}`} />
+                        <span className="font-mono">&lt;{t.tag}&gt;</span>
+                        <span className="tabular-nums">{t.count.toLocaleString()} · {pctVal}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Loading…</div>
+            )}
+          </CardContent>
+        </Card>
 
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Preview data</AlertTitle>
+          <AlertTitle>Base layer only</AlertTitle>
           <AlertDescription>
-            Metric definitions are frozen; values shown are seeded from the current corpus while the
-            live pipelines defined in the plan land. Refresh cadence will be live (on-write, debounced).
+            Cognitive (meso) and Relational (macro) layers are temporarily hidden. They'll return
+            once their upstream pipelines — shared attention, working-group topic overlap,
+            cohesion markers — are wired in.
           </AlertDescription>
         </Alert>
-      </header>
-
-      {/* Layers — bottom-up: Interactional → Cognitive → Relational */}
-      {LAYERS.map((layer) => {
-        const Icon = layer.icon;
-        return (
-          <section key={layer.key} className="space-y-4">
-            <div className={`rounded-xl border ${layer.ring} bg-gradient-to-br ${layer.bg} p-5`}>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg border bg-background/60 p-2">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-semibold">{layer.title}</h2>
-                      <Badge variant="outline">{layer.scale} layer</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{layer.subtitle}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-semibold tabular-nums">
-                    {avg(layer.metrics.map((m) => m.score))}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    layer score
-                  </div>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground max-w-3xl">{layer.narrative}</p>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              {layer.metrics.map((m) => (
-                <MetricCard key={m.id} metric={m} sparkColor={layer.dot} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
-
-      {/* How layers compose */}
-      <Card>
-        <CardHeader>
-          <CardTitle>How the layers compose</CardTitle>
-          <CardDescription>
-            Signals propagate upward: micro shapes meso, meso shapes macro.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>
-            <span className="font-medium text-foreground">Interactional (micro)</span> — new words
-            coined in messages, PRs, GitHub issues, and abstracts feed{" "}
-            <span className="font-medium text-foreground">cognitive (meso)</span> measures of shared
-            attention and shared mental models across working groups, which in turn feed{" "}
-            <span className="font-medium text-foreground">relational (macro)</span> measures of
-            identity and cohesion for the consortium as a whole.
-          </p>
-          <p>
-            Rising scores across all three layers indicate the consortium is coalescing in the right
-            direction; divergence between layers is itself a diagnostic.
-          </p>
-        </CardContent>
-      </Card>
+      </section>
     </div>
   );
 }
