@@ -9,20 +9,38 @@ import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation, Info } from "luc
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
 
-/** Layout tuning (SVG user units). 4-4-2 row layout. */
-const ROW_LAYOUT = [4, 4, 2];
-const CELL_W = 320;
-const CELL_H = 300;
-const MARGIN_X = 60;
-const MARGIN_TOP = 140; // room for stage
-const MARGIN_BOTTOM = 90; // room for entrance
+/**
+ * Layout mirrors the hand-drawn atrium diagram:
+ *  - Kitchen + 3189 doorway along the top wall
+ *  - Black square tables stacked along the left wall
+ *  - 2×8ft tables + presentation chair rows in the mid-left
+ *  - Small white cocktail tables in the top-right corner
+ *  - 3310 door on the right wall
+ *  - Singleton door + 6ft table + stairs along the bottom
+ *  - 10 rented Peak round tables (4-4-2) fill the center-right dining area
+ */
+const SVG_W = 1640;
+const SVG_H = 1120;
 const TABLE_R = 58;
 const SEAT_R = 20;
 const SEAT_ORBIT = TABLE_R + 28;
 
-const MAX_COLS = Math.max(...ROW_LAYOUT);
-const SVG_W = MARGIN_X * 2 + CELL_W * MAX_COLS;
-const SVG_H = MARGIN_TOP + MARGIN_BOTTOM + CELL_H * ROW_LAYOUT.length;
+// Explicit centers for each of the 10 Peak round tables (index = table order).
+const PEAK_TABLE_CENTERS: { cx: number; cy: number }[] = [
+  // Row 1 — 4 tables
+  { cx: 720, cy: 280 },
+  { cx: 940, cy: 280 },
+  { cx: 1160, cy: 280 },
+  { cx: 1380, cy: 280 },
+  // Row 2 — 4 tables
+  { cx: 720, cy: 580 },
+  { cx: 940, cy: 580 },
+  { cx: 1160, cy: 580 },
+  { cx: 1380, cy: 580 },
+  // Row 3 — 2 tables (offset toward center-right, matching the diagram)
+  { cx: 830, cy: 880 },
+  { cx: 1270, cy: 880 },
+];
 
 function seatPosition(index: number, total: number, cx: number, cy: number) {
   // Distribute seats evenly around the table, starting at the top.
@@ -31,22 +49,7 @@ function seatPosition(index: number, total: number, cx: number, cy: number) {
 }
 
 function tableCenter(idx: number) {
-  // Walk ROW_LAYOUT to find (row, col) for a linear table index.
-  let remaining = idx;
-  let row = 0;
-  for (; row < ROW_LAYOUT.length; row++) {
-    if (remaining < ROW_LAYOUT[row]) break;
-    remaining -= ROW_LAYOUT[row];
-  }
-  const col = remaining;
-  const rowCount = ROW_LAYOUT[row];
-  // Center each row horizontally within the SVG.
-  const rowWidth = CELL_W * rowCount;
-  const rowStart = (SVG_W - rowWidth) / 2;
-  return {
-    cx: rowStart + CELL_W * col + CELL_W / 2,
-    cy: MARGIN_TOP + CELL_H * row + CELL_H / 2,
-  };
+  return PEAK_TABLE_CENTERS[idx] ?? { cx: SVG_W / 2, cy: SVG_H / 2 };
 }
 
 /** Wrap a theme into up to two lines that fit under a table. */
