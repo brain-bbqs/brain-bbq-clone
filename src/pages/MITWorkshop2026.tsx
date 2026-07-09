@@ -179,7 +179,7 @@ const MITWorkshop2026 = () => {
                     { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
                     { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
                   ]],
-                  ["3:00", "4:00", "Grants and Budgets discussion.", "Singleton", "Yes", undefined, "NIH representatives"],
+                  ["3:00", "4:00", "Discussion with the NIH — What do you want the NIH to know?", "Singleton", "Yes", undefined, "NIH representatives"],
                   ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
                 ]}
               />
