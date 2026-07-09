@@ -166,51 +166,122 @@ export default function MITWorkshopSeating() {
                   strokeWidth={2}
                 />
 
-                {/* Stage / podium */}
+                {/* --- Atrium fixtures (mirrors the hand-drawn set-up diagram) --- */}
+                {/* Kitchen (top-left) */}
                 <g>
-                  <rect
-                    x={SVG_W / 2 - 180}
-                    y={40}
-                    width={360}
-                    height={56}
-                    rx={8}
-                    fill="hsl(var(--primary))"
-                    opacity={0.12}
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={1.5}
-                  />
-                  <text
-                    x={SVG_W / 2}
-                    y={73}
-                    textAnchor="middle"
-                    className="fill-primary font-semibold"
-                    style={{ fontSize: 16 }}
-                  >
-                    STAGE / PODIUM
+                  <rect x={90} y={30} width={200} height={44} rx={4}
+                    fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth={1.5} />
+                  <text x={190} y={58} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 14, letterSpacing: 1 }}>
+                    KITCHEN
                   </text>
                 </g>
 
-                {/* Entrance */}
+                {/* Doorway 3189 (top-center) */}
                 <g>
-                  <rect
-                    x={SVG_W / 2 - 60}
-                    y={SVG_H - 60}
-                    width={120}
-                    height={26}
-                    rx={4}
-                    fill="hsl(var(--muted))"
-                    stroke="hsl(var(--border))"
-                  />
-                  <text
-                    x={SVG_W / 2}
-                    y={SVG_H - 42}
-                    textAnchor="middle"
-                    className="fill-muted-foreground"
-                    style={{ fontSize: 11, letterSpacing: 1 }}
-                  >
-                    ENTRANCE
+                  <rect x={430} y={30} width={220} height={20} rx={2}
+                    fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <text x={540} y={72} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 12 }}>
+                    3189
                   </text>
                 </g>
+
+                {/* Small white cocktail tables (top-right corner) */}
+                <g>
+                  {[
+                    { cx: 1470, cy: 130 }, { cx: 1560, cy: 130 },
+                    { cx: 1470, cy: 220 }, { cx: 1560, cy: 220 },
+                  ].map((p, i) => (
+                    <circle key={i} cx={p.cx} cy={p.cy} r={22}
+                      fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth={1.5} />
+                  ))}
+                  <text x={1515} y={80} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 11 }}>
+                    small white tables
+                  </text>
+                </g>
+
+                {/* Black square tables (left wall) */}
+                <g>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <rect key={i} x={30} y={130 + i * 44} width={44} height={40} rx={2}
+                      fill="hsl(var(--foreground))" opacity={0.75} />
+                  ))}
+                  <text x={100} y={230} className="fill-muted-foreground" style={{ fontSize: 11 }}>
+                    black square tables
+                  </text>
+                </g>
+
+                {/* 2 × 8ft tables (mid-left, presentation front) */}
+                <g>
+                  <rect x={280} y={440} width={70} height={110} rx={3}
+                    fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth={1.5} />
+                  <rect x={280} y={560} width={70} height={110} rx={3}
+                    fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth={1.5} />
+                  <text x={315} y={430} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 11 }}>
+                    2 × 8ft tables
+                  </text>
+                </g>
+
+                {/* Presentation chair rows (the row of C's — chairs facing the 8ft tables) */}
+                <g>
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const y = 380 + i * 60;
+                    return (
+                      <g key={i}>
+                        {/* two chairs per row facing left */}
+                        <path d={`M 470 ${y} a 12 12 0 1 0 0 24`}
+                          fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
+                        <path d={`M 510 ${y} a 12 12 0 1 0 0 24`}
+                          fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
+                      </g>
+                    );
+                  })}
+                </g>
+
+                {/* 3310 door (right wall) */}
+                <g>
+                  <rect x={SVG_W - 60} y={500} width={20} height={110} rx={2}
+                    fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <text x={SVG_W - 30} y={560} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 12 }}
+                    transform={`rotate(90 ${SVG_W - 30} 560)`}>
+                    3310
+                  </text>
+                </g>
+
+                {/* Singleton door (bottom-left) */}
+                <g>
+                  <rect x={40} y={SVG_H - 90} width={90} height={22} rx={2}
+                    fill="hsl(var(--muted))" stroke="hsl(var(--border))" />
+                  <text x={85} y={SVG_H - 45} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 11 }}>
+                    singleton
+                  </text>
+                </g>
+
+                {/* 6ft table (bottom center-left, near stairs entry) */}
+                <g>
+                  <rect x={330} y={SVG_H - 110} width={110} height={40} rx={3}
+                    fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth={1.5} />
+                  <text x={385} y={SVG_H - 40} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 11 }}>
+                    6 ft
+                  </text>
+                </g>
+
+                {/* Stairs to downstairs (bottom-right, arc) */}
+                <g>
+                  <path d={`M 500 ${SVG_H - 80} Q ${SVG_W / 2 + 100} ${SVG_H - 20} ${SVG_W - 40} ${SVG_H - 120}`}
+                    fill="none" stroke="hsl(var(--border))" strokeWidth={2} />
+                  <text x={SVG_W / 2 + 180} y={SVG_H - 40} textAnchor="middle"
+                    className="fill-muted-foreground" style={{ fontSize: 12, letterSpacing: 1 }}>
+                    stairs to downstairs
+                  </text>
+                </g>
+                {/* --- end atrium fixtures --- */}
 
                 {/* Tables */}
                 {SEATING_PLAN.map((table, tIdx) => {
