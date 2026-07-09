@@ -375,32 +375,32 @@ export default function SocialForceField() {
         {/* Top-line stats */}
         <div className="grid gap-3 md:grid-cols-4">
           <StatCard
-            icon={Eye} label="Page views (14d)"
+            icon={Eye} label="Page views (all-time)"
             value={(data?.pageviews ?? 0).toLocaleString()}
             delta={data?.pvDelta ?? 0}
             spark={data?.pvSpark ?? new Array(14).fill(0)}
-            hint="Route loads captured by useAnalytics."
+            hint="Route loads · WoW delta"
           />
           <StatCard
-            icon={MousePointerClick} label="Clicks (14d)"
+            icon={MousePointerClick} label="Clicks (all-time)"
             value={(data?.clicks ?? 0).toLocaleString()}
             delta={data?.clickDelta ?? 0}
             spark={data?.clickSpark ?? new Array(14).fill(0)}
-            hint="Links, buttons, and tracked elements."
+            hint="Links, buttons, tracked elements · WoW delta"
           />
           <StatCard
-            icon={UsersIcon} label="Sessions (14d)"
+            icon={UsersIcon} label="Sessions (all-time)"
             value={(data?.sessions ?? 0).toLocaleString()}
             delta={data?.sessionDelta ?? 0}
             spark={data?.sessionSpark ?? new Array(14).fill(0)}
-            hint="Distinct browser sessions."
+            hint="Distinct browser sessions · WoW delta"
           />
           <StatCard
-            icon={UsersIcon} label="Signed-in users (14d)"
+            icon={UsersIcon} label="Signed-in users (all-time)"
             value={(data?.users ?? 0).toLocaleString()}
             delta={data?.userDelta ?? 0}
             spark={data?.sessionSpark ?? new Array(14).fill(0)}
-            hint="Unique user_id values on captured events."
+            hint="Unique user_id values · WoW delta"
           />
         </div>
 
@@ -409,7 +409,7 @@ export default function SocialForceField() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Top pages by views</CardTitle>
-              <CardDescription>Last 14 days · from analytics_pageviews</CardDescription>
+              <CardDescription>All-time · every route people have visited</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {(data?.topPages ?? []).map((p) => (
@@ -433,7 +433,7 @@ export default function SocialForceField() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Most-clicked things</CardTitle>
-              <CardDescription>Last 14 days · by element text</CardDescription>
+              <CardDescription>All-time · by element text</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {(data?.topClickTargets ?? []).map((t) => (
