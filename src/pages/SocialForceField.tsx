@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -16,7 +17,7 @@ import { PageMeta } from "@/components/PageMeta";
 function LayerStackDiagram({
   layers,
 }: {
-  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string }[];
+  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string; heatmap?: number[] }[];
 }) {
   // Isometric parameters
   const W = 560;
@@ -33,7 +34,7 @@ function LayerStackDiagram({
   // Layers stacked top-down: macro (top) → meso → micro (bottom)
   const zOffsets = [140, 70, 0]; // top, middle, bottom (index matches layers order)
 
-  const renderPlane = (zPix: number, tint: string, score: number) => {
+  const renderPlane = (zPix: number, tint: string, score: number, heatmap?: number[]) => {
     const lines: JSX.Element[] = [];
     for (let i = 0; i <= gridN; i++) {
       const a = iso(i, 0, zPix);
@@ -45,23 +46,51 @@ function LayerStackDiagram({
         <line key={`h${i}-${zPix}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className={tint} strokeWidth={0.75} opacity={0.55} />
       );
     }
-    // Score marker — a single filled cell at position proportional to score
-    const s = Math.max(0, Math.min(100, score)) / 100;
-    const gx = Math.round(s * gridN);
-    const gy = Math.round((1 - s) * gridN);
-    const p1 = iso(gx, gy, zPix);
-    const p2 = iso(gx + 1, gy, zPix);
-    const p3 = iso(gx + 1, gy + 1, zPix);
-    const p4 = iso(gx, gy + 1, zPix);
-    return (
-      <g>
-        {lines}
+    // Heatmap mode — render every cell with opacity proportional to activity.
+    const cells: JSX.Element[] = [];
+    if (heatmap && heatmap.length === gridN * gridN) {
+      for (let gy = 0; gy < gridN; gy++) {
+        for (let gx = 0; gx < gridN; gx++) {
+          const v = heatmap[gy * gridN + gx];
+          if (v <= 0) continue;
+          const p1 = iso(gx, gy, zPix);
+          const p2 = iso(gx + 1, gy, zPix);
+          const p3 = iso(gx + 1, gy + 1, zPix);
+          const p4 = iso(gx, gy + 1, zPix);
+          cells.push(
+            <polygon
+              key={`c-${zPix}-${gx}-${gy}`}
+              points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
+              className={tint}
+              fillOpacity={0.15 + v * 0.7}
+              stroke="none"
+            />
+          );
+        }
+      }
+    } else {
+      // Single marker cell proportional to score
+      const s = Math.max(0, Math.min(100, score)) / 100;
+      const gx = Math.round(s * gridN);
+      const gy = Math.round((1 - s) * gridN);
+      const p1 = iso(gx, gy, zPix);
+      const p2 = iso(gx + 1, gy, zPix);
+      const p3 = iso(gx + 1, gy + 1, zPix);
+      const p4 = iso(gx, gy + 1, zPix);
+      cells.push(
         <polygon
+          key={`m-${zPix}`}
           points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
           className={tint}
           fillOpacity={0.5}
           strokeOpacity={0.9}
         />
+      );
+    }
+    return (
+      <g>
+        {lines}
+        {cells}
       </g>
     );
   };
@@ -77,7 +106,7 @@ function LayerStackDiagram({
             stroke="currentColor" strokeDasharray="2 3" opacity={0.3}
           />
           {layers.map((l, i) => (
-            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score)}</g>
+            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score, l.heatmap)}</g>
           ))}
         </svg>
         <ol className="space-y-3 text-sm">
