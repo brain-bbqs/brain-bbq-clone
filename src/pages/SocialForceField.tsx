@@ -61,10 +61,10 @@ function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: stri
             <span className="h-2 w-2 rounded-sm bg-violet-500" />
             <span className="font-medium">Interactional · Micro</span>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) over 14d</p>
+          <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) all-time</p>
           <p className="text-xs text-muted-foreground">
-            The base social layer. Each cell is one page in the app; brightness reflects real
-            click activity from the last 14 days. Hover a cell to see the page.
+            The base social layer. Each cell is one page in the app; brightness reflects total
+            click activity since tracking began. Hover a cell to see the page.
           </p>
         </div>
       </div>
@@ -146,6 +146,7 @@ type Data = {
   tagBreakdown: { tag: string; count: number }[];
   heatmap: number[];
   heatmapLabels: string[];
+  firstSeen: string | null;
 };
 
 const dayBuckets = (rows: Row[], days: number) => {
@@ -191,33 +192,56 @@ export default function SocialForceField() {
     if (!allowed) return;
     let cancelled = false;
 
-    (async () => {
-      const now = Date.now();
-      const since = new Date(now - 14 * 86_400_000).toISOString();
-      const prevSince = new Date(now - 28 * 86_400_000).toISOString();
+    // Page through all rows in the table (RLS + PostgREST caps returns; we page in 1k chunks).
+    const fetchAll = async <T,>(table: string, cols: string): Promise<T[]> => {
+      const pageSize = 1000;
+      const out: T[] = [];
+      for (let from = 0; from < 200000; from += pageSize) {
+        const { data, error } = await supabase
+          .from(table as any)
+          .select(cols)
+          .order("created_at", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error || !data || data.length === 0) break;
+        out.push(...(data as T[]));
+        if (data.length < pageSize) break;
+      }
+      return out;
+    };
 
-      const [c14, p14, cPrev, pPrev] = await Promise.all([
-        supabase.from("analytics_clicks").select("path, session_id, user_id, created_at, element_tag, element_text").gte("created_at", since).limit(30000),
-        supabase.from("analytics_pageviews").select("path, session_id, user_id, created_at").gte("created_at", since).limit(30000),
-        supabase.from("analytics_clicks").select("session_id, user_id, created_at").gte("created_at", prevSince).lt("created_at", since).limit(30000),
-        supabase.from("analytics_pageviews").select("session_id, user_id, created_at").gte("created_at", prevSince).lt("created_at", since).limit(30000),
+    (async () => {
+      const [clicks, pvs] = await Promise.all([
+        fetchAll<Row>("analytics_clicks", "path, session_id, user_id, created_at, element_tag, element_text"),
+        fetchAll<Row>("analytics_pageviews", "path, session_id, user_id, created_at"),
       ]);
       if (cancelled) return;
 
-      const clicks = (c14.data ?? []) as Row[];
-      const pvs = (p14.data ?? []) as Row[];
-      const prevClicks = (cPrev.data ?? []) as Row[];
-      const prevPvs = (pPrev.data ?? []) as Row[];
-
-      const days = 14;
+      // Determine full history window in days for the sparkline
+      const all = [...clicks, ...pvs];
+      const firstTs = all.reduce((min, r) => Math.min(min, new Date(r.created_at).getTime()), Date.now());
+      const days = Math.max(14, Math.min(180, Math.ceil((Date.now() - firstTs) / 86_400_000) + 1));
       const clickSpark = dayBuckets(clicks, days);
       const pvSpark = dayBuckets(pvs, days);
-      const sessionSpark = uniqueDayBuckets([...clicks, ...pvs], days);
+      const sessionSpark = uniqueDayBuckets(all, days);
 
-      const sessions = new Set([...clicks, ...pvs].map((r) => r.session_id).filter(Boolean)).size;
-      const users = new Set([...clicks, ...pvs].map((r) => r.user_id).filter(Boolean)).size;
-      const prevSessions = new Set([...prevClicks, ...prevPvs].map((r) => r.session_id).filter(Boolean)).size;
-      const prevUsers = new Set([...prevClicks, ...prevPvs].map((r) => r.user_id).filter(Boolean)).size;
+      // Week-over-week delta (last 7d vs previous 7d)
+      const w = 7 * 86_400_000;
+      const now = Date.now();
+      const inRange = (r: Row, a: number, b: number) => {
+        const t = new Date(r.created_at).getTime();
+        return t >= a && t < b;
+      };
+      const cLast = clicks.filter((r) => inRange(r, now - w, now)).length;
+      const cPrevCount = clicks.filter((r) => inRange(r, now - 2 * w, now - w)).length;
+      const pLast = pvs.filter((r) => inRange(r, now - w, now)).length;
+      const pPrevCount = pvs.filter((r) => inRange(r, now - 2 * w, now - w)).length;
+      const sLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.session_id).filter(Boolean)).size;
+      const sPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.session_id).filter(Boolean)).size;
+      const uLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.user_id).filter(Boolean)).size;
+      const uPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.user_id).filter(Boolean)).size;
+
+      const sessions = new Set(all.map((r) => r.session_id).filter(Boolean)).size;
+      const users = new Set(all.map((r) => r.user_id).filter(Boolean)).size;
 
       // Top pages (by views), enriched with click counts
       const pvByPath = new Map<string, number>();
@@ -260,12 +284,13 @@ export default function SocialForceField() {
         sessions,
         users,
         clickSpark, pvSpark, sessionSpark,
-        clickDelta: pct(clicks.length, prevClicks.length),
-        pvDelta: pct(pvs.length, prevPvs.length),
-        sessionDelta: pct(sessions, prevSessions),
-        userDelta: pct(users, prevUsers),
+        clickDelta: pct(cLast, cPrevCount),
+        pvDelta: pct(pLast, pPrevCount),
+        sessionDelta: pct(sLast, sPrev),
+        userDelta: pct(uLast, uPrev),
         topPages, topClickTargets, tagBreakdown,
         heatmap, heatmapLabels,
+        firstSeen: all.length ? new Date(firstTs).toISOString() : null,
       });
     })();
 
@@ -304,12 +329,17 @@ export default function SocialForceField() {
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-            The base social layer — <span className="font-medium text-foreground">Interactional</span>.
-            This is where people first meet the platform: which pages they load, what they click,
-            and how often they come back. Cognitive and Relational layers will land as the pipelines
-            mature.
+        <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
+          The base social layer — <span className="font-medium text-foreground">Interactional</span>.
+          This is where people first meet the platform: which pages they load, what they click,
+          and how often they come back. Cognitive and Relational layers will land as the pipelines
+          mature.
+        </p>
+        {data?.firstSeen && (
+          <p className="text-xs text-muted-foreground">
+            All-time analytics since {new Date(data.firstSeen).toLocaleDateString()} · week-over-week deltas
           </p>
+        )}
         </div>
 
         <BaseLayerDiagram
@@ -338,39 +368,39 @@ export default function SocialForceField() {
           <p className="mt-3 text-sm text-muted-foreground max-w-3xl">
             Live analytics from <code className="text-xs">analytics_pageviews</code> and{" "}
             <code className="text-xs">analytics_clicks</code>. Everything on this page reflects
-            actual visitor behavior over the last 14 days.
+            actual visitor behavior since tracking began.
           </p>
         </div>
 
         {/* Top-line stats */}
         <div className="grid gap-3 md:grid-cols-4">
           <StatCard
-            icon={Eye} label="Page views (14d)"
+            icon={Eye} label="Page views (all-time)"
             value={(data?.pageviews ?? 0).toLocaleString()}
             delta={data?.pvDelta ?? 0}
             spark={data?.pvSpark ?? new Array(14).fill(0)}
-            hint="Route loads captured by useAnalytics."
+            hint="Route loads · WoW delta"
           />
           <StatCard
-            icon={MousePointerClick} label="Clicks (14d)"
+            icon={MousePointerClick} label="Clicks (all-time)"
             value={(data?.clicks ?? 0).toLocaleString()}
             delta={data?.clickDelta ?? 0}
             spark={data?.clickSpark ?? new Array(14).fill(0)}
-            hint="Links, buttons, and tracked elements."
+            hint="Links, buttons, tracked elements · WoW delta"
           />
           <StatCard
-            icon={UsersIcon} label="Sessions (14d)"
+            icon={UsersIcon} label="Sessions (all-time)"
             value={(data?.sessions ?? 0).toLocaleString()}
             delta={data?.sessionDelta ?? 0}
             spark={data?.sessionSpark ?? new Array(14).fill(0)}
-            hint="Distinct browser sessions."
+            hint="Distinct browser sessions · WoW delta"
           />
           <StatCard
-            icon={UsersIcon} label="Signed-in users (14d)"
+            icon={UsersIcon} label="Signed-in users (all-time)"
             value={(data?.users ?? 0).toLocaleString()}
             delta={data?.userDelta ?? 0}
             spark={data?.sessionSpark ?? new Array(14).fill(0)}
-            hint="Unique user_id values on captured events."
+            hint="Unique user_id values · WoW delta"
           />
         </div>
 
@@ -379,7 +409,7 @@ export default function SocialForceField() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Top pages by views</CardTitle>
-              <CardDescription>Last 14 days · from analytics_pageviews</CardDescription>
+              <CardDescription>All-time · every route people have visited</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {(data?.topPages ?? []).map((p) => (
@@ -403,7 +433,7 @@ export default function SocialForceField() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Most-clicked things</CardTitle>
-              <CardDescription>Last 14 days · by element text</CardDescription>
+              <CardDescription>All-time · by element text</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {(data?.topClickTargets ?? []).map((t) => (
