@@ -8,8 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
 import { MessageSquare, Lock, Layers, TrendingUp, TrendingDown, Minus, Info, MousePointerClick, Eye, Users as UsersIcon } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { useAuth } from "@/contexts/AuthContext";
-import { isPreviewMode } from "@/lib/preview-mode";
 
 // Isometric single-plane grid — the "base social layer".
 // Each cell = one page in the app; brightness = click intensity (14d).
@@ -179,10 +177,8 @@ const pct = (curr: number, prev: number) => {
 
 export default function SocialForceField() {
   const { isAdmin, isCurator, isLoading } = useUserTier();
-  const { session } = useAuth();
   const navigate = useNavigate();
   const allowed = isAdmin || isCurator;
-  const previewWithoutSession = isPreviewMode() && !session;
   const [data, setData] = useState<Data | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -196,110 +192,14 @@ export default function SocialForceField() {
   useEffect(() => {
     if (!allowed) return;
     let cancelled = false;
-
-    // Page through all rows in the table (RLS + PostgREST caps returns; we page in 1k chunks).
-    const fetchAll = async <T,>(table: string, cols: string): Promise<T[]> => {
-      const pageSize = 1000;
-      const out: T[] = [];
-      for (let from = 0; from < 200000; from += pageSize) {
-        const { data, error } = await supabase
-          .from(table as any)
-          .select(cols)
-          .order("created_at", { ascending: true })
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        out.push(...(data as T[]));
-        if (data.length < pageSize) break;
-      }
-      return out;
-    };
-
     (async () => {
       try {
         setLoadError(null);
-        const [clicks, pvs] = await Promise.all([
-          fetchAll<Row>("analytics_clicks", "path, session_id, user_id, created_at, element_tag, element_text"),
-          fetchAll<Row>("analytics_pageviews", "path, session_id, user_id, created_at"),
-        ]);
+        const { data: resp, error } = await supabase.functions.invoke("analytics-summary", { body: {} });
         if (cancelled) return;
-
-        // Determine full history window in days for the sparkline
-        const all = [...clicks, ...pvs];
-        const firstTs = all.reduce((min, r) => Math.min(min, new Date(r.created_at).getTime()), Date.now());
-        const days = Math.max(14, Math.min(180, Math.ceil((Date.now() - firstTs) / 86_400_000) + 1));
-        const clickSpark = dayBuckets(clicks, days);
-        const pvSpark = dayBuckets(pvs, days);
-        const sessionSpark = uniqueDayBuckets(all, days);
-
-        // Week-over-week delta (last 7d vs previous 7d)
-        const w = 7 * 86_400_000;
-        const now = Date.now();
-        const inRange = (r: Row, a: number, b: number) => {
-          const t = new Date(r.created_at).getTime();
-          return t >= a && t < b;
-        };
-        const cLast = clicks.filter((r) => inRange(r, now - w, now)).length;
-        const cPrevCount = clicks.filter((r) => inRange(r, now - 2 * w, now - w)).length;
-        const pLast = pvs.filter((r) => inRange(r, now - w, now)).length;
-        const pPrevCount = pvs.filter((r) => inRange(r, now - 2 * w, now - w)).length;
-        const sLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.session_id).filter(Boolean)).size;
-        const sPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.session_id).filter(Boolean)).size;
-        const uLast = new Set(all.filter((r) => inRange(r, now - w, now)).map((r) => r.user_id).filter(Boolean)).size;
-        const uPrev = new Set(all.filter((r) => inRange(r, now - 2 * w, now - w)).map((r) => r.user_id).filter(Boolean)).size;
-
-        const sessions = new Set(all.map((r) => r.session_id).filter(Boolean)).size;
-        const users = new Set(all.map((r) => r.user_id).filter(Boolean)).size;
-
-        // Top pages (by views), enriched with click counts
-        const pvByPath = new Map<string, number>();
-        pvs.forEach((r) => { const p = r.path || "/"; pvByPath.set(p, (pvByPath.get(p) ?? 0) + 1); });
-        const clicksByPath = new Map<string, number>();
-        clicks.forEach((r) => { const p = r.path || "/"; clicksByPath.set(p, (clicksByPath.get(p) ?? 0) + 1); });
-
-        const topPages = [...pvByPath.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 12)
-          .map(([path, views]) => ({ path, views, clicks: clicksByPath.get(path) ?? 0 }));
-
-        // Top click targets by element_text
-        const byText = new Map<string, number>();
-        clicks.forEach((r) => {
-          const t = (r.element_text || "").trim();
-          if (!t) return;
-          byText.set(t, (byText.get(t) ?? 0) + 1);
-        });
-        const topClickTargets = [...byText.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([text, count]) => ({ text, count }));
-
-        // Tag breakdown
-        const byTag = new Map<string, number>();
-        clicks.forEach((r) => { const t = r.element_tag || "other"; byTag.set(t, (byTag.get(t) ?? 0) + 1); });
-        const tagBreakdown = [...byTag.entries()].sort((a, b) => b[1] - a[1]).map(([tag, count]) => ({ tag, count }));
-
-        // Heatmap — top 36 paths by clicks, mapped left→right, top→bottom
-        const sortedClicks = [...clicksByPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 36);
-        const maxCount = sortedClicks[0]?.[1] ?? 1;
-        const heatmap = new Array(36).fill(0);
-        const heatmapLabels = new Array(36).fill("");
-        sortedClicks.forEach(([path, count], i) => {
-          heatmap[i] = Math.max(0, Math.min(1, count / maxCount));
-          heatmapLabels[i] = `${path} — ${count} clicks`;
-        });
-
-        setData({
-          clicks: clicks.length,
-          pageviews: pvs.length,
-          sessions,
-          users,
-          clickSpark, pvSpark, sessionSpark,
-          clickDelta: pct(cLast, cPrevCount),
-          pvDelta: pct(pLast, pPrevCount),
-          sessionDelta: pct(sLast, sPrev),
-          userDelta: pct(uLast, uPrev),
-          topPages, topClickTargets, tagBreakdown,
-          heatmap, heatmapLabels,
-          firstSeen: all.length ? new Date(firstTs).toISOString() : null,
-        });
+        if (error) throw error;
+        if (resp?.error) throw new Error(resp.error);
+        setData(resp as Data);
       } catch (error) {
         if (cancelled) return;
         const message = error instanceof Error ? error.message : "Analytics data could not be loaded.";
@@ -307,7 +207,6 @@ export default function SocialForceField() {
         setLoadError(message);
       }
     })();
-
     return () => { cancelled = true; };
   }, [allowed]);
 
@@ -354,18 +253,7 @@ export default function SocialForceField() {
             All-time analytics since {new Date(data.firstSeen).toLocaleDateString()} · week-over-week deltas
           </p>
         )}
-        {previewWithoutSession && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Preview is not signed in</AlertTitle>
-            <AlertDescription>
-              The database already contains historical analytics, but this preview is using a fake admin
-              shell without a real Supabase session. Sign in with an admin or curator account to read the
-              analytics rows here.
-            </AlertDescription>
-          </Alert>
-        )}
-        {loadError && !previewWithoutSession && (
+        {loadError && (
           <Alert variant="destructive">
             <Info className="h-4 w-4" />
             <AlertTitle>Analytics could not be loaded</AlertTitle>
