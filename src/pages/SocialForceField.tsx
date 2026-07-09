@@ -146,6 +146,7 @@ type Data = {
   tagBreakdown: { tag: string; count: number }[];
   heatmap: number[];
   heatmapLabels: string[];
+  firstSeen: string | null;
 };
 
 const dayBuckets = (rows: Row[], days: number) => {
@@ -328,12 +329,17 @@ export default function SocialForceField() {
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-            The base social layer — <span className="font-medium text-foreground">Interactional</span>.
-            This is where people first meet the platform: which pages they load, what they click,
-            and how often they come back. Cognitive and Relational layers will land as the pipelines
-            mature.
+        <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
+          The base social layer — <span className="font-medium text-foreground">Interactional</span>.
+          This is where people first meet the platform: which pages they load, what they click,
+          and how often they come back. Cognitive and Relational layers will land as the pipelines
+          mature.
+        </p>
+        {data?.firstSeen && (
+          <p className="text-xs text-muted-foreground">
+            All-time analytics since {new Date(data.firstSeen).toLocaleDateString()} · week-over-week deltas
           </p>
+        )}
         </div>
 
         <BaseLayerDiagram
