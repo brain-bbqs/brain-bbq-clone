@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -16,7 +17,7 @@ import { PageMeta } from "@/components/PageMeta";
 function LayerStackDiagram({
   layers,
 }: {
-  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string }[];
+  layers: { key: string; title: string; scale: string; score: number; formula: string; tint: string; heatmap?: number[] }[];
 }) {
   // Isometric parameters
   const W = 560;
@@ -33,7 +34,7 @@ function LayerStackDiagram({
   // Layers stacked top-down: macro (top) → meso → micro (bottom)
   const zOffsets = [140, 70, 0]; // top, middle, bottom (index matches layers order)
 
-  const renderPlane = (zPix: number, tint: string, score: number) => {
+  const renderPlane = (zPix: number, tint: string, score: number, heatmap?: number[]) => {
     const lines: JSX.Element[] = [];
     for (let i = 0; i <= gridN; i++) {
       const a = iso(i, 0, zPix);
@@ -45,23 +46,51 @@ function LayerStackDiagram({
         <line key={`h${i}-${zPix}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className={tint} strokeWidth={0.75} opacity={0.55} />
       );
     }
-    // Score marker — a single filled cell at position proportional to score
-    const s = Math.max(0, Math.min(100, score)) / 100;
-    const gx = Math.round(s * gridN);
-    const gy = Math.round((1 - s) * gridN);
-    const p1 = iso(gx, gy, zPix);
-    const p2 = iso(gx + 1, gy, zPix);
-    const p3 = iso(gx + 1, gy + 1, zPix);
-    const p4 = iso(gx, gy + 1, zPix);
-    return (
-      <g>
-        {lines}
+    // Heatmap mode — render every cell with opacity proportional to activity.
+    const cells: JSX.Element[] = [];
+    if (heatmap && heatmap.length === gridN * gridN) {
+      for (let gy = 0; gy < gridN; gy++) {
+        for (let gx = 0; gx < gridN; gx++) {
+          const v = heatmap[gy * gridN + gx];
+          if (v <= 0) continue;
+          const p1 = iso(gx, gy, zPix);
+          const p2 = iso(gx + 1, gy, zPix);
+          const p3 = iso(gx + 1, gy + 1, zPix);
+          const p4 = iso(gx, gy + 1, zPix);
+          cells.push(
+            <polygon
+              key={`c-${zPix}-${gx}-${gy}`}
+              points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
+              className={tint}
+              fillOpacity={0.15 + v * 0.7}
+              stroke="none"
+            />
+          );
+        }
+      }
+    } else {
+      // Single marker cell proportional to score
+      const s = Math.max(0, Math.min(100, score)) / 100;
+      const gx = Math.round(s * gridN);
+      const gy = Math.round((1 - s) * gridN);
+      const p1 = iso(gx, gy, zPix);
+      const p2 = iso(gx + 1, gy, zPix);
+      const p3 = iso(gx + 1, gy + 1, zPix);
+      const p4 = iso(gx, gy + 1, zPix);
+      cells.push(
         <polygon
+          key={`m-${zPix}`}
           points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
           className={tint}
           fillOpacity={0.5}
           strokeOpacity={0.9}
         />
+      );
+    }
+    return (
+      <g>
+        {lines}
+        {cells}
       </g>
     );
   };
@@ -77,7 +106,7 @@ function LayerStackDiagram({
             stroke="currentColor" strokeDasharray="2 3" opacity={0.3}
           />
           {layers.map((l, i) => (
-            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score)}</g>
+            <g key={l.key}>{renderPlane(zOffsets[i], l.tint, l.score, l.heatmap)}</g>
           ))}
         </svg>
         <ol className="space-y-3 text-sm">
@@ -130,37 +159,37 @@ const LAYERS: Layer[] = [
     key: "interactional",
     scale: "Micro",
     title: "Interactional",
-    subtitle: "Shared language · lexical alignment · conceptual pacts",
+    subtitle: "System interactions · clicks · navigation · attention",
     narrative:
-      "Individual exchanges — messages, PRs, GitHub issues, published abstracts — where new device/neuromod vocabulary is coined and reused.",
+      "The base social layer: how people first meet the consortium — where they click, which pages they visit, how long they stay engaged. Every dot on the base grid is a page in the app; brightness is real click activity from the last 14 days.",
     icon: MessageSquare,
     ring: "border-violet-500/40",
     bg: "from-violet-500/10 to-transparent",
     dot: "stroke-violet-400",
     metrics: [
       {
-        id: "novel-term-rate",
-        name: "Novel-term birth rate",
-        description: "New terms/week entering the consortium corpus (comments · PRs · issues · abstracts).",
-        score: 62, delta: +8, trend: "up",
-        source: "ontology-candidates · entity_comments · publications · github",
-        sparkline: [40, 44, 41, 48, 52, 50, 55, 58, 56, 59, 60, 62],
+        id: "click-volume",
+        name: "Click volume (14d)",
+        description: "Total tracked clicks across the consortium platform in the last 14 days.",
+        score: 0, delta: 0, trend: "flat",
+        source: "analytics_clicks",
+        sparkline: [0,0,0,0,0,0,0,0,0,0,0,0],
       },
       {
-        id: "lexical-alignment",
-        name: "Lexical alignment score",
-        description: "Mean pairwise cosine of author term vectors, 30-day rolling window.",
-        score: 58, delta: +5, trend: "up",
-        source: "entity_comments · assistant chat · github",
-        sparkline: [45, 46, 48, 47, 50, 52, 53, 55, 54, 56, 57, 58],
+        id: "pageview-volume",
+        name: "Page views (14d)",
+        description: "Distinct route loads across the consortium platform in the last 14 days.",
+        score: 0, delta: 0, trend: "flat",
+        source: "analytics_pageviews",
+        sparkline: [0,0,0,0,0,0,0,0,0,0,0,0],
       },
       {
-        id: "conceptual-pacts",
-        name: "Conceptual pacts",
-        description: "Novel terms reused by ≥3 authors within 14 days — Brennan & Clark signal.",
-        score: 41, delta: +12, trend: "up",
-        source: "derived from novel-term events",
-        sparkline: [22, 24, 26, 28, 30, 33, 35, 34, 37, 39, 40, 41],
+        id: "active-participants",
+        name: "Active participants (14d)",
+        description: "Unique sessions plus signed-in users generating interactions.",
+        score: 0, delta: 0, trend: "flat",
+        source: "analytics_clicks · analytics_pageviews",
+        sparkline: [0,0,0,0,0,0,0,0,0,0,0,0],
       },
     ],
   },
@@ -311,6 +340,123 @@ export default function SocialForceField() {
   const navigate = useNavigate();
   const allowed = isAdmin || isCurator;
 
+  // Live interactional signal from analytics_* tables.
+  const [interactional, setInteractional] = useState<{
+    clicks: number;
+    pageviews: number;
+    participants: number;
+    clickSpark: number[];
+    pageviewSpark: number[];
+    participantSpark: number[];
+    clickDelta: number;
+    pageviewDelta: number;
+    participantDelta: number;
+    heatmap: number[]; // 36 cells, 0-1
+    topPaths: { path: string; count: number }[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (!allowed) return;
+    let cancelled = false;
+
+    const load = async () => {
+      const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+      const prevSince = new Date(Date.now() - 28 * 24 * 3600 * 1000).toISOString();
+
+      const [clicksRes, pvRes, prevClicksRes, prevPvRes] = await Promise.all([
+        supabase.from("analytics_clicks").select("path, session_id, user_id, created_at").gte("created_at", since).limit(20000),
+        supabase.from("analytics_pageviews").select("path, session_id, user_id, created_at").gte("created_at", since).limit(20000),
+        supabase.from("analytics_clicks").select("session_id, user_id, created_at").gte("created_at", prevSince).lt("created_at", since).limit(20000),
+        supabase.from("analytics_pageviews").select("session_id, user_id, created_at").gte("created_at", prevSince).lt("created_at", since).limit(20000),
+      ]);
+
+      const clicks = clicksRes.data ?? [];
+      const pvs = pvRes.data ?? [];
+      const prevClicks = prevClicksRes.data ?? [];
+      const prevPvs = prevPvRes.data ?? [];
+      if (cancelled) return;
+
+      // Per-day sparklines (last 12 days)
+      const days = 12;
+      const dayBuckets = (rows: { created_at: string }[]) => {
+        const buckets = new Array(days).fill(0);
+        const now = Date.now();
+        for (const r of rows) {
+          const t = new Date(r.created_at).getTime();
+          const dayIdx = days - 1 - Math.floor((now - t) / (24 * 3600 * 1000));
+          if (dayIdx >= 0 && dayIdx < days) buckets[dayIdx]++;
+        }
+        return buckets;
+      };
+
+      const clickSpark = dayBuckets(clicks);
+      const pageviewSpark = dayBuckets(pvs);
+
+      // Participant sparkline = unique session ids per day
+      const partBuckets = new Array(days).fill(0);
+      const seenPerDay: Array<Set<string>> = Array.from({ length: days }, () => new Set());
+      const now = Date.now();
+      for (const r of [...clicks, ...pvs]) {
+        const t = new Date(r.created_at as string).getTime();
+        const dayIdx = days - 1 - Math.floor((now - t) / (24 * 3600 * 1000));
+        if (dayIdx >= 0 && dayIdx < days) {
+          const id = (r.user_id as string) || (r.session_id as string) || "";
+          if (id && !seenPerDay[dayIdx].has(id)) {
+            seenPerDay[dayIdx].add(id);
+            partBuckets[dayIdx]++;
+          }
+        }
+      }
+
+      const totalClicks = clicks.length;
+      const totalPvs = pvs.length;
+      const participants = new Set(
+        [...clicks, ...pvs].map((r) => (r.user_id as string) || (r.session_id as string)).filter(Boolean)
+      ).size;
+
+      const prevParticipants = new Set(
+        [...prevClicks, ...prevPvs].map((r) => (r.user_id as string) || (r.session_id as string)).filter(Boolean)
+      ).size;
+
+      const pct = (curr: number, prev: number) => {
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return Math.round(((curr - prev) / prev) * 100);
+      };
+
+      // Heatmap — top 36 paths by click count, ordered desc, filled left-to-right, top-to-bottom.
+      const byPath = new Map<string, number>();
+      for (const r of clicks) {
+        const p = (r.path as string) || "/";
+        byPath.set(p, (byPath.get(p) ?? 0) + 1);
+      }
+      const sorted = [...byPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 36);
+      const maxCount = sorted[0]?.[1] ?? 1;
+      const heatmap = new Array(36).fill(0);
+      sorted.forEach(([, c], i) => {
+        heatmap[i] = Math.max(0, Math.min(1, c / maxCount));
+      });
+
+      setInteractional({
+        clicks: totalClicks,
+        pageviews: totalPvs,
+        participants,
+        clickSpark,
+        pageviewSpark,
+        participantSpark: partBuckets,
+        clickDelta: pct(totalClicks, prevClicks.length),
+        pageviewDelta: pct(totalPvs, prevPvs.length),
+        participantDelta: pct(participants, prevParticipants),
+        heatmap,
+        topPaths: sorted.map(([path, count]) => ({ path, count })),
+      });
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [allowed]);
+
   useEffect(() => {
     if (!isLoading && !allowed) {
       const t = setTimeout(() => navigate("/", { replace: true }), 1200);
@@ -318,9 +464,49 @@ export default function SocialForceField() {
     }
   }, [isLoading, allowed, navigate]);
 
+  // Overlay live interactional numbers onto the interactional layer.
+  const liveLayers: Layer[] = useMemo(() => {
+    if (!interactional) return LAYERS;
+    const norm = (v: number, ceiling: number) =>
+      Math.max(0, Math.min(100, Math.round((v / ceiling) * 100)));
+    const trend = (d: number): Trend => (d > 2 ? "up" : d < -2 ? "down" : "flat");
+    return LAYERS.map((layer) => {
+      if (layer.key !== "interactional") return layer;
+      return {
+        ...layer,
+        metrics: [
+          {
+            ...layer.metrics[0],
+            score: norm(interactional.clicks, 10000),
+            delta: interactional.clickDelta,
+            trend: trend(interactional.clickDelta),
+            sparkline: interactional.clickSpark.length ? interactional.clickSpark : layer.metrics[0].sparkline,
+            description: `${interactional.clicks.toLocaleString()} clicks in the last 14 days.`,
+          },
+          {
+            ...layer.metrics[1],
+            score: norm(interactional.pageviews, 10000),
+            delta: interactional.pageviewDelta,
+            trend: trend(interactional.pageviewDelta),
+            sparkline: interactional.pageviewSpark.length ? interactional.pageviewSpark : layer.metrics[1].sparkline,
+            description: `${interactional.pageviews.toLocaleString()} page views in the last 14 days.`,
+          },
+          {
+            ...layer.metrics[2],
+            score: norm(interactional.participants, 500),
+            delta: interactional.participantDelta,
+            trend: trend(interactional.participantDelta),
+            sparkline: interactional.participantSpark.length ? interactional.participantSpark : layer.metrics[2].sparkline,
+            description: `${interactional.participants.toLocaleString()} distinct sessions/users interacting in the last 14 days.`,
+          },
+        ],
+      };
+    });
+  }, [interactional]);
+
   const layerAverages = useMemo(
-    () => LAYERS.map((l) => ({ key: l.key, title: l.title, avg: avg(l.metrics.map((m) => m.score)) })),
-    []
+    () => liveLayers.map((l) => ({ key: l.key, title: l.title, avg: avg(l.metrics.map((m) => m.score)) })),
+    [liveLayers]
   );
   const fieldStrength = avg(layerAverages.map((l) => l.avg));
 
@@ -367,7 +553,7 @@ export default function SocialForceField() {
               key: "relational",
               title: "Relational",
               scale: "Macro",
-              score: avg(LAYERS.find((l) => l.key === "relational")!.metrics.map((m) => m.score)),
+              score: avg(liveLayers.find((l) => l.key === "relational")!.metrics.map((m) => m.score)),
               formula: "R = f(cohesion, cross-lab ties)",
               tint: "stroke-amber-500",
             },
@@ -375,7 +561,7 @@ export default function SocialForceField() {
               key: "cognitive",
               title: "Cognitive",
               scale: "Meso",
-              score: avg(LAYERS.find((l) => l.key === "cognitive")!.metrics.map((m) => m.score)),
+              score: avg(liveLayers.find((l) => l.key === "cognitive")!.metrics.map((m) => m.score)),
               formula: "C = J(attention, mental models)",
               tint: "stroke-sky-500",
             },
@@ -383,9 +569,10 @@ export default function SocialForceField() {
               key: "interactional",
               title: "Interactional",
               scale: "Micro",
-              score: avg(LAYERS.find((l) => l.key === "interactional")!.metrics.map((m) => m.score)),
-              formula: "I = Σ align(term_i, term_j)",
+              score: avg(liveLayers.find((l) => l.key === "interactional")!.metrics.map((m) => m.score)),
+              formula: "I = Σ clicks(page_i) over 14d",
               tint: "stroke-violet-500",
+              heatmap: interactional?.heatmap,
             },
           ]}
         />
@@ -428,7 +615,7 @@ export default function SocialForceField() {
       </header>
 
       {/* Layers — bottom-up: Interactional → Cognitive → Relational */}
-      {LAYERS.map((layer) => {
+      {liveLayers.map((layer) => {
         const Icon = layer.icon;
         return (
           <section key={layer.key} className="space-y-4">
