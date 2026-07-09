@@ -8,8 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
 import { MessageSquare, Lock, Layers, TrendingUp, TrendingDown, Minus, Info, MousePointerClick, Eye, Users as UsersIcon } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { useAuth } from "@/contexts/AuthContext";
-import { isPreviewMode } from "@/lib/preview-mode";
 
 // Isometric single-plane grid — the "base social layer".
 // Each cell = one page in the app; brightness = click intensity (14d).
@@ -179,10 +177,8 @@ const pct = (curr: number, prev: number) => {
 
 export default function SocialForceField() {
   const { isAdmin, isCurator, isLoading } = useUserTier();
-  const { session } = useAuth();
   const navigate = useNavigate();
   const allowed = isAdmin || isCurator;
-  const previewWithoutSession = isPreviewMode() && !session;
   const [data, setData] = useState<Data | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -257,18 +253,7 @@ export default function SocialForceField() {
             All-time analytics since {new Date(data.firstSeen).toLocaleDateString()} · week-over-week deltas
           </p>
         )}
-        {previewWithoutSession && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Preview is not signed in</AlertTitle>
-            <AlertDescription>
-              The database already contains historical analytics, but this preview is using a fake admin
-              shell without a real Supabase session. Sign in with an admin or curator account to read the
-              analytics rows here.
-            </AlertDescription>
-          </Alert>
-        )}
-        {loadError && !previewWithoutSession && (
+        {loadError && (
           <Alert variant="destructive">
             <Info className="h-4 w-4" />
             <AlertTitle>Analytics could not be loaded</AlertTitle>
