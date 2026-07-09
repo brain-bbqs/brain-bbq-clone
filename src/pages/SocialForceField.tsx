@@ -61,10 +61,10 @@ function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: stri
             <span className="h-2 w-2 rounded-sm bg-violet-500" />
             <span className="font-medium">Interactional · Micro</span>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) over 14d</p>
+          <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) all-time</p>
           <p className="text-xs text-muted-foreground">
-            The base social layer. Each cell is one page in the app; brightness reflects real
-            click activity from the last 14 days. Hover a cell to see the page.
+            The base social layer. Each cell is one page in the app; brightness reflects total
+            click activity since tracking began. Hover a cell to see the page.
           </p>
         </div>
       </div>
@@ -368,7 +368,7 @@ export default function SocialForceField() {
           <p className="mt-3 text-sm text-muted-foreground max-w-3xl">
             Live analytics from <code className="text-xs">analytics_pageviews</code> and{" "}
             <code className="text-xs">analytics_clicks</code>. Everything on this page reflects
-            actual visitor behavior over the last 14 days.
+            actual visitor behavior since tracking began.
           </p>
         </div>
 
