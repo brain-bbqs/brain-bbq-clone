@@ -320,7 +320,7 @@ export default function MITWorkshopSeating() {
                         const lines = wrapTheme(table.theme);
                         const labelY = cy + SEAT_ORBIT + SEAT_R + 22;
                         const pillH = lines.length === 2 ? 42 : 26;
-                        const pillW = Math.min(CELL_W - 24, 260);
+                        const pillW = 210;
                         return (
                           <g>
                             <rect
