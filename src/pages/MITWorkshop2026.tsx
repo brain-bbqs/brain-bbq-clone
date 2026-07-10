@@ -1,16 +1,86 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight, Radio, ChevronRight } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { MEAL_BY_KEY } from "@/data/mit-workshop-2026";
+import { useEffect, useMemo, useState } from "react";
+
+// --- Live time helpers (America/New_York; workshop runs Jul 15–17, 2026) ---
+
+type EtNow = { y: number; mo: number; d: number; minutes: number; isTest: boolean };
+
+function readEtNow(): EtNow {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
+  const y = get("year"), mo = get("month"), d = get("day");
+  const minutes = get("hour") * 60 + get("minute");
+  const inWindow = y === 2026 && mo === 7 && (d === 15 || d === 16 || d === 17);
+  if (inWindow) return { y, mo, d, minutes, isTest: false };
+  // Test mode: pretend today is July 15, 2026 (keep current wall-clock minutes so timeline animates).
+  return { y: 2026, mo: 7, d: 15, minutes, isTest: true };
+}
+
+function useLiveEtNow(): EtNow {
+  const [now, setNow] = useState<EtNow>(() => readEtNow());
+  useEffect(() => {
+    const tick = () => setNow(readEtNow());
+    const id = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
+
+// --- Agenda data (declared before component to avoid TDZ during render) ---
+type AgendaRow = [string, string, string, string, string, string?, string?, ParallelOption[]?];
+type ParallelOption = { label: string; title: string; location?: string; speaker?: string };
+
+const DAY1_ROWS: AgendaRow[] = [
+  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
+  ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
+  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes", undefined, "Satra Ghosh (MIT)"],
+  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes", undefined, "BBQS project leads (round-robin)"],
+  ["12:15", "12:30", "Group Photo", "MIT Main Building & McGovern", ""],
+  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", "", "d1-lunch"],
+  ["2:00", "4:00", "BBQS Project Pitch (review proposed ideas) & discussion followed by Brainhack sessions. Identify volunteers to lead any new projects; leads set up projects using the Brainhack planning template and post slides. Current themes: Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group.", "Singleton", "Yes"],
+  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", "", "d1-happy"],
+];
+const DAY2_ROWS: AgendaRow[] = [
+  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
+  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
+  ["11:30", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+    { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
+    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
+    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
+  ]],
+  ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
+  ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+    { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
+    { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
+    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
+  ]],
+  ["3:00", "4:00", "Discussion with the NIH — What do you want the NIH to know?", "Singleton", "Yes", undefined, "NIH representatives"],
+  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
+];
+const DAY3_ROWS: AgendaRow[] = [
+  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
+  ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
+  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
+  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
+  ["2:45", "3:00", "Closing remarks.", "Singleton", "Yes", undefined, "Sully"],
+];
 
 const MITWorkshop2026 = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const now = useLiveEtNow();
   return (
     <>
       <PageMeta
@@ -21,8 +91,8 @@ const MITWorkshop2026 = () => {
         {/* Hero */}
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/5" />
-          <div className="relative max-w-5xl mx-auto px-6 py-12">
-            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-32 w-32 mb-6 mx-auto rounded-full" />
+          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-20 w-20 sm:h-32 sm:w-32 mb-4 sm:mb-6 mx-auto rounded-full" />
             <div className="flex items-center gap-3 mb-4">
               <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                 Conference
@@ -31,10 +101,10 @@ const MITWorkshop2026 = () => {
                 Upcoming
               </Badge>
             </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight max-w-3xl">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight max-w-3xl">
               2<sup>nd</sup> Annual Brain Behavior Quantification and Synchronization Workshop at MIT
             </h1>
-            <div className="flex flex-wrap items-center gap-4 mt-6 text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 sm:mt-6 text-sm sm:text-base text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 <span className="font-medium">July 15–17, 2026</span>
@@ -52,9 +122,9 @@ const MITWorkshop2026 = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-6">
           {/* Sub-page navigator */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
               { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
@@ -67,34 +137,34 @@ const MITWorkshop2026 = () => {
                 <a
                   key={to}
                   href={to}
-                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
+                    <span className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </span>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground">{label}</div>
-                    <div className="text-xs text-muted-foreground">{desc}</div>
+                    <div className="text-xs sm:text-sm font-semibold text-foreground">{label}</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">{desc}</div>
                   </div>
                 </a>
               ) : (
               <Link
                 key={to}
                 to={to}
-                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2"
               >
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" />
+                  <span className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-foreground">{label}</div>
-                  <div className="text-xs text-muted-foreground">{desc}</div>
+                  <div className="text-xs sm:text-sm font-semibold text-foreground">{label}</div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">{desc}</div>
                 </div>
               </Link>
               ))
@@ -128,9 +198,13 @@ const MITWorkshop2026 = () => {
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Clock className="h-5 w-5 text-primary" />
                 Agenda
+                <span className="ml-auto text-[11px] font-normal text-muted-foreground hidden sm:inline">
+                  All times shown in Eastern Time (America/New_York)
+                </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 px-3 sm:px-6">
+              <LiveNowBanner now={now} />
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -150,49 +224,24 @@ const MITWorkshop2026 = () => {
               </div>
 
               <AgendaDay
+                dayNumber={15}
+                now={now}
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
-                rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
-                  ["10:00", "10:15", "Introduction with Scientific and Technological Goals.", "Singleton", "Yes", undefined, "TBD — NIH representative"],
-                  ["10:15", "10:30", "Highlight Last Year's BBQS Consortia — What's New? Emphasizing cross-species and translation: Pose Estimation, Cross-Species Behavior, Statistical Modeling of Social Behavior — and the goal of crossing these.", "Singleton", "Yes", undefined, "Satra Ghosh (MIT)"],
-                  ["10:30", "12:15", "Data Pipeline Blitz — the data they are generating, the tools they have built or are using, and the research questions at the end of their pipeline.", "Singleton", "Yes", undefined, "BBQS project leads (round-robin)"],
-                  ["12:15", "12:30", "Group Photo", "MIT Main Building & McGovern", ""],
-                  ["12:30", "2:00", "BBQS Working Lunch: Minds & Matches — Focus: encourage social collaboration and new innovation. Secondary goal: breed new scientific ideas about cross-species synchronization. Assigned seating based on BBQS perspective of their projects.", "Atrium", "", "d1-lunch"],
-                  ["2:00", "4:00", "BBQS Project Pitch (review proposed ideas) & discussion followed by Brainhack sessions. Identify volunteers to lead any new projects; leads set up projects using the Brainhack planning template and post slides. Current themes: Statistical Modeling of Social Behavior; Pose Estimation; Cross-Species Group.", "Singleton", "Yes"],
-                  ["4:00", "6:00", "BBQS NeuroFair Poster and Demo Session + Reception: Devices, Data, and Ideas.", "Atrium / Seminar 3189", "", "d1-happy"],
-                ]}
+                rows={DAY1_ROWS}
               />
 
               <AgendaDay
+                dayNumber={16}
+                now={now}
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
-                rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
-                  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
-                  ["11:30", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
-                    { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
-                    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
-                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
-                  ]],
-                  ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
-                  ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
-                    { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
-                    { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
-                    { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
-                  ]],
-                  ["3:00", "4:00", "Grants and Budgets discussion.", "Singleton", "Yes", undefined, "NIH representatives"],
-                  ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
-                ]}
+                rows={DAY2_ROWS}
               />
 
               <AgendaDay
+                dayNumber={17}
+                now={now}
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
-                rows={[
-                  ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
-                  ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
-                  ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
-                  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
-                  ["2:45", "3:00", "Closing remarks.", "Singleton", "Yes", undefined, "Sully"],
-                ]}
+                rows={DAY3_ROWS}
               />
             </CardContent>
           </Card>
@@ -380,8 +429,6 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type ParallelOption = { label: string; title: string; location?: string; speaker?: string };
-type AgendaRow = [string, string, string, string, string, string?, string?, ParallelOption[]?];
 // [startTime, endTime, description, location, zoom, mealKey?, speaker?, parallelOptions?]
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
@@ -454,42 +501,102 @@ function withAmPm(rows: AgendaRow[]) {
   });
 }
 
-function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
+function AgendaDay({ title, rows, dayNumber, now }: { title: string; rows: AgendaRow[]; dayNumber: number; now: EtNow }) {
   const items = withAmPm(rows);
+  registerDay(dayNumber, items);
+  const isToday = now.y === 2026 && now.mo === 7 && now.d === dayNumber;
+  const activeIndex = isToday
+    ? items.findIndex((it) => now.minutes >= it.start.minutes && now.minutes < it.end.minutes)
+    : -1;
+  const upcomingIndex = isToday && activeIndex === -1
+    ? items.findIndex((it) => now.minutes < it.start.minutes)
+    : -1;
+  const isPast = !isToday && (now.d > dayNumber || (now.d === dayNumber && items.every((it) => now.minutes >= it.end.minutes)));
   return (
     <div>
-      <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 className="text-sm sm:text-base font-semibold text-foreground">{title}</h3>
+        {isToday && (
+          <Badge className="bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30 gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+            </span>
+            Today
+          </Badge>
+        )}
+        {isPast && (
+          <Badge variant="outline" className="text-muted-foreground">Wrapped</Badge>
+        )}
+      </div>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
           const [, , session, location, zoom, mealKey, speaker, options] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
           const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
+          const isActive = i === activeIndex;
+          const isNext = i === upcomingIndex;
+          const isDone = isToday && now.minutes >= end.minutes;
+          // Progress through the currently-live block (0..1)
+          const progress = isActive ? Math.min(1, Math.max(0, (now.minutes - start.minutes) / Math.max(1, end.minutes - start.minutes))) : 0;
           return (
             <div
               key={i}
-              className={`group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 hover:bg-primary/[0.03] transition-colors ${kind.tint}`}
+              id={isActive ? "live-now-session" : undefined}
+              className={`group relative flex flex-col sm:flex-row gap-2 sm:gap-4 p-3 sm:p-4 transition-colors ${
+                isActive
+                  ? "bg-red-500/[0.06] ring-2 ring-red-500/40 rounded-md z-10"
+                  : isNext
+                    ? "bg-primary/[0.05]"
+                    : isDone
+                      ? "opacity-60"
+                      : "hover:bg-primary/[0.03] " + kind.tint
+              }`}
             >
               {/* Accent bar */}
-              <span className={`absolute left-0 top-0 bottom-0 w-1 ${kind.dot}`} aria-hidden />
+              <span className={`absolute left-0 top-0 bottom-0 w-1 ${isActive ? "bg-red-500" : kind.dot}`} aria-hidden />
+
+              {isActive && (
+                <>
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                    </span>
+                    Happening now
+                  </span>
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-0 h-0.5 bg-red-500/70 transition-all"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </>
+              )}
+              {isNext && (
+                <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <ChevronRight className="h-3 w-3" />
+                  Up next
+                </span>
+              )}
 
               {/* Time column */}
-              <div className="sm:w-[130px] shrink-0 pl-2">
+              <div className="sm:w-[130px] shrink-0 pl-2 flex flex-row sm:flex-col items-baseline sm:items-start gap-2 sm:gap-0">
                 <div className="flex items-center gap-1.5 text-foreground font-semibold text-sm tabular-nums">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   {start.label}
                 </div>
-                <div className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                <div className="text-xs text-muted-foreground tabular-nums sm:mt-0.5">
                   → {end.label}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-1">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:mt-1">
                   {formatDuration(duration)}
                 </div>
               </div>
 
               {/* Session content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                   <Badge variant="secondary" className="gap-1 text-[10px] font-medium">
                     <Icon className="h-3 w-3" />
                     {kind.label}
@@ -507,7 +614,7 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                     </Badge>
                   )}
                   {meal && (
-                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300">
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300 hidden sm:inline-flex">
                       <ChefHat className="h-3 w-3" />
                       {meal.label}
                     </Badge>
@@ -519,7 +626,7 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{session}</p>
+                <p className={`text-sm text-foreground leading-relaxed ${isActive ? "font-medium" : ""}`}>{session}</p>
                 {options && options.length > 0 && (
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
                     {options.map((opt) => (
@@ -571,6 +678,104 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ---------------- Live-now banner ----------------
+
+function fmtMinutes(mins: number): string {
+  const h24 = Math.floor(mins / 60);
+  const m = mins % 60;
+  const suffix = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+// Duplicated day source of truth is expensive to maintain — the banner instead
+// walks the DOM after render is not clean either. Simpler: mirror the schedule
+// by re-declaring day/date pairs, and re-use the same rows via a global registry.
+// To keep this file self-contained without a second copy of the agenda rows,
+// we compute the live session by re-parsing the same rows passed to AgendaDay
+// via a module-scope cache that AgendaDay populates on render.
+
+const LIVE_CACHE = new Map<number, { start: number; end: number; label: string; kind: SessionKind; location: string }[]>();
+
+// We hook into AgendaDay via a side effect. Instead of refactoring, expose a
+// registration helper that AgendaDay calls. (See `withAmPm` above.)
+// The banner then reads from LIVE_CACHE.
+function registerDay(dayNumber: number, items: ReturnType<typeof withAmPm>) {
+  LIVE_CACHE.set(
+    dayNumber,
+    items.map(({ row, start, end }) => ({
+      start: start.minutes,
+      end: end.minutes,
+      label: row[2],
+      kind: classifySession(row[2]),
+      location: row[3],
+    })),
+  );
+}
+
+// Eagerly populate the live-schedule cache so the LiveNowBanner works on first render.
+registerDay(15, withAmPm(DAY1_ROWS));
+registerDay(16, withAmPm(DAY2_ROWS));
+registerDay(17, withAmPm(DAY3_ROWS));
+
+function LiveNowBanner({ now }: { now: EtNow }) {
+  const day = LIVE_CACHE.get(now.d);
+  const active = day?.find((it) => now.minutes >= it.start && now.minutes < it.end);
+  const upcoming = !active ? day?.find((it) => now.minutes < it.start) : undefined;
+  const label = active ? "Happening now" : upcoming ? "Up next" : "Nothing scheduled right now";
+  const item = active || upcoming;
+  const Icon = item?.kind.icon ?? Clock;
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sticky top-2 z-20 backdrop-blur">
+      <div className="flex items-center gap-2 sm:min-w-[140px]">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${active ? "bg-red-500 opacity-70" : "bg-primary opacity-40"}`} />
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${active ? "bg-red-500" : "bg-primary"}`} />
+        </span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-red-400">
+            {label}
+          </span>
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {fmtMinutes(now.minutes)} ET · Jul {now.d}
+            {now.isTest && <span className="ml-1 text-amber-600 dark:text-amber-400">· test mode</span>}
+          </span>
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        {item ? (
+          <div className="flex items-start gap-2">
+            <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground line-clamp-2">{item.label}</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {fmtMinutes(item.start)} → {fmtMinutes(item.end)}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {item.location}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">The workshop schedule has wrapped for the day.</p>
+        )}
+      </div>
+      {active && (
+        <a
+          href="#live-now-session"
+          className="text-xs font-semibold text-primary hover:underline shrink-0 self-start sm:self-auto"
+        >
+          Jump to session →
+        </a>
+      )}
     </div>
   );
 }

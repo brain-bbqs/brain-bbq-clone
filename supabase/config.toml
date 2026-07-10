@@ -48,6 +48,9 @@ verify_jwt = false
 [functions.globus-auth]
 verify_jwt = false
 
+[functions.analytics-summary]
+verify_jwt = false
+
 
 [functions.metadata-validate]
 verify_jwt = false
