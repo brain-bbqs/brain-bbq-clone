@@ -1,16 +1,47 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, DollarSign, Clock, Users, ExternalLink, LogIn, Plane, Wifi, Video, Link2, Target, Coffee, Presentation, Utensils, Camera, Sparkles, Vote, MessageCircle, PartyPopper, ChefHat, Mic, LayoutGrid, ArrowRight, Radio, ChevronRight } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import bbqsLogoIcon from "@/assets/bbqs-logo-icon.png";
 import { MEAL_BY_KEY } from "@/data/mit-workshop-2026";
+import { useEffect, useMemo, useState } from "react";
+
+// --- Live time helpers (America/New_York; workshop runs Jul 15–17, 2026) ---
+
+type EtNow = { y: number; mo: number; d: number; minutes: number; isTest: boolean };
+
+function readEtNow(): EtNow {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
+  const y = get("year"), mo = get("month"), d = get("day");
+  const minutes = get("hour") * 60 + get("minute");
+  const inWindow = y === 2026 && mo === 7 && (d === 15 || d === 16 || d === 17);
+  if (inWindow) return { y, mo, d, minutes, isTest: false };
+  // Test mode: pretend today is July 15, 2026 (keep current wall-clock minutes so timeline animates).
+  return { y: 2026, mo: 7, d: 15, minutes, isTest: true };
+}
+
+function useLiveEtNow(): EtNow {
+  const [now, setNow] = useState<EtNow>(() => readEtNow());
+  useEffect(() => {
+    const tick = () => setNow(readEtNow());
+    const id = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
 
 const MITWorkshop2026 = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const now = useLiveEtNow();
   return (
     <>
       <PageMeta
@@ -21,8 +52,8 @@ const MITWorkshop2026 = () => {
         {/* Hero */}
         <div className="relative overflow-hidden border-b border-border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/5" />
-          <div className="relative max-w-5xl mx-auto px-6 py-12">
-            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-32 w-32 mb-6 mx-auto rounded-full" />
+          <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+            <img src={bbqsLogoIcon} alt="BBQS Logo" className="h-20 w-20 sm:h-32 sm:w-32 mb-4 sm:mb-6 mx-auto rounded-full" />
             <div className="flex items-center gap-3 mb-4">
               <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                 Conference
@@ -31,10 +62,10 @@ const MITWorkshop2026 = () => {
                 Upcoming
               </Badge>
             </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight max-w-3xl">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight max-w-3xl">
               2<sup>nd</sup> Annual Brain Behavior Quantification and Synchronization Workshop at MIT
             </h1>
-            <div className="flex flex-wrap items-center gap-4 mt-6 text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 sm:mt-6 text-sm sm:text-base text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 <span className="font-medium">July 15–17, 2026</span>
@@ -52,9 +83,9 @@ const MITWorkshop2026 = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-6">
           {/* Sub-page navigator */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { to: "/mit-workshop-2026/travel", label: "Travel & Hotel", desc: "Getting there, hotels, transit", icon: Plane },
               { to: "/mit-workshop-2026/participants", label: "Participants", desc: "Who's attending", icon: Users },
@@ -67,34 +98,34 @@ const MITWorkshop2026 = () => {
                 <a
                   key={to}
                   href={to}
-                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                  className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
+                    <span className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </span>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground">{label}</div>
-                    <div className="text-xs text-muted-foreground">{desc}</div>
+                    <div className="text-xs sm:text-sm font-semibold text-foreground">{label}</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">{desc}</div>
                   </div>
                 </a>
               ) : (
               <Link
                 key={to}
                 to={to}
-                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-4 flex flex-col gap-2"
+                className="group rounded-xl border border-border/60 bg-card hover:border-primary/50 hover:shadow-md transition-all p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2"
               >
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" />
+                  <span className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-foreground">{label}</div>
-                  <div className="text-xs text-muted-foreground">{desc}</div>
+                  <div className="text-xs sm:text-sm font-semibold text-foreground">{label}</div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">{desc}</div>
                 </div>
               </Link>
               ))
