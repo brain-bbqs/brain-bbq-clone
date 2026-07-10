@@ -495,42 +495,101 @@ function withAmPm(rows: AgendaRow[]) {
   });
 }
 
-function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
+function AgendaDay({ title, rows, dayNumber, now }: { title: string; rows: AgendaRow[]; dayNumber: number; now: EtNow }) {
   const items = withAmPm(rows);
+  const isToday = now.y === 2026 && now.mo === 7 && now.d === dayNumber;
+  const activeIndex = isToday
+    ? items.findIndex((it) => now.minutes >= it.start.minutes && now.minutes < it.end.minutes)
+    : -1;
+  const upcomingIndex = isToday && activeIndex === -1
+    ? items.findIndex((it) => now.minutes < it.start.minutes)
+    : -1;
+  const isPast = !isToday && (now.d > dayNumber || (now.d === dayNumber && items.every((it) => now.minutes >= it.end.minutes)));
   return (
     <div>
-      <h3 className="text-base font-semibold text-foreground mb-3">{title}</h3>
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 className="text-sm sm:text-base font-semibold text-foreground">{title}</h3>
+        {isToday && (
+          <Badge className="bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30 gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+            </span>
+            Today
+          </Badge>
+        )}
+        {isPast && (
+          <Badge variant="outline" className="text-muted-foreground">Wrapped</Badge>
+        )}
+      </div>
       <div className="rounded-xl border border-border/70 bg-gradient-to-b from-background to-muted/20 shadow-[0_1px_0_hsl(var(--foreground)/0.04),0_10px_30px_-15px_hsl(var(--foreground)/0.15)] ring-1 ring-white/40 dark:ring-white/5 divide-y divide-border/60 overflow-hidden">
         {items.map(({ row, start, end, duration }, i) => {
           const [, , session, location, zoom, mealKey, speaker, options] = row;
           const kind = classifySession(session);
           const Icon = kind.icon;
           const meal = mealKey ? MEAL_BY_KEY[mealKey] : undefined;
+          const isActive = i === activeIndex;
+          const isNext = i === upcomingIndex;
+          const isDone = isToday && now.minutes >= end.minutes;
+          // Progress through the currently-live block (0..1)
+          const progress = isActive ? Math.min(1, Math.max(0, (now.minutes - start.minutes) / Math.max(1, end.minutes - start.minutes))) : 0;
           return (
             <div
               key={i}
-              className={`group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 hover:bg-primary/[0.03] transition-colors ${kind.tint}`}
+              id={isActive ? "live-now-session" : undefined}
+              className={`group relative flex flex-col sm:flex-row gap-2 sm:gap-4 p-3 sm:p-4 transition-colors ${
+                isActive
+                  ? "bg-red-500/[0.06] ring-2 ring-red-500/40 rounded-md z-10"
+                  : isNext
+                    ? "bg-primary/[0.05]"
+                    : isDone
+                      ? "opacity-60"
+                      : "hover:bg-primary/[0.03] " + kind.tint
+              }`}
             >
               {/* Accent bar */}
-              <span className={`absolute left-0 top-0 bottom-0 w-1 ${kind.dot}`} aria-hidden />
+              <span className={`absolute left-0 top-0 bottom-0 w-1 ${isActive ? "bg-red-500" : kind.dot}`} aria-hidden />
+
+              {isActive && (
+                <>
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                    </span>
+                    Happening now
+                  </span>
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-0 h-0.5 bg-red-500/70 transition-all"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </>
+              )}
+              {isNext && (
+                <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <ChevronRight className="h-3 w-3" />
+                  Up next
+                </span>
+              )}
 
               {/* Time column */}
-              <div className="sm:w-[130px] shrink-0 pl-2">
+              <div className="sm:w-[130px] shrink-0 pl-2 flex flex-row sm:flex-col items-baseline sm:items-start gap-2 sm:gap-0">
                 <div className="flex items-center gap-1.5 text-foreground font-semibold text-sm tabular-nums">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   {start.label}
                 </div>
-                <div className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                <div className="text-xs text-muted-foreground tabular-nums sm:mt-0.5">
                   → {end.label}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-1">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 sm:mt-1">
                   {formatDuration(duration)}
                 </div>
               </div>
 
               {/* Session content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                   <Badge variant="secondary" className="gap-1 text-[10px] font-medium">
                     <Icon className="h-3 w-3" />
                     {kind.label}
@@ -548,7 +607,7 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                     </Badge>
                   )}
                   {meal && (
-                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300">
+                    <Badge variant="outline" className="gap-1 text-[10px] border-orange-500/40 text-orange-700 dark:text-orange-300 hidden sm:inline-flex">
                       <ChefHat className="h-3 w-3" />
                       {meal.label}
                     </Badge>
@@ -560,7 +619,7 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{session}</p>
+                <p className={`text-sm text-foreground leading-relaxed ${isActive ? "font-medium" : ""}`}>{session}</p>
                 {options && options.length > 0 && (
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
                     {options.map((opt) => (
@@ -612,6 +671,101 @@ function AgendaDay({ title, rows }: { title: string; rows: AgendaRow[] }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ---------------- Live-now banner ----------------
+
+const DAYS: { d: number; title: string; rows: AgendaRow[] }[] = [];
+
+function fmtMinutes(mins: number): string {
+  const h24 = Math.floor(mins / 60);
+  const m = mins % 60;
+  const suffix = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+// Duplicated day source of truth is expensive to maintain — the banner instead
+// walks the DOM after render is not clean either. Simpler: mirror the schedule
+// by re-declaring day/date pairs, and re-use the same rows via a global registry.
+// To keep this file self-contained without a second copy of the agenda rows,
+// we compute the live session by re-parsing the same rows passed to AgendaDay
+// via a module-scope cache that AgendaDay populates on render.
+
+const LIVE_CACHE = new Map<number, { start: number; end: number; label: string; kind: SessionKind; location: string }[]>();
+
+// We hook into AgendaDay via a side effect. Instead of refactoring, expose a
+// registration helper that AgendaDay calls. (See `withAmPm` above.)
+// The banner then reads from LIVE_CACHE.
+function registerDay(dayNumber: number, items: ReturnType<typeof withAmPm>) {
+  LIVE_CACHE.set(
+    dayNumber,
+    items.map(({ row, start, end }) => ({
+      start: start.minutes,
+      end: end.minutes,
+      label: row[2],
+      kind: classifySession(row[2]),
+      location: row[3],
+    })),
+  );
+}
+
+function LiveNowBanner({ now }: { now: EtNow }) {
+  const day = LIVE_CACHE.get(now.d);
+  const active = day?.find((it) => now.minutes >= it.start && now.minutes < it.end);
+  const upcoming = !active ? day?.find((it) => now.minutes < it.start) : undefined;
+  const label = active ? "Happening now" : upcoming ? "Up next" : "Nothing scheduled right now";
+  const item = active || upcoming;
+  const Icon = item?.kind.icon ?? Clock;
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sticky top-2 z-20 backdrop-blur">
+      <div className="flex items-center gap-2 sm:min-w-[140px]">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${active ? "bg-red-500 opacity-70" : "bg-primary opacity-40"}`} />
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${active ? "bg-red-500" : "bg-primary"}`} />
+        </span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-red-400">
+            {label}
+          </span>
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {fmtMinutes(now.minutes)} ET · Jul {now.d}
+            {now.isTest && <span className="ml-1 text-amber-600 dark:text-amber-400">· test mode</span>}
+          </span>
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        {item ? (
+          <div className="flex items-start gap-2">
+            <Icon className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground line-clamp-2">{item.label}</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {fmtMinutes(item.start)} → {fmtMinutes(item.end)}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {item.location}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">The workshop schedule has wrapped for the day.</p>
+        )}
+      </div>
+      {active && (
+        <a
+          href="#live-now-session"
+          className="text-xs font-semibold text-primary hover:underline shrink-0 self-start sm:self-auto"
+        >
+          Jump to session →
+        </a>
+      )}
     </div>
   );
 }
