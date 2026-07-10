@@ -497,6 +497,7 @@ function withAmPm(rows: AgendaRow[]) {
 
 function AgendaDay({ title, rows, dayNumber, now }: { title: string; rows: AgendaRow[]; dayNumber: number; now: EtNow }) {
   const items = withAmPm(rows);
+  registerDay(dayNumber, items);
   const isToday = now.y === 2026 && now.mo === 7 && now.d === dayNumber;
   const activeIndex = isToday
     ? items.findIndex((it) => now.minutes >= it.start.minutes && now.minutes < it.end.minutes)
