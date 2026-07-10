@@ -3,11 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Presentation, LogIn, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download, ExternalLink,
+  Presentation, RefreshCw, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download, ExternalLink,
 } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 type GrantRef = {
@@ -37,8 +36,6 @@ const activityColor = (code: string) => {
 };
 
 const MITWorkshopPosters = () => {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [posters, setPosters] = useState<Poster[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +59,7 @@ const MITWorkshopPosters = () => {
     }
   };
 
-  useEffect(() => { if (user) load(); }, [user]);
+  useEffect(() => { load(); }, []);
 
   const sorted = useMemo(() => {
     const arr = [...posters];
@@ -129,8 +126,7 @@ const MITWorkshopPosters = () => {
                 Live from the poster submission form. De-duplicated by presenter + title — updates automatically as new posters are submitted.
               </p>
             </div>
-            {user && (
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={downloadCsv} disabled={sorted.length === 0} className="gap-2">
                   <Download className="h-4 w-4" /> Download CSV
                 </Button>
@@ -138,21 +134,10 @@ const MITWorkshopPosters = () => {
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Refresh
                 </Button>
-              </div>
-            )}
+            </div>
           </div>
 
-          {!authLoading && !user ? (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-muted-foreground">Sign in to view the poster submissions for the workshop.</p>
-                <Button onClick={() => navigate("/auth")} size="sm" className="gap-2 shrink-0">
-                  <LogIn className="h-4 w-4" /> Sign in
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
+          <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-base">
                   <span>
@@ -241,8 +226,7 @@ const MITWorkshopPosters = () => {
                   </table>
                 </div>
               </CardContent>
-            </Card>
-          )}
+          </Card>
         </div>
       </div>
     </>
