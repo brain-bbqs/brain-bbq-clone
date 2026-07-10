@@ -159,9 +159,13 @@ const MITWorkshop2026 = () => {
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Clock className="h-5 w-5 text-primary" />
                 Agenda
+                <span className="ml-auto text-[11px] font-normal text-muted-foreground hidden sm:inline">
+                  All times shown in Eastern Time (America/New_York)
+                </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 px-3 sm:px-6">
+              <LiveNowBanner now={now} />
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -181,6 +185,8 @@ const MITWorkshop2026 = () => {
               </div>
 
               <AgendaDay
+                dayNumber={15}
+                now={now}
                 title="Day 1 — Wednesday, July 15, 2026 · Social Coordination"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
@@ -195,6 +201,8 @@ const MITWorkshop2026 = () => {
               />
 
               <AgendaDay
+                dayNumber={16}
+                now={now}
                 title="Day 2 — Thursday, July 16, 2026 · Active Working"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
@@ -216,6 +224,8 @@ const MITWorkshop2026 = () => {
               />
 
               <AgendaDay
+                dayNumber={17}
+                now={now}
                 title="Day 3 — Friday, July 17, 2026 · Reflection"
                 rows={[
                   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
