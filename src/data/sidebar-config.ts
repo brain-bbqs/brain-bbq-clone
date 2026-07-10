@@ -29,6 +29,7 @@ import {
   ChefHat,
   LayoutGrid,
   Waves,
+  Presentation,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -86,6 +87,7 @@ const conferencesItems: NavItem[] = [
       { title: "Speakers & Talks", url: "/mit-workshop-2026/speakers", icon: Mic, authRequired: true },
       { title: "Menu", url: "/mit-workshop-2026/menu", icon: ChefHat, authRequired: true },
       { title: "Seating Chart", url: "/mit-workshop-2026/seating", icon: LayoutGrid, authRequired: true },
+      { title: "Poster Sessions", url: "/mit-workshop-2026/posters", icon: Presentation, authRequired: true },
     ],
   },
   { title: "SFN 2025", url: "/sfn-2025", icon: Calendar },
