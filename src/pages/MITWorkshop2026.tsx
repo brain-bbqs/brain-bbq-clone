@@ -684,11 +684,6 @@ function AgendaDay({ title, rows, dayNumber, now }: { title: string; rows: Agend
 
 // ---------------- Live-now banner ----------------
 
-// Eagerly populate the live-schedule cache so the LiveNowBanner works on first render.
-registerDay(15, withAmPm(DAY1_ROWS));
-registerDay(16, withAmPm(DAY2_ROWS));
-registerDay(17, withAmPm(DAY3_ROWS));
-
 function fmtMinutes(mins: number): string {
   const h24 = Math.floor(mins / 60);
   const m = mins % 60;
@@ -721,6 +716,11 @@ function registerDay(dayNumber: number, items: ReturnType<typeof withAmPm>) {
     })),
   );
 }
+
+// Eagerly populate the live-schedule cache so the LiveNowBanner works on first render.
+registerDay(15, withAmPm(DAY1_ROWS));
+registerDay(16, withAmPm(DAY2_ROWS));
+registerDay(17, withAmPm(DAY3_ROWS));
 
 function LiveNowBanner({ now }: { now: EtNow }) {
   const day = LIVE_CACHE.get(now.d);
