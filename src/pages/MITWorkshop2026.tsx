@@ -40,7 +40,7 @@ function useLiveEtNow(): EtNow {
 
 // --- Agenda data (declared before component to avoid TDZ during render) ---
 type AgendaRow = [string, string, string, string, string, string?, string?, ParallelOption[]?];
-type ParallelOption = { label: string; title: string; location: string; speaker?: string };
+type ParallelOption = { label: string; title: string; location?: string; speaker?: string };
 
 const DAY1_ROWS: AgendaRow[] = [
   ["9:00", "10:00", "Coffee/Tea Morning Social — Morning Snacks & Ice Breakers; setup posters.", "Atrium", "", "d1-coffee-am"],
@@ -429,8 +429,6 @@ const MITWorkshop2026 = () => {
 
 export default MITWorkshop2026;
 
-type ParallelOption = { label: string; title: string; location?: string; speaker?: string };
-type AgendaRow = [string, string, string, string, string, string?, string?, ParallelOption[]?];
 // [startTime, endTime, description, location, zoom, mealKey?, speaker?, parallelOptions?]
 
 // Convert "9:00" / "2:30" (assumed AM before 8, PM after) into minutes for duration + AM/PM display
