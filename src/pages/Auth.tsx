@@ -24,6 +24,7 @@ export default function Auth() {
     const globusError = searchParams.get("globus_error");
     const globusName = searchParams.get("globus_name");
     const globusEmail = searchParams.get("globus_email");
+    const globusSubject = searchParams.get("globus_subject");
 
     if (globusError) {
       const errorMessages: Record<string, string> = {
@@ -37,11 +38,21 @@ export default function Auth() {
         session_failed: "Failed to generate a session.",
       };
       if (globusError === "not_a_member") {
+        // Route into the single intake form with the Globus identity prefilled, so
+        // the person completes ONE request (name, institution, role) instead of us
+        // silently filing a bare row behind their back.
+        const intakeParams = new URLSearchParams();
+        if (globusEmail) intakeParams.set("email", globusEmail);
+        if (globusName) intakeParams.set("name", globusName);
+        if (globusSubject) intakeParams.set("subject", globusSubject);
+        const intakeTo = `/request-access${
+          intakeParams.toString() ? `?${intakeParams.toString()}` : ""
+        }`;
         toast.info(errorMessages.not_a_member, {
           duration: 12000,
           action: {
-            label: "Request access",
-            onClick: () => navigate("/request-access"),
+            label: "Complete intake form",
+            onClick: () => navigate(intakeTo),
           },
         });
       } else {

@@ -203,23 +203,13 @@ Deno.serve(async (req) => {
         .rpc("email_is_consortium_member", { _email: emailLowerForGate });
 
       if (!gateMatch) {
-        // Upsert-style: only insert if no pending request already exists for this email
-        const { data: existingReq } = await supabaseAdmin
-          .from("access_requests")
-          .select("id, status")
-          .ilike("email", emailLowerForGate)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (!existingReq) {
-          await supabaseAdmin.from("access_requests").insert({
-            email: emailLowerForGate,
-            globus_name: name || null,
-            globus_subject: userinfo.sub || null,
-            status: "pending",
-          });
-        }
-
+        // Do NOT file an access_request here. Non-members are routed into the ONE
+        // intake form (/request-access), which is the single place a request is
+        // created — capturing name, institution, and role in BBQS, and carrying the
+        // Globus subject/email through as prefilled+locked fields. Previously this
+        // block auto-filed a bare, role-less row; combined with a person then filling
+        // the intake form that produced two pending requests for the same email
+        // (the duplicate-request bug). Admins are still notified of the attempt.
         await logAndNotifyFailure(supabaseAdmin, {
           email,
           name,
@@ -227,7 +217,7 @@ Deno.serve(async (req) => {
           ipAddress: clientIp,
           metadata: {
             globus_username: userinfo.preferred_username,
-            request_recorded: !existingReq,
+            request_recorded: false,
           },
         });
 
@@ -235,6 +225,7 @@ Deno.serve(async (req) => {
         errorRedirect.searchParams.set("globus_error", "not_a_member");
         errorRedirect.searchParams.set("globus_email", email);
         if (name) errorRedirect.searchParams.set("globus_name", name);
+        if (userinfo.sub) errorRedirect.searchParams.set("globus_subject", userinfo.sub);
         return Response.redirect(errorRedirect.toString(), 302);
       }
 
