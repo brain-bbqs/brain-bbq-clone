@@ -110,6 +110,50 @@ const BudgetRenderer = ({ value }: { value: number | null }) => {
   );
 };
 
+// "Funding resources" strip atop the grants page — funding-FINDER links (resources with
+// resource_type='funding'), distinct from the structured NIH FOA list below. Added by the
+// BBQS agent (resourceInsert) or curators. Hidden when empty.
+function FundingResourcesStrip() {
+  const [items, setItems] = useState<Array<{ id: string; name: string; external_url: string | null; description: string | null }>>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { eq: (k: string, v: string) => { order: (c: string) => Promise<{ data: Array<{ id: string; name: string; external_url: string | null; description: string | null }> | null }> } };
+        };
+      })
+        .from("resources")
+        .select("id,name,external_url,description")
+        .eq("resource_type", "funding")
+        .order("name");
+      if (!cancelled) setItems(data ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  if (!items.length) return null;
+  return (
+    <div className="mb-6 rounded-lg border border-border bg-card/50 p-4">
+      <h2 className="mb-2 text-sm font-semibold text-foreground">Funding resources</h2>
+      <ul className="flex flex-wrap gap-2">
+        {items.map((r) => (
+          <li key={r.id}>
+            <a
+              href={r.external_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-primary hover:underline"
+              title={r.description ?? undefined}
+            >
+              {r.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function FundingOpportunities() {
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -273,6 +317,8 @@ export default function FundingOpportunities() {
             </p>
           </div>
         </div>
+
+        <FundingResourcesStrip />
 
         <div
           className="ag-theme-alpine w-full"

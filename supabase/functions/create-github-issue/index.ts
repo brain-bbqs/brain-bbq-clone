@@ -40,7 +40,11 @@ serve(async (req) => {
     }
 
     const owner = "brain-bbqs";
-    const repo = "brain-bbq-clone";
+    // Caller may target a specific repo (allowlisted). Defaults to brain-bbq-clone so
+    // the website's existing feature-suggestion box keeps working unchanged. The BBQS
+    // agent routes by type: bug reports → bbqs-agent, feature ideas → brain-bbq-clone.
+    const ALLOWED_REPOS = ["brain-bbq-clone", "bbqs-agent"];
+    const repo = typeof body.repo === "string" && ALLOWED_REPOS.includes(body.repo) ? body.repo : "brain-bbq-clone";
     const ghHeaders = {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       Accept: "application/vnd.github.v3+json",
@@ -63,9 +67,11 @@ serve(async (req) => {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error(`GitHub API error: ${resp.status} - ${errorText}`);
+        let ghMessage = errorText;
+        try { ghMessage = JSON.parse(errorText)?.message ?? errorText; } catch { /* keep raw */ }
         return new Response(
-          JSON.stringify({ error: "Failed to update issue" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: `GitHub ${resp.status} updating issue in ${owner}/${repo}: ${ghMessage}` }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const issue = await resp.json();
@@ -109,9 +115,21 @@ serve(async (req) => {
     if (!issueResponse.ok) {
       const errorText = await issueResponse.text();
       console.error(`GitHub API error: ${issueResponse.status} - ${errorText}`);
+      // Surface the LITERAL GitHub error (status + message) + a targeted hint, instead
+      // of a generic "Failed to create issue" that hides the cause. The caller is an
+      // authenticated admin; GitHub's error body (Not Found / Bad credentials / etc.)
+      // is safe to relay and is what we need to debug token/permission problems.
+      let ghMessage = errorText;
+      try { ghMessage = JSON.parse(errorText)?.message ?? errorText; } catch { /* keep raw */ }
+      const hint =
+        issueResponse.status === 404 ? ` — the GITHUB_TOKEN's account cannot see ${owner}/${repo}. For a PRIVATE repo (bbqs-agent) the token's account must be a collaborator/member with Issues access.`
+        : issueResponse.status === 401 ? " — GITHUB_TOKEN is missing, invalid, or expired."
+        : issueResponse.status === 403 ? " — GITHUB_TOKEN lacks Issues:write, hit a rate limit, or needs org SSO authorization."
+        : issueResponse.status === 422 ? " — request rejected (e.g. unknown label/assignee or validation error)."
+        : "";
       return new Response(
-        JSON.stringify({ error: "Failed to create issue on GitHub" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `GitHub ${issueResponse.status} creating issue in ${owner}/${repo}: ${ghMessage}${hint}` }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

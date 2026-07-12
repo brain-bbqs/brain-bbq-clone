@@ -185,6 +185,11 @@ Deno.serve(async (req) => {
       const userinfo = await userinfoRes.json();
       const email = userinfo.email;
       const name = userinfo.name || userinfo.preferred_username || "";
+      // The name we hand back to the frontend (sign-in greeting etc.). Defaults to
+      // the Globus-provided name, but is upgraded below to the onboarded investigator
+      // name when we have one — so a member whose Globus account name is a username
+      // (e.g. "test-user-tier1") is greeted by their real consortium name.
+      let displayName = name;
 
       if (!email) {
         return await errorRedirectAndNotify("no_email", undefined, name);
@@ -321,6 +326,131 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Link the investigator record to this auth user on EVERY sign-in. The
+      // auto_link_investigator trigger only fires on auth-user INSERT, so a member
+      // who is RE-ONBOARDED after a reset (their auth.users row already exists) is
+      // never re-linked — their new investigator row keeps user_id = NULL and the
+      // agent's member context (which resolves by user_id under RLS) can't see it
+      // (blank profile, no onboarding steps). Match primary OR secondary email; only
+      // set when currently NULL so an already-linked row is never re-pointed.
+      // Best-effort: must NOT block sign-in.
+      try {
+        // Find the unlinked investigator(s) matching this email (primary or secondary).
+        // There can be DUPLICATE rows for one person (same email, multiple records). A
+        // blanket UPDATE would set the SAME user_id on >1 row → unique-constraint
+        // violation → the whole update fails and the member is NEVER linked (so the
+        // agent can't resolve them by user_id). So link EXACTLY ONE row — the most
+        // recently updated (the active record, e.g. the one carrying the grant link) —
+        // and log any duplicates so they can be de-duped.
+        const { data: matches } = await supabaseAdmin
+          .from("investigators")
+          .select("id")
+          .or(`email.ilike.${canonicalEmail},secondary_emails.cs.{${emailLower}}`)
+          .is("user_id", null)
+          .order("updated_at", { ascending: false });
+        if (matches && matches.length > 0) {
+          if (matches.length > 1) {
+            console.warn(
+              `Multiple unlinked investigators for ${canonicalEmail} (${matches.length}) — linking the most recent; de-dup the rest:`,
+              (matches as Array<{ id: string }>).map((m) => m.id).join(", "),
+            );
+          }
+          const targetId = (matches[0] as { id: string }).id;
+          const { error: linkErr } = await supabaseAdmin
+            .from("investigators")
+            .update({ user_id: userId })
+            .eq("id", targetId);
+          if (linkErr) console.error("investigator user_id link failed:", linkErr.message);
+        }
+      } catch (linkEx) {
+        console.error("investigator link threw:", linkEx instanceof Error ? linkEx.message : String(linkEx));
+      }
+
+      // ===== TIER → ROLE SYNC (KG user_roles + agent app_metadata.role) =====
+      // An admin sets an access tier at onboarding → investigators.pending_role
+      // (admin/curator/member). Two separate role systems must reflect it:
+      //   • user_roles  — KG RLS (has_role / is_curator_or_admin)
+      //   • app_metadata.role on the auth user — the AGENT's persona tier
+      //     (resolveUserRole reads ONLY app_metadata.role; user_roles is invisible
+      //      to it), which is why an elevated member previously never saw Admin MODE.
+      // The auto_link_investigator trigger promotes pending_role → user_roles ONLY
+      // on auth-user INSERT, and NOTHING ever set app_metadata.role. So we do both
+      // here, on EVERY sign-in: (1) promote any lingering pending_role (covers the
+      // re-onboard case where the trigger didn't fire), (2) mirror the highest
+      // ELEVATED user_roles role into app_metadata.role. Elevate-only — we never
+      // downgrade here, to avoid clobbering an admin granted out-of-band; role
+      // REMOVAL is handled on the offboarding path. Best-effort: never block sign-in.
+      try {
+        const { data: invRow } = await supabaseAdmin
+          .from("investigators")
+          .select("pending_role, name")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const pending = (invRow?.pending_role as string | null) ?? null;
+
+        // (1) Re-onboard: promote pending_role → user_roles ourselves, then clear it.
+        if (pending && pending !== "member") {
+          const { data: have } = await supabaseAdmin
+            .from("user_roles")
+            .select("user_id")
+            .eq("user_id", userId)
+            .eq("role", pending)
+            .maybeSingle();
+          if (!have) {
+            const { error: roleInsErr } = await supabaseAdmin
+              .from("user_roles")
+              .insert({ user_id: userId, role: pending });
+            if (roleInsErr) console.error("user_roles insert failed:", roleInsErr.message);
+          }
+        }
+        if (pending) {
+          await supabaseAdmin.from("investigators").update({ pending_role: null }).eq("user_id", userId);
+        }
+
+        // (2) Mirror the highest ELEVATED user_roles role into app_metadata.role.
+        const { data: roleRows } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const roleSet = new Set((roleRows ?? []).map((r: any) => r.role as string));
+        const elevated = roleSet.has("admin") ? "admin" : roleSet.has("curator") ? "curator" : null;
+        if (elevated) {
+          const baseMeta = (existingUser?.app_metadata as Record<string, unknown>) ?? {};
+          if (baseMeta.role !== elevated) {
+            const { error: metaErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+              app_metadata: { ...baseMeta, role: elevated },
+            });
+            if (metaErr) console.error("app_metadata.role sync failed:", metaErr.message);
+            else console.log(`Set app_metadata.role=${elevated} for ${canonicalEmail}`);
+          }
+        }
+
+        // (3) Backfill profiles.full_name from the investigator name when the profile
+        // has no name yet (e.g. Globus returned none) — so the website shows the
+        // onboarded name everywhere, not only where it falls back to the investigator
+        // record. Only fills an EMPTY name; never overwrites a name the user set.
+        const invName = (invRow?.name as string | null)?.trim();
+        // Prefer the onboarded investigator name for the frontend greeting.
+        if (invName) displayName = invName;
+        if (invName) {
+          const { data: prof } = await supabaseAdmin
+            .from("profiles")
+            .select("full_name")
+            .eq("id", userId)
+            .maybeSingle();
+          if (prof && (!prof.full_name || String(prof.full_name).trim() === "")) {
+            const { error: nameErr } = await supabaseAdmin
+              .from("profiles")
+              .update({ full_name: invName })
+              .eq("id", userId);
+            if (nameErr) console.error("profiles.full_name backfill failed:", nameErr.message);
+            else console.log(`Backfilled profiles.full_name='${invName}' for ${canonicalEmail}`);
+          }
+        }
+      } catch (roleEx) {
+        console.error("tier→role/name sync threw:", roleEx instanceof Error ? roleEx.message : String(roleEx));
+      }
+
       // Generate magic link using canonical email
       const { data: linkData, error: linkError } =
         await supabaseAdmin.auth.admin.generateLink({
@@ -338,7 +468,7 @@ Deno.serve(async (req) => {
       // Redirect back to frontend with token_hash
       const successRedirect = new URL(frontendRedirect);
       successRedirect.searchParams.set("token_hash", linkData.properties.hashed_token);
-      successRedirect.searchParams.set("globus_name", name);
+      successRedirect.searchParams.set("globus_name", displayName);
       successRedirect.searchParams.set("globus_email", email);
 
       return Response.redirect(successRedirect.toString(), 302);
