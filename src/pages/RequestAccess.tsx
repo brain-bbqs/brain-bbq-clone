@@ -1,11 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -17,38 +24,71 @@ import { toast } from "sonner";
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 
-const requestSchema = z.object({
-  full_name: z
-    .string()
-    .trim()
-    .min(2, "Please enter your full name")
-    .max(120, "Name must be under 120 characters"),
-  email: z
-    .string()
-    .trim()
-    .email("Please enter a valid email address")
-    .max(255, "Email must be under 255 characters"),
-  institution: z
-    .string()
-    .trim()
-    .min(2, "Please enter your institution")
-    .max(200, "Institution must be under 200 characters"),
-  message: z
-    .string()
-    .trim()
-    .max(1500, "Message must be under 1500 characters")
-    .optional()
-    .or(z.literal("")),
-});
+// Fixed role vocabulary — maps cleanly onto the agent's role normalization
+// (contact_pi / co_pi / postdoc / graduate_student / research_staff / NIH program
+// staff). "Other" reveals a free-text box. Stored verbatim in
+// access_requests.requested_role so onboarding starts with a known role.
+const ROLE_OPTIONS = [
+  "Contact PI",
+  "Co-PI / MPI",
+  "Postdoc",
+  "Graduate student",
+  "Research staff",
+  "NIH program staff",
+  "Other",
+] as const;
+
+const requestSchema = z
+  .object({
+    full_name: z
+      .string()
+      .trim()
+      .min(2, "Please enter your full name")
+      .max(120, "Name must be under 120 characters"),
+    email: z
+      .string()
+      .trim()
+      .email("Please enter a valid email address")
+      .max(255, "Email must be under 255 characters"),
+    institution: z
+      .string()
+      .trim()
+      .min(2, "Please enter your institution")
+      .max(200, "Institution must be under 200 characters"),
+    requested_role: z.string().min(1, "Please select your role in BBQS"),
+    other_role: z.string().trim().max(120).optional().or(z.literal("")),
+    message: z
+      .string()
+      .trim()
+      .max(1500, "Message must be under 1500 characters")
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine(
+    (d) => d.requested_role !== "Other" || (d.other_role && d.other_role.length >= 2),
+    { message: "Please describe your role", path: ["other_role"] },
+  );
 
 export default function RequestAccess() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Prefilled from the Globus sign-in redirect (a non-member who tried to sign in
+  // is routed here with their identity attached). Email is locked when it comes
+  // from Globus — it MUST match the identity they'll sign in with.
+  const globusEmail = searchParams.get("email") ?? "";
+  const globusName = searchParams.get("name") ?? "";
+  const globusSubject = searchParams.get("subject") ?? "";
+  const emailLocked = globusEmail.length > 0;
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
-    full_name: "",
-    email: "",
+    full_name: globusName,
+    email: globusEmail,
     institution: "",
+    requested_role: "",
+    other_role: "",
     message: "",
   });
 
@@ -66,17 +106,36 @@ export default function RequestAccess() {
       return;
     }
 
+    const roleValue =
+      parsed.data.requested_role === "Other"
+        ? (parsed.data.other_role || "Other").trim()
+        : parsed.data.requested_role;
+
     setSubmitting(true);
     try {
       const { error } = await supabase.from("access_requests").insert({
         full_name: parsed.data.full_name,
         email: parsed.data.email.toLowerCase(),
         institution: parsed.data.institution,
+        requested_role: roleValue,
         message: parsed.data.message || null,
-        globus_name: parsed.data.full_name,
+        globus_name: globusName || parsed.data.full_name,
+        globus_subject: globusSubject || null,
         status: "pending",
       });
-      if (error) throw error;
+      if (error) {
+        // A partial unique index on (lower(email)) WHERE status='pending' guards
+        // against a second pending request for the same person. Treat the conflict
+        // as "already submitted" rather than an error — they don't need to do
+        // anything further. (If the index isn't applied yet the insert just
+        // succeeds; the globus-auth path no longer double-files, so real-world
+        // duplicates are rare either way.)
+        if ((error as { code?: string }).code === "23505") {
+          setSubmitted(true);
+          return;
+        }
+        throw error;
+      }
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
@@ -156,9 +215,13 @@ export default function RequestAccess() {
                 placeholder="jane@university.edu"
                 maxLength={255}
                 required
+                readOnly={emailLocked}
+                className={emailLocked ? "bg-muted cursor-not-allowed" : undefined}
               />
               <p className="text-xs text-muted-foreground">
-                Use the email tied to your Globus identity.
+                {emailLocked
+                  ? "From your Globus identity — this is the email you'll sign in with."
+                  : "Use the email tied to your Globus identity."}
               </p>
             </div>
             <div className="space-y-2">
@@ -173,12 +236,42 @@ export default function RequestAccess() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="requested_role">Your role in BBQS</Label>
+              <Select
+                value={form.requested_role}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, requested_role: v, other_role: v === "Other" ? f.other_role : "" }))
+                }
+              >
+                <SelectTrigger id="requested_role">
+                  <SelectValue placeholder="Select your role…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.requested_role === "Other" && (
+                <Input
+                  aria-label="Describe your role"
+                  value={form.other_role}
+                  onChange={update("other_role")}
+                  placeholder="e.g. Program coordinator"
+                  maxLength={120}
+                  className="mt-2"
+                />
+              )}
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="message">Why are you requesting access? (optional)</Label>
               <Textarea
                 id="message"
                 value={form.message}
                 onChange={update("message")}
-                placeholder="Briefly describe your role and how you'd use the platform."
+                placeholder="Briefly describe how you'd use the platform."
                 rows={4}
                 maxLength={1500}
               />

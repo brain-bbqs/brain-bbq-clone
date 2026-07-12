@@ -40,6 +40,7 @@ interface AccessRequest {
   review_notes: string | null;
   full_name?: string | null;
   institution?: string | null;
+  requested_role?: string | null;
 }
 
 interface AdminAccessRequestsProps {
@@ -298,6 +299,11 @@ export default function AdminAccessRequests({ embedded = false }: AdminAccessReq
         </div>
         {r.institution && (
           <div className="text-xs text-muted-foreground mt-1">{r.institution}</div>
+        )}
+        {r.requested_role && (
+          <Badge variant="outline" className="mt-1 text-xs font-normal">
+            {r.requested_role}
+          </Badge>
         )}
         {r.message && (
           <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2 max-w-md">
