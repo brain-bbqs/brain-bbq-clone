@@ -739,7 +739,6 @@ function LiveNowBanner({ now }: { now: EtNow }) {
           </span>
           <span className="text-[11px] text-muted-foreground tabular-nums">
             {fmtMinutes(now.minutes)} ET · Jul {now.d}
-            {now.isTest && <span className="ml-1 text-amber-600 dark:text-amber-400">· test mode</span>}
           </span>
         </div>
       </div>
