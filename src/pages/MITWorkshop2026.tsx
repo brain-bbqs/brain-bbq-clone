@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 
 // --- Live time helpers (America/New_York; workshop runs Jul 15–17, 2026) ---
 
-type EtNow = { y: number; mo: number; d: number; minutes: number; isTest: boolean };
+type EtNow = { y: number; mo: number; d: number; minutes: number };
 
 function readEtNow(): EtNow {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -22,10 +22,7 @@ function readEtNow(): EtNow {
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
   const y = get("year"), mo = get("month"), d = get("day");
   const minutes = get("hour") * 60 + get("minute");
-  const inWindow = y === 2026 && mo === 7 && (d === 15 || d === 16 || d === 17);
-  if (inWindow) return { y, mo, d, minutes, isTest: false };
-  // Test mode: pretend today is July 15, 2026 (keep current wall-clock minutes so timeline animates).
-  return { y: 2026, mo: 7, d: 15, minutes, isTest: true };
+  return { y, mo, d, minutes };
 }
 
 function useLiveEtNow(): EtNow {
