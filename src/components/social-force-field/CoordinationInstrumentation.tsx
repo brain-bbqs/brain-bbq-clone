@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { isPreviewMode } from "@/lib/preview-mode";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfileRow {
   investigator_id: string;
@@ -25,6 +27,10 @@ interface TrendRow {
 }
 
 export function CoordinationInstrumentation() {
+  const { session } = useAuth();
+  // In preview without a real signed-in admin session, synthesize data so the panel
+  // is visible during development. Real deployments still require an admin JWT.
+  const useMock = isPreviewMode() && !session;
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [trend, setTrend] = useState<TrendRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +42,13 @@ export function CoordinationInstrumentation() {
     if (ranRef.current) return;
     ranRef.current = true;
     (async () => {
+      if (useMock) {
+        const mock = buildMockData();
+        setRows(mock.rows);
+        setTrend(mock.trend);
+        setLoading(false);
+        return;
+      }
       await reload();
       // If we have no profiles yet, run a compute automatically so admins never see an empty pane.
       const { data: existing } = await supabase.rpc("ir_list_profiles");
@@ -105,6 +118,7 @@ export function CoordinationInstrumentation() {
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold">Coordination instrumentation</h2>
                 <Badge variant="outline">Admin-only</Badge>
+                {useMock && <Badge variant="outline">Preview · synthetic</Badge>}
                 {computing && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" /> updating…
