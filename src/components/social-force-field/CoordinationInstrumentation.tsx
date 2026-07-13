@@ -282,27 +282,6 @@ export function CoordinationInstrumentation() {
               }
             />
           </div>
-          <CardDescription>
-            Word-choice dimensions per person. Click a row to see their top LIWC categories.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="ag-theme-alpine" style={{ width: "100%", height: 460 }}>
-            <AgGridReact
-              rowData={enriched}
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              rowSelection="single"
-              onRowClicked={(e) => setSelected(e.data.investigator_id)}
-              animateRows
-              suppressCellFocus
-              overlayNoRowsTemplate={
-                loading || computing
-                  ? '<span style="color:hsl(var(--muted-foreground))">Loading…</span>'
-                  : '<span style="color:hsl(var(--muted-foreground))">No profiles yet — corpus empty or worker failed.</span>'
-              }
-            />
-          </div>
           {selectedRow && (
             <div className="mt-4 rounded-lg border bg-muted/20 p-3">
               <div className="text-xs text-muted-foreground mb-2">
