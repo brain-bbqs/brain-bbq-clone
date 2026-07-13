@@ -9,8 +9,10 @@ import { getCorsHeaders } from "../_shared/auth.ts";
  */
 
 const SHEET_ID = "1dNoYYPF2cDqOAzn1PeJlx2aBVuOz8szWWI4mm4nZcuc";
-const SHEET_NAME = "Form Responses 1";
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+// The live form responses live on the first tab (gid=0). A stale
+// "Form Responses 1" tab still exists with a partial snapshot (~34 rows),
+// so we intentionally fetch the first sheet by gid to get the full list.
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
