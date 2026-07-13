@@ -9,6 +9,7 @@ import { useUserTier } from "@/hooks/useUserTier";
 import { MessageSquare, Lock, Layers, TrendingUp, TrendingDown, Minus, Info, MousePointerClick, Eye, Users as UsersIcon } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { CoordinationInstrumentation } from "@/components/social-force-field/CoordinationInstrumentation";
+import { isPreviewMode } from "@/lib/preview-mode";
 
 // Isometric single-plane grid — the "base social layer".
 // Each cell = one page in the app; brightness = click intensity (14d).
