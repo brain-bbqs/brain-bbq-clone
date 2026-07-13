@@ -259,6 +259,30 @@ export function CoordinationInstrumentation() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Per-person profiles</CardTitle>
           <CardDescription>
+            Word-choice dimensions per person. Attention columns come from tracked clicks —
+            proxy for where each person's focus lives on the platform. Click a row to see their
+            top LIWC categories.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LiwcLegend />
+          <div className="ag-theme-alpine mt-3" style={{ width: "100%", height: 560 }}>
+            <AgGridReact
+              rowData={enriched}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              rowSelection="single"
+              onRowClicked={(e) => setSelected(e.data.investigator_id)}
+              animateRows
+              suppressCellFocus
+              overlayNoRowsTemplate={
+                loading || computing
+                  ? '<span style="color:hsl(var(--muted-foreground))">Loading…</span>'
+                  : '<span style="color:hsl(var(--muted-foreground))">No people yet.</span>'
+              }
+            />
+          </div>
+          <CardDescription>
             Word-choice dimensions per person. Click a row to see their top LIWC categories.
           </CardDescription>
         </CardHeader>
