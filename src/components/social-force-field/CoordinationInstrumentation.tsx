@@ -21,6 +21,7 @@ interface ProfileRow {
   liwc: Record<string, number>;
   attention_clicks?: number;
   attention_top_path?: string | null;
+  mechanism?: string | null; // e.g. R34, R61
 }
 
 interface TrendRow {
@@ -63,12 +64,30 @@ export function CoordinationInstrumentation() {
 
   async function reload() {
     setLoading(true);
-    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }] = await Promise.all([
+    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }, { data: gi }] = await Promise.all([
       supabase.rpc("ir_list_profiles"),
       supabase.rpc("ir_consortium_trend"),
       supabase.from("investigators").select("id, name, user_id").order("name"),
       supabase.from("analytics_clicks").select("user_id, path").not("user_id", "is", null).limit(10000),
+      supabase.from("grant_investigators").select("investigator_id, grants(grant_number)"),
     ]);
+
+    // Derive activity mechanism (R34 / R61 / …) per investigator by parsing grant numbers.
+    const mechExtract = (gn: string | null | undefined): string | null => {
+      if (!gn) return null;
+      const m = gn.match(/^\d*([A-Z]\d{2})/);
+      return m ? m[1] : null;
+    };
+    const mechRank = (m: string | null) => (m === "R61" ? 3 : m === "R34" ? 2 : m ? 1 : 0);
+    const mechByInv = new Map<string, string>();
+    for (const row of ((gi ?? []) as any[])) {
+      const invId: string = row.investigator_id;
+      const gn: string | null = row.grants?.grant_number ?? null;
+      const mech = mechExtract(gn);
+      if (!mech) continue;
+      const existing = mechByInv.get(invId);
+      if (!existing || mechRank(mech) > mechRank(existing)) mechByInv.set(invId, mech);
+    }
 
     // Build attention (click count + top path) per user_id
     const attentionByUser = new Map<string, { count: number; paths: Map<string, number> }>();
@@ -95,7 +114,8 @@ export function CoordinationInstrumentation() {
       .map((inv) => {
         const p = profileById.get(inv.id);
         const att = topPathFor(inv.user_id);
-        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path };
+        const mech = mechByInv.get(inv.id) ?? null;
+        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path, mechanism: mech };
         return {
           investigator_id: inv.id,
           full_name: inv.name || "(unknown)",
@@ -107,6 +127,7 @@ export function CoordinationInstrumentation() {
           liwc: {},
           attention_clicks: att.count,
           attention_top_path: att.path,
+          mechanism: mech,
         };
       });
     setRows(merged);
@@ -183,6 +204,16 @@ export function CoordinationInstrumentation() {
     const pctFmt = (p: any) => (p.value == null ? "—" : (Number(p.value) * 100).toFixed(2) + "%");
     return [
       { headerName: "Person", field: "full_name", pinned: "left", minWidth: 180, flex: 1 },
+      { headerName: "Group", field: "mechanism", width: 100,
+        headerTooltip: "NIH activity code from linked grant — R34 (planning) or R61 (early-stage)",
+        cellRenderer: (p: any) => {
+          const m = p.value;
+          if (!m) return '<span class="text-muted-foreground">—</span>';
+          const color = m === "R34" ? "bg-sky-500/15 text-sky-500 border-sky-500/30"
+                      : m === "R61" ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                      : "bg-muted text-muted-foreground border";
+          return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${color}">${m}</span>`;
+        } },
       { headerName: "Tokens", field: "token_count", width: 100, type: "numericColumn", cellClass: "tabular-nums text-right" },
       { headerName: "Attention (clicks)", field: "attention_clicks", width: 150, type: "numericColumn",
         headerTooltip: "Total tracked clicks by this person across the platform", cellClass: "tabular-nums text-right",
@@ -212,6 +243,39 @@ export function CoordinationInstrumentation() {
 
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, filter: true, resizable: true }), []);
   const selectedRow = enriched.find((r) => r.investigator_id === selected) ?? null;
+
+  // Bar chart data: mean psych dimensions grouped by mechanism.
+  const groupChart = useMemo(() => {
+    const dims: { key: string; label: string; scale: number }[] = [
+      { key: "tone", label: "Tone", scale: 1 },
+      { key: "emotion", label: "Emotion", scale: 100 },
+      { key: "analytic", label: "Analytic", scale: 100 },
+      { key: "certainty_balance", label: "Certainty", scale: 1 },
+      { key: "self_focus", label: "Self focus", scale: 100 },
+      { key: "group_focus", label: "Group focus", scale: 100 },
+      { key: "social", label: "Social", scale: 100 },
+      { key: "long_words", label: "Long words", scale: 100 },
+    ];
+    const buckets = new Map<string, any[]>();
+    for (const r of enriched) {
+      const g = (r as any).mechanism ?? "Other";
+      const b = buckets.get(g) ?? [];
+      b.push(r);
+      buckets.set(g, b);
+    }
+    const groups = Array.from(buckets.entries())
+      .filter(([, arr]) => arr.length > 0)
+      .sort((a, b) => (a[0] === "R34" ? -1 : b[0] === "R34" ? 1 : a[0] === "R61" ? -1 : b[0] === "R61" ? 1 : 0))
+      .map(([name, arr]) => ({
+        name,
+        n: arr.length,
+        values: dims.map((d) => ({
+          key: d.key, label: d.label,
+          value: (arr.reduce((s, r) => s + Number((r as any)[d.key] ?? 0), 0) / arr.length) * d.scale,
+        })),
+      }));
+    return { dims, groups };
+  }, [enriched]);
 
   return (
     <section className="space-y-4">
@@ -316,6 +380,21 @@ export function CoordinationInstrumentation() {
           </CardHeader>
           <CardContent>
             <CorrelationHeatmap data={corr} />
+          </CardContent>
+        </Card>
+      )}
+
+      {groupChart.groups.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Psychology by grant mechanism</CardTitle>
+            <CardDescription>
+              Mean word-choice dimensions per group — compare R34 (planning) and R61
+              (early-stage) cohorts holistically. Bars are group means; higher isn't better.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MechanismBarChart dims={groupChart.dims} groups={groupChart.groups} />
           </CardContent>
         </Card>
       )}
@@ -461,10 +540,80 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
       liwc,
       attention_clicks: Math.floor(seed(i + 13) * 400),
       attention_top_path: paths[Math.floor(seed(i + 23) * paths.length)],
+      mechanism: seed(i + 41) < 0.55 ? "R34" : seed(i + 41) < 0.9 ? "R61" : null,
     };
   });
   const trend: TrendRow[] = [];
   return { rows, trend };
+}
+
+// Bar chart: mean psych dimensions per grant-mechanism cohort.
+function MechanismBarChart({
+  dims,
+  groups,
+}: {
+  dims: { key: string; label: string; scale: number }[];
+  groups: { name: string; n: number; values: { key: string; label: string; value: number }[] }[];
+}) {
+  const colorFor = (name: string) =>
+    name === "R34" ? "hsl(199 89% 55%)"
+    : name === "R61" ? "hsl(38 90% 55%)"
+    : "hsl(280 70% 60%)";
+  // Compute a per-dimension symmetric range so bars are comparable within a dim.
+  const ranges = dims.map((d) => {
+    const vals = groups.map((g) => g.values.find((v) => v.key === d.key)?.value ?? 0);
+    const min = Math.min(0, ...vals);
+    const max = Math.max(0, ...vals);
+    const span = Math.max(1e-6, max - min);
+    return { min, max, span };
+  });
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 text-xs">
+        {groups.map((g) => (
+          <div key={g.name} className="inline-flex items-center gap-2">
+            <span className="h-2 w-3 rounded-sm" style={{ background: colorFor(g.name) }} />
+            <span className="font-medium">{g.name === "Other" ? "Unlabeled" : g.name}</span>
+            <span className="text-muted-foreground">· {g.n} people</span>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {dims.map((d, di) => {
+          const { min, span } = ranges[di];
+          return (
+            <div key={d.key} className="space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{d.label}</span>
+                <span className="tabular-nums">
+                  {groups.map((g) => {
+                    const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                    return (
+                      <span key={g.name} className="ml-3">
+                        <span className="text-foreground">{g.name === "Other" ? "—" : g.name}</span>{" "}
+                        {v.toFixed(2)}
+                      </span>
+                    );
+                  })}
+                </span>
+              </div>
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}>
+                {groups.map((g) => {
+                  const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                  const w = ((v - min) / span) * 100;
+                  return (
+                    <div key={g.name} className="h-3 rounded-sm bg-muted/50 overflow-hidden" title={`${g.name}: ${v.toFixed(3)}`}>
+                      <div className="h-full" style={{ width: `${Math.max(2, w)}%`, background: colorFor(g.name) }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // Small legend explaining what each LIWC-derived column means.
