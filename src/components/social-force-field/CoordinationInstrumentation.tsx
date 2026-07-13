@@ -21,6 +21,7 @@ interface ProfileRow {
   liwc: Record<string, number>;
   attention_clicks?: number;
   attention_top_path?: string | null;
+  mechanism?: string | null; // e.g. R34, R61
 }
 
 interface TrendRow {
@@ -63,12 +64,30 @@ export function CoordinationInstrumentation() {
 
   async function reload() {
     setLoading(true);
-    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }] = await Promise.all([
+    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }, { data: gi }] = await Promise.all([
       supabase.rpc("ir_list_profiles"),
       supabase.rpc("ir_consortium_trend"),
       supabase.from("investigators").select("id, name, user_id").order("name"),
       supabase.from("analytics_clicks").select("user_id, path").not("user_id", "is", null).limit(10000),
+      supabase.from("grant_investigators").select("investigator_id, grants(grant_number)"),
     ]);
+
+    // Derive activity mechanism (R34 / R61 / …) per investigator by parsing grant numbers.
+    const mechExtract = (gn: string | null | undefined): string | null => {
+      if (!gn) return null;
+      const m = gn.match(/^\d*([A-Z]\d{2})/);
+      return m ? m[1] : null;
+    };
+    const mechRank = (m: string | null) => (m === "R61" ? 3 : m === "R34" ? 2 : m ? 1 : 0);
+    const mechByInv = new Map<string, string>();
+    for (const row of ((gi ?? []) as any[])) {
+      const invId: string = row.investigator_id;
+      const gn: string | null = row.grants?.grant_number ?? null;
+      const mech = mechExtract(gn);
+      if (!mech) continue;
+      const existing = mechByInv.get(invId);
+      if (!existing || mechRank(mech) > mechRank(existing)) mechByInv.set(invId, mech);
+    }
 
     // Build attention (click count + top path) per user_id
     const attentionByUser = new Map<string, { count: number; paths: Map<string, number> }>();
@@ -95,7 +114,8 @@ export function CoordinationInstrumentation() {
       .map((inv) => {
         const p = profileById.get(inv.id);
         const att = topPathFor(inv.user_id);
-        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path };
+        const mech = mechByInv.get(inv.id) ?? null;
+        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path, mechanism: mech };
         return {
           investigator_id: inv.id,
           full_name: inv.name || "(unknown)",
@@ -107,6 +127,7 @@ export function CoordinationInstrumentation() {
           liwc: {},
           attention_clicks: att.count,
           attention_top_path: att.path,
+          mechanism: mech,
         };
       });
     setRows(merged);
