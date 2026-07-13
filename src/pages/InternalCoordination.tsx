@@ -36,8 +36,6 @@ export default function InternalCoordination() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    // Audit trail: log the view.
-    supabase.from("auth_audit_log").insert({ event: "internal_research_view" }).then(() => {});
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
@@ -85,7 +83,7 @@ export default function InternalCoordination() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <PageMeta title="Admin" description="Admin" noindex />
+      <PageMeta title="Admin" description="Admin" />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Coordination Instrumentation</h1>
