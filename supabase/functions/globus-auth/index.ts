@@ -234,21 +234,25 @@ Deno.serve(async (req) => {
       const emailLower = email.toLowerCase();
 
       // Check if this email is a secondary_email for any investigator
-      const { data: invBySecondary } = await supabaseAdmin
+      const { data: invBySecondaryRows } = await supabaseAdmin
         .from("investigators")
         .select("email")
         .contains("secondary_emails", [emailLower])
-        .maybeSingle();
+        .not("email", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      const invBySecondary = invBySecondaryRows?.[0];
 
       if (invBySecondary?.email) {
         canonicalEmail = invBySecondary.email;
         console.log(`Resolved secondary email ${email} → canonical ${canonicalEmail}`);
       } else {
-        const { data: invByPrimary } = await supabaseAdmin
+        const { data: invByPrimaryRows } = await supabaseAdmin
           .from("investigators")
           .select("email")
           .ilike("email", emailLower)
-          .maybeSingle();
+          .limit(1);
+        const invByPrimary = invByPrimaryRows?.[0];
         if (invByPrimary?.email) {
           canonicalEmail = invByPrimary.email;
         }
@@ -288,11 +292,12 @@ Deno.serve(async (req) => {
           .eq("domain", domain)
           .maybeSingle();
 
-        const { data: knownInvestigator } = await supabaseAdmin
+        const { data: knownInvestigatorRows } = await supabaseAdmin
           .from("investigators")
           .select("id")
           .or(`email.ilike.${emailLower},secondary_emails.cs.{${emailLower}}`)
-          .maybeSingle();
+          .limit(1);
+        const knownInvestigator = knownInvestigatorRows?.[0];
 
         if (!allowedDomain && !knownInvestigator) {
           return await errorRedirectAndNotify("domain_not_allowed", email, name, {
