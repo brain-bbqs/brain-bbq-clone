@@ -112,7 +112,9 @@ Deno.serve(async (req) => {
     // legacy names not represented in the form.
     const seen = new Map<string, any>();
     const upsert = (p: any, prefer: boolean) => {
-      const key = p.email || normKey(p.name);
+      // Always key by normalized name — the roster tab has no email column,
+      // so keying by email would produce duplicate rows for the same person.
+      const key = normKey(p.name);
       if (!key) return;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, p); return; }
