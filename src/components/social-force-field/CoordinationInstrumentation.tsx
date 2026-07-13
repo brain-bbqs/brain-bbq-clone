@@ -421,11 +421,20 @@ function CorrelationHeatmap({
 }
 
 function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
-  const names = [
+  const seedNames = [
     "Ada Okafor", "Rahul Menon", "Sofía Álvarez", "Wen Zhang", "Priya Iyer",
     "Jonas Berg", "Amara Diallo", "Kenji Watanabe", "Lena Novak", "Mateo Rossi",
     "Yasmin Haddad", "Noah Fischer",
   ];
+  const firsts = ["Ada","Rahul","Sofía","Wen","Priya","Jonas","Amara","Kenji","Lena","Mateo","Yasmin","Noah","Ines","Omar","Ravi","Chen","Aiko","Sven","Zara","Diego","Hana","Luca","Nadia","Farid","Elif","Petra","Tomas","Iris","Mira","Kai","Bo","Jia","Nia","Alex","Sam","Rin","Ola","Anya","Kofi","Sena","Ida","Bianca","Cai","Dev","Eli","Fatima","Gia","Hugo","Ivy","Jae"];
+  const lasts = ["Okafor","Menon","Álvarez","Zhang","Iyer","Berg","Diallo","Watanabe","Novak","Rossi","Haddad","Fischer","Silva","Kimura","Park","Nguyen","Kaur","Ahmed","Costa","Hansen","Lopez","Petrov","Duarte","Baxter","Feld","Guerra","Holm","Ishii","Jankovic","Kato","Lima","Meyer","Nair","Osei","Pettersen","Quintero","Ricci","Sato","Traore","Umar","Vega","Wong","Xu","Yamada","Zorin"];
+  const seed = (n: number) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+  const N = 180;
+  const names: string[] = [];
+  for (let i = 0; i < N; i++) {
+    if (i < seedNames.length) names.push(seedNames[i]);
+    else names.push(`${firsts[Math.floor(seed(i * 3 + 11) * firsts.length)]} ${lasts[Math.floor(seed(i * 7 + 19) * lasts.length)]}`);
+  }
   // Real LIWC-dict keys so derived psychology fields populate in preview.
   const liwcCats = [
     "posemo", "negemo", "anxiety", "anger", "sadness",
@@ -434,16 +443,13 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
     "first_person_singular", "first_person_plural", "second_person",
     "work", "achievement",
   ];
-  const seed = (n: number) => {
-    const x = Math.sin(n * 9301 + 49297) * 233280;
-    return x - Math.floor(x);
-  };
   const rows: ProfileRow[] = names.map((full_name, i) => {
     const liwc: Record<string, number> = {};
     liwcCats.forEach((c, j) => {
       liwc[c] = 0.005 + seed(i * 31 + j) * 0.06;
     });
     liwc.long_words = 0.15 + seed(i + 91) * 0.2;
+    const paths = ["/projects", "/investigators", "/mit-workshop-2026", "/publications", "/resources", "/species", "/working-groups", "/", "/metadata-assistant"];
     return {
       investigator_id: `mock-${i}`,
       full_name,
@@ -453,8 +459,41 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
       token_count: 1200 + Math.floor(seed(i + 7) * 4000),
       last_computed_at: new Date().toISOString(),
       liwc,
+      attention_clicks: Math.floor(seed(i + 13) * 400),
+      attention_top_path: paths[Math.floor(seed(i + 23) * paths.length)],
     };
   });
   const trend: TrendRow[] = [];
   return { rows, trend };
+}
+
+// Small legend explaining what each LIWC-derived column means.
+function LiwcLegend() {
+  const items: { label: string; desc: string }[] = [
+    { label: "Tone", desc: "positive − negative emotion words" },
+    { label: "Emotion", desc: "total share of affect words" },
+    { label: "Analytic", desc: "insight + causation + cognitive framing" },
+    { label: "Certainty", desc: "certain vs tentative language" },
+    { label: "Self focus", desc: "first-person singular (I, me, my)" },
+    { label: "Group focus", desc: "first-person plural (we, us, our)" },
+    { label: "Social", desc: "people, family, colleagues, friends" },
+    { label: "Long words", desc: "share of tokens > 6 letters — verbal complexity" },
+    { label: "Attention", desc: "tracked clicks by this person on the platform" },
+    { label: "Top page", desc: "route where their clicks concentrate" },
+  ];
+  return (
+    <details className="rounded-md border bg-muted/20 px-3 py-2 text-xs">
+      <summary className="cursor-pointer select-none text-muted-foreground">
+        What these columns mean — LIWC-derived dimensions & attention signal
+      </summary>
+      <dl className="mt-2 grid gap-x-4 gap-y-1 md:grid-cols-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex gap-2">
+            <dt className="font-medium text-foreground min-w-[92px]">{it.label}</dt>
+            <dd className="text-muted-foreground">{it.desc}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
 }
