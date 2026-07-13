@@ -14,7 +14,10 @@ const SHEET_ID = "1dNoYYPF2cDqOAzn1PeJlx2aBVuOz8szWWI4mm4nZcuc";
 // gid=912781162 with clean columns: Name | Institution | Role in BBQS |
 // Attendance. That's the source of truth for the participants table.
 const SHEET_GID = "912781162";
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+// Use the `export?format=csv` endpoint (not gviz) so that any basic filter
+// applied on the sheet is ignored — we always want every row on the tab.
+// `range=A1:D5000` forces cell-based export regardless of hidden rows.
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}&range=A1:D5000`;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
