@@ -204,6 +204,16 @@ export function CoordinationInstrumentation() {
     const pctFmt = (p: any) => (p.value == null ? "—" : (Number(p.value) * 100).toFixed(2) + "%");
     return [
       { headerName: "Person", field: "full_name", pinned: "left", minWidth: 180, flex: 1 },
+      { headerName: "Group", field: "mechanism", width: 100,
+        headerTooltip: "NIH activity code from linked grant — R34 (planning) or R61 (early-stage)",
+        cellRenderer: (p: any) => {
+          const m = p.value;
+          if (!m) return '<span class="text-muted-foreground">—</span>';
+          const color = m === "R34" ? "bg-sky-500/15 text-sky-500 border-sky-500/30"
+                      : m === "R61" ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                      : "bg-muted text-muted-foreground border";
+          return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${color}">${m}</span>`;
+        } },
       { headerName: "Tokens", field: "token_count", width: 100, type: "numericColumn", cellClass: "tabular-nums text-right" },
       { headerName: "Attention (clicks)", field: "attention_clicks", width: 150, type: "numericColumn",
         headerTooltip: "Total tracked clicks by this person across the platform", cellClass: "tabular-nums text-right",
@@ -233,6 +243,39 @@ export function CoordinationInstrumentation() {
 
   const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, filter: true, resizable: true }), []);
   const selectedRow = enriched.find((r) => r.investigator_id === selected) ?? null;
+
+  // Bar chart data: mean psych dimensions grouped by mechanism.
+  const groupChart = useMemo(() => {
+    const dims: { key: string; label: string; scale: number }[] = [
+      { key: "tone", label: "Tone", scale: 1 },
+      { key: "emotion", label: "Emotion", scale: 100 },
+      { key: "analytic", label: "Analytic", scale: 100 },
+      { key: "certainty_balance", label: "Certainty", scale: 1 },
+      { key: "self_focus", label: "Self focus", scale: 100 },
+      { key: "group_focus", label: "Group focus", scale: 100 },
+      { key: "social", label: "Social", scale: 100 },
+      { key: "long_words", label: "Long words", scale: 100 },
+    ];
+    const buckets = new Map<string, any[]>();
+    for (const r of enriched) {
+      const g = (r as any).mechanism ?? "Other";
+      const b = buckets.get(g) ?? [];
+      b.push(r);
+      buckets.set(g, b);
+    }
+    const groups = Array.from(buckets.entries())
+      .filter(([, arr]) => arr.length > 0)
+      .sort((a, b) => (a[0] === "R34" ? -1 : b[0] === "R34" ? 1 : a[0] === "R61" ? -1 : b[0] === "R61" ? 1 : 0))
+      .map(([name, arr]) => ({
+        name,
+        n: arr.length,
+        values: dims.map((d) => ({
+          key: d.key, label: d.label,
+          value: (arr.reduce((s, r) => s + Number((r as any)[d.key] ?? 0), 0) / arr.length) * d.scale,
+        })),
+      }));
+    return { dims, groups };
+  }, [enriched]);
 
   return (
     <section className="space-y-4">
@@ -337,6 +380,21 @@ export function CoordinationInstrumentation() {
           </CardHeader>
           <CardContent>
             <CorrelationHeatmap data={corr} />
+          </CardContent>
+        </Card>
+      )}
+
+      {groupChart.groups.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Psychology by grant mechanism</CardTitle>
+            <CardDescription>
+              Mean word-choice dimensions per group — compare R34 (planning) and R61
+              (early-stage) cohorts holistically. Bars are group means; higher isn't better.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MechanismBarChart dims={groupChart.dims} groups={groupChart.groups} />
           </CardContent>
         </Card>
       )}
