@@ -201,6 +201,21 @@ const MITWorkshop2026 = () => {
             </CardHeader>
             <CardContent className="space-y-6 px-3 sm:px-6">
               <LiveNowBanner now={now} />
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <Video className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-sm font-semibold text-foreground">Joining remotely?</div>
+                  <div className="text-xs text-muted-foreground">All sessions stream on the workshop Zoom.</div>
+                </div>
+                <a
+                  href="https://us02web.zoom.us/j/87392380688?pwd=byaY8FDtj7gS8RgnLLSQU7bbN488tg.1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Video className="h-4 w-4" /> Join Zoom
+                </a>
+              </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-2">Format</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
