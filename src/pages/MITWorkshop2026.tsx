@@ -340,8 +340,8 @@ const MITWorkshop2026 = () => {
                   <Video className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
                     <span className="font-medium text-foreground">Zoom:</span>{" "}
-                    <a href="https://mit.zoom.us/j/91680232208" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
-                      mit.zoom.us/j/91680232208
+                    <a href="https://us02web.zoom.us/j/87392380688?pwd=byaY8FDtj7gS8RgnLLSQU7bbN488tg.1" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                      us02web.zoom.us/j/87392380688
                     </a>
                   </span>
                 </li>
