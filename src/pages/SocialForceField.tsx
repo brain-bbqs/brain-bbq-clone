@@ -148,6 +148,9 @@ type Data = {
   tagBreakdown: { tag: string; count: number }[];
   heatmap: number[];
   heatmapLabels: string[];
+  projectClicks?: { grant_number: string; title: string | null; count: number }[];
+  topDestinations?: { href: string; count: number }[];
+  tabClicks?: { path: string; label: string; count: number }[];
   firstSeen: string | null;
 };
 
