@@ -9,15 +9,18 @@ import { getCorsHeaders } from "../_shared/auth.ts";
  */
 
 const SHEET_ID = "1dNoYYPF2cDqOAzn1PeJlx2aBVuOz8szWWI4mm4nZcuc";
-// The workbook has three tabs. The raw "Form Responses 1" tab (gid=358008666)
-// only holds a partial snapshot (~34 rows). The curated master roster lives on
-// gid=912781162 with clean columns: Name | Institution | Role in BBQS |
-// Attendance. That's the source of truth for the participants table.
-const SHEET_GID = "912781162";
-// Use the `export?format=csv` endpoint (not gviz) so that any basic filter
-// applied on the sheet is ignored — we always want every row on the tab.
-// `range=A1:D5000` forces cell-based export regardless of hidden rows.
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}&range=A1:D5000`;
+// The workbook has two tabs we care about:
+//   * Form Responses 1  (gid=358008666) — live-updating from the registration
+//     form; source of truth for anything the user tests by submitting the form.
+//   * NameTags          (gid=912781162) — curated roster for name tags. Some
+//     participants only exist here (added by hand before the form went live).
+// We fetch BOTH and merge, so newly submitted form responses appear immediately
+// while the curated entries continue to show up for legacy attendees.
+const FORM_GID = "358008666";
+const ROSTER_GID = "912781162";
+// Cache-busting `t=` param defeats Google's CDN cache so edits appear live.
+const csvUrl = (gid: string) =>
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}&range=A1:Z5000&t=${Date.now()}`;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
