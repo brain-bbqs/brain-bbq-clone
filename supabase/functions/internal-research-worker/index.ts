@@ -222,10 +222,7 @@ async function compute(admin: ReturnType<typeof createClient>, investigatorIds: 
   }));
 
   if (rows.length > 0) {
-    // internal_research is not on PostgREST's exposed schemas; call it explicitly.
-    const { error } = await admin.schema("internal_research")
-      .from("interactional_profiles")
-      .upsert(rows, { onConflict: "investigator_id" });
+    const { error } = await admin.rpc("ir_upsert_profiles", { _rows: rows });
     if (error) throw error;
   }
 
@@ -233,21 +230,9 @@ async function compute(admin: ReturnType<typeof createClient>, investigatorIds: 
 }
 
 async function snapshot(admin: ReturnType<typeof createClient>) {
-  const { data: profiles } = await admin.schema("internal_research")
-    .from("interactional_profiles").select("*");
-  const today = new Date().toISOString().slice(0, 10);
-  const rows = (profiles ?? []).map((p: any) => ({
-    investigator_id: p.investigator_id,
-    personality_score: p.personality_score,
-    science_score: p.science_score,
-    adhesion: p.adhesion,
-    snapshot_date: today,
-  }));
-  if (rows.length > 0) {
-    await admin.schema("internal_research").from("interactional_snapshots")
-      .upsert(rows, { onConflict: "investigator_id,snapshot_date" });
-  }
-  return { snapshots: rows.length };
+  const { data, error } = await admin.rpc("ir_snapshot_now");
+  if (error) throw error;
+  return { snapshots: data ?? 0 };
 }
 
 Deno.serve(async (req) => {
@@ -271,12 +256,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(r), { headers });
     }
     if (mode === "drain") {
-      const { data: q } = await admin.schema("internal_research")
-        .from("interactional_queue").select("investigator_id").limit(200);
+      const { data: q, error: qErr } = await admin.rpc("ir_drain_queue", { _limit: 200 });
+      if (qErr) throw qErr;
       const ids = (q ?? []).map((r: any) => r.investigator_id);
       if (ids.length === 0) return new Response(JSON.stringify({ computed: 0 }), { headers });
       const r = await compute(admin, ids);
-      await admin.schema("internal_research").from("interactional_queue").delete().in("investigator_id", ids);
       return new Response(JSON.stringify(r), { headers });
     }
     const r = await compute(admin, null);
