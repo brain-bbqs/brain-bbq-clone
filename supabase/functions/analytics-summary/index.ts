@@ -11,6 +11,7 @@ type Row = {
   created_at: string;
   element_tag?: string | null;
   element_text?: string | null;
+  element_href?: string | null;
 };
 
 function pct(curr: number, prev: number) {
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
   try {
     const admin = createClient(url, service);
     const [clicks, pvs] = await Promise.all([
-      fetchAll(admin, "analytics_clicks", "path, session_id, user_id, created_at, element_tag, element_text"),
+      fetchAll(admin, "analytics_clicks", "path, session_id, user_id, created_at, element_tag, element_text, element_href"),
       fetchAll(admin, "analytics_pageviews", "path, session_id, user_id, created_at"),
     ]);
     const all = [...clicks, ...pvs];
@@ -151,6 +152,72 @@ Deno.serve(async (req) => {
       heatmapLabels[i] = `${path} — ${count} clicks`;
     });
 
+    // --- Project clicks: which grants people open / land on ---
+    const grantHits = new Map<string, number>();
+    const grantRe = /\/projects\/([^/?#]+)(?:\/|$)/;
+    for (const r of clicks) {
+      const src = r.element_href || "";
+      const m1 = src.match(grantRe);
+      const g = m1?.[1];
+      if (g && g !== "") grantHits.set(g, (grantHits.get(g) ?? 0) + 1);
+    }
+    for (const r of pvs) {
+      const m = (r.path || "").match(grantRe);
+      const g = m?.[1];
+      if (g) grantHits.set(g, (grantHits.get(g) ?? 0) + 1);
+    }
+    let projectClicks: { grant_number: string; title: string | null; count: number }[] = [];
+    if (grantHits.size > 0) {
+      const nums = [...grantHits.keys()];
+      const { data: gs } = await admin
+        .from("grants")
+        .select("grant_number, title")
+        .in("grant_number", nums);
+      const titleMap = new Map<string, string>();
+      (gs ?? []).forEach((g: any) => titleMap.set(g.grant_number, g.title));
+      projectClicks = [...grantHits.entries()]
+        .map(([grant_number, count]) => ({
+          grant_number,
+          title: titleMap.get(grant_number) ?? null,
+          count,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15);
+    }
+
+    // --- Side-nav / link destinations: where clicks send people next ---
+    const destHits = new Map<string, number>();
+    for (const r of clicks) {
+      const h = (r.element_href || "").trim();
+      if (!h || !h.startsWith("/")) continue;
+      const clean = h.split("#")[0];
+      destHits.set(clean, (destHits.get(clean) ?? 0) + 1);
+    }
+    const topDestinations = [...destHits.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([href, count]) => ({ href, count }));
+
+    // --- Tab / filter buttons: buttons grouped by originating path ---
+    // Heuristic: buttons on a page whose text is short-ish and not empty.
+    const tabAgg = new Map<string, number>();
+    for (const r of clicks) {
+      if ((r.element_tag || "") !== "button") continue;
+      const text = (r.element_text || "").trim();
+      if (!text || text.length > 60) continue;
+      const path = r.path || "/";
+      // Skip generic actions we already surface elsewhere
+      if (/^(Refresh|Next day|Prev day|Sign in|Sign out)$/i.test(text)) continue;
+      tabAgg.set(`${path}\u0001${text}`, (tabAgg.get(`${path}\u0001${text}`) ?? 0) + 1);
+    }
+    const tabClicks = [...tabAgg.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([k, count]) => {
+        const [path, label] = k.split("\u0001");
+        return { path, label, count };
+      });
+
     const body = {
       clicks: clicks.length,
       pageviews: pvs.length,
@@ -165,6 +232,7 @@ Deno.serve(async (req) => {
       userDelta: pct(uLast, uPrev),
       topPages, topClickTargets, tagBreakdown,
       heatmap, heatmapLabels,
+      projectClicks, topDestinations, tabClicks,
       firstSeen: all.length ? new Date(firstTs).toISOString() : null,
     };
     return new Response(JSON.stringify(body), { headers });

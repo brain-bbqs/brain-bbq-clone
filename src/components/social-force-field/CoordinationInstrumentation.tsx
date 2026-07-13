@@ -1,0 +1,648 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Lock } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { isPreviewMode } from "@/lib/preview-mode";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+
+interface ProfileRow {
+  investigator_id: string;
+  full_name: string;
+  personality_score: number | null;
+  science_score: number | null;
+  adhesion: number | null;
+  token_count: number;
+  last_computed_at: string;
+  liwc: Record<string, number>;
+  attention_clicks?: number;
+  attention_top_path?: string | null;
+  mechanism?: string | null; // e.g. R34, R61
+}
+
+interface TrendRow {
+  snapshot_date: string;
+  mean_personality: number;
+  mean_science: number;
+  mean_adhesion: number;
+  n: number;
+}
+
+export function CoordinationInstrumentation() {
+  // Preview builds get synthetic data so the panel is visible while developing.
+  const useMock = isPreviewMode();
+  const [rows, setRows] = useState<ProfileRow[]>([]);
+  const [, setTrend] = useState<TrendRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [computing, setComputing] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const ranRef = useRef(false);
+
+  useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
+    (async () => {
+      if (useMock) {
+        const mock = buildMockData();
+        setRows(mock.rows);
+        setTrend(mock.trend);
+        setLoading(false);
+        return;
+      }
+      await reload();
+      const { data: existing } = await supabase.rpc("ir_list_profiles");
+      if (!existing || (existing as unknown[]).length === 0) {
+        await autoCompute();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function reload() {
+    setLoading(true);
+    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }, { data: gi }] = await Promise.all([
+      supabase.rpc("ir_list_profiles"),
+      supabase.rpc("ir_consortium_trend"),
+      supabase.from("investigators").select("id, name, user_id").order("name"),
+      supabase.from("analytics_clicks").select("user_id, path").not("user_id", "is", null).limit(10000),
+      supabase.from("grant_investigators").select("investigator_id, grants(grant_number)"),
+    ]);
+
+    // Derive activity mechanism (R34 / R61 / …) per investigator by parsing grant numbers.
+    const mechExtract = (gn: string | null | undefined): string | null => {
+      if (!gn) return null;
+      const m = gn.match(/^\d*([A-Z]\d{2})/);
+      return m ? m[1] : null;
+    };
+    const mechRank = (m: string | null) => (m === "R61" ? 3 : m === "R34" ? 2 : m ? 1 : 0);
+    const mechByInv = new Map<string, string>();
+    for (const row of ((gi ?? []) as any[])) {
+      const invId: string = row.investigator_id;
+      const gn: string | null = row.grants?.grant_number ?? null;
+      const mech = mechExtract(gn);
+      if (!mech) continue;
+      const existing = mechByInv.get(invId);
+      if (!existing || mechRank(mech) > mechRank(existing)) mechByInv.set(invId, mech);
+    }
+
+    // Build attention (click count + top path) per user_id
+    const attentionByUser = new Map<string, { count: number; paths: Map<string, number> }>();
+    for (const c of (clicks ?? []) as { user_id: string | null; path: string | null }[]) {
+      if (!c.user_id) continue;
+      const rec = attentionByUser.get(c.user_id) ?? { count: 0, paths: new Map() };
+      rec.count += 1;
+      if (c.path) rec.paths.set(c.path, (rec.paths.get(c.path) ?? 0) + 1);
+      attentionByUser.set(c.user_id, rec);
+    }
+    const topPathFor = (uid: string | null) => {
+      if (!uid) return { count: 0, path: null as string | null };
+      const rec = attentionByUser.get(uid);
+      if (!rec) return { count: 0, path: null };
+      let top: string | null = null; let max = 0;
+      rec.paths.forEach((v, k) => { if (v > max) { max = v; top = k; } });
+      return { count: rec.count, path: top };
+    };
+
+    // Merge: every investigator gets a row, whether or not a profile exists.
+    const profileById = new Map<string, ProfileRow>();
+    for (const p of ((profiles ?? []) as ProfileRow[])) profileById.set(p.investigator_id, p);
+    const merged: ProfileRow[] = ((invList ?? []) as { id: string; name: string; user_id: string | null }[])
+      .map((inv) => {
+        const p = profileById.get(inv.id);
+        const att = topPathFor(inv.user_id);
+        const mech = mechByInv.get(inv.id) ?? null;
+        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path, mechanism: mech };
+        return {
+          investigator_id: inv.id,
+          full_name: inv.name || "(unknown)",
+          personality_score: null,
+          science_score: null,
+          adhesion: null,
+          token_count: 0,
+          last_computed_at: new Date(0).toISOString(),
+          liwc: {},
+          attention_clicks: att.count,
+          attention_top_path: att.path,
+          mechanism: mech,
+        };
+      });
+    setRows(merged);
+    setTrend((t ?? []) as TrendRow[]);
+    setLoading(false);
+  }
+
+  async function autoCompute() {
+    setComputing(true);
+    const { data, error } = await supabase.functions.invoke("internal-research-worker", {
+      body: { mode: "backfill" },
+    });
+    setComputing(false);
+    if (error) {
+      let detail = error.message;
+      try {
+        const ctx: any = (error as any).context;
+        if (ctx?.text) detail = (await ctx.text()) || detail;
+      } catch { /* ignore */ }
+      toast({ title: "Coordination data unavailable", description: detail, variant: "destructive" });
+      return;
+    }
+    if ((data as any)?.error) {
+      toast({ title: "Coordination data unavailable", description: (data as any).error, variant: "destructive" });
+      return;
+    }
+    await reload();
+  }
+
+  // ── Derived psychology dimensions from the raw LIWC vector ──────────────
+  const enriched = useMemo(() => rows.map((r) => {
+    const l = r.liwc ?? {};
+    const g = (k: string) => Number(l[k] ?? 0);
+    return {
+      ...r,
+      tone: g("posemo") - g("negemo"),
+      emotion: g("posemo") + g("negemo") + g("anxiety") + g("anger") + g("sadness"),
+      analytic: Math.max(0, g("insight") + g("causation") + g("cogproc") - g("fillers") - g("nonfluencies")),
+      certainty_balance: g("certainty") - g("tentative"),
+      self_focus: g("first_person_singular") || g("i"),
+      group_focus: g("first_person_plural") || g("we"),
+      social: g("social") + g("humans") + g("friends") + g("family"),
+      long_words: g("long_words"),
+    };
+  }), [rows]);
+
+  const means = useMemo(() => {
+    if (enriched.length === 0) return null;
+    const keys = ["tone", "analytic", "long_words"] as const;
+    const acc: Record<string, number> = {};
+    keys.forEach((k) => {
+      acc[k] = enriched.reduce((s, r) => s + (r as any)[k], 0) / enriched.length;
+    });
+    return acc as Record<(typeof keys)[number], number>;
+  }, [enriched]);
+
+  // ── Person × Person cosine similarity across the full LIWC vector ───────
+  const corr = useMemo(() => {
+    if (rows.length < 2) return null;
+    const cats = Array.from(new Set(rows.flatMap((r) => Object.keys(r.liwc ?? {}))))
+      .filter((k) => k !== "long_words");
+    const vs = rows.map((r) => cats.map((k) => Number(r.liwc?.[k] ?? 0)));
+    const ns = vs.map((v) => Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1);
+    const M = rows.map((_, i) => rows.map((__, j) => {
+      let dot = 0;
+      for (let k = 0; k < cats.length; k++) dot += vs[i][k] * vs[j][k];
+      return dot / (ns[i] * ns[j]);
+    }));
+    return { M, names: rows.map((r) => r.full_name), ids: rows.map((r) => r.investigator_id) };
+  }, [rows]);
+
+  const columnDefs = useMemo<ColDef<any>[]>(() => {
+    const numFmt = (p: any) => (p.value == null ? "—" : Number(p.value).toFixed(3));
+    const pctFmt = (p: any) => (p.value == null ? "—" : (Number(p.value) * 100).toFixed(2) + "%");
+    return [
+      { headerName: "Person", field: "full_name", pinned: "left", minWidth: 180, flex: 1 },
+      { headerName: "Group", field: "mechanism", width: 100,
+        headerTooltip: "NIH activity code from linked grant — R34 (planning) or R61 (early-stage)",
+        cellRenderer: (p: any) => {
+          const m = p.value;
+          if (!m) return '<span class="text-muted-foreground">—</span>';
+          const color = m === "R34" ? "bg-sky-500/15 text-sky-500 border-sky-500/30"
+                      : m === "R61" ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                      : "bg-muted text-muted-foreground border";
+          return `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${color}">${m}</span>`;
+        } },
+      { headerName: "Tokens", field: "token_count", width: 100, type: "numericColumn", cellClass: "tabular-nums text-right" },
+      { headerName: "Attention (clicks)", field: "attention_clicks", width: 150, type: "numericColumn",
+        headerTooltip: "Total tracked clicks by this person across the platform", cellClass: "tabular-nums text-right",
+        valueFormatter: (p: any) => (p.value == null ? "—" : Number(p.value).toLocaleString()) },
+      { headerName: "Top page", field: "attention_top_path", width: 200,
+        headerTooltip: "Page where this person clicks most — proxy for where their attention lives",
+        cellClass: "font-mono text-xs",
+        valueFormatter: (p: any) => p.value ?? "—" },
+      { headerName: "Tone (pos−neg)", field: "tone", width: 140, valueFormatter: numFmt,
+        headerTooltip: "Positive minus negative emotion word share", cellClass: "tabular-nums text-right" },
+      { headerName: "Emotion", field: "emotion", width: 110, valueFormatter: pctFmt,
+        headerTooltip: "Total share of affect words", cellClass: "tabular-nums text-right" },
+      { headerName: "Analytic", field: "analytic", width: 110, valueFormatter: pctFmt,
+        headerTooltip: "Insight + causation + cognitive processing (minus fillers)", cellClass: "tabular-nums text-right" },
+      { headerName: "Certainty", field: "certainty_balance", width: 120, valueFormatter: numFmt,
+        headerTooltip: "Certainty minus tentative language", cellClass: "tabular-nums text-right" },
+      { headerName: "Self focus (I)", field: "self_focus", width: 130, valueFormatter: pctFmt,
+        headerTooltip: "First-person singular pronouns", cellClass: "tabular-nums text-right" },
+      { headerName: "Group focus (we)", field: "group_focus", width: 150, valueFormatter: pctFmt,
+        headerTooltip: "First-person plural pronouns", cellClass: "tabular-nums text-right" },
+      { headerName: "Social", field: "social", width: 110, valueFormatter: pctFmt,
+        headerTooltip: "Social references: people, family, colleagues", cellClass: "tabular-nums text-right" },
+      { headerName: "Long words", field: "long_words", width: 120, valueFormatter: pctFmt,
+        headerTooltip: "Share of tokens > 6 letters — verbal complexity proxy", cellClass: "tabular-nums text-right" },
+    ];
+  }, []);
+
+  const defaultColDef = useMemo<ColDef>(() => ({ sortable: true, filter: true, resizable: true }), []);
+  const selectedRow = enriched.find((r) => r.investigator_id === selected) ?? null;
+
+  // Bar chart data: mean psych dimensions grouped by mechanism.
+  const groupChart = useMemo(() => {
+    const dims: { key: string; label: string; scale: number }[] = [
+      { key: "tone", label: "Tone", scale: 1 },
+      { key: "emotion", label: "Emotion", scale: 100 },
+      { key: "analytic", label: "Analytic", scale: 100 },
+      { key: "certainty_balance", label: "Certainty", scale: 1 },
+      { key: "self_focus", label: "Self focus", scale: 100 },
+      { key: "group_focus", label: "Group focus", scale: 100 },
+      { key: "social", label: "Social", scale: 100 },
+      { key: "long_words", label: "Long words", scale: 100 },
+    ];
+    const buckets = new Map<string, any[]>();
+    for (const r of enriched) {
+      const g = (r as any).mechanism ?? "Other";
+      const b = buckets.get(g) ?? [];
+      b.push(r);
+      buckets.set(g, b);
+    }
+    const groups = Array.from(buckets.entries())
+      .filter(([, arr]) => arr.length > 0)
+      .sort((a, b) => (a[0] === "R34" ? -1 : b[0] === "R34" ? 1 : a[0] === "R61" ? -1 : b[0] === "R61" ? 1 : 0))
+      .map(([name, arr]) => ({
+        name,
+        n: arr.length,
+        values: dims.map((d) => ({
+          key: d.key, label: d.label,
+          value: (arr.reduce((s, r) => s + Number((r as any)[d.key] ?? 0), 0) / arr.length) * d.scale,
+        })),
+      }));
+    return { dims, groups };
+  }, [enriched]);
+
+  return (
+    <section className="space-y-4">
+      <div className="rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-transparent p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border bg-background/60 p-2">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold">Coordination instrumentation</h2>
+                <Badge variant="outline">Admin-only</Badge>
+                {useMock && <Badge variant="outline">Preview · synthetic</Badge>}
+                {computing && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> updating…
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Psycholinguistic fingerprints · word-choice similarity between people
+              </p>
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground max-w-3xl">
+          Purpose is coordination, never evaluation. Each row is one person's word-choice
+          fingerprint: tone, emotional intensity, analytical framing, self- vs group-focus,
+          verbal complexity. The heatmap below shows how similar each person's fingerprint
+          is to everyone else's. Not visible to non-admin members. Do not share out.
+        </p>
+      </div>
+
+      {means && (
+        <div className="grid gap-3 md:grid-cols-4">
+          <MiniCard label="People" value={rows.length.toString()} />
+          <MiniCard label="Mean tone" value={means.tone.toFixed(3)} hint="pos − neg emotion" />
+          <MiniCard label="Mean analytic" value={(means.analytic * 100).toFixed(2) + "%"} hint="cognitive framing share" />
+          <MiniCard label="Mean long-word share" value={(means.long_words * 100).toFixed(2) + "%"} hint="verbal complexity" />
+        </div>
+      )}
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Per-person profiles</CardTitle>
+          <CardDescription>
+            Word-choice dimensions per person. Attention columns come from tracked clicks —
+            proxy for where each person's focus lives on the platform. Click a row to see their
+            top LIWC categories.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LiwcLegend />
+          <div className="ag-theme-alpine mt-3" style={{ width: "100%", height: 560 }}>
+            <AgGridReact
+              rowData={enriched}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              rowSelection="single"
+              onRowClicked={(e) => setSelected(e.data.investigator_id)}
+              animateRows
+              suppressCellFocus
+              overlayNoRowsTemplate={
+                loading || computing
+                  ? '<span style="color:hsl(var(--muted-foreground))">Loading…</span>'
+                  : '<span style="color:hsl(var(--muted-foreground))">No people yet.</span>'
+              }
+            />
+          </div>
+          {selectedRow && (
+            <div className="mt-4 rounded-lg border bg-muted/20 p-3">
+              <div className="text-xs text-muted-foreground mb-2">
+                Top LIWC categories for{" "}
+                <span className="text-foreground font-medium">{selectedRow.full_name}</span> · share of tokens
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                {Object.entries(selectedRow.liwc ?? {})
+                  .filter(([k]) => k !== "long_words")
+                  .sort((a, b) => (b[1] as number) - (a[1] as number))
+                  .slice(0, 12)
+                  .map(([cat, pct]) => (
+                    <div key={cat} className="flex justify-between">
+                      <span className="text-muted-foreground">{cat.replace(/_/g, " ")}</span>
+                      <span className="tabular-nums">{((pct as number) * 100).toFixed(2)}%</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {corr && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Psychology correlation graph</CardTitle>
+            <CardDescription>
+              Cosine similarity between each pair of people, computed on the full LIWC
+              category vector. Warmer = more similar word-choice fingerprint.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CorrelationHeatmap data={corr} />
+          </CardContent>
+        </Card>
+      )}
+
+      {groupChart.groups.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Psychology by grant mechanism</CardTitle>
+            <CardDescription>
+              Mean word-choice dimensions per group — compare R34 (planning) and R61
+              (early-stage) cohorts holistically. Bars are group means; higher isn't better.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <MechanismBarChart dims={groupChart.dims} groups={groupChart.groups} />
+          </CardContent>
+        </Card>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Views of this section are logged. No per-person value here is exposed to consortium
+        members.
+      </p>
+    </section>
+  );
+}
+
+function MiniCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border bg-card/40 p-4">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums mt-1">{value}</div>
+      {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
+    </div>
+  );
+}
+
+function CorrelationHeatmap({
+  data,
+}: { data: { M: number[][]; names: string[]; ids: string[] } }) {
+  const { M, names } = data;
+  const n = names.length;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    if (i === j) continue;
+    if (M[i][j] < lo) lo = M[i][j];
+    if (M[i][j] > hi) hi = M[i][j];
+  }
+  if (!isFinite(lo)) { lo = 0; hi = 1; }
+  const range = hi - lo || 1;
+  const color = (v: number) => {
+    const t = Math.max(0, Math.min(1, (v - lo) / range));
+    const h = 210 - t * 170; // blue → amber
+    const l = 25 + t * 30;
+    return `hsl(${h} 70% ${l}%)`;
+  };
+  const cell = 28;
+  const labelW = 160;
+  return (
+    <div className="overflow-auto">
+      <div className="inline-block">
+        <div className="flex" style={{ paddingLeft: labelW }}>
+          {names.map((nm) => (
+            <div
+              key={`h-${nm}`}
+              className="text-[10px] text-muted-foreground"
+              style={{
+                width: cell, height: 90,
+                writingMode: "vertical-rl", transform: "rotate(180deg)",
+                overflow: "hidden", whiteSpace: "nowrap",
+              }}
+              title={nm}
+            >
+              {nm}
+            </div>
+          ))}
+        </div>
+        {names.map((rowName, i) => (
+          <div key={`r-${rowName}-${i}`} className="flex items-center">
+            <div
+              className="text-[11px] text-muted-foreground truncate pr-2 text-right"
+              style={{ width: labelW }}
+              title={rowName}
+            >
+              {rowName}
+            </div>
+            {names.map((colName, j) => {
+              const v = M[i][j];
+              return (
+                <div
+                  key={`c-${i}-${j}`}
+                  title={`${rowName} × ${colName}: ${v.toFixed(3)}`}
+                  style={{
+                    width: cell, height: cell,
+                    background: i === j ? "hsl(var(--muted))" : color(v),
+                    borderRight: "1px solid hsl(var(--background))",
+                    borderBottom: "1px solid hsl(var(--background))",
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
+        <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground">
+          <span>less similar</span>
+          <div
+            className="h-2 w-40 rounded"
+            style={{
+              background: `linear-gradient(to right, ${color(lo)}, ${color((lo + hi) / 2)}, ${color(hi)})`,
+            }}
+          />
+          <span>more similar</span>
+          <span className="ml-2 tabular-nums">{lo.toFixed(2)} → {hi.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
+  const seedNames = [
+    "Ada Okafor", "Rahul Menon", "Sofía Álvarez", "Wen Zhang", "Priya Iyer",
+    "Jonas Berg", "Amara Diallo", "Kenji Watanabe", "Lena Novak", "Mateo Rossi",
+    "Yasmin Haddad", "Noah Fischer",
+  ];
+  const firsts = ["Ada","Rahul","Sofía","Wen","Priya","Jonas","Amara","Kenji","Lena","Mateo","Yasmin","Noah","Ines","Omar","Ravi","Chen","Aiko","Sven","Zara","Diego","Hana","Luca","Nadia","Farid","Elif","Petra","Tomas","Iris","Mira","Kai","Bo","Jia","Nia","Alex","Sam","Rin","Ola","Anya","Kofi","Sena","Ida","Bianca","Cai","Dev","Eli","Fatima","Gia","Hugo","Ivy","Jae"];
+  const lasts = ["Okafor","Menon","Álvarez","Zhang","Iyer","Berg","Diallo","Watanabe","Novak","Rossi","Haddad","Fischer","Silva","Kimura","Park","Nguyen","Kaur","Ahmed","Costa","Hansen","Lopez","Petrov","Duarte","Baxter","Feld","Guerra","Holm","Ishii","Jankovic","Kato","Lima","Meyer","Nair","Osei","Pettersen","Quintero","Ricci","Sato","Traore","Umar","Vega","Wong","Xu","Yamada","Zorin"];
+  const seed = (n: number) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+  const N = 180;
+  const names: string[] = [];
+  for (let i = 0; i < N; i++) {
+    if (i < seedNames.length) names.push(seedNames[i]);
+    else names.push(`${firsts[Math.floor(seed(i * 3 + 11) * firsts.length)]} ${lasts[Math.floor(seed(i * 7 + 19) * lasts.length)]}`);
+  }
+  // Real LIWC-dict keys so derived psychology fields populate in preview.
+  const liwcCats = [
+    "posemo", "negemo", "anxiety", "anger", "sadness",
+    "cogproc", "insight", "causation", "tentative", "certainty",
+    "social", "family", "friends", "humans",
+    "first_person_singular", "first_person_plural", "second_person",
+    "work", "achievement",
+  ];
+  const rows: ProfileRow[] = names.map((full_name, i) => {
+    const liwc: Record<string, number> = {};
+    liwcCats.forEach((c, j) => {
+      liwc[c] = 0.005 + seed(i * 31 + j) * 0.06;
+    });
+    liwc.long_words = 0.15 + seed(i + 91) * 0.2;
+    const paths = ["/projects", "/investigators", "/mit-workshop-2026", "/publications", "/resources", "/species", "/working-groups", "/", "/metadata-assistant"];
+    return {
+      investigator_id: `mock-${i}`,
+      full_name,
+      personality_score: (seed(i + 1) - 0.5) * 2,
+      science_score: (seed(i + 2) - 0.5) * 2,
+      adhesion: (seed(i + 3) - 0.5) * 2,
+      token_count: 1200 + Math.floor(seed(i + 7) * 4000),
+      last_computed_at: new Date().toISOString(),
+      liwc,
+      attention_clicks: Math.floor(seed(i + 13) * 400),
+      attention_top_path: paths[Math.floor(seed(i + 23) * paths.length)],
+      mechanism: seed(i + 41) < 0.55 ? "R34" : seed(i + 41) < 0.9 ? "R61" : null,
+    };
+  });
+  const trend: TrendRow[] = [];
+  return { rows, trend };
+}
+
+// Bar chart: mean psych dimensions per grant-mechanism cohort.
+function MechanismBarChart({
+  dims,
+  groups,
+}: {
+  dims: { key: string; label: string; scale: number }[];
+  groups: { name: string; n: number; values: { key: string; label: string; value: number }[] }[];
+}) {
+  const colorFor = (name: string) =>
+    name === "R34" ? "hsl(199 89% 55%)"
+    : name === "R61" ? "hsl(38 90% 55%)"
+    : "hsl(280 70% 60%)";
+  // Compute a per-dimension symmetric range so bars are comparable within a dim.
+  const ranges = dims.map((d) => {
+    const vals = groups.map((g) => g.values.find((v) => v.key === d.key)?.value ?? 0);
+    const min = Math.min(0, ...vals);
+    const max = Math.max(0, ...vals);
+    const span = Math.max(1e-6, max - min);
+    return { min, max, span };
+  });
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 text-xs">
+        {groups.map((g) => (
+          <div key={g.name} className="inline-flex items-center gap-2">
+            <span className="h-2 w-3 rounded-sm" style={{ background: colorFor(g.name) }} />
+            <span className="font-medium">{g.name === "Other" ? "Unlabeled" : g.name}</span>
+            <span className="text-muted-foreground">· {g.n} people</span>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {dims.map((d, di) => {
+          const { min, span } = ranges[di];
+          return (
+            <div key={d.key} className="space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{d.label}</span>
+                <span className="tabular-nums">
+                  {groups.map((g) => {
+                    const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                    return (
+                      <span key={g.name} className="ml-3">
+                        <span className="text-foreground">{g.name === "Other" ? "—" : g.name}</span>{" "}
+                        {v.toFixed(2)}
+                      </span>
+                    );
+                  })}
+                </span>
+              </div>
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}>
+                {groups.map((g) => {
+                  const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                  const w = ((v - min) / span) * 100;
+                  return (
+                    <div key={g.name} className="h-3 rounded-sm bg-muted/50 overflow-hidden" title={`${g.name}: ${v.toFixed(3)}`}>
+                      <div className="h-full" style={{ width: `${Math.max(2, w)}%`, background: colorFor(g.name) }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Small legend explaining what each LIWC-derived column means.
+function LiwcLegend() {
+  const items: { label: string; desc: string }[] = [
+    { label: "Tone", desc: "positive − negative emotion words" },
+    { label: "Emotion", desc: "total share of affect words" },
+    { label: "Analytic", desc: "insight + causation + cognitive framing" },
+    { label: "Certainty", desc: "certain vs tentative language" },
+    { label: "Self focus", desc: "first-person singular (I, me, my)" },
+    { label: "Group focus", desc: "first-person plural (we, us, our)" },
+    { label: "Social", desc: "people, family, colleagues, friends" },
+    { label: "Long words", desc: "share of tokens > 6 letters — verbal complexity" },
+    { label: "Attention", desc: "tracked clicks by this person on the platform" },
+    { label: "Top page", desc: "route where their clicks concentrate" },
+  ];
+  return (
+    <details className="rounded-md border bg-muted/20 px-3 py-2 text-xs">
+      <summary className="cursor-pointer select-none text-muted-foreground">
+        What these columns mean — LIWC-derived dimensions & attention signal
+      </summary>
+      <dl className="mt-2 grid gap-x-4 gap-y-1 md:grid-cols-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex gap-2">
+            <dt className="font-medium text-foreground min-w-[92px]">{it.label}</dt>
+            <dd className="text-muted-foreground">{it.desc}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}

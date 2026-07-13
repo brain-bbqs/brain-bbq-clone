@@ -58,19 +58,18 @@ const DAY2_ROWS: AgendaRow[] = [
     { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
   ]],
   ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
-  ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+  ["2:00", "4:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
     { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
     { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
     { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
   ]],
-  ["3:00", "4:00", "Discussion with the NIH — What do you want the NIH to know?", "Singleton", "Yes", undefined, "NIH representatives"],
   ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
 ];
 const DAY3_ROWS: AgendaRow[] = [
   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium", "", "d3-coffee-am"],
   ["10:00", "11:30", "Brainhack Sessions (cont'd).", "Singleton", "Yes"],
   ["11:30", "12:30", "BBQS Working Lunch: Brainhack — wrap-up of deliverables and documentation.", "Atrium", "", "d3-lunch"],
-  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion and town hall.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic"],
+  ["12:30", "2:45", "Final project reports and parallel session summaries — what's next (add Brainhack slides to this section). Open mic discussion / Town Hall / Discussion with the NIH.", "Singleton", "Yes", undefined, "Brainhack leads · Open mic · NIH representatives"],
   ["2:45", "3:00", "Closing remarks.", "Singleton", "Yes", undefined, "Sully"],
 ];
 
@@ -341,8 +340,8 @@ const MITWorkshop2026 = () => {
                   <Video className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-muted-foreground">
                     <span className="font-medium text-foreground">Zoom:</span>{" "}
-                    <a href="https://mit.zoom.us/j/91680232208" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
-                      mit.zoom.us/j/91680232208
+                    <a href="https://us02web.zoom.us/j/87392380688?pwd=byaY8FDtj7gS8RgnLLSQU7bbN488tg.1" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                      us02web.zoom.us/j/87392380688
                     </a>
                   </span>
                 </li>
