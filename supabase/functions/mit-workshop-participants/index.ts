@@ -9,8 +9,12 @@ import { getCorsHeaders } from "../_shared/auth.ts";
  */
 
 const SHEET_ID = "1dNoYYPF2cDqOAzn1PeJlx2aBVuOz8szWWI4mm4nZcuc";
-const SHEET_NAME = "Form Responses 1";
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+// The workbook has three tabs. The raw "Form Responses 1" tab (gid=358008666)
+// only holds a partial snapshot (~34 rows). The curated master roster lives on
+// gid=912781162 with clean columns: Name | Institution | Role in BBQS |
+// Attendance. That's the source of truth for the participants table.
+const SHEET_GID = "912781162";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -63,9 +67,9 @@ Deno.serve(async (req) => {
 
     const iName = col(["full name", "name"]);
     const iInst = col(["institution", "affiliation", "organization"]);
-    const iRole = col(["primary role", "role with bbqs", "role"]);
+    const iRole = col(["role in bbqs", "primary role", "role with bbqs", "role"]);
     const iEmail = col(["email address", "email"]);
-    const iAttend = col(["plan to attend", "attend"]);
+    const iAttend = col(["attendance", "plan to attend", "attend"]);
     const iTs = col(["timestamp"]);
 
     const seen = new Map<string, any>();
