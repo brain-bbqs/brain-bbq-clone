@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { isPreviewMode } from "@/lib/preview-mode";
 
 interface ProfileRow {
   investigator_id: string;
@@ -25,6 +26,9 @@ interface TrendRow {
 }
 
 export function CoordinationInstrumentation() {
+  // In preview/dev builds, synthesize data so the panel is visible during development
+  // without needing a real admin JWT. Real deployments still require admin.
+  const useMock = isPreviewMode();
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [trend, setTrend] = useState<TrendRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +40,13 @@ export function CoordinationInstrumentation() {
     if (ranRef.current) return;
     ranRef.current = true;
     (async () => {
+      if (useMock) {
+        const mock = buildMockData();
+        setRows(mock.rows);
+        setTrend(mock.trend);
+        setLoading(false);
+        return;
+      }
       await reload();
       // If we have no profiles yet, run a compute automatically so admins never see an empty pane.
       const { data: existing } = await supabase.rpc("ir_list_profiles");
@@ -105,6 +116,7 @@ export function CoordinationInstrumentation() {
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold">Coordination instrumentation</h2>
                 <Badge variant="outline">Admin-only</Badge>
+                {useMock && <Badge variant="outline">Preview · synthetic</Badge>}
                 {computing && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" /> updating…
@@ -201,6 +213,60 @@ function MiniCard({ label, value }: { label: string; value: string }) {
       <div className="text-2xl font-semibold tabular-nums mt-1">{value}</div>
     </div>
   );
+}
+
+function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
+  const names = [
+    "Ada Okafor", "Rahul Menon", "Sofía Álvarez", "Wen Zhang", "Priya Iyer",
+    "Jonas Berg", "Amara Diallo", "Kenji Watanabe", "Lena Novak", "Mateo Rossi",
+    "Yasmin Haddad", "Noah Fischer",
+  ];
+  const liwcCats = [
+    "cognition", "affect", "social", "focuspresent", "focuspast", "focusfuture",
+    "certain", "tentative", "we", "i", "you", "science", "power", "achieve",
+  ];
+  const seed = (n: number) => {
+    // deterministic pseudo-random so refreshes are stable in preview
+    const x = Math.sin(n * 9301 + 49297) * 233280;
+    return x - Math.floor(x);
+  };
+  const rows: ProfileRow[] = names.map((full_name, i) => {
+    const liwc: Record<string, number> = {};
+    let sum = 0;
+    liwcCats.forEach((c, j) => {
+      const v = 0.02 + seed(i * 31 + j) * 0.18;
+      liwc[c] = v;
+      sum += v;
+    });
+    Object.keys(liwc).forEach((k) => (liwc[k] = liwc[k] / sum));
+    const p = (seed(i + 1) - 0.5) * 2;
+    const s = (seed(i + 2) - 0.5) * 2;
+    const a = (seed(i + 3) - 0.5) * 2;
+    return {
+      investigator_id: `mock-${i}`,
+      full_name,
+      personality_score: p,
+      science_score: s,
+      adhesion: a,
+      token_count: 1200 + Math.floor(seed(i + 7) * 4000),
+      last_computed_at: new Date().toISOString(),
+      liwc,
+    };
+  });
+  const days = 14;
+  const today = new Date();
+  const trend: TrendRow[] = Array.from({ length: days }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (days - 1 - i));
+    return {
+      snapshot_date: d.toISOString().slice(0, 10),
+      mean_personality: (seed(i + 11) - 0.5) * 0.6,
+      mean_science: (seed(i + 13) - 0.5) * 0.6,
+      mean_adhesion: 0.2 + Math.sin(i / 3) * 0.25 + (seed(i + 17) - 0.5) * 0.1,
+      n: rows.length,
+    };
+  });
+  return { rows, trend };
 }
 
 function Sparkline({ values }: { values: number[] }) {
