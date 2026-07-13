@@ -11,52 +11,76 @@ import { PageMeta } from "@/components/PageMeta";
 import { CoordinationInstrumentation } from "@/components/social-force-field/CoordinationInstrumentation";
 import { isPreviewMode } from "@/lib/preview-mode";
 
-// Isometric single-plane grid — the "base social layer".
-// Each cell = one page in the app; brightness = click intensity (14d).
+// 3D-looking isometric plane — the "base social layer".
+// Each cell = one page in the app; brightness/height = total click activity.
 function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: string[] }) {
-  const W = 560;
-  const H = 300;
+  const W = 620;
+  const H = 360;
   const cx = W / 2;
   const gridN = 6;
-  const cell = 28;
-  const iso = (x: number, y: number) => ({
+  const cell = 30;
+  const maxLift = 60; // pixel height a fully-hot cell rises
+  const iso = (x: number, y: number, z = 0) => ({
     x: cx + (x - y) * (cell * 0.9),
-    y: 150 + (x + y) * (cell * 0.45),
+    y: 170 + (x + y) * (cell * 0.45) - z,
   });
-  const lines: JSX.Element[] = [];
+
+  // ground grid
+  const grid: JSX.Element[] = [];
   for (let i = 0; i <= gridN; i++) {
     const a = iso(i, 0), b = iso(i, gridN), c = iso(0, i), d = iso(gridN, i);
-    lines.push(
-      <line key={`v${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
-      <line key={`h${i}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
+    grid.push(
+      <line key={`gv${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-violet-500/40" strokeWidth={0.75} />,
+      <line key={`gh${i}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className="stroke-violet-500/40" strokeWidth={0.75} />,
     );
   }
-  const cells: JSX.Element[] = [];
+
+  // sort back-to-front so nearer bars overpaint farther ones
+  const order: { gx: number; gy: number; v: number }[] = [];
   for (let gy = 0; gy < gridN; gy++) {
     for (let gx = 0; gx < gridN; gx++) {
-      const idx = gy * gridN + gx;
-      const v = heatmap[idx] ?? 0;
-      if (v <= 0) continue;
-      const p1 = iso(gx, gy), p2 = iso(gx + 1, gy), p3 = iso(gx + 1, gy + 1), p4 = iso(gx, gy + 1);
-      cells.push(
-        <polygon
-          key={`c-${idx}`}
-          points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
-          className="fill-violet-500 stroke-violet-400"
-          fillOpacity={0.15 + v * 0.75}
-          strokeOpacity={0.5}
-        >
-          <title>{labels[idx] ?? ""}</title>
-        </polygon>,
-      );
+      order.push({ gx, gy, v: heatmap[gy * gridN + gx] ?? 0 });
     }
   }
+  order.sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
+
+  const bars: JSX.Element[] = order.map(({ gx, gy, v }) => {
+    if (v <= 0) return <g key={`b-${gx}-${gy}`} />;
+    const h = Math.max(4, v * maxLift);
+    // bottom face corners
+    const b1 = iso(gx, gy), b2 = iso(gx + 1, gy), b3 = iso(gx + 1, gy + 1), b4 = iso(gx, gy + 1);
+    // top face corners (lifted by h)
+    const t1 = iso(gx, gy, h), t2 = iso(gx + 1, gy, h), t3 = iso(gx + 1, gy + 1, h), t4 = iso(gx, gy + 1, h);
+    const intensity = 0.35 + Math.min(1, v) * 0.55;
+    return (
+      <g key={`b-${gx}-${gy}`}>
+        <title>{labels[gy * gridN + gx] ?? ""}</title>
+        {/* right face (darker) */}
+        <polygon points={`${b2.x},${b2.y} ${b3.x},${b3.y} ${t3.x},${t3.y} ${t2.x},${t2.y}`}
+          fill="hsl(258 80% 45%)" fillOpacity={intensity * 0.6} stroke="hsl(258 90% 70%)" strokeOpacity={0.35} strokeWidth={0.5} />
+        {/* left face (mid) */}
+        <polygon points={`${b3.x},${b3.y} ${b4.x},${b4.y} ${t4.x},${t4.y} ${t3.x},${t3.y}`}
+          fill="hsl(262 80% 55%)" fillOpacity={intensity * 0.75} stroke="hsl(258 90% 70%)" strokeOpacity={0.35} strokeWidth={0.5} />
+        {/* top face (brightest) */}
+        <polygon points={`${t1.x},${t1.y} ${t2.x},${t2.y} ${t3.x},${t3.y} ${t4.x},${t4.y}`}
+          fill="hsl(268 95% 68%)" fillOpacity={0.45 + intensity * 0.5} stroke="hsl(272 95% 82%)" strokeOpacity={0.7} strokeWidth={0.75} />
+      </g>
+    );
+  });
+
   return (
     <div className="rounded-xl border bg-card/40 p-6">
       <div className="grid gap-6 md:grid-cols-[1fr_minmax(0,240px)] items-center">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto text-muted-foreground" aria-hidden="true">
-          {lines}
-          {cells}
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" aria-hidden="true">
+          <defs>
+            <radialGradient id="baseGlow" cx="50%" cy="55%" r="55%">
+              <stop offset="0%" stopColor="hsl(268 90% 60% / 0.35)" />
+              <stop offset="100%" stopColor="transparent" />
+            </radialGradient>
+          </defs>
+          <rect x="0" y="0" width={W} height={H} fill="url(#baseGlow)" />
+          {grid}
+          {bars}
         </svg>
         <div className="text-sm space-y-2">
           <div className="flex items-center gap-2">
@@ -65,8 +89,8 @@ function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: stri
           </div>
           <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) all-time</p>
           <p className="text-xs text-muted-foreground">
-            The base social layer. Each cell is one page in the app; brightness reflects total
-            click activity since tracking began. Hover a cell to see the page.
+            The base social layer. Each cell is one page in the app; bar height and brightness
+            reflect total click activity since tracking began. Hover a bar to see the page.
           </p>
         </div>
       </div>
