@@ -241,10 +241,6 @@ export default function SocialForceField() {
 
   const maxTopPageViews = useMemo(() => Math.max(1, ...(data?.topPages.map((p) => p.views) ?? [1])), [data]);
   const maxTopClick = useMemo(() => Math.max(1, ...(data?.topClickTargets.map((t) => t.count) ?? [1])), [data]);
-  const maxProject = useMemo(() => Math.max(1, ...((data?.projectClicks ?? []).map((p) => p.count))), [data]);
-  const maxDest = useMemo(() => Math.max(1, ...((data?.topDestinations ?? []).map((d) => d.count))), [data]);
-  const maxTab = useMemo(() => Math.max(1, ...((data?.tabClicks ?? []).map((t) => t.count))), [data]);
-  const totalTagged = useMemo(() => (data?.tagBreakdown ?? []).reduce((a, b) => a + b.count, 0), [data]);
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading…</div>;
 
@@ -299,6 +295,8 @@ export default function SocialForceField() {
           labels={data?.heatmapLabels ?? new Array(36).fill("")}
         />
       </header>
+
+      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
 
       {/* Layer header */}
       <section className="space-y-4">
@@ -405,131 +403,7 @@ export default function SocialForceField() {
           </Card>
         </div>
 
-        {/* Interaction shape */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Interaction shape</CardTitle>
-            <CardDescription>Where the clicks go — link vs. button vs. other</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data && totalTagged > 0 ? (
-              <div className="space-y-3">
-                <div className="flex h-3 w-full overflow-hidden rounded-full border">
-                  {data.tagBreakdown.map((t, i) => {
-                    const w = (t.count / totalTagged) * 100;
-                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
-                    return <div key={t.tag} className={colors[i % colors.length]} style={{ width: `${w}%` }} title={`${t.tag}: ${t.count}`} />;
-                  })}
-                </div>
-                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                  {data.tagBreakdown.map((t, i) => {
-                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
-                    const pctVal = Math.round((t.count / totalTagged) * 100);
-                    return (
-                      <div key={t.tag} className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-sm ${colors[i % colors.length]}`} />
-                        <span className="font-mono">&lt;{t.tag}&gt;</span>
-                        <span className="tabular-nums">{t.count.toLocaleString()} · {pctVal}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Which projects are people opening */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Which projects are people opening?</CardTitle>
-              <CardDescription>Grant profiles by clicks + landings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {(data?.projectClicks ?? []).map((p) => (
-                <div key={p.grant_number} className="space-y-1">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">
-                      <span className="font-mono text-xs text-muted-foreground mr-2">{p.grant_number}</span>
-                      <span>{p.title ?? "(untitled)"}</span>
-                    </span>
-                    <span className="text-muted-foreground tabular-nums">{p.count.toLocaleString()}</span>
-                  </div>
-                  <Progress value={(p.count / maxProject) * 100} className="h-1.5" />
-                </div>
-              ))}
-              {data && (data.projectClicks ?? []).length === 0 && (
-                <div className="text-sm text-muted-foreground">No project opens yet.</div>
-              )}
-              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Where clicks send people</CardTitle>
-              <CardDescription>Destination routes from side-nav & inline links</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {(data?.topDestinations ?? []).map((d) => (
-                <div key={d.href} className="space-y-1">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-mono text-xs">{d.href}</span>
-                    <span className="text-muted-foreground tabular-nums">{d.count.toLocaleString()}</span>
-                  </div>
-                  <Progress value={(d.count / maxDest) * 100} className="h-1.5" />
-                </div>
-              ))}
-              {data && (data.topDestinations ?? []).length === 0 && (
-                <div className="text-sm text-muted-foreground">No internal destinations yet.</div>
-              )}
-              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tabs, filters & table headers</CardTitle>
-            <CardDescription>
-              Which sub-views inside a page people actually reach for — grouped by page
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(data?.tabClicks ?? []).map((t) => (
-              <div key={`${t.path}::${t.label}`} className="space-y-1">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate">
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{t.path}</span>
-                    <span>{t.label}</span>
-                  </span>
-                  <span className="text-muted-foreground tabular-nums">{t.count.toLocaleString()}</span>
-                </div>
-                <Progress value={(t.count / maxTab) * 100} className="h-1.5" />
-              </div>
-            ))}
-            {data && (data.tabClicks ?? []).length === 0 && (
-              <div className="text-sm text-muted-foreground">No tab / header clicks captured.</div>
-            )}
-            {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-          </CardContent>
-        </Card>
-
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Base layer only</AlertTitle>
-          <AlertDescription>
-            Cognitive (meso) and Relational (macro) layers are temporarily hidden. They'll return
-            once their upstream pipelines — shared attention, working-group topic overlap,
-            cohesion markers — are wired in.
-          </AlertDescription>
-        </Alert>
       </section>
-
-      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
     </div>
   );
 }
