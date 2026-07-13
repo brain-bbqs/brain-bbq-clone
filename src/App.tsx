@@ -54,6 +54,7 @@ import DataModel from "./pages/DataModel";
 import Constitution from "./pages/Constitution";
 import OntologyApproval from "./pages/OntologyApproval";
 import SocialForceField from "./pages/SocialForceField";
+import InternalCoordination from "./pages/InternalCoordination";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="/cross-species-synchronization" element={<CrossSpeciesSynchronization />} />
               <Route path="/grants/:grantNumber/methods-evidence" element={<GrantMethodsEvidence />} />
               <Route path="/admin" element={<AdminConsole />} />
+              <Route path="/internal/coordination" element={<InternalCoordination />} />
               <Route path="/admin/harvester" element={<Navigate to="/resources/devices" replace />} />
               <Route path="/admin/kg-heatmap" element={<Navigate to="/resources/devices" replace />} />
               <Route path="/admin/kg-live" element={<Navigate to="/resources/devices" replace />} />
