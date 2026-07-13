@@ -540,10 +540,80 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
       liwc,
       attention_clicks: Math.floor(seed(i + 13) * 400),
       attention_top_path: paths[Math.floor(seed(i + 23) * paths.length)],
+      mechanism: seed(i + 41) < 0.55 ? "R34" : seed(i + 41) < 0.9 ? "R61" : null,
     };
   });
   const trend: TrendRow[] = [];
   return { rows, trend };
+}
+
+// Bar chart: mean psych dimensions per grant-mechanism cohort.
+function MechanismBarChart({
+  dims,
+  groups,
+}: {
+  dims: { key: string; label: string; scale: number }[];
+  groups: { name: string; n: number; values: { key: string; label: string; value: number }[] }[];
+}) {
+  const colorFor = (name: string) =>
+    name === "R34" ? "hsl(199 89% 55%)"
+    : name === "R61" ? "hsl(38 90% 55%)"
+    : "hsl(280 70% 60%)";
+  // Compute a per-dimension symmetric range so bars are comparable within a dim.
+  const ranges = dims.map((d) => {
+    const vals = groups.map((g) => g.values.find((v) => v.key === d.key)?.value ?? 0);
+    const min = Math.min(0, ...vals);
+    const max = Math.max(0, ...vals);
+    const span = Math.max(1e-6, max - min);
+    return { min, max, span };
+  });
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 text-xs">
+        {groups.map((g) => (
+          <div key={g.name} className="inline-flex items-center gap-2">
+            <span className="h-2 w-3 rounded-sm" style={{ background: colorFor(g.name) }} />
+            <span className="font-medium">{g.name === "Other" ? "Unlabeled" : g.name}</span>
+            <span className="text-muted-foreground">· {g.n} people</span>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {dims.map((d, di) => {
+          const { min, span } = ranges[di];
+          return (
+            <div key={d.key} className="space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{d.label}</span>
+                <span className="tabular-nums">
+                  {groups.map((g) => {
+                    const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                    return (
+                      <span key={g.name} className="ml-3">
+                        <span className="text-foreground">{g.name === "Other" ? "—" : g.name}</span>{" "}
+                        {v.toFixed(2)}
+                      </span>
+                    );
+                  })}
+                </span>
+              </div>
+              <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${groups.length}, 1fr)` }}>
+                {groups.map((g) => {
+                  const v = g.values.find((v) => v.key === d.key)?.value ?? 0;
+                  const w = ((v - min) / span) * 100;
+                  return (
+                    <div key={g.name} className="h-3 rounded-sm bg-muted/50 overflow-hidden" title={`${g.name}: ${v.toFixed(3)}`}>
+                      <div className="h-full" style={{ width: `${Math.max(2, w)}%`, background: colorFor(g.name) }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // Small legend explaining what each LIWC-derived column means.
