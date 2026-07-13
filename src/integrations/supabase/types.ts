@@ -2655,6 +2655,37 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
+      ir_consortium_trend: {
+        Args: never
+        Returns: {
+          mean_adhesion: number
+          mean_personality: number
+          mean_science: number
+          n: number
+          snapshot_date: string
+        }[]
+      }
+      ir_drain_queue: {
+        Args: { _limit?: number }
+        Returns: {
+          investigator_id: string
+        }[]
+      }
+      ir_list_profiles: {
+        Args: never
+        Returns: {
+          adhesion: number
+          full_name: string
+          investigator_id: string
+          last_computed_at: string
+          liwc: Json
+          personality_score: number
+          science_score: number
+          token_count: number
+        }[]
+      }
+      ir_snapshot_now: { Args: never; Returns: number }
+      ir_upsert_profiles: { Args: { _rows: Json }; Returns: number }
       is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       revert_curation_change: { Args: { _audit_id: string }; Returns: Json }
       search_knowledge_embeddings: {
