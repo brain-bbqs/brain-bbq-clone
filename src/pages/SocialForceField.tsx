@@ -421,7 +421,7 @@ export default function SocialForceField() {
         </Alert>
       </section>
 
-      {isAdmin && <CoordinationInstrumentation />}
+      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
     </div>
   );
 }
