@@ -19,6 +19,8 @@ interface ProfileRow {
   token_count: number;
   last_computed_at: string;
   liwc: Record<string, number>;
+  attention_clicks?: number;
+  attention_top_path?: string | null;
 }
 
 interface TrendRow {
@@ -61,11 +63,53 @@ export function CoordinationInstrumentation() {
 
   async function reload() {
     setLoading(true);
-    const [{ data: profiles }, { data: t }] = await Promise.all([
+    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }] = await Promise.all([
       supabase.rpc("ir_list_profiles"),
       supabase.rpc("ir_consortium_trend"),
+      supabase.from("investigators").select("id, name, user_id").order("name"),
+      supabase.from("analytics_clicks").select("user_id, path").not("user_id", "is", null).limit(10000),
     ]);
-    setRows((profiles ?? []) as ProfileRow[]);
+
+    // Build attention (click count + top path) per user_id
+    const attentionByUser = new Map<string, { count: number; paths: Map<string, number> }>();
+    for (const c of (clicks ?? []) as { user_id: string | null; path: string | null }[]) {
+      if (!c.user_id) continue;
+      const rec = attentionByUser.get(c.user_id) ?? { count: 0, paths: new Map() };
+      rec.count += 1;
+      if (c.path) rec.paths.set(c.path, (rec.paths.get(c.path) ?? 0) + 1);
+      attentionByUser.set(c.user_id, rec);
+    }
+    const topPathFor = (uid: string | null) => {
+      if (!uid) return { count: 0, path: null as string | null };
+      const rec = attentionByUser.get(uid);
+      if (!rec) return { count: 0, path: null };
+      let top: string | null = null; let max = 0;
+      rec.paths.forEach((v, k) => { if (v > max) { max = v; top = k; } });
+      return { count: rec.count, path: top };
+    };
+
+    // Merge: every investigator gets a row, whether or not a profile exists.
+    const profileById = new Map<string, ProfileRow>();
+    for (const p of ((profiles ?? []) as ProfileRow[])) profileById.set(p.investigator_id, p);
+    const merged: ProfileRow[] = ((invList ?? []) as { id: string; name: string; user_id: string | null }[])
+      .map((inv) => {
+        const p = profileById.get(inv.id);
+        const att = topPathFor(inv.user_id);
+        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path };
+        return {
+          investigator_id: inv.id,
+          full_name: inv.name || "(unknown)",
+          personality_score: null,
+          science_score: null,
+          adhesion: null,
+          token_count: 0,
+          last_computed_at: new Date(0).toISOString(),
+          liwc: {},
+          attention_clicks: att.count,
+          attention_top_path: att.path,
+        };
+      });
+    setRows(merged);
     setTrend((t ?? []) as TrendRow[]);
     setLoading(false);
   }
@@ -140,6 +184,13 @@ export function CoordinationInstrumentation() {
     return [
       { headerName: "Person", field: "full_name", pinned: "left", minWidth: 180, flex: 1 },
       { headerName: "Tokens", field: "token_count", width: 100, type: "numericColumn", cellClass: "tabular-nums text-right" },
+      { headerName: "Attention (clicks)", field: "attention_clicks", width: 150, type: "numericColumn",
+        headerTooltip: "Total tracked clicks by this person across the platform", cellClass: "tabular-nums text-right",
+        valueFormatter: (p: any) => (p.value == null ? "—" : Number(p.value).toLocaleString()) },
+      { headerName: "Top page", field: "attention_top_path", width: 200,
+        headerTooltip: "Page where this person clicks most — proxy for where their attention lives",
+        cellClass: "font-mono text-xs",
+        valueFormatter: (p: any) => p.value ?? "—" },
       { headerName: "Tone (pos−neg)", field: "tone", width: 140, valueFormatter: numFmt,
         headerTooltip: "Positive minus negative emotion word share", cellClass: "tabular-nums text-right" },
       { headerName: "Emotion", field: "emotion", width: 110, valueFormatter: pctFmt,
