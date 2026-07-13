@@ -94,39 +94,57 @@ async function requireAdmin(req: Request, url: string, anon: string): Promise<bo
 async function loadCorpus(admin: ReturnType<typeof createClient>, investigatorIds: string[] | null): Promise<CorpusRow[]> {
   const rows: CorpusRow[] = [];
 
-  // grants → investigators via grant_investigators
-  let gq = admin.from("grants").select("id, abstract, grant_investigators!inner(investigator_id)");
-  const { data: grants } = await gq;
+  // Load flat tables and join in memory — more robust than nested PostgREST embeds.
+  const [{ data: grants, error: gErr }, { data: gInv, error: giErr }, { data: pubs, error: pErr }, { data: projPubs, error: ppErr }, { data: projects, error: prErr }, { data: comments, error: cErr }, { data: suggestions, error: sErr }, { data: invs, error: iErr }] = await Promise.all([
+    admin.from("grants").select("id, abstract"),
+    admin.from("grant_investigators").select("grant_id, investigator_id"),
+    admin.from("publications").select("id, title"),
+    admin.from("project_publications").select("project_id, publication_id"),
+    admin.from("projects").select("id, grant_id"),
+    admin.from("entity_comments").select("user_id, content"),
+    admin.from("feature_suggestions").select("submitted_by, description"),
+    admin.from("investigators").select("id, user_id"),
+  ]);
+  for (const [name, err] of Object.entries({ grants: gErr, grant_investigators: giErr, publications: pErr, project_publications: ppErr, projects: prErr, comments: cErr, suggestions: sErr, investigators: iErr })) {
+    if (err) console.error(`corpus load ${name} error:`, err.message);
+  }
+
+  // grant_id -> [investigator_id]
+  const grantToInvs = new Map<string, string[]>();
+  for (const gi of (gInv ?? []) as any[]) {
+    const arr = grantToInvs.get(gi.grant_id) ?? [];
+    arr.push(gi.investigator_id);
+    grantToInvs.set(gi.grant_id, arr);
+  }
+
+  // grants -> abstract
   for (const g of (grants ?? []) as any[]) {
     if (!g.abstract) continue;
-    for (const gi of g.grant_investigators ?? []) {
-      if (investigatorIds && !investigatorIds.includes(gi.investigator_id)) continue;
-      rows.push({ investigator_id: gi.investigator_id, text: g.abstract, source: "grant" });
+    for (const invId of grantToInvs.get(g.id) ?? []) {
+      if (investigatorIds && !investigatorIds.includes(invId)) continue;
+      rows.push({ investigator_id: invId, text: g.abstract, source: "grant" });
     }
   }
 
-  // publications (title only — no abstract column)
-  const { data: pubs } = await admin
-    .from("publications")
-    .select("id, title, project_publications!inner(project_id, projects!inner(grant_id, grants!inner(id, grant_investigators!inner(investigator_id))))");
+  // publications -> title (via project_publications -> projects -> grant_id)
+  const projectToGrant = new Map<string, string>();
+  for (const p of (projects ?? []) as any[]) if (p.grant_id) projectToGrant.set(p.id, p.grant_id);
+  const pubToInvs = new Map<string, Set<string>>();
+  for (const pp of (projPubs ?? []) as any[]) {
+    const grantId = projectToGrant.get(pp.project_id);
+    if (!grantId) continue;
+    const invs2 = grantToInvs.get(grantId) ?? [];
+    if (!pubToInvs.has(pp.publication_id)) pubToInvs.set(pp.publication_id, new Set());
+    for (const inv of invs2) pubToInvs.get(pp.publication_id)!.add(inv);
+  }
   for (const p of (pubs ?? []) as any[]) {
     if (!p.title) continue;
-    const invSet = new Set<string>();
-    for (const pp of p.project_publications ?? []) {
-      const gs = pp.projects?.grants;
-      const list = Array.isArray(gs) ? gs : gs ? [gs] : [];
-      for (const g of list) for (const gi of g.grant_investigators ?? []) invSet.add(gi.investigator_id);
-    }
-    for (const invId of invSet) {
+    for (const invId of pubToInvs.get(p.id) ?? []) {
       if (investigatorIds && !investigatorIds.includes(invId)) continue;
       rows.push({ investigator_id: invId, text: p.title, source: "publication" });
     }
   }
 
-  // comments — join user_id → investigators
-  const { data: comments } = await admin.from("entity_comments").select("user_id, content");
-  const { data: suggestions } = await admin.from("feature_suggestions").select("submitted_by, description");
-  const { data: invs } = await admin.from("investigators").select("id, user_id");
   const userToInv = new Map<string, string>();
   for (const i of (invs ?? []) as any[]) if (i.user_id) userToInv.set(i.user_id, i.id);
   for (const c of (comments ?? []) as any[]) {
@@ -142,6 +160,7 @@ async function loadCorpus(admin: ReturnType<typeof createClient>, investigatorId
     rows.push({ investigator_id: invId, text: s.description, source: "suggestion" });
   }
 
+  console.log(`corpus rows: ${rows.length} across ${new Set(rows.map(r => r.investigator_id)).size} people`);
   return rows;
 }
 
@@ -244,7 +263,7 @@ Deno.serve(async (req) => {
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const isAdmin = await requireAdmin(req, url, anon);
-  if (!isAdmin) return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers });
+  if (!isAdmin) return new Response(JSON.stringify({ error: "admin_required" }), { status: 403, headers });
 
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
   const mode: Mode = body.mode ?? "backfill";
@@ -264,9 +283,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(r), { headers });
     }
     const r = await compute(admin, null);
+    // Also take a snapshot so trends populate over time.
+    try { await snapshot(admin); } catch (e) { console.warn("snapshot after compute failed:", (e as Error).message); }
     return new Response(JSON.stringify(r), { headers });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown";
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("worker error:", message);
     return new Response(JSON.stringify({ error: message }), { status: 500, headers });
   }
 });

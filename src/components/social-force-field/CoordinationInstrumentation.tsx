@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Lock } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ProfileRow {
@@ -29,11 +28,22 @@ export function CoordinationInstrumentation() {
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [trend, setTrend] = useState<TrendRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recomputing, setRecomputing] = useState(false);
+  const [computing, setComputing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const ranRef = useRef(false);
 
   useEffect(() => {
-    reload();
+    if (ranRef.current) return;
+    ranRef.current = true;
+    (async () => {
+      await reload();
+      // If we have no profiles yet, run a compute automatically so admins never see an empty pane.
+      const { data: existing } = await supabase.rpc("ir_list_profiles");
+      if (!existing || (existing as unknown[]).length === 0) {
+        await autoCompute();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function reload() {
@@ -47,17 +57,26 @@ export function CoordinationInstrumentation() {
     setLoading(false);
   }
 
-  async function recompute() {
-    setRecomputing(true);
-    const { error } = await supabase.functions.invoke("internal-research-worker", {
+  async function autoCompute() {
+    setComputing(true);
+    const { data, error } = await supabase.functions.invoke("internal-research-worker", {
       body: { mode: "backfill" },
     });
-    setRecomputing(false);
+    setComputing(false);
     if (error) {
-      toast({ title: "Recompute failed", description: error.message, variant: "destructive" });
+      // Read the real error body — supabase.functions.invoke masks non-2xx bodies otherwise.
+      let detail = error.message;
+      try {
+        const ctx: any = (error as any).context;
+        if (ctx?.text) detail = (await ctx.text()) || detail;
+      } catch { /* ignore */ }
+      toast({ title: "Coordination data unavailable", description: detail, variant: "destructive" });
       return;
     }
-    await supabase.rpc("ir_snapshot_now");
+    if ((data as any)?.error) {
+      toast({ title: "Coordination data unavailable", description: (data as any).error, variant: "destructive" });
+      return;
+    }
     await reload();
   }
 
@@ -86,18 +105,17 @@ export function CoordinationInstrumentation() {
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold">Coordination instrumentation</h2>
                 <Badge variant="outline">Admin-only</Badge>
+                {computing && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> updating…
+                  </span>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">
                 Psycholinguistic profiles · mutual-vocabulary similarity · social adhesion
               </p>
             </div>
           </div>
-          <Button onClick={recompute} disabled={recomputing} size="sm">
-            {recomputing
-              ? <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              : <RefreshCw className="h-4 w-4 mr-1" />}
-            Recompute
-          </Button>
         </div>
         <p className="mt-3 text-sm text-muted-foreground max-w-3xl">
           Purpose is coordination, never evaluation. Numbers are z-scored against the current
@@ -108,7 +126,7 @@ export function CoordinationInstrumentation() {
 
       {avg && (
         <div className="grid gap-3 md:grid-cols-4">
-          <MiniCard label="Investigators" value={rows.length.toString()} />
+          <MiniCard label="People" value={rows.length.toString()} />
           <MiniCard label="Mean personality" value={avg.p.toFixed(2)} />
           <MiniCard label="Mean science" value={avg.s.toFixed(2)} />
           <MiniCard label="Mean adhesion" value={avg.a.toFixed(2)} />
@@ -129,29 +147,28 @@ export function CoordinationInstrumentation() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Per-investigator profiles</CardTitle>
+          <CardTitle className="text-base">Per-person profiles</CardTitle>
           <CardDescription>Click a row to see the top LIWC categories</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left">
               <tr>
-                <th className="p-2 font-medium">Investigator</th>
+                <th className="p-2 font-medium">Person</th>
                 <th className="p-2 font-medium text-right">Personality</th>
                 <th className="p-2 font-medium text-right">Science</th>
                 <th className="p-2 font-medium text-right">Adhesion</th>
-                <th className="p-2 font-medium text-right">Tokens</th>
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">
+              {(loading || computing) && rows.length === 0 && (
+                <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Loading…
                 </td></tr>
               )}
-              {!loading && rows.length === 0 && (
-                <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">
-                  No profiles yet. Click Recompute to build the first pass.
+              {!loading && !computing && rows.length === 0 && (
+                <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  No profiles yet — the corpus is empty or the worker failed. Check function logs.
                 </td></tr>
               )}
               {rows.map((r) => (
@@ -219,11 +236,10 @@ function FragmentRow({
         <td className="p-2 text-right tabular-nums">{num(row.personality_score)}</td>
         <td className="p-2 text-right tabular-nums">{num(row.science_score)}</td>
         <td className="p-2 text-right tabular-nums font-medium">{num(row.adhesion)}</td>
-        <td className="p-2 text-right tabular-nums text-muted-foreground">{row.token_count}</td>
       </tr>
       {expanded && (
         <tr className="border-t border-border bg-muted/20">
-          <td colSpan={5} className="p-3">
+          <td colSpan={4} className="p-3">
             <div className="text-xs text-muted-foreground mb-2">
               Top LIWC categories (share of tokens)
             </div>
