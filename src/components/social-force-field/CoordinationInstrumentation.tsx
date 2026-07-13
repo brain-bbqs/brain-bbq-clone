@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { isPreviewMode } from "@/lib/preview-mode";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfileRow {
   investigator_id: string;
@@ -27,10 +26,9 @@ interface TrendRow {
 }
 
 export function CoordinationInstrumentation() {
-  const { session } = useAuth();
-  // In preview without a real signed-in admin session, synthesize data so the panel
-  // is visible during development. Real deployments still require an admin JWT.
-  const useMock = isPreviewMode() && !session;
+  // In preview/dev builds, synthesize data so the panel is visible during development
+  // without needing a real admin JWT. Real deployments still require admin.
+  const useMock = isPreviewMode();
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [trend, setTrend] = useState<TrendRow[]>([]);
   const [loading, setLoading] = useState(true);
