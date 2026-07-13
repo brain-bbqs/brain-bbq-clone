@@ -65,6 +65,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Joseph Neimat", institution: "University of Louisville", role: "PI", domain: "D" },
       { name: "Karen Kate David", institution: "NIH BRAIN/NINDS", role: "NIH Program", domain: "NIH" },
       { name: "Meaghan Perdue", institution: "UMass Chan Medical School", role: "Infra (EMBER)", domain: "F" },
+      { name: "Jack Grinband", institution: "Columbia University", role: "PI", domain: "D" },
     ],
   },
   {
@@ -132,6 +133,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Nader Nikbakht", institution: "MIT", role: "Research Staff", domain: "F" },
       { name: "Ming Zhan", institution: "NIDA/NIH", role: "NIH Program (Bridge)", domain: "NIH" },
       { name: "Dorota Jarecka", institution: "MIT", role: "Infra (EMBER)", domain: "F" },
+      { name: "Timothy Brown", institution: "University of Washington School of Medicine", role: "Advisory Board" },
     ],
   },
   {
@@ -148,6 +150,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Jane Wang", institution: "Cornell University", role: "PI/Co-I", domain: "A" },
       { name: "Cody Baker", institution: "Dartmouth College", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Nima Dehghani", institution: "MIT", role: "Infra (BARD.CC)", domain: "F" },
+      { name: "Terry Jernigan", institution: "UC San Diego", role: "Consortium Coordinator (ABCD/HBCD) · Pereira collaborator", domain: "B" },
     ],
   },
   {
@@ -178,6 +181,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Tyler Albarran", institution: "Georgia Tech", role: "Postdoc/Grad" },
       { name: "Tristan Daniel", institution: "Georgia Tech", role: "Postdoc/Grad" },
       { name: "Varun Thvar", institution: "MIT", role: "Visiting Undergrad" },
+      { name: "Caleb Scott-Joseph", institution: "University of Pennsylvania", role: "Postdoc/Grad" },
     ],
   },
 ];
