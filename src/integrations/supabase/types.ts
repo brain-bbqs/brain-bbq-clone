@@ -2671,6 +2671,7 @@ export type Database = {
           investigator_id: string
         }[]
       }
+      ir_is_authorized: { Args: never; Returns: boolean }
       ir_list_profiles: {
         Args: never
         Returns: {
