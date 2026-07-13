@@ -1,87 +1,84 @@
-# Social Force Field — Visualization & Measurement Plan
+# Interactional Micro-Layer — Admin-Only Social Adhesion Instrumentation
 
-Goal: turn the three-layer framework (Interactional / Cognitive / Relational) into a real, measurable dashboard grounded in the literature, using signals already flowing through the BBQS platform. **Plan only — no implementation until approved.**
+Ethical frame (locked in, drives every design choice below):
 
----
-
-## 1. Framing (theory → layer → what we actually observe)
-
-| Layer | Scale | Construct | Observable in BBQS |
-|---|---|---|---|
-| **Interactional** | Micro | Shared language: lexical alignment, "conceptual pacts", novel device/neuromod vocabulary | `entity_comments`, `feature_suggestions`, `curation_audit_log` free text, assistant chat logs, **published abstracts (`publications`)**, **GitHub issue/PR text** (via existing connector) |
-| **Cognitive** | Meso | Shared attention & shared mental models | Co-viewing / co-commenting on `resources`, working-group topic overlap, ontology-decision agreement, `resource_links` density |
-| **Relational** | Macro | Group identity & social cohesion | Pronoun/function-word ratios, co-PI graph (`grant_investigators`), workshop retention, in-group vs. out-group linguistic style toward AI agents |
-
-Shared language sits at the bottom and propagates upward — new terms coined at the micro layer become the vocabulary of shared mental models (meso) and then anchor group identity (macro).
+- **Purpose is coordination, never evaluation.** Scores exist so admins can notice where the group is drifting apart and intervene — never to rank, fund, or judge any individual.
+- **No consortium member ever sees a score about themselves or anyone else.** Not in the UI, not in an export, not via the API.
+- **The existence of the research is itself confidential.** No page title, nav entry, tooltip, edge-function name, or public route hints that per-person psycholinguistic scoring is happening.
+- Any future paper or public write-up uses aggregate consortium-level trends only, never per-person rows.
 
 ---
 
-## 2. Parameters we can capture today (no new instrumentation)
+## 1. What we compute per investigator
 
-**Interactional** — corpus = internal text + published abstracts + GitHub issues/PRs:
-- Novel-term detection: extend the Ontology Approval candidate-term pipeline.
-- Pairwise lexical alignment: cosine similarity of author term vectors, rolling window.
-- Conceptual-pact detection: novel term reused by ≥3 authors within 14 days.
+From text they've already produced in BBQS (`grants.abstract`, `publications.abstract`, `entity_comments`, `feature_suggestions`; emails deferred to v2):
 
-**Cognitive:**
-- Co-attention graph from analytics + `entity_comments` on shared `resources`.
-- Working-group topic overlap (Jaccard on keyword sets from grants + publications).
-- Curation agreement rate (ontology + pending-change decisions).
+- **LIWC profile** — % of tokens per category (Linguistic, Psychological, Personal concerns, Spoken categories) from the four appendix pages. Also `words/sentence`, `avg_word_length`, `pct_words_>6_letters`, pronoun ratios.
+- **Personality Score** (scalar, z-scored vs. consortium): combination of prosocial / open / cognitively-complex categories (Social processes, Positive emotion, Insight, Cognitive processes, Inclusive, Words>6 letters) minus (Negations, Inhibition, Anger). Weights live in `interactional_config` so admins can retune without a deploy.
+- **Science Score** (scalar): pairwise cosine similarity of the investigator's TF-IDF science vector (grants + pubs only) against every other investigator's — reported as **mean similarity to the rest of the consortium**. No hub grant anchor; there is no "goal vector." This measures how vocabulary-connected each person is to the group as it currently is, which drifts as the group drifts.
+- **Social Adhesion** = 0.5 · Personality + 0.5 · Science, again z-scored. Watched as a trend, no target value.
 
-**Relational:**
-- Pronoun / function-word ratios (we/us/our vs. I/you/they) — Tausczik & Pennebaker signal.
-- Co-investigator network cohesion (clustering coefficient, bridging ties).
-- **AI-as-teammate delta**: live comparison of linguistic register when addressing human collaborators vs. the NeuroMCP / metadata / EMBER agents.
-- Workshop retention across MIT 2026 / SFN 2025 rosters.
+## 2. Storage — admin-only from the schema up
 
-**Deferred (flag, don't build):** Zoom transcripts, Slack/Discord, timestamped shared-doc edits.
+New tables under a **non-`public` schema** so PostgREST can't reach them even if someone forgets a policy:
 
----
-
-## 3. Metrics per layer (v1 target set)
-
-**Interactional** — novel-term birth rate · lexical alignment score · conceptual-pact count.
-**Cognitive** — co-attention density · WG topic overlap · curation agreement rate.
-**Relational** — inclusive-pronoun ratio · cross-lab collaboration index · AI-as-teammate register delta.
-
-Each metric gets: definition, source table(s), refresh trigger, stable ID for sparkline rendering.
-
----
-
-## 4. Visualization
-
-Replace the three flat cards with a stacked, animated three-layer field, bottom-up:
-
-```text
-┌─ Relational (Macro) ─── cohesion halo, pronoun ribbons ──┐
-├─ Cognitive (Meso) ── shared-attention constellation ─────┤
-└─ Interactional (Micro) ── lexical particles, new terms ──┘
+```
+CREATE SCHEMA IF NOT EXISTS internal_research;
 ```
 
-- **Hero:** ambient looping video that echoes real BBQS motifs — mouse / macaque / zebrafish / songbird silhouettes, Neuropixels / miniscope / 2P mesoscope shapes, brain-region contours — resolving into the three stacked layers. (Generated: `src/assets/social-force-field-hero.mp4.asset.json`.)
-- **Interactional diagram:** word-velocity cloud — novel terms glow on arrival, fade as they normalize.
-- **Cognitive diagram:** force-directed graph of entities co-attended within a window.
-- **Relational diagram:** chord diagram of cross-lab ties + pronoun-ratio gauge + AI-vs-human register delta.
+Tables in `internal_research`:
 
----
+- `interactional_profiles(investigator_id, liwc jsonb, personality_score, science_score, adhesion, token_count, last_computed_at)`
+- `interactional_snapshots(id, investigator_id, personality_score, science_score, adhesion, snapshot_date)`
+- `interactional_config(key, value jsonb)` — weights, source toggles.
+- `interactional_queue(investigator_id, enqueued_at)` — debounce buffer.
 
-## 5. Build order (for later approval)
+Access rules:
 
-1. Freeze metric definitions in `src/data/social-force-field.ts` (typed catalog, no live data yet).
-2. Drop the BBQS-motif hero video into the page header.
-3. Ship the three static-but-well-designed layer diagrams (reuse `SynergyNetwork`, `MarrChordDiagram`; add a word-velocity component).
-4. Wire **Interactional** first — reuses ontology candidate-term pipeline + `entity_comments` + publications + GitHub issue ingest.
-5. Wire **Cognitive** next — co-attention query on analytics + entity_comments.
-6. Wire **Relational** last — pronoun classifier edge function + co-PI graph + AI-vs-human register delta (live).
-7. Keep the page admin-only (already gated).
+- No `GRANT` to `anon` or `authenticated`. Only `service_role` and a dedicated admin role. Because the schema isn't in `db.schemas` for PostgREST, the tables are invisible to the JS client entirely — no RLS bypass surface to worry about.
+- RLS still enabled on every table with a single `USING (public.has_role(auth.uid(), 'admin'))` policy as belt-and-braces.
+- No foreign key from these tables into `public` tables (avoid leaking their existence through error messages on public queries). Use plain uuid columns and validate in the edge function.
 
----
+## 3. Compute path
 
-## 6. Decisions (locked in)
+- Edge function `internal-research-worker` (deliberately generic name, no mention of the feature) reads the queue, computes profiles, writes to `internal_research.*`. Uses `SUPABASE_SERVICE_ROLE_KEY`.
+- LIWC dictionary shipped as a JSON asset inside the edge function directory only — **not** exposed to the frontend bundle.
+- Triggered by: (a) DB triggers on the four corpus tables that enqueue an investigator id via a `SECURITY DEFINER` function; (b) an admin-only manual "recompute" button; (c) nightly cron to write snapshots.
+- No client ever calls this function. Invocation is admin-JWT-gated and additionally origin-checked.
 
-1. **Corpus scope (Interactional):** consortium-internal text + published abstracts + GitHub issue/PR text.
-2. **Hero visual:** ambient video that visually echoes real BBQS motifs (not abstract).
-3. **AI-as-teammate metric:** in-scope from v1, no ELSI hold.
-4. **Refresh cadence:** **live** — metrics recompute on write (short debounce), not nightly.
+## 4. UI — hidden by default
 
-Next step (awaiting go-ahead): turn §5 steps 1–3 into a concrete task list.
+- New route `/internal/coordination` (no sidebar entry, no breadcrumb, no link from anywhere). Access = `useUserTier().isAdmin` only; anything less returns `NotFound` (404, not 403 — 403 signals "there's something here you can't see").
+- `<PageMeta>` intentionally leaves `robots="noindex,nofollow"` and a neutral title ("Admin").
+- No mention on `/social-force-field`. The public Social Force Field page continues to show only the layer diagrams and aggregate consortium metrics already planned — never a per-person value.
+- Contents of `/internal/coordination`:
+  1. Consortium roll-up: mean adhesion trend, vocabulary-cohesion trend, count of active contributors. Aggregates only.
+  2. Investigator table (admins only): name, personality/science/adhesion, sparkline. Sortable. This is the operational surface.
+  3. Drilldown drawer: LIWC radar, top contributing terms, source breakdown. Also admin-only.
+- Every load of this page writes a row to `auth_audit_log` (`event='internal_research_view'`) so we know who looked and when.
+
+## 5. What consortium members can see
+
+Nothing new. The existing `/social-force-field` page keeps its current three-layer visualization with **only aggregate** numbers (consortium-level lexical alignment trend, novel-term birth rate, co-attention density). No per-person breakdown, no ranking table, no "your score."
+
+## 6. Build order
+
+1. Migration: `internal_research` schema + four tables + admin-only RLS + `SECURITY DEFINER` enqueue function. No GRANTs to `anon`/`authenticated`.
+2. LIWC dictionary JSON inside `supabase/functions/internal-research-worker/dict/`.
+3. Edge function `internal-research-worker` (compute + backfill mode).
+4. DB triggers on `grants`, `publications`, `entity_comments`, `feature_suggestions` calling the enqueue function.
+5. Route `/internal/coordination` gated behind `isAdmin`, with audit-log write on mount.
+6. Nightly snapshot cron.
+
+## 7. Explicit non-goals
+
+- No per-person surfacing to non-admins under any circumstance.
+- No email ingest yet — enable in v2 with the same admin-only gating and an explicit consent line in the consortium onboarding notice.
+- No LLM-written personality descriptions in v1 (avoids inadvertently generating harsh characterizations of real people). Rules-based summary only.
+- No export button. If an admin needs data, they run a query — friction is the point.
+
+## Open questions
+
+1. Should the audit log of who viewed `/internal/coordination` also be admin-only-visible, or visible to a smaller "oversight" subset (e.g., only the two named PIs of the coordination-core grant)? Recommend the latter for accountability — admins can see the data, but their access is watched by someone.
+2. When (if ever) do we tell consortium members this instrumentation exists? Recommend a one-line addition to the internal data-use notice before we ingest emails, not before v1 ships.
+3. OK to name the edge function `internal-research-worker` and the route `/internal/coordination`? Both are deliberately bland; happy to make them blander.
