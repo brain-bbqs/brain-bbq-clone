@@ -11,52 +11,76 @@ import { PageMeta } from "@/components/PageMeta";
 import { CoordinationInstrumentation } from "@/components/social-force-field/CoordinationInstrumentation";
 import { isPreviewMode } from "@/lib/preview-mode";
 
-// Isometric single-plane grid — the "base social layer".
-// Each cell = one page in the app; brightness = click intensity (14d).
+// 3D-looking isometric plane — the "base social layer".
+// Each cell = one page in the app; brightness/height = total click activity.
 function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: string[] }) {
-  const W = 560;
-  const H = 300;
+  const W = 620;
+  const H = 360;
   const cx = W / 2;
   const gridN = 6;
-  const cell = 28;
-  const iso = (x: number, y: number) => ({
+  const cell = 30;
+  const maxLift = 60; // pixel height a fully-hot cell rises
+  const iso = (x: number, y: number, z = 0) => ({
     x: cx + (x - y) * (cell * 0.9),
-    y: 150 + (x + y) * (cell * 0.45),
+    y: 170 + (x + y) * (cell * 0.45) - z,
   });
-  const lines: JSX.Element[] = [];
+
+  // ground grid
+  const grid: JSX.Element[] = [];
   for (let i = 0; i <= gridN; i++) {
     const a = iso(i, 0), b = iso(i, gridN), c = iso(0, i), d = iso(gridN, i);
-    lines.push(
-      <line key={`v${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
-      <line key={`h${i}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className="stroke-violet-500" strokeWidth={0.75} opacity={0.55} />,
+    grid.push(
+      <line key={`gv${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-violet-500/40" strokeWidth={0.75} />,
+      <line key={`gh${i}`} x1={c.x} y1={c.y} x2={d.x} y2={d.y} className="stroke-violet-500/40" strokeWidth={0.75} />,
     );
   }
-  const cells: JSX.Element[] = [];
+
+  // sort back-to-front so nearer bars overpaint farther ones
+  const order: { gx: number; gy: number; v: number }[] = [];
   for (let gy = 0; gy < gridN; gy++) {
     for (let gx = 0; gx < gridN; gx++) {
-      const idx = gy * gridN + gx;
-      const v = heatmap[idx] ?? 0;
-      if (v <= 0) continue;
-      const p1 = iso(gx, gy), p2 = iso(gx + 1, gy), p3 = iso(gx + 1, gy + 1), p4 = iso(gx, gy + 1);
-      cells.push(
-        <polygon
-          key={`c-${idx}`}
-          points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
-          className="fill-violet-500 stroke-violet-400"
-          fillOpacity={0.15 + v * 0.75}
-          strokeOpacity={0.5}
-        >
-          <title>{labels[idx] ?? ""}</title>
-        </polygon>,
-      );
+      order.push({ gx, gy, v: heatmap[gy * gridN + gx] ?? 0 });
     }
   }
+  order.sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
+
+  const bars: JSX.Element[] = order.map(({ gx, gy, v }) => {
+    if (v <= 0) return <g key={`b-${gx}-${gy}`} />;
+    const h = Math.max(4, v * maxLift);
+    // bottom face corners
+    const b1 = iso(gx, gy), b2 = iso(gx + 1, gy), b3 = iso(gx + 1, gy + 1), b4 = iso(gx, gy + 1);
+    // top face corners (lifted by h)
+    const t1 = iso(gx, gy, h), t2 = iso(gx + 1, gy, h), t3 = iso(gx + 1, gy + 1, h), t4 = iso(gx, gy + 1, h);
+    const intensity = 0.35 + Math.min(1, v) * 0.55;
+    return (
+      <g key={`b-${gx}-${gy}`}>
+        <title>{labels[gy * gridN + gx] ?? ""}</title>
+        {/* right face (darker) */}
+        <polygon points={`${b2.x},${b2.y} ${b3.x},${b3.y} ${t3.x},${t3.y} ${t2.x},${t2.y}`}
+          fill="hsl(258 80% 45%)" fillOpacity={intensity * 0.6} stroke="hsl(258 90% 70%)" strokeOpacity={0.35} strokeWidth={0.5} />
+        {/* left face (mid) */}
+        <polygon points={`${b3.x},${b3.y} ${b4.x},${b4.y} ${t4.x},${t4.y} ${t3.x},${t3.y}`}
+          fill="hsl(262 80% 55%)" fillOpacity={intensity * 0.75} stroke="hsl(258 90% 70%)" strokeOpacity={0.35} strokeWidth={0.5} />
+        {/* top face (brightest) */}
+        <polygon points={`${t1.x},${t1.y} ${t2.x},${t2.y} ${t3.x},${t3.y} ${t4.x},${t4.y}`}
+          fill="hsl(268 95% 68%)" fillOpacity={0.45 + intensity * 0.5} stroke="hsl(272 95% 82%)" strokeOpacity={0.7} strokeWidth={0.75} />
+      </g>
+    );
+  });
+
   return (
     <div className="rounded-xl border bg-card/40 p-6">
       <div className="grid gap-6 md:grid-cols-[1fr_minmax(0,240px)] items-center">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto text-muted-foreground" aria-hidden="true">
-          {lines}
-          {cells}
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" aria-hidden="true">
+          <defs>
+            <radialGradient id="baseGlow" cx="50%" cy="55%" r="55%">
+              <stop offset="0%" stopColor="hsl(268 90% 60% / 0.35)" />
+              <stop offset="100%" stopColor="transparent" />
+            </radialGradient>
+          </defs>
+          <rect x="0" y="0" width={W} height={H} fill="url(#baseGlow)" />
+          {grid}
+          {bars}
         </svg>
         <div className="text-sm space-y-2">
           <div className="flex items-center gap-2">
@@ -65,8 +89,8 @@ function BaseLayerDiagram({ heatmap, labels }: { heatmap: number[]; labels: stri
           </div>
           <p className="text-xs text-muted-foreground font-mono">I = Σ clicks(page_i) all-time</p>
           <p className="text-xs text-muted-foreground">
-            The base social layer. Each cell is one page in the app; brightness reflects total
-            click activity since tracking began. Hover a cell to see the page.
+            The base social layer. Each cell is one page in the app; bar height and brightness
+            reflect total click activity since tracking began. Hover a bar to see the page.
           </p>
         </div>
       </div>
@@ -217,10 +241,6 @@ export default function SocialForceField() {
 
   const maxTopPageViews = useMemo(() => Math.max(1, ...(data?.topPages.map((p) => p.views) ?? [1])), [data]);
   const maxTopClick = useMemo(() => Math.max(1, ...(data?.topClickTargets.map((t) => t.count) ?? [1])), [data]);
-  const maxProject = useMemo(() => Math.max(1, ...((data?.projectClicks ?? []).map((p) => p.count))), [data]);
-  const maxDest = useMemo(() => Math.max(1, ...((data?.topDestinations ?? []).map((d) => d.count))), [data]);
-  const maxTab = useMemo(() => Math.max(1, ...((data?.tabClicks ?? []).map((t) => t.count))), [data]);
-  const totalTagged = useMemo(() => (data?.tagBreakdown ?? []).reduce((a, b) => a + b.count, 0), [data]);
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading…</div>;
 
@@ -275,6 +295,8 @@ export default function SocialForceField() {
           labels={data?.heatmapLabels ?? new Array(36).fill("")}
         />
       </header>
+
+      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
 
       {/* Layer header */}
       <section className="space-y-4">
@@ -381,131 +403,7 @@ export default function SocialForceField() {
           </Card>
         </div>
 
-        {/* Interaction shape */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Interaction shape</CardTitle>
-            <CardDescription>Where the clicks go — link vs. button vs. other</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data && totalTagged > 0 ? (
-              <div className="space-y-3">
-                <div className="flex h-3 w-full overflow-hidden rounded-full border">
-                  {data.tagBreakdown.map((t, i) => {
-                    const w = (t.count / totalTagged) * 100;
-                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
-                    return <div key={t.tag} className={colors[i % colors.length]} style={{ width: `${w}%` }} title={`${t.tag}: ${t.count}`} />;
-                  })}
-                </div>
-                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                  {data.tagBreakdown.map((t, i) => {
-                    const colors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-emerald-500"];
-                    const pctVal = Math.round((t.count / totalTagged) * 100);
-                    return (
-                      <div key={t.tag} className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-sm ${colors[i % colors.length]}`} />
-                        <span className="font-mono">&lt;{t.tag}&gt;</span>
-                        <span className="tabular-nums">{t.count.toLocaleString()} · {pctVal}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Which projects are people opening */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Which projects are people opening?</CardTitle>
-              <CardDescription>Grant profiles by clicks + landings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {(data?.projectClicks ?? []).map((p) => (
-                <div key={p.grant_number} className="space-y-1">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">
-                      <span className="font-mono text-xs text-muted-foreground mr-2">{p.grant_number}</span>
-                      <span>{p.title ?? "(untitled)"}</span>
-                    </span>
-                    <span className="text-muted-foreground tabular-nums">{p.count.toLocaleString()}</span>
-                  </div>
-                  <Progress value={(p.count / maxProject) * 100} className="h-1.5" />
-                </div>
-              ))}
-              {data && (data.projectClicks ?? []).length === 0 && (
-                <div className="text-sm text-muted-foreground">No project opens yet.</div>
-              )}
-              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Where clicks send people</CardTitle>
-              <CardDescription>Destination routes from side-nav & inline links</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {(data?.topDestinations ?? []).map((d) => (
-                <div key={d.href} className="space-y-1">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-mono text-xs">{d.href}</span>
-                    <span className="text-muted-foreground tabular-nums">{d.count.toLocaleString()}</span>
-                  </div>
-                  <Progress value={(d.count / maxDest) * 100} className="h-1.5" />
-                </div>
-              ))}
-              {data && (data.topDestinations ?? []).length === 0 && (
-                <div className="text-sm text-muted-foreground">No internal destinations yet.</div>
-              )}
-              {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tabs, filters & table headers</CardTitle>
-            <CardDescription>
-              Which sub-views inside a page people actually reach for — grouped by page
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(data?.tabClicks ?? []).map((t) => (
-              <div key={`${t.path}::${t.label}`} className="space-y-1">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate">
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{t.path}</span>
-                    <span>{t.label}</span>
-                  </span>
-                  <span className="text-muted-foreground tabular-nums">{t.count.toLocaleString()}</span>
-                </div>
-                <Progress value={(t.count / maxTab) * 100} className="h-1.5" />
-              </div>
-            ))}
-            {data && (data.tabClicks ?? []).length === 0 && (
-              <div className="text-sm text-muted-foreground">No tab / header clicks captured.</div>
-            )}
-            {!data && <div className="text-sm text-muted-foreground">Loading…</div>}
-          </CardContent>
-        </Card>
-
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Base layer only</AlertTitle>
-          <AlertDescription>
-            Cognitive (meso) and Relational (macro) layers are temporarily hidden. They'll return
-            once their upstream pipelines — shared attention, working-group topic overlap,
-            cohesion markers — are wired in.
-          </AlertDescription>
-        </Alert>
       </section>
-
-      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
     </div>
   );
 }

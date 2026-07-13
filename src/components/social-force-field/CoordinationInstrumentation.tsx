@@ -19,6 +19,8 @@ interface ProfileRow {
   token_count: number;
   last_computed_at: string;
   liwc: Record<string, number>;
+  attention_clicks?: number;
+  attention_top_path?: string | null;
 }
 
 interface TrendRow {
@@ -61,11 +63,53 @@ export function CoordinationInstrumentation() {
 
   async function reload() {
     setLoading(true);
-    const [{ data: profiles }, { data: t }] = await Promise.all([
+    const [{ data: profiles }, { data: t }, { data: invList }, { data: clicks }] = await Promise.all([
       supabase.rpc("ir_list_profiles"),
       supabase.rpc("ir_consortium_trend"),
+      supabase.from("investigators").select("id, name, user_id").order("name"),
+      supabase.from("analytics_clicks").select("user_id, path").not("user_id", "is", null).limit(10000),
     ]);
-    setRows((profiles ?? []) as ProfileRow[]);
+
+    // Build attention (click count + top path) per user_id
+    const attentionByUser = new Map<string, { count: number; paths: Map<string, number> }>();
+    for (const c of (clicks ?? []) as { user_id: string | null; path: string | null }[]) {
+      if (!c.user_id) continue;
+      const rec = attentionByUser.get(c.user_id) ?? { count: 0, paths: new Map() };
+      rec.count += 1;
+      if (c.path) rec.paths.set(c.path, (rec.paths.get(c.path) ?? 0) + 1);
+      attentionByUser.set(c.user_id, rec);
+    }
+    const topPathFor = (uid: string | null) => {
+      if (!uid) return { count: 0, path: null as string | null };
+      const rec = attentionByUser.get(uid);
+      if (!rec) return { count: 0, path: null };
+      let top: string | null = null; let max = 0;
+      rec.paths.forEach((v, k) => { if (v > max) { max = v; top = k; } });
+      return { count: rec.count, path: top };
+    };
+
+    // Merge: every investigator gets a row, whether or not a profile exists.
+    const profileById = new Map<string, ProfileRow>();
+    for (const p of ((profiles ?? []) as ProfileRow[])) profileById.set(p.investigator_id, p);
+    const merged: ProfileRow[] = ((invList ?? []) as { id: string; name: string; user_id: string | null }[])
+      .map((inv) => {
+        const p = profileById.get(inv.id);
+        const att = topPathFor(inv.user_id);
+        if (p) return { ...p, full_name: p.full_name || inv.name || "(unknown)", attention_clicks: att.count, attention_top_path: att.path };
+        return {
+          investigator_id: inv.id,
+          full_name: inv.name || "(unknown)",
+          personality_score: null,
+          science_score: null,
+          adhesion: null,
+          token_count: 0,
+          last_computed_at: new Date(0).toISOString(),
+          liwc: {},
+          attention_clicks: att.count,
+          attention_top_path: att.path,
+        };
+      });
+    setRows(merged);
     setTrend((t ?? []) as TrendRow[]);
     setLoading(false);
   }
@@ -140,6 +184,13 @@ export function CoordinationInstrumentation() {
     return [
       { headerName: "Person", field: "full_name", pinned: "left", minWidth: 180, flex: 1 },
       { headerName: "Tokens", field: "token_count", width: 100, type: "numericColumn", cellClass: "tabular-nums text-right" },
+      { headerName: "Attention (clicks)", field: "attention_clicks", width: 150, type: "numericColumn",
+        headerTooltip: "Total tracked clicks by this person across the platform", cellClass: "tabular-nums text-right",
+        valueFormatter: (p: any) => (p.value == null ? "—" : Number(p.value).toLocaleString()) },
+      { headerName: "Top page", field: "attention_top_path", width: 200,
+        headerTooltip: "Page where this person clicks most — proxy for where their attention lives",
+        cellClass: "font-mono text-xs",
+        valueFormatter: (p: any) => p.value ?? "—" },
       { headerName: "Tone (pos−neg)", field: "tone", width: 140, valueFormatter: numFmt,
         headerTooltip: "Positive minus negative emotion word share", cellClass: "tabular-nums text-right" },
       { headerName: "Emotion", field: "emotion", width: 110, valueFormatter: pctFmt,
@@ -208,11 +259,14 @@ export function CoordinationInstrumentation() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Per-person profiles</CardTitle>
           <CardDescription>
-            Word-choice dimensions per person. Click a row to see their top LIWC categories.
+            Word-choice dimensions per person. Attention columns come from tracked clicks —
+            proxy for where each person's focus lives on the platform. Click a row to see their
+            top LIWC categories.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="ag-theme-alpine" style={{ width: "100%", height: 460 }}>
+          <LiwcLegend />
+          <div className="ag-theme-alpine mt-3" style={{ width: "100%", height: 560 }}>
             <AgGridReact
               rowData={enriched}
               columnDefs={columnDefs}
@@ -224,7 +278,7 @@ export function CoordinationInstrumentation() {
               overlayNoRowsTemplate={
                 loading || computing
                   ? '<span style="color:hsl(var(--muted-foreground))">Loading…</span>'
-                  : '<span style="color:hsl(var(--muted-foreground))">No profiles yet — corpus empty or worker failed.</span>'
+                  : '<span style="color:hsl(var(--muted-foreground))">No people yet.</span>'
               }
             />
           </div>
@@ -367,11 +421,20 @@ function CorrelationHeatmap({
 }
 
 function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
-  const names = [
+  const seedNames = [
     "Ada Okafor", "Rahul Menon", "Sofía Álvarez", "Wen Zhang", "Priya Iyer",
     "Jonas Berg", "Amara Diallo", "Kenji Watanabe", "Lena Novak", "Mateo Rossi",
     "Yasmin Haddad", "Noah Fischer",
   ];
+  const firsts = ["Ada","Rahul","Sofía","Wen","Priya","Jonas","Amara","Kenji","Lena","Mateo","Yasmin","Noah","Ines","Omar","Ravi","Chen","Aiko","Sven","Zara","Diego","Hana","Luca","Nadia","Farid","Elif","Petra","Tomas","Iris","Mira","Kai","Bo","Jia","Nia","Alex","Sam","Rin","Ola","Anya","Kofi","Sena","Ida","Bianca","Cai","Dev","Eli","Fatima","Gia","Hugo","Ivy","Jae"];
+  const lasts = ["Okafor","Menon","Álvarez","Zhang","Iyer","Berg","Diallo","Watanabe","Novak","Rossi","Haddad","Fischer","Silva","Kimura","Park","Nguyen","Kaur","Ahmed","Costa","Hansen","Lopez","Petrov","Duarte","Baxter","Feld","Guerra","Holm","Ishii","Jankovic","Kato","Lima","Meyer","Nair","Osei","Pettersen","Quintero","Ricci","Sato","Traore","Umar","Vega","Wong","Xu","Yamada","Zorin"];
+  const seed = (n: number) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+  const N = 180;
+  const names: string[] = [];
+  for (let i = 0; i < N; i++) {
+    if (i < seedNames.length) names.push(seedNames[i]);
+    else names.push(`${firsts[Math.floor(seed(i * 3 + 11) * firsts.length)]} ${lasts[Math.floor(seed(i * 7 + 19) * lasts.length)]}`);
+  }
   // Real LIWC-dict keys so derived psychology fields populate in preview.
   const liwcCats = [
     "posemo", "negemo", "anxiety", "anger", "sadness",
@@ -380,16 +443,13 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
     "first_person_singular", "first_person_plural", "second_person",
     "work", "achievement",
   ];
-  const seed = (n: number) => {
-    const x = Math.sin(n * 9301 + 49297) * 233280;
-    return x - Math.floor(x);
-  };
   const rows: ProfileRow[] = names.map((full_name, i) => {
     const liwc: Record<string, number> = {};
     liwcCats.forEach((c, j) => {
       liwc[c] = 0.005 + seed(i * 31 + j) * 0.06;
     });
     liwc.long_words = 0.15 + seed(i + 91) * 0.2;
+    const paths = ["/projects", "/investigators", "/mit-workshop-2026", "/publications", "/resources", "/species", "/working-groups", "/", "/metadata-assistant"];
     return {
       investigator_id: `mock-${i}`,
       full_name,
@@ -399,8 +459,41 @@ function buildMockData(): { rows: ProfileRow[]; trend: TrendRow[] } {
       token_count: 1200 + Math.floor(seed(i + 7) * 4000),
       last_computed_at: new Date().toISOString(),
       liwc,
+      attention_clicks: Math.floor(seed(i + 13) * 400),
+      attention_top_path: paths[Math.floor(seed(i + 23) * paths.length)],
     };
   });
   const trend: TrendRow[] = [];
   return { rows, trend };
+}
+
+// Small legend explaining what each LIWC-derived column means.
+function LiwcLegend() {
+  const items: { label: string; desc: string }[] = [
+    { label: "Tone", desc: "positive − negative emotion words" },
+    { label: "Emotion", desc: "total share of affect words" },
+    { label: "Analytic", desc: "insight + causation + cognitive framing" },
+    { label: "Certainty", desc: "certain vs tentative language" },
+    { label: "Self focus", desc: "first-person singular (I, me, my)" },
+    { label: "Group focus", desc: "first-person plural (we, us, our)" },
+    { label: "Social", desc: "people, family, colleagues, friends" },
+    { label: "Long words", desc: "share of tokens > 6 letters — verbal complexity" },
+    { label: "Attention", desc: "tracked clicks by this person on the platform" },
+    { label: "Top page", desc: "route where their clicks concentrate" },
+  ];
+  return (
+    <details className="rounded-md border bg-muted/20 px-3 py-2 text-xs">
+      <summary className="cursor-pointer select-none text-muted-foreground">
+        What these columns mean — LIWC-derived dimensions & attention signal
+      </summary>
+      <dl className="mt-2 grid gap-x-4 gap-y-1 md:grid-cols-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex gap-2">
+            <dt className="font-medium text-foreground min-w-[92px]">{it.label}</dt>
+            <dd className="text-muted-foreground">{it.desc}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
 }
