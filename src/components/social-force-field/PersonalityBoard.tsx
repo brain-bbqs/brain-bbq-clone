@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Lock } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Loader2, Lock } from "lucide-react";
 
 type PersonRow = {
   investigator_id: string;
@@ -34,8 +32,8 @@ const HX_LABELS: Record<string, { label: string; hue: number }> = {
 export function PersonalityBoard() {
   const [rows, setRows] = useState<PersonRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recomputing, setRecomputing] = useState(false);
   const [model, setModel] = useState<"bigfive" | "hexaco">("hexaco");
+  const autoRan = useRef(false);
 
   useEffect(() => { void reload(); }, []);
 
@@ -49,26 +47,21 @@ export function PersonalityBoard() {
     let nameMap = new Map<string, string>();
     if (ids.length) {
       const { data: invs } = await supabase
-        .from("investigators").select("id, full_name").in("id", ids);
-      nameMap = new Map((invs ?? []).map((i: any) => [i.id, i.full_name]));
+        .from("investigators").select("id, name").in("id", ids);
+      nameMap = new Map((invs ?? []).map((i: any) => [i.id, i.name]));
     }
     setRows((scores ?? []).map((s: any) => ({
       ...s,
       full_name: nameMap.get(s.investigator_id) ?? "—",
     })));
     setLoading(false);
-  }
 
-  async function recompute() {
-    setRecomputing(true);
-    const { error } = await supabase.functions.invoke("personality-score-worker", { body: {} });
-    setRecomputing(false);
-    if (error) {
-      toast({ title: "Recompute failed", description: error.message, variant: "destructive" });
-      return;
+    // Auto-run scoring in the background if the table is empty. Silent.
+    if ((scores ?? []).length === 0 && !autoRan.current) {
+      autoRan.current = true;
+      void supabase.functions.invoke("personality-score-worker", { body: {} })
+        .then(({ error }) => { if (!error) void reload(); });
     }
-    toast({ title: "Personality scores updated" });
-    await reload();
   }
 
   const labels = model === "bigfive" ? BF_LABELS : HX_LABELS;
@@ -99,10 +92,6 @@ export function PersonalityBoard() {
               className={`px-2 py-1 ${model === "bigfive" ? "bg-primary text-primary-foreground" : "bg-background"}`}
             >Big Five</button>
           </div>
-          <Button onClick={recompute} disabled={recomputing} size="sm" variant="outline">
-            {recomputing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-            Recompute
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -125,7 +114,8 @@ export function PersonalityBoard() {
           </div>
         ) : rows.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground text-sm">
-            No personality scores yet. Click Recompute to score all investigators from their grant text.
+            <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+            First-time scoring in progress — reading grant &amp; publication text for all investigators…
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
