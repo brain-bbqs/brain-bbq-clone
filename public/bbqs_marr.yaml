@@ -360,14 +360,14 @@ projects:
         citations: 13
         rcr: 6.436206914013057
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/40043703/"
-    target_species_domain: "Rattus norvegicus (Norway rat)"
+    target_species_domain: "Rattus norvegicus; Mus musculus (Norway rat; house mouse)"
     marr_l1_ethological_goal: "Precise physical execution of social behaviors and deep phenotyping."
     marr_l2_algorithmic_function: "3D keypoint extraction and non-linear spatial transformations."
     marr_l3_implementational_hardware: "Multi-camera 3D arrays."
     data_analysis_approach: "Utilizing advanced computer vision to extract deep 3D phenotypic markers during social interactions, transforming raw pixel data into continuous kinematic latents."
     cross_project_synergy: "Can serve as a foundational validation dataset for EMBER's (R24MH136632) behavioral ontologies (NBO)."
     agentic_action_required: "None. Species and institution identified."
-    species: ["Rattus norvegicus"]
+    species: ["Rattus norvegicus", "Mus musculus"]
     experimental_approaches: ["Deep phenotyping", "Social interaction tracking"]
     data_modalities: ["Video / Optical"]
     data_type: ["Raw pixels", "Continuous 3D kinematic latents"]
@@ -664,14 +664,14 @@ projects:
         citations: 0
         rcr: 0
         pubmed_link: "https://pubmed.ncbi.nlm.nih.gov/41292955/"
-    target_species_domain: "Sapajus apella (brown capuchin)"
+    target_species_domain: "Cebus capucinus (white-faced capuchin)"
     marr_l1_ethological_goal: "Survival, foraging, and social navigation in unstructured, wild ecological environments."
     marr_l2_algorithmic_function: "Wild-environment computer vision; robust behavioral feature extraction from noisy backgrounds."
     marr_l3_implementational_hardware: "Unobtrusive environmental camera networks ('AI Forest'), edge-computing nodes."
     data_analysis_approach: "Deploying AI at the edge in wild environments to track complex behavioral traits, isolating social and environmental factors without the constraints of a laboratory setting."
     cross_project_synergy: "The ultimate test of 'Behavior-First' observation. Data pipelines here will stress-test the laboratory-derived algorithms of 1U01DA063534 for real-world robustness."
     agentic_action_required: "Map the edge-computing hardware architecture used to process computer vision data locally in the wild."
-    species: ["Sapajus apella"]
+    species: ["Cebus capucinus"]
     experimental_approaches: ["Wild ecological observation", "Unobtrusive monitoring"]
     data_modalities: ["Video / Optical", "Environmental / Meteorological"]
     data_type: ["Wild-environment video frames"]
@@ -1174,14 +1174,14 @@ projects:
     award_amount: 854818
     publication_count: 0
     publications: []
-    target_species_domain: "Mus musculus (house mouse)"
+    target_species_domain: "Meriones unguiculatus (Mongolian gerbil)"
     marr_l1_ethological_goal: "Auditory communication within family social units, vocal identity signaling, and social-acoustic interactions."
     marr_l2_algorithmic_function: "Computational analysis linking vocalization patterns to neural dynamics and behavioral states."
     marr_l3_implementational_hardware: "Multi-animal audio-visual recording systems for family groups."
     data_analysis_approach: "Studying auditory communication within cohesive family units, linking vocalizations to neural activity and social behavior in naturalistic settings."
     cross_project_synergy: "Complements 1U01DA063565 on mouse family behavior with a focus on auditory/vocal communication; relevant to cross-species vocalization studies."
     agentic_action_required: "None."
-    species: ["Mus musculus"]
+    species: ["Meriones unguiculatus"]
     experimental_approaches: ["Family group observation", "Vocalization recording", "Neural recording"]
     data_modalities: ["Audio", "Video / Optical", "Neural"]
     data_type: ["Vocalization recordings", "Neural activity", "Behavioral annotations"]
