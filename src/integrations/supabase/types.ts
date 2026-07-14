@@ -2462,6 +2462,35 @@ export type Database = {
         }
         Relationships: []
       }
+      investigator_cohorts: {
+        Row: {
+          cohort: string | null
+          investigator_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigator_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investigator_directory: {
         Row: {
           created_at: string | null
@@ -2696,6 +2725,14 @@ export type Database = {
         Returns: undefined
       }
       email_is_consortium_member: { Args: { _email: string }; Returns: boolean }
+      get_investigator_attention: {
+        Args: never
+        Returns: {
+          clicks: number
+          investigator_id: string
+          pageviews: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
