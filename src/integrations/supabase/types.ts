@@ -1457,7 +1457,6 @@ export type Database = {
       }
       investigators: {
         Row: {
-          birthday: string | null
           created_at: string
           email: string | null
           id: string
@@ -1477,10 +1476,8 @@ export type Database = {
           updated_at: string
           user_id: string | null
           working_groups: string[] | null
-          zodiac_sign: string | null
         }
         Insert: {
-          birthday?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1500,10 +1497,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           working_groups?: string[] | null
-          zodiac_sign?: string | null
         }
         Update: {
-          birthday?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1523,7 +1518,6 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           working_groups?: string[] | null
-          zodiac_sign?: string | null
         }
         Relationships: [
           {
@@ -2730,7 +2724,6 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
-      derive_zodiac: { Args: { _d: string }; Returns: string }
       email_is_consortium_member: { Args: { _email: string }; Returns: boolean }
       get_investigator_attention: {
         Args: never

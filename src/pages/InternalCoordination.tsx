@@ -3,8 +3,6 @@ import { PageMeta } from "@/components/PageMeta";
 import NotFound from "./NotFound";
 import { PersonalityBoard } from "@/components/social-force-field/PersonalityBoard";
 import { CohortHeatmap } from "@/components/social-force-field/CohortHeatmap";
-import { BirthdayAdmin } from "@/components/social-force-field/BirthdayAdmin";
-import { ZodiacDistribution } from "@/components/social-force-field/ZodiacDistribution";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,8 +50,6 @@ export default function InternalCoordination() {
       </div>
       <CohortHeatmap cohort="R61" model={model} />
       <CohortHeatmap cohort="R34" model={model} />
-      <ZodiacDistribution />
-      <BirthdayAdmin />
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-foreground mb-2">Individual profiles</h2>
         <PersonalityBoard />
