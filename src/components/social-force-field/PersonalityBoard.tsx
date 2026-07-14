@@ -47,8 +47,8 @@ export function PersonalityBoard() {
     let nameMap = new Map<string, string>();
     if (ids.length) {
       const { data: invs } = await supabase
-        .from("investigators").select("id, full_name").in("id", ids);
-      nameMap = new Map((invs ?? []).map((i: any) => [i.id, i.full_name]));
+        .from("investigators").select("id, name").in("id", ids);
+      nameMap = new Map((invs ?? []).map((i: any) => [i.id, i.name]));
     }
     setRows((scores ?? []).map((s: any) => ({
       ...s,
