@@ -7,10 +7,6 @@ const corsHeaders = {
 };
 
 const ADMIN_NOTIFY_EMAIL = "nader.nikbakht@gmail.com";
-// Where actionable access-request notifications go (a member trying to sign in who
-// isn't on the roster yet). Separate from the security-alarm address above so the
-// admin team sees "someone wants in — approve them" in one shared mailbox.
-const ACCESS_REQUEST_NOTIFY_EMAIL = "noreply@brain-bbqs.org";
 
 // Send an admin email via the auth-notify edge function. Best-effort; never throws.
 async function sendAdminEmail(to: string, subject: string, html: string) {
@@ -238,14 +234,16 @@ Deno.serve(async (req) => {
 
       if (!signInEmail) {
         // Not on the roster (yet). This is a would-be member to APPROVE, not a
-        // security failure — so we (1) record the attempt in the audit log, (2)
+        // security failure — so we (1) record the attempt in the audit log and (2)
         // AUTO-FILE a pending access_request so the attempt becomes an actionable,
-        // reviewable item even if the person never finishes the intake form, and
-        // (3) email the admin distribution list an actionable approval notice —
-        // ONCE per person. The intake form (to which we still redirect) folds its
-        // richer institution/role details into this SAME pending row via the shared
-        // upsert_access_request RPC, so there is no duplicate-request regression
-        // (the reason a bare auto-file was removed before) and no lost form data.
+        // reviewable item even if the person never finishes the intake form. The
+        // ADMIN NOTIFICATION is NOT sent from here: it fires from the AFTER INSERT
+        // trigger on access_requests (notify_new_access_request → notify-access-request
+        // fn), so it happens exactly once per new request regardless of path — this
+        // path, the RPC, or the intake form directly. The intake form (to which we
+        // still redirect) folds its richer institution/role details into this SAME
+        // pending row via the shared upsert_access_request RPC (an UPDATE, so it does
+        // NOT re-notify), so there is no duplicate-request regression and no lost data.
         const attemptedEmail = (userinfo.email || candidateEmails[0]).toLowerCase();
 
         await logAuthFailure(supabaseAdmin, {
@@ -259,48 +257,20 @@ Deno.serve(async (req) => {
           },
         });
 
-        // Auto-file / dedup-enrich the pending request. Degrades gracefully if the
-        // RPC migration hasn't been applied yet (KG migrations aren't db-pushed).
-        let requestCreated = false;
+        // Auto-file / dedup-enrich the pending request (INSERT here fires the notify
+        // trigger). Degrades gracefully if the RPC migration isn't applied yet.
         try {
-          const { data: up, error: upErr } = await supabaseAdmin.rpc(
-            "upsert_access_request",
-            {
-              _email: attemptedEmail,
-              _globus_name: name || null,
-              _globus_subject: userinfo.sub || null,
-            },
-          );
-          if (upErr) {
-            console.error("upsert_access_request failed:", upErr.message);
-          } else {
-            const row = Array.isArray(up) ? up[0] : up;
-            requestCreated = !!(row && (row as { was_created?: boolean }).was_created);
-          }
+          const { error: upErr } = await supabaseAdmin.rpc("upsert_access_request", {
+            _email: attemptedEmail,
+            _globus_name: name || null,
+            _globus_subject: userinfo.sub || null,
+          });
+          if (upErr) console.error("upsert_access_request failed:", upErr.message);
         } catch (e) {
           console.error(
             "upsert_access_request threw:",
             e instanceof Error ? e.message : String(e),
           );
-        }
-
-        // Notify admins only on a genuinely NEW request (retries fold into the same
-        // pending row → was_created=false → no repeat email; this is why Brett's 3
-        // rapid retries must not mean 3 alerts).
-        if (requestCreated) {
-          const adminUrl = `${new URL(frontendRedirect).origin}/admin?tab=access-requests`;
-          const subject = `[BBQS] Access requested — approval needed: ${name || attemptedEmail}`;
-          const html = [
-            `<h2>Access requested — approval needed</h2>`,
-            `<p>Someone signed in via Globus but isn't on the consortium roster yet. A pending access request has been filed for your review.</p>`,
-            `<p><strong>Name:</strong> ${name || "unknown"}</p>`,
-            `<p><strong>Email:</strong> ${attemptedEmail}</p>`,
-            `<p><strong>Globus username:</strong> ${userinfo.preferred_username || "unknown"}</p>`,
-            `<p><strong>Identities checked:</strong> ${candidateEmails.join(", ")}</p>`,
-            `<p><a href="${adminUrl}">Review &amp; approve in the admin console →</a></p>`,
-            `<p style="color:#888;font-size:12px">They've been shown the intake form to add their institution and role; that detail attaches to this same request. If this is an existing member whose on-file email differs, add the address above to their investigator record and they'll sign in automatically.</p>`,
-          ].join("\n");
-          await sendAdminEmail(ACCESS_REQUEST_NOTIFY_EMAIL, subject, html);
         }
 
         const errorRedirect = new URL(frontendRedirect);
