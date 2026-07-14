@@ -7,20 +7,34 @@ const corsHeaders = {
 };
 
 const ADMIN_NOTIFY_EMAIL = "nader.nikbakht@gmail.com";
+// Where actionable access-request notifications go (a member trying to sign in who
+// isn't on the roster yet). Separate from the security-alarm address above so the
+// admin team sees "someone wants in — approve them" in one shared mailbox.
+const ACCESS_REQUEST_NOTIFY_EMAIL = "noreply@brain-bbqs.org";
 
-interface FailureInfo {
-  email?: string;
-  name?: string;
-  errorReason: string;
-  ipAddress?: string;
-  metadata?: Record<string, unknown>;
+// Send an admin email via the auth-notify edge function. Best-effort; never throws.
+async function sendAdminEmail(to: string, subject: string, html: string) {
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    await fetch(`${SUPABASE_URL}/functions/v1/auth-notify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ to, subject, html }),
+    });
+  } catch (e) {
+    console.error("Failed to send admin notification:", e);
+  }
 }
 
-async function logAndNotifyFailure(
+// Log an auth attempt to auth_audit_log (audit trail only, no email). Best-effort.
+async function logAuthFailure(
   supabaseAdmin: ReturnType<typeof createClient>,
   info: FailureInfo,
 ) {
-  // 1. Log to auth_audit_log table
   try {
     await supabaseAdmin.from("auth_audit_log").insert({
       attempted_email: info.email || null,
@@ -32,43 +46,39 @@ async function logAndNotifyFailure(
   } catch (e) {
     console.error("Failed to log auth failure:", e);
   }
+}
 
-  // 2. Send admin notification email via Supabase Auth admin API (magic-link style)
-  //    We use a simple approach: invoke a separate edge function or send directly
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+interface FailureInfo {
+  email?: string;
+  name?: string;
+  errorReason: string;
+  ipAddress?: string;
+  metadata?: Record<string, unknown>;
+}
 
-    const timestamp = new Date().toISOString();
-    const subject = `[BBQS] Failed Auth Attempt: ${info.errorReason}`;
-    const body = [
-      `<h2>Failed Authentication Attempt</h2>`,
-      `<p><strong>Time:</strong> ${timestamp}</p>`,
-      `<p><strong>Email:</strong> ${info.email || "unknown"}</p>`,
-      `<p><strong>Globus Name:</strong> ${info.name || "unknown"}</p>`,
-      `<p><strong>Error:</strong> ${info.errorReason}</p>`,
-      `<p><strong>IP:</strong> ${info.ipAddress || "unknown"}</p>`,
-      info.metadata
-        ? `<p><strong>Details:</strong> <pre>${JSON.stringify(info.metadata, null, 2)}</pre></p>`
-        : "",
-    ].join("\n");
-
-    // Use the auth-notify edge function for sending email
-    await fetch(`${SUPABASE_URL}/functions/v1/auth-notify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        to: ADMIN_NOTIFY_EMAIL,
-        subject,
-        html: body,
-      }),
-    });
-  } catch (e) {
-    console.error("Failed to send admin notification:", e);
-  }
+// Genuine auth FAILURE (token exchange, userinfo, domain, create-user, session):
+// audit-log it AND send the security-alarm email. NOT used for not_a_member, which
+// is a would-be member to approve — that path files a request + sends an actionable
+// approval notice instead (see the gate below).
+async function logAndNotifyFailure(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  info: FailureInfo,
+) {
+  await logAuthFailure(supabaseAdmin, info);
+  const timestamp = new Date().toISOString();
+  const subject = `[BBQS] Failed Auth Attempt: ${info.errorReason}`;
+  const body = [
+    `<h2>Failed Authentication Attempt</h2>`,
+    `<p><strong>Time:</strong> ${timestamp}</p>`,
+    `<p><strong>Email:</strong> ${info.email || "unknown"}</p>`,
+    `<p><strong>Globus Name:</strong> ${info.name || "unknown"}</p>`,
+    `<p><strong>Error:</strong> ${info.errorReason}</p>`,
+    `<p><strong>IP:</strong> ${info.ipAddress || "unknown"}</p>`,
+    info.metadata
+      ? `<p><strong>Details:</strong> <pre>${JSON.stringify(info.metadata, null, 2)}</pre></p>`
+      : "",
+  ].join("\n");
+  await sendAdminEmail(ADMIN_NOTIFY_EMAIL, subject, body);
 }
 
 function getClientIp(req: Request): string | undefined {
@@ -227,16 +237,18 @@ Deno.serve(async (req) => {
       }
 
       if (!signInEmail) {
-        // Do NOT file an access_request here. Non-members are routed into the ONE
-        // intake form (/request-access), which is the single place a request is
-        // created — capturing name, institution, and role in BBQS, and carrying the
-        // Globus subject/email through as prefilled+locked fields. Previously this
-        // block auto-filed a bare, role-less row; combined with a person then filling
-        // the intake form that produced two pending requests for the same email
-        // (the duplicate-request bug). Admins are still notified of the attempt — now
-        // WITH the full list of identities checked, so a genuine on-file-email
-        // mismatch is diagnosable from the failure email instead of guessed at.
-        await logAndNotifyFailure(supabaseAdmin, {
+        // Not on the roster (yet). This is a would-be member to APPROVE, not a
+        // security failure — so we (1) record the attempt in the audit log, (2)
+        // AUTO-FILE a pending access_request so the attempt becomes an actionable,
+        // reviewable item even if the person never finishes the intake form, and
+        // (3) email the admin distribution list an actionable approval notice —
+        // ONCE per person. The intake form (to which we still redirect) folds its
+        // richer institution/role details into this SAME pending row via the shared
+        // upsert_access_request RPC, so there is no duplicate-request regression
+        // (the reason a bare auto-file was removed before) and no lost form data.
+        const attemptedEmail = (userinfo.email || candidateEmails[0]).toLowerCase();
+
+        await logAuthFailure(supabaseAdmin, {
           email: userinfo.email,
           name,
           errorReason: "not_a_member",
@@ -244,9 +256,52 @@ Deno.serve(async (req) => {
           metadata: {
             globus_username: userinfo.preferred_username,
             identities_checked: candidateEmails,
-            request_recorded: false,
           },
         });
+
+        // Auto-file / dedup-enrich the pending request. Degrades gracefully if the
+        // RPC migration hasn't been applied yet (KG migrations aren't db-pushed).
+        let requestCreated = false;
+        try {
+          const { data: up, error: upErr } = await supabaseAdmin.rpc(
+            "upsert_access_request",
+            {
+              _email: attemptedEmail,
+              _globus_name: name || null,
+              _globus_subject: userinfo.sub || null,
+            },
+          );
+          if (upErr) {
+            console.error("upsert_access_request failed:", upErr.message);
+          } else {
+            const row = Array.isArray(up) ? up[0] : up;
+            requestCreated = !!(row && (row as { was_created?: boolean }).was_created);
+          }
+        } catch (e) {
+          console.error(
+            "upsert_access_request threw:",
+            e instanceof Error ? e.message : String(e),
+          );
+        }
+
+        // Notify admins only on a genuinely NEW request (retries fold into the same
+        // pending row → was_created=false → no repeat email; this is why Brett's 3
+        // rapid retries must not mean 3 alerts).
+        if (requestCreated) {
+          const adminUrl = `${new URL(frontendRedirect).origin}/admin?tab=access-requests`;
+          const subject = `[BBQS] Access requested — approval needed: ${name || attemptedEmail}`;
+          const html = [
+            `<h2>Access requested — approval needed</h2>`,
+            `<p>Someone signed in via Globus but isn't on the consortium roster yet. A pending access request has been filed for your review.</p>`,
+            `<p><strong>Name:</strong> ${name || "unknown"}</p>`,
+            `<p><strong>Email:</strong> ${attemptedEmail}</p>`,
+            `<p><strong>Globus username:</strong> ${userinfo.preferred_username || "unknown"}</p>`,
+            `<p><strong>Identities checked:</strong> ${candidateEmails.join(", ")}</p>`,
+            `<p><a href="${adminUrl}">Review &amp; approve in the admin console →</a></p>`,
+            `<p style="color:#888;font-size:12px">They've been shown the intake form to add their institution and role; that detail attaches to this same request. If this is an existing member whose on-file email differs, add the address above to their investigator record and they'll sign in automatically.</p>`,
+          ].join("\n");
+          await sendAdminEmail(ACCESS_REQUEST_NOTIFY_EMAIL, subject, html);
+        }
 
         const errorRedirect = new URL(frontendRedirect);
         errorRedirect.searchParams.set("globus_error", "not_a_member");
