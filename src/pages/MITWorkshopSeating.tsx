@@ -8,6 +8,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation, Info } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
+import { supabase } from "@/integrations/supabase/client";
+import { ZODIAC_GLYPH, ZODIAC_ELEMENT, zodiacCompatibility, type ZodiacSign } from "@/lib/zodiac";
 
 /**
  * Layout mirrors the hand-drawn atrium diagram:
@@ -78,6 +80,25 @@ export default function MITWorkshopSeating() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<{ table: SeatingTable; seat: Seat; index: number } | null>(null);
+  const [zodiacByName, setZodiacByName] = useState<Record<string, ZodiacSign>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("investigators")
+        .select("name, zodiac_sign")
+        .not("zodiac_sign", "is", null)
+        .limit(500);
+      const m: Record<string, ZodiacSign> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (r.name && r.zodiac_sign) m[r.name.toLowerCase()] = r.zodiac_sign;
+      }
+      setZodiacByName(m);
+    })();
+  }, [user]);
+
+  const signOf = (name: string): ZodiacSign | null => zodiacByName[name?.toLowerCase()] ?? null;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -435,6 +456,26 @@ export default function MITWorkshopSeating() {
                   {selected.seat.grants ? ` · ${selected.seat.grants}` : ""}
                 </div>
               </div>
+              {signOf(selected.seat.name) && (
+                <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground">
+                  {ZODIAC_GLYPH[signOf(selected.seat.name)!]} {signOf(selected.seat.name)} · {ZODIAC_ELEMENT[signOf(selected.seat.name)!]}
+                </span>
+              )}
+              {signOf(selected.seat.name) && (() => {
+                const s = signOf(selected.seat.name)!;
+                const tablemates = selected.table.seats
+                  .filter((o, i) => i !== selected.index && o.name !== "Open seat")
+                  .map((o) => ({ name: o.name, sign: signOf(o.name) }))
+                  .filter((o) => o.sign);
+                if (tablemates.length === 0) return null;
+                const avg = tablemates.reduce((a, b) => a + zodiacCompatibility(s, b.sign!), 0) / tablemates.length;
+                const label = avg >= 0.75 ? "High" : avg >= 0.35 ? "Mixed" : "Low";
+                return (
+                  <span className="text-xs text-muted-foreground">
+                    Table zodiac fit: <span className="font-semibold text-foreground">{label}</span> ({(avg * 100).toFixed(0)}%)
+                  </span>
+                );
+              })()}
               {selected.seat.dietary && (
                 <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
                   <Utensils className="h-3 w-3" /> {selected.seat.dietary}
