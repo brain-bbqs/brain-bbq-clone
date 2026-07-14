@@ -67,7 +67,7 @@ export function CohortHeatmap({ cohort, model }: { cohort: Cohort; model: Model 
         await Promise.all([
           supabase.from("investigator_cohorts").select("investigator_id, cohort").eq("cohort", cohort),
           supabase.from("personality_scores").select("investigator_id, big_five, hexaco"),
-          supabase.from("investigators").select("id, full_name, user_id"),
+          supabase.from("investigators").select("id, name, user_id"),
           supabase.rpc("get_investigator_attention"),
         ]);
       if (cancelled) return;
@@ -83,7 +83,7 @@ export function CohortHeatmap({ cohort, model }: { cohort: Cohort; model: Model 
         const scoresBlock = (model === "bigfive" ? s?.big_five : s?.hexaco) ?? {};
         const r: Row = {
           investigator_id: inv.id,
-          full_name: inv.full_name,
+          full_name: inv.name,
           scores: scoresBlock,
           clicks: a?.clicks ?? 0,
           pageviews: a?.pageviews ?? 0,
