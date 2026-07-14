@@ -75,3 +75,6 @@ verify_jwt = false
 
 [functions.harvester-tick]
 verify_jwt = false
+
+[functions.personality-score-worker]
+verify_jwt = false
