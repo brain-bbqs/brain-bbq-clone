@@ -86,18 +86,17 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const admin = createClient(supabaseUrl, serviceKey);
 
-    // Verify caller is admin
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData } = await userClient.auth.getUser();
+    // Verify caller is admin (use service-role client to read JWT + roles)
+    const { data: userData } = await admin.auth.getUser(token);
     if (!userData?.user) {
       return new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { data: isAdminData } = await userClient.rpc("has_role", {
+    const { data: isAdminData } = await admin.rpc("has_role", {
       _user_id: userData.user.id, _role: "admin",
     });
     if (!isAdminData) {
@@ -105,8 +104,6 @@ Deno.serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const admin = createClient(supabaseUrl, serviceKey);
 
     // Pull all investigators (limit for safety)
     const { data: investigators, error: iErr } = await admin
