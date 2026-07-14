@@ -8,6 +8,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { LayoutGrid, Printer, Utensils, DoorOpen, Presentation, Info } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
 import { SEATING_PLAN, SEATS_PER_TABLE, TABLE_COUNT, TOTAL_SEATS, type Seat, type SeatingTable } from "@/data/mit-workshop-seating";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Layout mirrors the hand-drawn atrium diagram:

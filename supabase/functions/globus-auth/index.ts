@@ -183,7 +183,6 @@ Deno.serve(async (req) => {
       }
 
       const userinfo = await userinfoRes.json();
-      const email = userinfo.email;
       const name = userinfo.name || userinfo.preferred_username || "";
       // The name we hand back to the frontend (sign-in greeting etc.). Defaults to
       // the Globus-provided name, but is upgraded below to the onboarded investigator
@@ -191,43 +190,75 @@ Deno.serve(async (req) => {
       // (e.g. "test-user-tier1") is greeted by their real consortium name.
       let displayName = name;
 
-      if (!email) {
+      // Globus asserts MORE THAN ONE identity for a person: `email` (the mailbox,
+      // e.g. bey2103@cumc.columbia.edu) and `preferred_username` (the eppn/username,
+      // e.g. bey2103@columbia.edu). For institutional identities these frequently
+      // DIFFER (med-center subdomain vs base domain), and the address on file in
+      // `investigators` may be EITHER one. The membership gate must therefore check
+      // EVERY email-like identity Globus vouches for — not just `userinfo.email` —
+      // or an invited investigator whose on-file address is their username is wrongly
+      // bounced as not_a_member (confirmed 2026-07-14: Brett Youngerman signed in as
+      // bey2103@cumc.columbia.edu while the directory held the bey2103@columbia.edu
+      // variant, so the single-email gate missed him).
+      const assertedIdentities = [userinfo.email, userinfo.preferred_username]
+        .filter((v) => typeof v === "string")
+        .map((v) => v.toLowerCase().trim())
+        .filter((v) => v.includes("@"));
+      const candidateEmails = [...new Set(assertedIdentities)];
+
+      if (candidateEmails.length === 0) {
         return await errorRedirectAndNotify("no_email", undefined, name);
       }
 
       // ===== STRICT MEMBERSHIP GATE =====
-      // Email MUST already exist on an investigator record (primary or secondary).
-      // If not, do NOT create an auth.users row. File an access_request and notify admins.
-      const emailLowerForGate = email.toLowerCase();
-      const { data: gateMatch } = await supabaseAdmin
-        .rpc("email_is_consortium_member", { _email: emailLowerForGate });
+      // At least ONE asserted identity MUST already exist on an investigator record
+      // (primary or secondary). Pass on the first that matches and adopt it as THE
+      // sign-in identity for everything downstream (canonical resolution, linking).
+      // If none match, do NOT create an auth.users row — notify admins and route to
+      // the intake form.
+      let signInEmail: string | null = null;
+      for (const cand of candidateEmails) {
+        const { data: isMember } = await supabaseAdmin
+          .rpc("email_is_consortium_member", { _email: cand });
+        if (isMember) {
+          signInEmail = cand;
+          break;
+        }
+      }
 
-      if (!gateMatch) {
+      if (!signInEmail) {
         // Do NOT file an access_request here. Non-members are routed into the ONE
         // intake form (/request-access), which is the single place a request is
         // created — capturing name, institution, and role in BBQS, and carrying the
         // Globus subject/email through as prefilled+locked fields. Previously this
         // block auto-filed a bare, role-less row; combined with a person then filling
         // the intake form that produced two pending requests for the same email
-        // (the duplicate-request bug). Admins are still notified of the attempt.
+        // (the duplicate-request bug). Admins are still notified of the attempt — now
+        // WITH the full list of identities checked, so a genuine on-file-email
+        // mismatch is diagnosable from the failure email instead of guessed at.
         await logAndNotifyFailure(supabaseAdmin, {
-          email,
+          email: userinfo.email,
           name,
           errorReason: "not_a_member",
           ipAddress: clientIp,
           metadata: {
             globus_username: userinfo.preferred_username,
+            identities_checked: candidateEmails,
             request_recorded: false,
           },
         });
 
         const errorRedirect = new URL(frontendRedirect);
         errorRedirect.searchParams.set("globus_error", "not_a_member");
-        errorRedirect.searchParams.set("globus_email", email);
+        errorRedirect.searchParams.set("globus_email", userinfo.email || candidateEmails[0]);
         if (name) errorRedirect.searchParams.set("globus_name", name);
         if (userinfo.sub) errorRedirect.searchParams.set("globus_subject", userinfo.sub);
         return Response.redirect(errorRedirect.toString(), 302);
       }
+
+      // From here on, `email` is the Globus-asserted identity that matched a
+      // consortium member; canonical resolution maps it to the primary below.
+      const email = signInEmail;
 
       // Resolve the canonical email for this person.
       let canonicalEmail = email;

@@ -1791,6 +1791,58 @@ export type Database = {
           },
         ]
       }
+      personality_scores: {
+        Row: {
+          big_five: Json
+          hexaco: Json
+          investigator_id: string
+          last_computed_at: string
+          matched_count: number
+          token_count: number
+          top_adjectives: Json
+        }
+        Insert: {
+          big_five?: Json
+          hexaco?: Json
+          investigator_id: string
+          last_computed_at?: string
+          matched_count?: number
+          token_count?: number
+          top_adjectives?: Json
+        }
+        Update: {
+          big_five?: Json
+          hexaco?: Json
+          investigator_id?: string
+          last_computed_at?: string
+          matched_count?: number
+          token_count?: number
+          top_adjectives?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personality_scores_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: true
+            referencedRelation: "investigator_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personality_scores_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: true
+            referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personality_scores_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: true
+            referencedRelation: "investigators_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -2410,6 +2462,35 @@ export type Database = {
         }
         Relationships: []
       }
+      investigator_cohorts: {
+        Row: {
+          cohort: string | null
+          investigator_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigator_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grant_investigators_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investigator_directory: {
         Row: {
           created_at: string | null
@@ -2644,6 +2725,14 @@ export type Database = {
         Returns: undefined
       }
       email_is_consortium_member: { Args: { _email: string }; Returns: boolean }
+      get_investigator_attention: {
+        Args: never
+        Returns: {
+          clicks: number
+          investigator_id: string
+          pageviews: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2655,16 +2744,6 @@ export type Database = {
         Args: { _suggestion_id: string }
         Returns: undefined
       }
-      ir_consortium_trend: {
-        Args: never
-        Returns: {
-          mean_adhesion: number
-          mean_personality: number
-          mean_science: number
-          n: number
-          snapshot_date: string
-        }[]
-      }
       ir_drain_queue: {
         Args: { _limit?: number }
         Returns: {
@@ -2672,20 +2751,6 @@ export type Database = {
         }[]
       }
       ir_is_authorized: { Args: never; Returns: boolean }
-      ir_list_profiles: {
-        Args: never
-        Returns: {
-          adhesion: number
-          full_name: string
-          investigator_id: string
-          last_computed_at: string
-          liwc: Json
-          personality_score: number
-          science_score: number
-          token_count: number
-        }[]
-      }
-      ir_snapshot_now: { Args: never; Returns: number }
       ir_upsert_profiles: { Args: { _rows: Json }; Returns: number }
       is_curator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       revert_curation_change: { Args: { _audit_id: string }; Returns: Json }
