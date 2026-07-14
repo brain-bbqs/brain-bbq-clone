@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.nih-grants]
 verify_jwt = false
 
+[functions.import-grant-publications]
+verify_jwt = false
+
 [functions.bbqs-api]
 verify_jwt = false
 
@@ -46,6 +49,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.globus-auth]
+verify_jwt = false
+
+[functions.notify-access-request]
 verify_jwt = false
 
 [functions.analytics-summary]
