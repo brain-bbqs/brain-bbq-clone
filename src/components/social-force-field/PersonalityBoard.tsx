@@ -114,7 +114,8 @@ export function PersonalityBoard() {
           </div>
         ) : rows.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground text-sm">
-            No personality scores yet. Click Recompute to score all investigators from their grant text.
+            <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+            First-time scoring in progress — reading grant &amp; publication text for all investigators…
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
