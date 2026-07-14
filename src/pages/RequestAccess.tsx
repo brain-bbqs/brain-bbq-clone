@@ -113,24 +113,36 @@ export default function RequestAccess() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("access_requests").insert({
-        full_name: parsed.data.full_name,
-        email: parsed.data.email.toLowerCase(),
-        institution: parsed.data.institution,
-        requested_role: roleValue,
-        message: parsed.data.message || null,
-        globus_name: globusName || parsed.data.full_name,
-        globus_subject: globusSubject || null,
-        status: "pending",
+      // Route through the shared SECURITY DEFINER upsert so these details ENRICH the
+      // pending row the failed Globus sign-in may have already auto-filed for this
+      // email (rather than colliding on the one-pending-per-email unique index and
+      // losing the institution/role captured here). Falls back to a direct insert if
+      // the RPC migration hasn't been applied yet (PGRST202).
+      const { error } = await supabase.rpc("upsert_access_request", {
+        _email: parsed.data.email.toLowerCase(),
+        _full_name: parsed.data.full_name,
+        _institution: parsed.data.institution,
+        _requested_role: roleValue,
+        _message: parsed.data.message || null,
+        _globus_name: globusName || parsed.data.full_name,
+        _globus_subject: globusSubject || null,
       });
       if (error) {
-        // A partial unique index on (lower(email)) WHERE status='pending' guards
-        // against a second pending request for the same person. Treat the conflict
-        // as "already submitted" rather than an error — they don't need to do
-        // anything further. (If the index isn't applied yet the insert just
-        // succeeds; the globus-auth path no longer double-files, so real-world
-        // duplicates are rare either way.)
-        if ((error as { code?: string }).code === "23505") {
+        if ((error as { code?: string }).code === "PGRST202") {
+          // RPC not deployed yet — fall back to a direct insert. A partial unique
+          // index on (lower(email)) WHERE status='pending' guards against a second
+          // pending request; treat that conflict as "already submitted".
+          const { error: insErr } = await supabase.from("access_requests").insert({
+            full_name: parsed.data.full_name,
+            email: parsed.data.email.toLowerCase(),
+            institution: parsed.data.institution,
+            requested_role: roleValue,
+            message: parsed.data.message || null,
+            globus_name: globusName || parsed.data.full_name,
+            globus_subject: globusSubject || null,
+            status: "pending",
+          });
+          if (insErr && (insErr as { code?: string }).code !== "23505") throw insErr;
           setSubmitted(true);
           return;
         }
