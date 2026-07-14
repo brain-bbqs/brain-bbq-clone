@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     // Pull all investigators (limit for safety)
     const { data: investigators, error: iErr } = await admin
       .from("investigators")
-      .select("id, full_name")
+      .select("id, name")
       .limit(500);
     if (iErr) throw iErr;
 
