@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Lock, Layers, Info, Radio } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { CoordinationInstrumentation } from "@/components/social-force-field/CoordinationInstrumentation";
+import { PersonalityBoard } from "@/components/social-force-field/PersonalityBoard";
 import { isPreviewMode } from "@/lib/preview-mode";
 
 
@@ -161,7 +161,7 @@ export default function SocialForceField() {
         </div>
       </header>
 
-      {(isAdmin || isPreviewMode()) && <CoordinationInstrumentation />}
+      {(isAdmin || isPreviewMode()) && <PersonalityBoard />}
 
       <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <MetricsTable
