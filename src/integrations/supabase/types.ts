@@ -2770,6 +2770,21 @@ export type Database = {
           title: string
         }[]
       }
+      upsert_access_request: {
+        Args: {
+          _email: string
+          _full_name?: string
+          _globus_name?: string
+          _globus_subject?: string
+          _institution?: string
+          _message?: string
+          _requested_role?: string
+        }
+        Returns: {
+          id: string
+          was_created: boolean
+        }[]
+      }
       user_can_edit_grant_roster: {
         Args: { _grant_id: string; _user_id: string }
         Returns: boolean
