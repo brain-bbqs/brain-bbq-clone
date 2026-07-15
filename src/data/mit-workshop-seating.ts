@@ -49,6 +49,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Holly Moore", institution: "NIDA", role: "NIH Program", domain: "NIH" },
       { name: "Rahul Hingorani", institution: "JHU APL", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Luke Bloy", institution: "CHOP", role: "Research Staff", domain: "D" },
+      { name: "Fang Yu Chang", institution: "UCLA", role: "Research Staff (virtual)", domain: "A" },
     ],
   },
   {
@@ -66,6 +67,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Karen Kate David", institution: "NIH BRAIN/NINDS", role: "NIH Program", domain: "NIH" },
       { name: "Meaghan Perdue", institution: "UMass Chan Medical School", role: "Infra (EMBER)", domain: "F" },
       { name: "Jack Grinband", institution: "Columbia University", role: "PI", domain: "D" },
+      { name: "Nelleke van Wouwe", institution: "University of Louisville", role: "Research Staff (virtual)", domain: "D" },
     ],
   },
   {
@@ -83,6 +85,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Yaroslav Halchenko", institution: "Dartmouth / DANDI", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Darrell De Freitas", institution: "University of Pennsylvania", role: "Infra (EMBER)", domain: "F" },
       { name: "Suliman Sharif", institution: "MIT", role: "Organizer / Admin", domain: "ADMIN" },
+      { name: "Mengsen Zhang", institution: "Michigan State University", role: "PI (virtual)", domain: "B" },
     ],
   },
   {
@@ -100,6 +103,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Lizzy Ankudowich", institution: "NIMH/BRAIN", role: "NIH Program", domain: "NIH" },
       { name: "Han Yi", institution: "JHU APL", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Satrajit Ghosh", institution: "MIT", role: "PI (EMBER)", domain: "F" },
+      { name: "Maryam Shanechi", institution: "University of Southern California", role: "PI (virtual)", domain: "D" },
     ],
   },
   {
@@ -116,6 +120,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Jeffrey Walker", institution: "Yale University", role: "Research Staff", domain: "E" },
       { name: "Farah Nikhath Bader", institution: "NINDS/BRAIN Initiative", role: "NIH Program", domain: "NIH" },
       { name: "Oliver Ruebel", institution: "Lawrence Berkeley National Lab", role: "Infra (EMBER)", domain: "F" },
+      { name: "Christina Liu", institution: "NIMH", role: "NIH Program (virtual)", domain: "NIH" },
     ],
   },
   {
@@ -134,6 +139,8 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Ming Zhan", institution: "NIDA/NIH", role: "NIH Program (Bridge)", domain: "NIH" },
       { name: "Dorota Jarecka", institution: "MIT", role: "Infra (EMBER)", domain: "F" },
       { name: "Timothy Brown", institution: "University of Washington School of Medicine", role: "Advisory Board" },
+      { name: "Ralph Peterson", institution: "Basis Research Institute", role: "Research Staff / Postdoc (virtual)" },
+      { name: "Yi Zuo", institution: "UC Santa Cruz", role: "Co-I (virtual)", domain: "E" },
     ],
   },
   {
@@ -151,6 +158,7 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Cody Baker", institution: "Dartmouth College", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Nima Dehghani", institution: "MIT", role: "Infra (BARD.CC)", domain: "F" },
       { name: "Terry Jernigan", institution: "UC San Diego", role: "Consortium Coordinator (ABCD/HBCD) · Pereira collaborator", domain: "B" },
+      { name: "Grace Hwang", institution: "NIH/NINDS/BRAIN", role: "NIH Program (virtual)", domain: "NIH" },
     ],
   },
   {
@@ -167,6 +175,8 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Deepa Purushothaman", institution: "Yale University", role: "Postdoc/Grad" },
       { name: "Yankun Xu", institution: "Duke University", role: "Postdoc/Grad", domain: "D" },
       { name: "Tek Raj Chhetri", institution: "MIT", role: "Postdoc/Grad" },
+      { name: "Merav Sabri", institution: "NIH/NIDCD", role: "NIH Program (virtual)", domain: "NIH" },
+      { name: "Christina Hatch", institution: "NIH/NIDA", role: "NIH Program (virtual)", domain: "NIH" },
     ],
   },
   {
@@ -182,6 +192,9 @@ export const SEATING_PLAN: SeatingTable[] = [
       { name: "Tristan Daniel", institution: "Georgia Tech", role: "Postdoc/Grad" },
       { name: "Varun Thvar", institution: "MIT", role: "Visiting Undergrad" },
       { name: "Caleb Scott-Joseph", institution: "University of Pennsylvania", role: "Postdoc/Grad" },
+      { name: "Yuan Luo", institution: "NIDA/NIH", role: "NIH Program (virtual)", domain: "NIH" },
+      { name: "Eunyoung Kim", institution: "NIH/NIMH/BRAIN", role: "NIH Program (virtual)", domain: "NIH" },
+      { name: "Kari Johnson", institution: "NIH", role: "NIH Program (virtual)", domain: "NIH" },
     ],
   },
 ];
