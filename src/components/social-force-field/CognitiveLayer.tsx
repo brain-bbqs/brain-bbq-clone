@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { CohortHeatmap } from "./CohortHeatmap";
 
 type Summary = { summary: string; n_grants: number; generated_at: string };
 type SummaryResp = Record<"R61" | "R34", Summary>;
@@ -19,7 +18,6 @@ const COHORTS = [
 export function CognitiveLayer() {
   const [summaries, setSummaries] = useState<SummaryResp | null>(null);
   const [attention, setAttention] = useState<AttentionData | null>(null);
-  const [model, setModel] = useState<"hexaco" | "bigfive">("hexaco");
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,32 +75,15 @@ export function CognitiveLayer() {
       </div>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle className="text-base">Personality alignment (empirical)</CardTitle>
-            <CardDescription>Personality derived from grant/publication text × attention on the platform</CardDescription>
-          </div>
-          <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
-            <button onClick={() => setModel("hexaco")}
-                    className={`px-3 py-1 ${model === "hexaco" ? "bg-primary text-primary-foreground" : "bg-background"}`}>HEXACO</button>
-            <button onClick={() => setModel("bigfive")}
-                    className={`px-3 py-1 ${model === "bigfive" ? "bg-primary text-primary-foreground" : "bg-background"}`}>Big Five</button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <CohortHeatmap cohort="R61" model={model} />
-          <CohortHeatmap cohort="R34" model={model} />
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Shared attention — which projects people actually visit</CardTitle>
           <CardDescription>Aggregate clicks + page opens per project across all consortium users</CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
           {!attention?.projectClicks?.length && (
-            <div className="text-xs text-muted-foreground">No project attention captured yet.</div>
+            <div className="text-xs text-muted-foreground">
+              No project attention captured yet — this list populates once consortium members start opening project pages.
+            </div>
           )}
           {(attention?.projectClicks ?? []).slice(0, 15).map((p) => (
             <div key={p.grant_number} className="grid grid-cols-[1fr_auto] items-center gap-3 text-xs border-t first:border-t-0 py-1.5">
