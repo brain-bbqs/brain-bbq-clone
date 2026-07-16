@@ -235,6 +235,32 @@ const MITWorkshop2026 = () => {
                 </ul>
               </div>
 
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <Presentation className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-sm font-semibold text-foreground">Agenda materials</div>
+                  <div className="text-xs text-muted-foreground">Live slides and notes for the workshop.</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href="https://docs.google.com/presentation/d/183tVuRuDK8g/edit?usp=sharing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <Presentation className="h-4 w-4" /> Slides
+                  </a>
+                  <a
+                    href="https://docs.google.com/document/d/13jQZXhAhN0C/edit?usp=sharing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" /> Notes
+                  </a>
+                </div>
+              </div>
+
               <AgendaDay
                 dayNumber={15}
                 now={now}
