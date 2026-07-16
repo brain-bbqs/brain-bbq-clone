@@ -356,6 +356,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cohort_summaries: {
+        Row: {
+          generated_at: string
+          mechanism: string
+          n_grants: number
+          summary: string
+        }
+        Insert: {
+          generated_at?: string
+          mechanism: string
+          n_grants?: number
+          summary: string
+        }
+        Update: {
+          generated_at?: string
+          mechanism?: string
+          n_grants?: number
+          summary?: string
+        }
+        Relationships: []
+      }
       curation_audit_log: {
         Row: {
           action: Database["public"]["Enums"]["curation_action"]

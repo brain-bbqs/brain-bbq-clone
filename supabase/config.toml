@@ -84,3 +84,12 @@ verify_jwt = false
 
 [functions.personality-score-worker]
 verify_jwt = false
+
+[functions.interactional-terms]
+verify_jwt = false
+
+[functions.cohort-mental-model-summary]
+verify_jwt = false
+
+[functions.relational-cohesion]
+verify_jwt = false
