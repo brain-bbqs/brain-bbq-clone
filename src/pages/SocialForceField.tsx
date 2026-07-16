@@ -7,8 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserTier } from "@/hooks/useUserTier";
 import { Lock, Layers, Info, Radio } from "lucide-react";
 import { PageMeta } from "@/components/PageMeta";
-import { PersonalityBoard } from "@/components/social-force-field/PersonalityBoard";
-import { isPreviewMode } from "@/lib/preview-mode";
+import { LayerTabs } from "@/components/social-force-field/LayerTabs";
 
 
 type Row = { path?: string | null; session_id?: string | null; user_id?: string | null; created_at: string; element_tag?: string | null; element_text?: string | null };
@@ -129,7 +128,7 @@ export default function SocialForceField() {
     <div className="p-6 md:p-8 space-y-8 max-w-6xl">
       <PageMeta
         title="Social Force Field — BBQS"
-        description="Admin view: the base interactional layer — real website analytics from the consortium platform."
+        description="Admin view: three-layer social force field — interactional, cognitive, relational."
       />
 
       <header className="space-y-4">
@@ -143,8 +142,8 @@ export default function SocialForceField() {
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Social Force Field</h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
-            Consortium coordination view — psycholinguistic fingerprints, similarity between
-            people, and live attention signals from the platform. Updates on a live pulse.
+            Three layers of the consortium's identity — from words we reuse (micro) to mental
+            models we share (meso) to group cohesion around cross-species synchronization (macro).
           </p>
         {data?.firstSeen && (
           <p className="text-xs text-muted-foreground">
@@ -161,40 +160,45 @@ export default function SocialForceField() {
         </div>
       </header>
 
-      {(isAdmin || isPreviewMode()) && <PersonalityBoard />}
+      <LayerTabs />
 
-      <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <MetricsTable
-          title="Platform pulse"
-          description="Live counts across all-time — updates every 30s"
-          rows={[
-            { label: "Page views", value: data?.pageviews ?? 0, delta: data?.pvDelta ?? 0 },
-            { label: "Clicks", value: data?.clicks ?? 0, delta: data?.clickDelta ?? 0 },
-            { label: "Sessions", value: data?.sessions ?? 0, delta: data?.sessionDelta ?? 0 },
-            { label: "Signed-in users", value: data?.users ?? 0, delta: data?.userDelta ?? 0 },
-          ]}
-        />
-        <MetricsTable
-          title="Most-clicked things"
-          description="Top interactive elements by count"
-          rows={(data?.topClickTargets ?? []).slice(0, 8).map((t) => ({
-            label: t.text, value: t.count, bar: t.count / maxTopClick,
-          }))}
-          emptyLabel="No click labels captured yet."
-          loading={!data}
-        />
-        <div className="md:col-span-2">
+      <details className="rounded-lg border border-border">
+        <summary className="cursor-pointer px-4 py-2 text-xs uppercase tracking-wide text-muted-foreground">
+          Raw signal · platform pulse
+        </summary>
+        <section className="grid gap-4 md:grid-cols-2 p-4">
           <MetricsTable
-            title="Top pages by views"
-            description="Every route people have visited — attention over time"
-            rows={(data?.topPages ?? []).slice(0, 12).map((p) => ({
-              label: p.path, value: p.views, sub: `${p.clicks.toLocaleString()} clicks`, bar: p.views / maxTopPageViews, mono: true,
+            title="Platform pulse"
+            description="Live counts across all-time — updates every 30s"
+            rows={[
+              { label: "Page views", value: data?.pageviews ?? 0, delta: data?.pvDelta ?? 0 },
+              { label: "Clicks", value: data?.clicks ?? 0, delta: data?.clickDelta ?? 0 },
+              { label: "Sessions", value: data?.sessions ?? 0, delta: data?.sessionDelta ?? 0 },
+              { label: "Signed-in users", value: data?.users ?? 0, delta: data?.userDelta ?? 0 },
+            ]}
+          />
+          <MetricsTable
+            title="Most-clicked things"
+            description="Top interactive elements by count"
+            rows={(data?.topClickTargets ?? []).slice(0, 8).map((t) => ({
+              label: t.text, value: t.count, bar: t.count / maxTopClick,
             }))}
-            emptyLabel="No page views yet."
+            emptyLabel="No click labels captured yet."
             loading={!data}
           />
-        </div>
-      </section>
+          <div className="md:col-span-2">
+            <MetricsTable
+              title="Top pages by views"
+              description="Every route people have visited — attention over time"
+              rows={(data?.topPages ?? []).slice(0, 12).map((p) => ({
+                label: p.path, value: p.views, sub: `${p.clicks.toLocaleString()} clicks`, bar: p.views / maxTopPageViews, mono: true,
+              }))}
+              emptyLabel="No page views yet."
+              loading={!data}
+            />
+          </div>
+        </section>
+      </details>
     </div>
   );
 }
