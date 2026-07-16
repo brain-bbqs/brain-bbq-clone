@@ -51,18 +51,19 @@ const DAY1_ROWS: AgendaRow[] = [
 ];
 const DAY2_ROWS: AgendaRow[] = [
   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
-  ["10:00", "11:30", "Report Back from Day 1 Brainhack sessions and overview of what's next.", "Singleton", "Yes", undefined, "Brainhack session leads"],
-  ["11:30", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+  ["10:00", "11:00", "Working time — teams actively working on their Brainhack projects. No formal session.", "Atrium / Seminar 3189", ""],
+  ["11:00", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
     { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
-    { label: "Option B", title: "Office Hours with WG-ELSI — discussion about data usage.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
+    { label: "Option B", title: "Office Hours with WG-ELSI — pre-voting discussion about data sharing.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
     { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
   ]],
-  ["12:30", "2:00", "BBQS Working Lunch.", "Atrium", "Yes", "d2-lunch"],
-  ["2:00", "4:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
-    { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance.", location: "Singleton", speaker: "PI representatives" },
+  ["12:30", "2:00", "BBQS Working Lunch: Brainhack working sessions.", "Atrium", "Yes", "d2-lunch"],
+  ["2:00", "3:00", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
+    { label: "Option A (PIs Required)", title: "Policy Formation Forum — voting on Data Sharing Policy, Data Usage Agreements, and Governance. BBQS-PIs ongoing agenda/minutes.", location: "Singleton", speaker: "PI representatives" },
     { label: "Option B", title: "Young Investigator-led unconference.", location: "Seminar 3189", speaker: "Megan Peters" },
     { label: "Option C", title: "Brainhack working sessions.", location: "Atrium" },
   ]],
+  ["3:00", "4:00", "Brainhack report backs — brief updates and plans for tomorrow.", "Singleton", "", undefined, "Brainhack session leads"],
   ["4:00", "6:00", "Poster Session II — Light Snack Reception (Brain-Boosting Snacks).", "Atrium", "", "d2-happy"],
 ];
 const DAY3_ROWS: AgendaRow[] = [
