@@ -51,7 +51,7 @@ const DAY1_ROWS: AgendaRow[] = [
 ];
 const DAY2_ROWS: AgendaRow[] = [
   ["9:00", "10:00", "Coffee/Tea Morning Social.", "Atrium / Seminar 3189", "Yes", "d2-coffee-am"],
-  ["10:00", "11:00", "Brainhack working sessions — teams actively working on their projects.", "Atrium / Seminar 3189", ""],
+  ["10:00", "11:00", "Working time — teams actively working on their Brainhack projects. No formal session.", "Atrium / Seminar 3189", ""],
   ["11:00", "12:30", "Parallel working sessions — pick one; feel free to move between rooms.", "Singleton / Atrium / Seminar 3189", "Yes", undefined, undefined, [
     { label: "Option A", title: "From AI Literacy to Liability: Failure Points and Sensitive Data in the Age of Coding Agents.", location: "Singleton", speaker: "Satra Ghosh" },
     { label: "Option B", title: "Office Hours with WG-ELSI — pre-voting discussion about data sharing.", location: "Seminar 3189", speaker: "WG-ELSI chairs" },
