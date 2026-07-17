@@ -90,7 +90,8 @@ export function CognitiveLayer() {
             </div>
           ) : (() => {
             const rows = [...(attention?.projectClicks ?? [])].slice(0, 20).reverse();
-            const y = rows.map((p) => `${p.grant_number}`);
+            const trunc = (s: string, n = 55) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+            const y = rows.map((p) => `${p.grant_number}  ·  ${trunc(p.title || "—")}`);
             const x = rows.map((p) => p.count);
             const labels = rows.map((p) => p.title || "—");
             return (
@@ -102,19 +103,29 @@ export function CognitiveLayer() {
                   y,
                   text: x.map(String),
                   textposition: "outside",
+                  textfont: { size: 14, color: "#f8fafc" },
+                  cliponaxis: false,
                   customdata: labels,
                   hovertemplate: "<b>%{y}</b><br>%{customdata}<br>%{x} hits<extra></extra>",
-                  marker: { color: "hsl(var(--primary))" },
+                  marker: { color: "#f59e0b", line: { color: "#fbbf24", width: 1 } },
                 }]}
                 layout={{
-                  height: Math.max(320, rows.length * 26 + 60),
-                  margin: { l: 110, r: 40, t: 10, b: 40 },
+                  height: Math.max(480, rows.length * 42 + 80),
+                  margin: { l: 360, r: 60, t: 10, b: 50 },
                   paper_bgcolor: "transparent",
                   plot_bgcolor: "transparent",
-                  font: { color: "hsl(var(--foreground))", size: 11 },
-                  xaxis: { title: { text: "Clicks + page opens" }, gridcolor: "hsl(var(--border))", zeroline: false },
-                  yaxis: { automargin: true, tickfont: { family: "ui-monospace, SFMono-Regular, monospace" } },
-                  bargap: 0.25,
+                  font: { color: "#e2e8f0", size: 13 },
+                  xaxis: {
+                    title: { text: "Clicks + page opens", font: { size: 14 } },
+                    gridcolor: "rgba(148,163,184,0.2)",
+                    zeroline: false,
+                    tickfont: { size: 13 },
+                  },
+                  yaxis: {
+                    automargin: true,
+                    tickfont: { size: 13, color: "#f1f5f9" },
+                  },
+                  bargap: 0.35,
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: "100%" }}
