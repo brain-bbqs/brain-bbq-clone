@@ -1,62 +1,79 @@
-import { useMemo, useState } from "react";
+import createPlotlyComponent from "react-plotly.js/factory";
+import Plotly from "plotly.js-basic-dist-min";
+
+const Plot = createPlotlyComponent(Plotly as any);
 
 type Label = { grant_number: string; title: string };
 
 export function CohesionMatrix({ labels, matrix }: { labels: Label[]; matrix: number[][] }) {
-  const [hover, setHover] = useState<{ i: number; j: number } | null>(null);
   const n = labels.length;
-  const size = 18;
-  const width = Math.max(400, n * size + 220);
-  const height = n * size + 60;
-
-  const cells = useMemo(() => {
-    const out: { i: number; j: number; v: number }[] = [];
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) out.push({ i, j, v: matrix[i]?.[j] ?? 0 });
-    return out;
-  }, [matrix, n]);
+  // Mask the diagonal (self-similarity is always 1 and drowns out real signal).
+  const z = matrix.map((row, i) => row.map((v, j) => (i === j ? null : v)));
+  const tickvals = labels.map((_, i) => i);
+  const ticktext = labels.map((l) => l.grant_number);
+  const titles = labels.map((l) => l.title);
+  const customdata = labels.map((_, i) => labels.map((_, j) => [titles[i], titles[j]]));
 
   return (
-    <div className="relative overflow-auto">
-      <svg width={width} height={height} className="text-xs">
-        {labels.map((l, j) => (
-          <text key={`c${j}`} x={210 + j * size + size / 2} y={16}
-                textAnchor="start" transform={`rotate(-55 ${210 + j * size + size / 2} 16)`}
-                className="fill-muted-foreground font-mono" style={{ fontSize: 9 }}>
-            {l.grant_number}
-          </text>
-        ))}
-        {labels.map((l, i) => (
-          <text key={`r${i}`} x={200} y={60 + i * size + size / 2 - 2} textAnchor="end"
-                className="fill-foreground font-mono" style={{ fontSize: 9 }}>
-            {l.grant_number}
-          </text>
-        ))}
-        {cells.map(({ i, j, v }) => {
-          const alpha = Math.min(1, v * 1.4);
-          const hue = i === j ? 210 : 25 + (1 - v) * 20;
-          const isHover = hover && hover.i === i && hover.j === j;
-          return (
-            <rect
-              key={`${i}-${j}`}
-              x={210 + j * size} y={60 + i * size - size}
-              width={size - 1} height={size - 1}
-              fill={`hsl(${hue} 80% ${75 - alpha * 45}%)`}
-              stroke={isHover ? "hsl(38 90% 45%)" : "transparent"}
-              strokeWidth={isHover ? 2 : 0}
-              onMouseEnter={() => setHover({ i, j })}
-              onMouseLeave={() => setHover(null)}
-            />
-          );
-        })}
-      </svg>
-      {hover && (
-        <div className="absolute top-2 right-2 bg-background border border-border rounded px-2 py-1 text-xs shadow max-w-xs">
-          <div className="font-mono text-muted-foreground">{labels[hover.i].grant_number} × {labels[hover.j].grant_number}</div>
-          <div className="tabular-nums">cohesion = {(matrix[hover.i][hover.j] * 100).toFixed(1)}%</div>
-          <div className="mt-1 text-muted-foreground truncate">{labels[hover.i].title}</div>
-          <div className="text-muted-foreground truncate">{labels[hover.j].title}</div>
-        </div>
-      )}
-    </div>
+    <Plot
+      data={[
+        {
+          type: "heatmap",
+          z: z as any,
+          x: tickvals,
+          y: tickvals,
+          customdata: customdata as any,
+          hovertemplate:
+            "<b>%{customdata[0]}</b><br>×<br><b>%{customdata[1]}</b><br>shared = %{z:.0%}<extra></extra>",
+          colorscale: [
+            [0, "#1e293b"],
+            [0.25, "#7c2d12"],
+            [0.5, "#c2410c"],
+            [0.75, "#f59e0b"],
+            [1, "#fde68a"],
+          ],
+          zmin: 0,
+          zmax: 0.5,
+          colorbar: {
+            title: { text: "Shared", font: { color: "#e2e8f0", size: 12 } },
+            tickformat: ".0%",
+            tickfont: { color: "#e2e8f0", size: 11 },
+            outlinewidth: 0,
+            thickness: 12,
+            len: 0.9,
+          },
+          xgap: 1,
+          ygap: 1,
+        } as any,
+      ]}
+      layout={{
+        height: Math.max(600, n * 22 + 160),
+        margin: { l: 130, r: 40, t: 100, b: 40 },
+        paper_bgcolor: "transparent",
+        plot_bgcolor: "transparent",
+        font: { color: "#e2e8f0", size: 11 },
+        xaxis: {
+          side: "top",
+          tickvals,
+          ticktext,
+          tickangle: -55,
+          tickfont: { family: "ui-monospace, SFMono-Regular, monospace", size: 10, color: "#f1f5f9" },
+          showgrid: false,
+          zeroline: false,
+        },
+        yaxis: {
+          autorange: "reversed",
+          tickvals,
+          ticktext,
+          tickfont: { family: "ui-monospace, SFMono-Regular, monospace", size: 10, color: "#f1f5f9" },
+          showgrid: false,
+          zeroline: false,
+          automargin: true,
+        },
+      }}
+      config={{ displayModeBar: false, responsive: true }}
+      style={{ width: "100%" }}
+      useResizeHandler
+    />
   );
 }
