@@ -359,7 +359,10 @@ export default function Devices() {
         r.model_name ||
         (r.environment_tags || []).some((tag) => tag !== "computational_only")
       );
-      return hasDeviceSignal && (!computationalOnly || hasPhysicalContext);
+      // Restrict the page to the 32 canonical BBQS device categories only —
+      // any row that falls into the catch-all "other" bucket is dropped.
+      const inCanonicalTaxonomy = canonicalCategory(r).key !== "other";
+      return hasDeviceSignal && (!computationalOnly || hasPhysicalContext) && inCanonicalTaxonomy;
     });
     setRows(nextRows);
     setLoading(false);
