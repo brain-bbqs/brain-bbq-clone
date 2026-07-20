@@ -335,6 +335,7 @@ export default function Devices() {
   const [rows, setRows] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const isMobile = useIsMobile();
 
   const load = async () => {
@@ -384,9 +385,24 @@ export default function Devices() {
 
   const isModelKnown = (r: DeviceRow) => Boolean(r.model_name || r.manufacturer);
 
-  const physicalRows = rows.filter((r) => !(r.environment_tags || []).includes("computational_only"));
-  const modelRows = rows.filter((r) => isModelKnown(r));
-  const missingModels = rows.length - modelRows.length;
+  const filteredRows = useMemo(
+    () => (categoryFilter === "all" ? rows : rows.filter((r) => canonicalCategory(r).key === categoryFilter)),
+    [rows, categoryFilter]
+  );
+  const physicalRows = filteredRows.filter((r) => !(r.environment_tags || []).includes("computational_only"));
+  const modelRows = filteredRows.filter((r) => isModelKnown(r));
+  const missingModels = filteredRows.length - modelRows.length;
+
+  // Per-category counts (across full row set, not just current filter) — used
+  // to power the taxonomy chips row.
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of rows) {
+      const k = canonicalCategory(r).key;
+      counts[k] = (counts[k] || 0) + 1;
+    }
+    return counts;
+  }, [rows]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, filter: true, unSortIcon: true, wrapText: true, autoHeight: true }),
@@ -409,10 +425,13 @@ export default function Devices() {
       ),
     },
     {
-      field: "device_class", headerName: "Class", width: 140,
-      cellRenderer: (p: any) => p.value
-        ? <Badge variant="outline" className="text-xs">{String(p.value).replace(/_/g, " ")}</Badge>
-        : <span className="text-muted-foreground text-xs">—</span>,
+      headerName: "BBQS category", width: 190,
+      valueGetter: (p) => (p.data ? canonicalCategory(p.data).label : ""),
+      cellRenderer: (p: any) => (
+        <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+          {canonicalCategory(p.data).label}
+        </Badge>
+      ),
     },
     {
       field: "manufacturer", headerName: "Manufacturer", width: 140,
