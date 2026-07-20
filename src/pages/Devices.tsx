@@ -578,7 +578,50 @@ export default function Devices() {
           onChange={(e) => setQuickFilterText(e.target.value)}
           className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
         />
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{rows.length} rows</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {filteredRows.length} / {rows.length} rows
+        </span>
+      </div>
+
+      {/* Canonical BBQS taxonomy — 32 categories */}
+      <div className="mb-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+          BBQS device taxonomy · {BBQS_TAXONOMY.length - 1} categories
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("all")}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              categoryFilter === "all"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-foreground border-border hover:border-primary/50"
+            }`}
+          >
+            All ({rows.length})
+          </button>
+          {BBQS_TAXONOMY.map((c) => {
+            const n = categoryCounts[c.key] || 0;
+            const active = categoryFilter === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setCategoryFilter(c.key)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : n > 0
+                    ? "bg-background text-foreground border-border hover:border-primary/50"
+                    : "bg-muted/40 text-muted-foreground border-transparent"
+                }`}
+                title={n === 0 ? "No evidence yet" : `${n} evidence rows`}
+              >
+                {c.label} {n > 0 && <span className="opacity-70">· {n}</span>}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-4">
@@ -602,11 +645,11 @@ export default function Devices() {
 
       {isMobile ? (
         <MobileCardList
-          items={rows.map((r, i) => ({
+          items={filteredRows.map((r, i) => ({
             id: String(i),
             title: deviceName(r),
             fields: [
-              { label: "Class", value: r.device_class?.replace(/_/g, " ") || "—" },
+              { label: "Category", value: canonicalCategory(r).label },
               { label: "Manufacturer", value: r.manufacturer || "—" },
               { label: "Species", value: (r.species || []).join(", ") || "—" },
               { label: "Environment", value: (r.environment_tags || []).join(", ") || r.setting || "—" },
@@ -619,7 +662,7 @@ export default function Devices() {
       ) : (
         <div className="ag-theme-alpine rounded-lg border border-border overflow-x-auto" style={{ width: "100%" }}>
           <AgGridReact<DeviceRow>
-            rowData={rows}
+            rowData={filteredRows}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}
