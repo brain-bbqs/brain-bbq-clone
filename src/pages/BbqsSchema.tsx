@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, ExternalLink, Search } from "lucide-react";
+import { ChevronRight, Download, ExternalLink, Search } from "lucide-react";
 import {
   ALL_TYPES,
   BBQS_TYPES,
@@ -130,6 +130,16 @@ export default function BbqsSchema() {
           <div className="mt-4 flex gap-2 text-xs text-muted-foreground">
             <Badge variant="secondary">{BBQS_TYPES.length} BBQS types</Badge>
             <Badge variant="secondary">{SCHEMA_ROOTS.length} schema.org anchors</Badge>
+          </div>
+          <div className="mt-4">
+            <a
+              href="/bbqs-schema.linkml.yaml"
+              download
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:border-primary hover:text-primary"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download LinkML (YAML)
+            </a>
           </div>
         </div>
       </div>
