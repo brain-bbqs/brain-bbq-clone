@@ -1,44 +1,78 @@
-## Plan: Astrological Sign Layer for Investigators
 
-Add birthday + zodiac sign as a lightweight "vibes" pairing signal alongside personality scoring, then re-visit seating.
+# BBQS Schema — schema.org alignment (frontend only)
 
-### 1. Data model
-- Add two columns to `public.investigators`:
-  - `birthday date` (nullable)
-  - `zodiac_sign text` (nullable, generated on write via trigger from `birthday` using standard date ranges)
-- Trigger `set_zodiac_from_birthday()` auto-fills `zodiac_sign` whenever `birthday` changes (Aries…Pisces, western tropical dates).
-- No new grants required — RLS on investigators already covers read/update.
+Publish a BBQS type hierarchy that mirrors schema.org's style, purely as a **frontend artifact**. No DB migrations, no new columns, no backfills. The goal is a canonical, browsable "this is what BBQS types are and how they map to schema.org" — the same way schema.org itself is just a hierarchy of definitions with links.
 
-### 2. Admin entry UI
-- On `/internal-coordination` (Cognitive Layer), add a compact "Birthdays" admin panel (admin-only):
-  - Searchable list of all 180 investigators
-  - Inline date picker per row → updates `birthday`; sign auto-derived server-side
-  - Bulk paste (CSV: `name,YYYY-MM-DD`) for fast entry
-- Progress indicator: "X of 180 birthdays entered".
+## Deliverables
 
-### 3. Zodiac bar chart
-- New `ZodiacDistribution.tsx` card on `/internal-coordination`:
-  - Bar chart of counts per sign across all investigators (12 bars, ordered Aries→Pisces)
-  - Hover → list of investigators for that sign
-  - Split toggle: All / R61 / R34 cohort
+**1. Canonical type module** — `src/data/bbqs-schema.ts`
 
-### 4. Pairing metric
-- Extend the existing seating/pairing logic on `/mit-workshop-2026/seating` to include a zodiac compatibility score:
-  - Element groups: Fire (Aries, Leo, Sagittarius), Earth (Taurus, Virgo, Capricorn), Air (Gemini, Libra, Aquarius), Water (Cancer, Scorpio, Pisces)
-  - Compatibility: same element = +1.0, complementary (Fire↔Air, Earth↔Water) = +0.5, otherwise 0
-  - Blended into existing pairing score with a small weight (default 0.15, tunable via a slider in the seating page)
-  - Missing birthday → zodiac contribution = 0 (neutral)
+A single TypeScript file (source of truth) defining every BBQS type:
+- `key` (e.g. `bbqs:Investigator`)
+- `label`, `description`
+- `subClassOf` — schema.org type URL (e.g. `https://schema.org/Person`)
+- `parent` — parent BBQS key for tree rendering
+- `properties[]` — each with name, expected type, schema.org equivalent when one exists, BBQS-specific note
+- `instancesFrom[]` — which existing BBQS tables/pages surface rows of this type (informational, no code coupling)
+- `examples[]` — one or two real BBQS instances (e.g. "1R61MH138612 — SeeMe")
 
-### 5. Reseating pass
-- After birthdays are populated, the seating page will automatically re-score with the zodiac component. A "Re-evaluate seating" button on `/mit-workshop-2026/seating` triggers a fresh pairing pass and shows a diff (who moved).
+**2. The type map** (what actually goes in the file)
 
-### Files
-- `supabase/migrations/…` — add `birthday`, `zodiac_sign`, trigger
-- `src/components/social-force-field/BirthdayAdmin.tsx` — entry panel
-- `src/components/social-force-field/ZodiacDistribution.tsx` — bar chart
-- `src/lib/zodiac.ts` — client-side sign + compatibility helpers
-- `src/pages/InternalCoordination.tsx` — mount new panels
-- `src/pages/MITWorkshop2026.tsx` / seating component — blend zodiac into pairing score + weight slider + re-evaluate button
+```text
+schema:Thing
+├── schema:Organization
+│   ├── bbqs:Consortium
+│   ├── bbqs:ResearchOrganization      → schema:ResearchOrganization
+│   └── bbqs:FundingAgency             → schema:FundingAgency
+├── schema:Person
+│   └── bbqs:Investigator              → schema:Person
+├── schema:Project
+│   └── bbqs:FundedProject             → schema:ResearchProject
+├── schema:Grant
+│   └── bbqs:NIHGrant                  → schema:MonetaryGrant (adds mechanism R61/R34/RF1)
+├── schema:CreativeWork
+│   ├── bbqs:Publication               → schema:ScholarlyArticle
+│   ├── bbqs:Dandiset                  → schema:Dataset
+│   ├── bbqs:SoftwareTool              → schema:SoftwareApplication
+│   └── bbqs:Announcement              → schema:Article
+├── schema:JobPosting
+│   └── bbqs:Job                       → schema:JobPosting
+├── schema:Taxon
+│   └── bbqs:Species                   → schema:Taxon
+├── schema:Product
+│   └── bbqs:Device                    → schema:Product
+│       ├── bbqs:NeuralRecordingDevice   (Neuropixels, wireless neural, iEEG, EEG, OPM)
+│       ├── bbqs:BehavioralSensor        (video, thermal, IR, motion capture, eye tracker, IMU)
+│       ├── bbqs:PhysiologicalSensor     (EDA, ECG, EMG, PPG, respiration, cortisol …)
+│       ├── bbqs:EnvironmentalSensor     (LiDAR, mmWave, GPS, RFID, flow, ultrasonic mic)
+│       └── bbqs:ImagingSystem           (fMRI, two-photon, thermal imaging)
+└── schema:Event
+    └── bbqs:WorkshopEvent             → schema:Event
+```
 
-### Open question
-Any preference on the zodiac weight in the pairing score, or should I ship with 0.15 and let you tune it live?
+**3. Browse page** — `src/pages/BbqsSchema.tsx` at `/schema`
+
+Layout modeled loosely on schema.org itself, styled with our existing tokens (light bg, navy sidebar chrome, orange accents):
+- Left rail: collapsible type tree with search
+- Right pane: for the selected type — description, `subClassOf` link out to schema.org, properties table (BBQS prop → schema.org prop → notes), "Instances in BBQS" pointing to the relevant existing page (Projects, Investigators, Species, Devices…), example JSON-LD snippet
+- Top of page: intro paragraph explaining "this mirrors schema.org so BrainKB, MCP consumers, and external crawlers can align"
+- Sidebar link under Documentation
+
+**4. Sidebar entry**
+
+Add "Schema" (or "BBQS Types") under the Documentation section of `src/data/sidebar-config.ts`, pointing to `/schema`.
+
+**5. That's it**
+
+- No migrations.
+- No changes to `resources`, `investigators`, `projects`, etc.
+- No JSON-LD emission on entity pages this pass — we can layer that later if you want.
+- No touch to the agent DB or BrainKB federation plan yet.
+
+## Order of work
+
+1. Draft `src/data/bbqs-schema.ts` with the ~20 types above.
+2. Build `BbqsSchema.tsx` (tree + detail pane + search).
+3. Register `/schema` route in `App.tsx` and add sidebar link.
+
+Approve and I'll build it.
