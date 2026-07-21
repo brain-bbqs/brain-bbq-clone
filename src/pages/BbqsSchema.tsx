@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, ExternalLink, Search } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import {
   ALL_TYPES,
   BBQS_TYPES,
@@ -79,6 +78,10 @@ export default function BbqsSchema() {
 
   const type = findType(selected)!;
 
+  useEffect(() => {
+    document.title = "BBQS Schema — types aligned to schema.org";
+  }, []);
+
   const q = query.trim().toLowerCase();
   const matcher = useMemo(
     () => (t: BbqsType) => {
@@ -106,15 +109,6 @@ export default function BbqsSchema() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>BBQS Schema — types aligned to schema.org</title>
-        <meta
-          name="description"
-          content="Canonical BBQS type hierarchy for investigators, projects, grants, publications, devices, and events — mapped to schema.org."
-        />
-        <link rel="canonical" href="https://brain-bbq-clone.lovable.app/schema" />
-      </Helmet>
-
       <div className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <h1 className="text-3xl font-semibold tracking-tight">BBQS Schema</h1>
