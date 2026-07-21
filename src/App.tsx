@@ -88,6 +88,7 @@ const App = () => (
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/data-model" element={<DataModel />} />
+              <Route path="/schema" element={<BbqsSchema />} />
               <Route path="/constitution" element={<Constitution />} />
               <Route path="/ontology-approval" element={<OntologyApproval />} />
               <Route path="/social-force-field" element={<SocialForceField />} />
