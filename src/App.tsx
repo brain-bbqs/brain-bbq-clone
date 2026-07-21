@@ -51,6 +51,7 @@ import RequestAccess from "./pages/RequestAccess";
 import Devices from "./pages/Devices";
 import DevicesGraph from "./pages/DevicesGraph";
 import DataModel from "./pages/DataModel";
+import BbqsSchema from "./pages/BbqsSchema";
 import Constitution from "./pages/Constitution";
 import OntologyApproval from "./pages/OntologyApproval";
 import SocialForceField from "./pages/SocialForceField";
