@@ -96,7 +96,6 @@ const conferencesItems: NavItem[] = [
 
 const engineeringItems: NavItem[] = [
   { title: "Roadmap", url: "/roadmap", icon: Map },
-  { title: "AI Constitution", url: "/constitution", icon: ScrollText },
   { title: "Data Model", url: "/data-model", icon: Database },
   { title: "BBQS Schema", url: "/schema", icon: Database },
   { title: "Ontology Approval", url: "/ontology-approval", icon: CheckSquare, adminOnly: true },
