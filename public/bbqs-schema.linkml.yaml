@@ -1,0 +1,428 @@
+id: https://brain-bbq-clone.lovable.app/schema/bbqs
+name: bbqs
+title: BBQS Schema
+description: >-
+  LinkML representation of the BBQS (Brain Behavior Quantification and Synchronization)
+  type hierarchy, aligned to schema.org. Mirrors the browsable schema published at
+  https://brain-bbq-clone.lovable.app/schema. Frontend-only source of truth — no
+  database coupling.
+license: MIT
+version: 1.0.0
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  schema: https://schema.org/
+  bbqs: https://brain-bbq-clone.lovable.app/schema#
+  xsd: http://www.w3.org/2001/XMLSchema#
+
+default_prefix: bbqs
+default_range: string
+
+imports:
+  - linkml:types
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
+classes:
+
+  # ---- schema.org anchors (abstract, non-instantiated in BBQS) --------------
+  Thing:
+    class_uri: schema:Thing
+    abstract: true
+    description: The most generic type on schema.org.
+
+  Organization:
+    is_a: Thing
+    class_uri: schema:Organization
+    abstract: true
+    description: An organization such as a school, NGO, corporation, club, or funding body.
+
+  Person:
+    is_a: Thing
+    class_uri: schema:Person
+    abstract: true
+    description: A person (alive, dead, undead, or fictional).
+
+  Project:
+    is_a: Thing
+    class_uri: schema:Project
+    abstract: true
+    description: An enterprise planned to achieve a particular aim.
+
+  Grant:
+    is_a: Thing
+    class_uri: schema:Grant
+    abstract: true
+    description: A grant, typically financial or otherwise quantifiable, of resources.
+
+  CreativeWork:
+    is_a: Thing
+    class_uri: schema:CreativeWork
+    abstract: true
+    description: The most generic kind of creative work, including books, articles, software, datasets.
+
+  JobPosting:
+    is_a: Thing
+    class_uri: schema:JobPosting
+    abstract: true
+    description: A listing that describes a job opening in a certain organization.
+
+  Taxon:
+    is_a: Thing
+    class_uri: schema:Taxon
+    abstract: true
+    description: A set of organisms asserted to represent a natural cohesive biological unit.
+
+  Product:
+    is_a: Thing
+    class_uri: schema:Product
+    abstract: true
+    description: Any offered product or service — here specialized as scientific instruments.
+
+  Event:
+    is_a: Thing
+    class_uri: schema:Event
+    abstract: true
+    description: An event happening at a certain time and location.
+
+  # ---- BBQS types -----------------------------------------------------------
+
+  Consortium:
+    is_a: Organization
+    class_uri: schema:Organization
+    description: The BBQS Consortium itself — a multi-institution NIH-funded research collective.
+    slots:
+      - name
+      - url
+      - member
+      - funder
+
+  ResearchOrganization:
+    is_a: Organization
+    class_uri: schema:ResearchOrganization
+    description: A university, institute, or lab that participates in BBQS.
+    slots:
+      - name
+      - url
+      - employee
+
+  FundingAgency:
+    is_a: Organization
+    class_uri: schema:FundingAgency
+    description: An organization that funds BBQS research (typically NIH).
+    slots:
+      - name
+      - identifier
+
+  Investigator:
+    is_a: Person
+    class_uri: schema:Person
+    description: >-
+      A person named on a BBQS grant or contributing to a BBQS project — PI, co-I,
+      trainee, or collaborator.
+    slots:
+      - givenName
+      - familyName
+      - email
+      - affiliation
+      - orcid
+      - role
+      - worksOn
+
+  FundedProject:
+    is_a: Project
+    class_uri: schema:ResearchProject
+    description: A BBQS research project — the scientific work tied to one or more NIH awards.
+    slots:
+      - name
+      - description
+      - funding
+      - member
+      - about
+      - instrument
+
+  NIHGrant:
+    is_a: Grant
+    class_uri: schema:MonetaryGrant
+    description: An NIH award funding BBQS work. Encodes the funding mechanism (R61, R34, RF1, etc.).
+    slots:
+      - identifier
+      - funder
+      - amount
+      - startDate
+      - endDate
+      - mechanism
+
+  Publication:
+    is_a: CreativeWork
+    class_uri: schema:ScholarlyArticle
+    description: A peer-reviewed publication produced under BBQS support.
+    slots:
+      - headline
+      - author
+      - datePublished
+      - identifier
+      - isBasedOn
+
+  Dandiset:
+    is_a: CreativeWork
+    class_uri: schema:Dataset
+    description: A DANDI-archived dataset released by BBQS.
+    slots:
+      - name
+      - identifier
+      - about
+      - measurementTechnique
+
+  SoftwareTool:
+    is_a: CreativeWork
+    class_uri: schema:SoftwareApplication
+    description: A software package, pipeline, or analysis library released by BBQS.
+    slots:
+      - name
+      - codeRepository
+      - applicationCategory
+
+  Announcement:
+    is_a: CreativeWork
+    class_uri: schema:Article
+    description: A public consortium announcement or news post.
+    slots:
+      - headline
+      - datePublished
+      - author
+
+  Job:
+    is_a: JobPosting
+    class_uri: schema:JobPosting
+    description: A postdoc, staff, or trainee position posted by a BBQS lab.
+    slots:
+      - title
+      - hiringOrganization
+      - employmentType
+      - datePosted
+
+  Species:
+    is_a: Taxon
+    class_uri: schema:Taxon
+    description: A species studied in a BBQS project.
+    slots:
+      - name
+      - taxonRank
+      - identifier
+
+  Device:
+    is_a: Product
+    class_uri: schema:Product
+    description: A scientific instrument used in BBQS data collection. Specialized by modality.
+    slots:
+      - name
+      - manufacturer
+      - model
+      - category
+
+  NeuralRecordingDevice:
+    is_a: Device
+    description: Devices that record neural activity directly (Neuropixels, wireless neural, iEEG, EEG, OPM).
+    slots:
+      - channelCount
+      - samplingRate
+
+  BehavioralSensor:
+    is_a: Device
+    description: Devices capturing behavior — video, pose, gaze, movement.
+    slots:
+      - frameRate
+
+  PhysiologicalSensor:
+    is_a: Device
+    description: Devices measuring peripheral physiology (EDA, ECG, EMG, PPG, respiration, cortisol, skin temp).
+    slots:
+      - samplingRate
+
+  EnvironmentalSensor:
+    is_a: Device
+    description: Devices sensing the environment or spatial context around a subject (LiDAR, mmWave, GPS, RFID, flow, ultrasonic mic).
+
+  ImagingSystem:
+    is_a: Device
+    description: Large-scale imaging systems (fMRI, two-photon, thermal imaging).
+    slots:
+      - modality
+
+  WorkshopEvent:
+    is_a: Event
+    class_uri: schema:Event
+    description: A BBQS-organized workshop or convening.
+    slots:
+      - name
+      - startDate
+      - endDate
+      - location
+      - attendee
+
+# ---------------------------------------------------------------------------
+# Slots
+# ---------------------------------------------------------------------------
+slots:
+
+  name:
+    slot_uri: schema:name
+    range: string
+
+  description:
+    slot_uri: schema:description
+    range: string
+
+  url:
+    slot_uri: schema:url
+    range: uriorcurie
+
+  identifier:
+    slot_uri: schema:identifier
+    range: string
+    description: External identifier — e.g. NIH grant number, DOI, DANDI URL, NCBI Taxon URL.
+
+  # People / org relations
+  member:
+    slot_uri: schema:member
+    range: Organization
+    multivalued: true
+
+  employee:
+    slot_uri: schema:employee
+    range: Investigator
+    multivalued: true
+
+  funder:
+    slot_uri: schema:funder
+    range: FundingAgency
+
+  givenName:
+    slot_uri: schema:givenName
+    range: string
+  familyName:
+    slot_uri: schema:familyName
+    range: string
+  email:
+    slot_uri: schema:email
+    range: string
+    description: Primary and secondary emails. PII — restricted in the public API.
+  affiliation:
+    slot_uri: schema:affiliation
+    range: ResearchOrganization
+    multivalued: true
+  orcid:
+    slot_uri: schema:identifier
+    range: uriorcurie
+  role:
+    range: string
+    description: BBQS role — PI, Co-I, Trainee, Collaborator.
+  worksOn:
+    slot_uri: schema:worksFor
+    range: FundedProject
+    multivalued: true
+
+  # Project / grant
+  funding:
+    slot_uri: schema:funding
+    range: NIHGrant
+    multivalued: true
+  about:
+    slot_uri: schema:about
+    range: Species
+    multivalued: true
+  instrument:
+    range: Device
+    multivalued: true
+    description: Devices used in the project.
+  amount:
+    slot_uri: schema:amount
+    range: float
+  startDate:
+    slot_uri: schema:startDate
+    range: date
+  endDate:
+    slot_uri: schema:endDate
+    range: date
+  mechanism:
+    range: string
+    description: NIH funding mechanism — R61, R34, RF1, U01, …
+
+  # CreativeWork
+  headline:
+    slot_uri: schema:headline
+    range: string
+  author:
+    slot_uri: schema:author
+    range: Investigator
+    multivalued: true
+  datePublished:
+    slot_uri: schema:datePublished
+    range: date
+  isBasedOn:
+    slot_uri: schema:isBasedOn
+    range: FundedProject
+  measurementTechnique:
+    slot_uri: schema:measurementTechnique
+    range: Device
+    multivalued: true
+  codeRepository:
+    slot_uri: schema:codeRepository
+    range: uriorcurie
+  applicationCategory:
+    slot_uri: schema:applicationCategory
+    range: string
+
+  # JobPosting
+  title:
+    slot_uri: schema:title
+    range: string
+  hiringOrganization:
+    slot_uri: schema:hiringOrganization
+    range: ResearchOrganization
+  employmentType:
+    slot_uri: schema:employmentType
+    range: string
+  datePosted:
+    slot_uri: schema:datePosted
+    range: date
+
+  # Taxon
+  taxonRank:
+    slot_uri: schema:taxonRank
+    range: string
+
+  # Device
+  manufacturer:
+    slot_uri: schema:manufacturer
+    range: string
+  model:
+    slot_uri: schema:model
+    range: string
+  category:
+    slot_uri: schema:category
+    range: string
+    description: BBQS canonical device category (one of the 32).
+  channelCount:
+    range: integer
+    description: Number of recording channels.
+  samplingRate:
+    range: float
+    description: Sampling rate in Hz.
+  frameRate:
+    range: float
+    description: Frame rate in fps.
+  modality:
+    range: string
+    description: Imaging modality — fMRI, two-photon, thermal.
+
+  # Event
+  location:
+    slot_uri: schema:location
+    range: string
+  attendee:
+    slot_uri: schema:attendee
+    range: Investigator
+    multivalued: true

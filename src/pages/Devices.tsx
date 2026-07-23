@@ -14,19 +14,71 @@ import "@/styles/ag-grid-theme.css";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCardList } from "@/components/MobileCardList";
 
-// Curated "known gotchas" per device class — plain-English things that commonly
-// trip up experimenters, based on shared lab experience. Keys match the
-// `device_class` values produced by the harvester (snake_case).
+// Canonical BBQS device taxonomy — the 32 categories used across the program.
+// The DB `device_class` values (video_tracking, ephys_headstage, …) are folded
+// into these buckets client-side via `canonicalCategory()` below.
+type CanonicalCategory = {
+  key: string;
+  label: string;
+  aliases: string[]; // lowercase substrings to match against device_class / labels / model / manufacturer
+};
+
+const BBQS_TAXONOMY: CanonicalCategory[] = [
+  { key: "video_cameras", label: "Video Cameras", aliases: ["video_tracking", "video tracking", "behavior camera", "video camera", "rgb camera"] },
+  { key: "neuropixels", label: "Neuropixels", aliases: ["neuropixel", "silicon probe", "imec"] },
+  { key: "thermal_cameras", label: "Thermal Cameras", aliases: ["thermal camera", "flir", "thermal imag"] },
+  { key: "ultrasonic_microphones", label: "Ultrasonic Microphones", aliases: ["ultrasonic", "usv", "bioacoustic", "audio_recording", "microphone"] },
+  { key: "rna_sequencing", label: "RNA Sequencing", aliases: ["rna-seq", "rna seq", "sequencing", "scrna", "transcriptom"] },
+  { key: "heart_rate_sensors", label: "Heart Rate Sensors", aliases: ["heart rate", "ecg", "hrv", "polar"] },
+  { key: "eye_tracker", label: "Eye Tracker", aliases: ["eye-track", "eye track", "tobii", "pupil labs", "gaze"] },
+  { key: "infrared_cameras", label: "Infrared Cameras", aliases: ["infrared camera", "ir camera", "nir camera"] },
+  { key: "wireless_neural", label: "Wireless Neural", aliases: ["wireless neural", "wireless recording", "telemetry", "ephys_headstage", "headstage"] },
+  { key: "imu", label: "IMU", aliases: ["imu", "inertial"] },
+  { key: "rfid", label: "RFID", aliases: ["rfid"] },
+  { key: "respiration_sensors", label: "Respiration Sensors", aliases: ["respiration", "breathing belt", "resp belt"] },
+  { key: "accelerometer", label: "Accelerometer", aliases: ["accelerometer", "actigraph", "wearable_actigraphy"] },
+  { key: "eeg", label: "EEG", aliases: ["eeg", "scalp electrode"] },
+  { key: "eda", label: "EDA", aliases: ["eda", "electrodermal", "gsr", "skin conductance"] },
+  { key: "plethysmography", label: "Plethysmography (PPG)", aliases: ["plethysmograph", "ppg", "pulse oximet"] },
+  { key: "intranasal_thermistor", label: "Intranasal Thermistor", aliases: ["thermistor", "nasal temperature"] },
+  { key: "emg", label: "EMG", aliases: ["emg", "electromyograph"] },
+  { key: "gps", label: "GPS", aliases: ["gps", "geoloc"] },
+  { key: "neuroimaging_fmri", label: "Neuroimaging (fMRI)", aliases: ["fmri", "mri scanner", "neuroimaging"] },
+  { key: "flow_sensors", label: "Flow Sensors", aliases: ["flow sensor", "airflow", "flowmeter"] },
+  { key: "tracking_software", label: "Tracking Software", aliases: ["deeplabcut", "dlc", "sleap", "tracking software", "pose estimation"] },
+  { key: "ieeg", label: "iEEG", aliases: ["ieeg", "ecog", "intracranial", "sEEG", "seeg", "stimulation"] },
+  { key: "motion_tracking", label: "Motion Tracking", aliases: ["motion capture", "mocap", "vicon", "optitrack"] },
+  { key: "cortisol_wearable", label: "Cortisol Wearable", aliases: ["cortisol"] },
+  { key: "epinephrine_wearable", label: "Epinephrine Wearable", aliases: ["epinephrine", "adrenaline sensor"] },
+  { key: "opm", label: "Optically Pumped Magnetometers", aliases: ["optically pumped", "opm", "magnetometer", "quspin"] },
+  { key: "smartphone_camera", label: "Smartphone Camera", aliases: ["smartphone", "iphone", "mobile phone camera"] },
+  { key: "skin_temperature", label: "Skin Temperature Sensor", aliases: ["skin temperature", "temperature sensor"] },
+  { key: "vr", label: "Virtual Reality Environment", aliases: ["virtual reality", "vr headset", "oculus", "htc vive"] },
+  { key: "lidar", label: "LiDAR", aliases: ["lidar"] },
+  { key: "mmwave", label: "Millimeter Wave Sensing", aliases: ["millimeter wave", "mmwave", "60 ghz radar"] },
+  // "Two-photon" and generic ephys headstages that don't fit above still get
+  // surfaced under a catch-all so we don't silently drop rows.
+  { key: "other", label: "Other / Unmapped", aliases: [] },
+];
+
+function canonicalCategory(r: DeviceRow): CanonicalCategory {
+  const hay = [r.device_class, r.model_name, r.hardware_label, r.device_label, r.manufacturer, r.sample_use_case]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  for (const c of BBQS_TAXONOMY) {
+    if (c.key === "other") continue;
+    if (c.aliases.some((a) => hay.includes(a.toLowerCase()))) return c;
+  }
+  return BBQS_TAXONOMY[BBQS_TAXONOMY.length - 1];
+}
+
+// Common gotchas keyed by canonical taxonomy key.
 const COMMON_ISSUES: Record<string, string[]> = {
   silicon_probe: [
     "Shank breakage on insertion — slow descent (<5 µm/s) and pre-thin dura",
     "Ground/reference loops causing 60 Hz noise",
     "Channel drift over long recordings; re-reference or Kilosort drift correction",
-  ],
-  neuropixels: [
-    "Headstage overheating in freely-moving rigs — add airflow or duty-cycle",
-    "Reference/ground mis-config produces flat channels",
-    "Probe bending if not perfectly perpendicular to brain surface",
   ],
   miniscope: [
     "GRIN lens focal drift after implantation — re-focus at each session",
@@ -37,16 +89,6 @@ const COMMON_ISSUES: Record<string, string[]> = {
     "Z-drift over long sessions — enable online motion correction",
     "Laser power creep damages tissue; monitor at objective",
     "PMT saturation in bright expressers",
-  ],
-  eeg: [
-    "Impedance >10 kΩ → noisy channels; re-gel and re-abrade",
-    "Line noise from nearby equipment; notch filter or shielding",
-    "Sweat/movement artifacts in long recordings",
-  ],
-  ieeg: [
-    "Grid migration between imaging and recording — re-localize",
-    "CSF shunting under grid causing signal loss",
-    "Stim artifact bleed into recording channels",
   ],
   dbs_lead: [
     "Lead migration in first 2 weeks post-op",
@@ -62,16 +104,6 @@ const COMMON_ISSUES: Record<string, string[]> = {
     "IR interference between multiple depth cameras — stagger or time-mux",
     "Poor depth on dark/reflective fur",
     "Calibration drift with temperature",
-  ],
-  imu: [
-    "Gyro drift over minutes; fuse with accelerometer/magnetometer",
-    "Magnetometer useless indoors near ferrous metal",
-    "Clock skew vs. other streams — use LSL for sync",
-  ],
-  emg: [
-    "Cross-talk between adjacent muscles",
-    "Electrode lift-off during long sessions",
-    "Motion artifact swamping signal at high forces",
   ],
   headstage: [
     "Connector fatigue after ~50 mating cycles",
@@ -103,16 +135,174 @@ const COMMON_ISSUES: Record<string, string[]> = {
     "Sample-clock drift between devices — use shared clock",
     "Buffer underruns at high channel × rate combinations",
   ],
+  // Canonical BBQS taxonomy keys
+  video_cameras: [
+    "Rolling shutter distorts fast movement — use global shutter for pose tracking",
+    "IR illumination flicker synced to line frequency",
+    "Frame drops at high FPS if disk I/O can't keep up",
+  ],
+  neuropixels: [
+    "Headstage overheating in freely-moving rigs — add airflow or duty-cycle",
+    "Reference/ground mis-config produces flat channels",
+    "Probe bending if not perfectly perpendicular to brain surface",
+  ],
+  thermal_cameras: [
+    "Emissivity assumptions off for fur/skin — calibrate per subject",
+    "Ambient temperature drift; re-baseline between sessions",
+    "Low spatial resolution vs. RGB — align with a shared fiducial",
+  ],
+  ultrasonic_microphones: [
+    "Aliasing if sample rate <2× target frequency (need >=250 kHz for mouse USV)",
+    "Cage reflections cause phantom calls — use absorbing lining",
+    "Wind/handling noise in the ultrasonic band",
+  ],
+  rna_sequencing: [
+    "Batch effects across library prep days",
+    "Low-input dropout in single-cell protocols",
+    "Ambient RNA contamination in droplet workflows",
+  ],
+  heart_rate_sensors: [
+    "Motion artifact during locomotion",
+    "Poor contact on furred/dark skin",
+    "Bluetooth dropouts break beat-to-beat continuity",
+  ],
+  eye_tracker: [
+    "Drift over long sessions — re-calibrate every 10–15 min",
+    "Glasses/eyelashes cause pupil detection loss",
+    "Head-fixed vs. free-viewing latencies differ",
+  ],
+  infrared_cameras: [
+    "IR illuminator hotspots saturate the sensor",
+    "Multiple IR sources interfere — stagger or time-multiplex",
+    "Focus shift between visible and IR",
+  ],
+  wireless_neural: [
+    "RF dropouts in dense metal environments",
+    "Battery life limits session length",
+    "Sync jitter with wired streams — use hardware trigger",
+  ],
+  imu: [
+    "Gyro drift over minutes; fuse with accelerometer/magnetometer",
+    "Magnetometer useless indoors near ferrous metal",
+    "Clock skew vs. other streams — use LSL for sync",
+  ],
+  rfid: [
+    "Read range collapses near metal cage walls",
+    "Tag collision when multiple animals cluster",
+    "Antenna orientation strongly affects detection",
+  ],
+  respiration_sensors: [
+    "Belt slippage over long sessions",
+    "Motion artifact mimics breaths",
+    "Baseline drift from posture changes",
+  ],
+  accelerometer: [
+    "DC drift on cheap MEMS — high-pass filter",
+    "Aliasing when downsampling gait data",
+    "Axis-alignment errors between subjects",
+  ],
+  eeg: [
+    "Impedance >10 kΩ → noisy channels; re-gel and re-abrade",
+    "Line noise from nearby equipment; notch filter or shielding",
+    "Sweat/movement artifacts in long recordings",
+  ],
+  eda: [
+    "Sensor dries out — re-gel every ~30 min",
+    "Temperature confounds tonic level",
+    "Ambulatory motion swamps phasic peaks",
+  ],
+  plethysmography: [
+    "Motion artifact dominates during exercise",
+    "Skin tone bias for green-LED PPG",
+    "Pressure of the finger clip alters waveform",
+  ],
+  intranasal_thermistor: [
+    "Fixation drift with head movement",
+    "Mouth-breathing bypasses the sensor",
+    "Condensation shorts the bead",
+  ],
+  emg: [
+    "Cross-talk between adjacent muscles",
+    "Electrode lift-off during long sessions",
+    "Motion artifact swamping signal at high forces",
+  ],
+  gps: [
+    "Multipath error in urban canyons",
+    "Indoor accuracy is effectively zero",
+    "Cold-start fix delay of 30–60 s",
+  ],
+  neuroimaging_fmri: [
+    "Motion regressors don't fully remove spike artifacts",
+    "Physio noise (cardiac/respiratory) aliased into BOLD",
+    "Distortion in orbitofrontal / temporal lobe near air",
+  ],
+  flow_sensors: [
+    "Calibration drift with temperature",
+    "Debris clogging small-bore sensors",
+    "Reverse-flow detection missing on some hot-wire models",
+  ],
+  tracking_software: [
+    "Model generalization fails across lighting/arena changes",
+    "Occlusion causes ID swaps in multi-animal tracking",
+    "Frame rate mismatch between labeled and inference video",
+  ],
+  ieeg: [
+    "Grid migration between imaging and recording — re-localize",
+    "CSF shunting under grid causing signal loss",
+    "Stim artifact bleed into recording channels",
+  ],
+  motion_tracking: [
+    "Marker occlusion in cluttered scenes",
+    "IR strobe interference between cameras",
+    "Calibration drift after rig bumps",
+  ],
+  cortisol_wearable: [
+    "Sweat pooling delays diffusion to sensor",
+    "Diurnal baseline swamps event-locked responses",
+    "Sensor lifetime measured in hours, not days",
+  ],
+  epinephrine_wearable: [
+    "Very short half-life narrows the detection window",
+    "Cross-reactivity with other catecholamines",
+    "Skin-site variability between subjects",
+  ],
+  opm: [
+    "Sensitive to ambient magnetic field — shielded room required",
+    "Head movement modulates sensor gain",
+    "Cell heating drifts with room temperature",
+  ],
+  smartphone_camera: [
+    "Auto-exposure/white-balance drift between clips",
+    "HEIC/HEVC files aren't ingest-friendly — convert to MP4",
+    "Rolling shutter warps fast motion",
+  ],
+  skin_temperature: [
+    "Ambient conductive/convective loss confounds readings",
+    "Adhesive lift-off after 12–24 h",
+    "Slow response time (seconds) misses transients",
+  ],
+  vr: [
+    "Simulator sickness at high vection with low frame rate",
+    "Lighthouse occlusion loses head pose",
+    "Latency between motion and display breaks presence",
+  ],
+  lidar: [
+    "Reflective/black surfaces produce holes in the point cloud",
+    "Rain/dust scatters returns",
+    "Motion compensation needed for handheld capture",
+  ],
+  mmwave: [
+    "Multipath ghosts in reflective rooms",
+    "Range–velocity ambiguity from chirp config",
+    "Regulatory limits on transmit power in some regions",
+  ],
 };
 
 function issuesFor(row: DeviceRow): string[] {
+  const cat = canonicalCategory(row);
+  if (COMMON_ISSUES[cat.key]) return COMMON_ISSUES[cat.key];
   const cls = (row.device_class || "").toLowerCase();
   if (COMMON_ISSUES[cls]) return COMMON_ISSUES[cls];
-  // Fuzzy fallback: try to match on label keywords.
-  const hay = `${row.model_name || ""} ${row.hardware_label || ""} ${row.device_label || ""}`.toLowerCase();
-  for (const [key, issues] of Object.entries(COMMON_ISSUES)) {
-    if (hay.includes(key.replace(/_/g, " ")) || hay.includes(key)) return issues;
-  }
   return [];
 }
 
@@ -145,6 +335,7 @@ export default function Devices() {
   const [rows, setRows] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [quickFilterText, setQuickFilterText] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const isMobile = useIsMobile();
 
   const load = async () => {
@@ -168,7 +359,10 @@ export default function Devices() {
         r.model_name ||
         (r.environment_tags || []).some((tag) => tag !== "computational_only")
       );
-      return hasDeviceSignal && (!computationalOnly || hasPhysicalContext);
+      // Restrict the page to the 32 canonical BBQS device categories only —
+      // any row that falls into the catch-all "other" bucket is dropped.
+      const inCanonicalTaxonomy = canonicalCategory(r).key !== "other";
+      return hasDeviceSignal && (!computationalOnly || hasPhysicalContext) && inCanonicalTaxonomy;
     });
     setRows(nextRows);
     setLoading(false);
@@ -194,9 +388,24 @@ export default function Devices() {
 
   const isModelKnown = (r: DeviceRow) => Boolean(r.model_name || r.manufacturer);
 
-  const physicalRows = rows.filter((r) => !(r.environment_tags || []).includes("computational_only"));
-  const modelRows = rows.filter((r) => isModelKnown(r));
-  const missingModels = rows.length - modelRows.length;
+  const filteredRows = useMemo(
+    () => (categoryFilter === "all" ? rows : rows.filter((r) => canonicalCategory(r).key === categoryFilter)),
+    [rows, categoryFilter]
+  );
+  const physicalRows = filteredRows.filter((r) => !(r.environment_tags || []).includes("computational_only"));
+  const modelRows = filteredRows.filter((r) => isModelKnown(r));
+  const missingModels = filteredRows.length - modelRows.length;
+
+  // Per-category counts (across full row set, not just current filter) — used
+  // to power the taxonomy chips row.
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of rows) {
+      const k = canonicalCategory(r).key;
+      counts[k] = (counts[k] || 0) + 1;
+    }
+    return counts;
+  }, [rows]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({ sortable: true, resizable: true, filter: true, unSortIcon: true, wrapText: true, autoHeight: true }),
@@ -219,10 +428,13 @@ export default function Devices() {
       ),
     },
     {
-      field: "device_class", headerName: "Class", width: 140,
-      cellRenderer: (p: any) => p.value
-        ? <Badge variant="outline" className="text-xs">{String(p.value).replace(/_/g, " ")}</Badge>
-        : <span className="text-muted-foreground text-xs">—</span>,
+      headerName: "BBQS category", width: 190,
+      valueGetter: (p) => (p.data ? canonicalCategory(p.data).label : ""),
+      cellRenderer: (p: any) => (
+        <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+          {canonicalCategory(p.data).label}
+        </Badge>
+      ),
     },
     {
       field: "manufacturer", headerName: "Manufacturer", width: 140,
@@ -369,7 +581,50 @@ export default function Devices() {
           onChange={(e) => setQuickFilterText(e.target.value)}
           className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full max-w-md"
         />
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{rows.length} rows</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {filteredRows.length} / {rows.length} rows
+        </span>
+      </div>
+
+      {/* Canonical BBQS taxonomy — 32 categories */}
+      <div className="mb-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+          BBQS device taxonomy · {BBQS_TAXONOMY.length - 1} categories
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("all")}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              categoryFilter === "all"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-foreground border-border hover:border-primary/50"
+            }`}
+          >
+            All ({rows.length})
+          </button>
+          {BBQS_TAXONOMY.map((c) => {
+            const n = categoryCounts[c.key] || 0;
+            const active = categoryFilter === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setCategoryFilter(c.key)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : n > 0
+                    ? "bg-background text-foreground border-border hover:border-primary/50"
+                    : "bg-muted/40 text-muted-foreground border-transparent"
+                }`}
+                title={n === 0 ? "No evidence yet" : `${n} evidence rows`}
+              >
+                {c.label} {n > 0 && <span className="opacity-70">· {n}</span>}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-4">
@@ -393,11 +648,11 @@ export default function Devices() {
 
       {isMobile ? (
         <MobileCardList
-          items={rows.map((r, i) => ({
+          items={filteredRows.map((r, i) => ({
             id: String(i),
             title: deviceName(r),
             fields: [
-              { label: "Class", value: r.device_class?.replace(/_/g, " ") || "—" },
+              { label: "Category", value: canonicalCategory(r).label },
               { label: "Manufacturer", value: r.manufacturer || "—" },
               { label: "Species", value: (r.species || []).join(", ") || "—" },
               { label: "Environment", value: (r.environment_tags || []).join(", ") || r.setting || "—" },
@@ -410,7 +665,7 @@ export default function Devices() {
       ) : (
         <div className="ag-theme-alpine rounded-lg border border-border overflow-x-auto" style={{ width: "100%" }}>
           <AgGridReact<DeviceRow>
-            rowData={rows}
+            rowData={filteredRows}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             quickFilterText={quickFilterText}

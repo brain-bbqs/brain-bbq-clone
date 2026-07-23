@@ -86,9 +86,11 @@ export function RelationalLayer() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Cohesion matrix</CardTitle>
+          <CardTitle className="text-base">Project-to-project overlap</CardTitle>
           <CardDescription>
-            Jaccard similarity across species, approaches, sensors, data modalities, analysis methods & keywords. Darker = more shared.
+            How much any two projects share across species, approaches, sensors, data modalities, analysis methods, and keywords.
+            Brighter cells = more overlap. Hover any cell to see the two project titles and their percent overlap. The diagonal
+            (a project with itself) is muted so the real signal stands out.
           </CardDescription>
         </CardHeader>
         <CardContent>
