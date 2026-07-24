@@ -128,6 +128,66 @@ function EditableTagList({ items, onChange, placeholder }: {
   );
 }
 
+// The four canonical BBQS working groups. These MUST match the wg-*@brain-bbqs.org
+// Google Groups (the sync-member-groups edge function maps on these). Free-text entry
+// produced drift ("Analytics" vs "WG-Analytics"), so working groups are now picked from
+// this fixed list only.
+const CANONICAL_WORKING_GROUPS = ["WG-Analytics", "WG-Devices", "WG-ELSI", "WG-Standards"] as const;
+
+// Standardized working-group picker — choose from the canonical list, no free text.
+function EditableWorkingGroups({ items, onChange }: {
+  items: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const selected = new Set(items);
+  const available = CANONICAL_WORKING_GROUPS.filter((w) => !selected.has(w));
+  const add = (wg: string) => {
+    if (!selected.has(wg)) onChange([...items, wg]);
+    setAdding(false);
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {items.map((it) => (
+        <Badge key={it} variant="secondary" className="gap-1 pr-1">
+          {it}
+          <button onClick={() => onChange(items.filter((x) => x !== it))} className="hover:text-destructive">
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ))}
+      {adding ? (
+        <div className="inline-flex flex-wrap items-center gap-1">
+          {available.map((w) => (
+            <button
+              key={w}
+              onClick={() => add(w)}
+              className="px-2 py-1 text-xs rounded border border-border hover:bg-accent"
+            >
+              {w}
+            </button>
+          ))}
+          {available.length === 0 && (
+            <span className="text-muted-foreground italic text-xs">All working groups added</span>
+          )}
+          <button onClick={() => setAdding(false)} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        available.length > 0 && (
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setAdding(true)}>
+            <Plus className="h-3 w-3 mr-1" /> Add
+          </Button>
+        )
+      )}
+      {items.length === 0 && !adding && (
+        <span className="text-muted-foreground italic text-xs">No working groups</span>
+      )}
+    </div>
+  );
+}
+
 // Editable institution picker (links/unlinks rows in investigator_organizations)
 function EditableInstitutions({ investigatorId, current, onChanged, openEntity }: {
   investigatorId: string;
@@ -385,6 +445,25 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
+  // secondary_emails is deliberately EXCLUDED from investigators_public (it's
+  // access-granting — the Globus sign-in gate matches on it). So the public summary
+  // never carries it, which is why it showed on the admin console but not here. Fetch
+  // it from the base table only for the OWNER or a curator/admin (RLS permits those),
+  // so a member can see/manage their own alternate emails.
+  const canSeeSecondary = isOwner || isCurator;
+  const { data: priv } = useQuery({
+    queryKey: ["investigator-private", id],
+    enabled: !!id && canSeeSecondary,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("investigators")
+        .select("secondary_emails")
+        .eq("id", id)
+        .maybeSingle();
+      return (data as { secondary_emails?: string[] } | null) ?? null;
+    },
+  });
+
   // Can edit if: user owns this investigator (user_id link), email matches (legacy),
   // user is a curator/admin (Tier 1 or Tier 2), OR user shares a grant with this investigator
   // Editability is determined by ownership / role / shared-grant — email-match
@@ -413,6 +492,7 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["entity-investigator", id] });
+      queryClient.invalidateQueries({ queryKey: ["investigator-private", id] });
       toast({ title: "Updated", description: "Profile field saved." });
     },
     onError: () => {
@@ -529,10 +609,9 @@ export function InvestigatorSummary({ id }: { id: string }) {
       {/* Working Groups */}
       <SummaryField label="Working Groups">
         {canEdit ? (
-          <EditableTagList
+          <EditableWorkingGroups
             items={data.working_groups || []}
             onChange={(next) => updateField.mutate({ field: "working_groups", value: next })}
-            placeholder="Add a working group"
           />
         ) : data.working_groups && data.working_groups.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
@@ -543,22 +622,25 @@ export function InvestigatorSummary({ id }: { id: string }) {
         )}
       </SummaryField>
 
-      {/* Secondary Emails */}
-      <SummaryField label="Secondary Emails">
-        {canEdit ? (
-          <EditableTagList
-            items={data.secondary_emails || []}
-            onChange={(next) => updateField.mutate({ field: "secondary_emails", value: next })}
-            placeholder="Add an alternate email"
-          />
-        ) : data.secondary_emails && data.secondary_emails.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {data.secondary_emails.map((e: string) => <Badge key={e} variant="secondary">{e}</Badge>)}
-          </div>
-        ) : (
-          <span className="text-muted-foreground italic text-xs">None</span>
-        )}
-      </SummaryField>
+      {/* Secondary Emails — only the owner or a curator/admin can see/manage these
+          (access-granting; not exposed on the public summary). */}
+      {canSeeSecondary && (
+        <SummaryField label="Secondary Emails">
+          {canEdit ? (
+            <EditableTagList
+              items={priv?.secondary_emails || []}
+              onChange={(next) => updateField.mutate({ field: "secondary_emails", value: next })}
+              placeholder="Add an alternate email"
+            />
+          ) : priv?.secondary_emails && priv.secondary_emails.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {priv.secondary_emails.map((e: string) => <Badge key={e} variant="secondary">{e}</Badge>)}
+            </div>
+          ) : (
+            <span className="text-muted-foreground italic text-xs">None</span>
+          )}
+        </SummaryField>
+      )}
 
       {/* Institutions */}
       <SummaryField label="University/Institution">
