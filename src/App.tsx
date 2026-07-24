@@ -52,7 +52,7 @@ import Devices from "./pages/Devices";
 import DevicesGraph from "./pages/DevicesGraph";
 import DataModel from "./pages/DataModel";
 import BbqsSchema from "./pages/BbqsSchema";
-import Constitution from "./pages/Constitution";
+
 import OntologyApproval from "./pages/OntologyApproval";
 import SocialForceField from "./pages/SocialForceField";
 import InternalCoordination from "./pages/InternalCoordination";
@@ -89,7 +89,7 @@ const App = () => (
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/data-model" element={<DataModel />} />
               <Route path="/schema" element={<BbqsSchema />} />
-              <Route path="/constitution" element={<Constitution />} />
+              
               <Route path="/ontology-approval" element={<OntologyApproval />} />
               <Route path="/social-force-field" element={<SocialForceField />} />
               <Route path="/auth" element={<Auth />} />

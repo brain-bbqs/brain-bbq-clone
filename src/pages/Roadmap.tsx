@@ -34,7 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeCard } from "@/components/roadmap/ThemeCard";
 import { ThemeDrawer } from "@/components/roadmap/ThemeDrawer";
-import { ConstitutionPanel } from "@/components/roadmap/ConstitutionPanel";
+
 import { RoadmapTimeline } from "@/components/roadmap/RoadmapTimeline";
 import {
   ROADMAP_THEMES,
@@ -547,7 +547,6 @@ export default function Roadmap() {
         <Tabs defaultValue="themes" className="mb-6">
           <TabsList>
             <TabsTrigger value="themes">Themes</TabsTrigger>
-            <TabsTrigger value="constitution">AI Constitution</TabsTrigger>
             <TabsTrigger value="execution">Execution (GitHub)</TabsTrigger>
           </TabsList>
 
@@ -556,10 +555,6 @@ export default function Roadmap() {
               openIssuesByLabel={openIssuesByLabel}
               onOpenTheme={(t) => setActiveTheme(t)}
             />
-          </TabsContent>
-
-          <TabsContent value="constitution" className="mt-6">
-            <ConstitutionPanel />
           </TabsContent>
 
           <TabsContent value="execution" className="mt-6">

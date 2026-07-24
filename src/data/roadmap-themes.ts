@@ -1,8 +1,6 @@
 // Curated developer roadmap themes. Each theme corresponds to a Spec-Kit-style
 // folder under `.specify/specs/` (spec.md + plan.md + tasks.md). Contributors
 // extend those markdown files via PR; this index just wires them into the UI.
-import constitutionRaw from "../../.specify/memory/constitution.md?raw";
-
 import spec001 from "../../.specify/specs/001-consortium-agent/spec.md?raw";
 import plan001 from "../../.specify/specs/001-consortium-agent/plan.md?raw";
 import tasks001 from "../../.specify/specs/001-consortium-agent/tasks.md?raw";
@@ -43,8 +41,6 @@ export interface RoadmapTheme {
   plan: string;
   tasks: string;
 }
-
-export const constitution = constitutionRaw;
 
 export const PILLAR_LABEL: Record<ThemePillar, string> = {
   agent: "Agent",
