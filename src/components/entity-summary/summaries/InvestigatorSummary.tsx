@@ -445,11 +445,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
     },
   });
 
-  // secondary_emails is deliberately EXCLUDED from investigators_public (it's
-  // access-granting — the Globus sign-in gate matches on it). So the public summary
-  // never carries it, which is why it showed on the admin console but not here. Fetch
-  // it from the base table only for the OWNER or a curator/admin (RLS permits those),
-  // so a member can see/manage their own alternate emails.
+  // email AND secondary_emails are deliberately EXCLUDED from investigators_public
+  // (email is kept off the public summary; secondary_emails is access-granting — the
+  // Globus sign-in gate matches on it). Because the pane reads investigators_public,
+  // the Email field bound to data.email showed blank and edits appeared not to save
+  // (the write landed, but the read-back view had no email to show). Fetch both from
+  // the base table for the OWNER or a curator/admin (RLS permits those), so a member
+  // can see and manage their own primary + alternate emails.
   const canSeeSecondary = isOwner || isCurator;
   const { data: priv } = useQuery({
     queryKey: ["investigator-private", id],
@@ -457,10 +459,10 @@ export function InvestigatorSummary({ id }: { id: string }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("investigators")
-        .select("secondary_emails")
+        .select("email, secondary_emails")
         .eq("id", id)
         .maybeSingle();
-      return (data as { secondary_emails?: string[] } | null) ?? null;
+      return (data as { email?: string | null; secondary_emails?: string[] } | null) ?? null;
     },
   });
 
@@ -507,7 +509,11 @@ export function InvestigatorSummary({ id }: { id: string }) {
   if (isLoading) return <SummaryLoading />;
   if (!data) return <p className="p-6 text-muted-foreground">Investigator not found.</p>;
 
-  const completeness = calcCompleteness(data);
+  // Email lives on the base table (investigators_public omits it). Owner/curator get it
+  // from `priv`; other viewers don't see an email here (it's kept off the public view).
+  const emailValue = (canSeeSecondary ? priv?.email : data.email) || "";
+
+  const completeness = calcCompleteness({ ...data, email: emailValue });
 
   const summaryContent = (
     <div className="space-y-1">
@@ -536,12 +542,13 @@ export function InvestigatorSummary({ id }: { id: string }) {
         )}
       </SummaryField>
 
-      {/* Email */}
+      {/* Email — sourced from the base table (investigators_public omits it) so the
+          owner/curator sees the real value and edits persist visibly. */}
       <SummaryField label="Email">
         {canEdit ? (
-          <EditableText value={data.email || ""} onSave={(v) => handleSave("email", v)} placeholder="Enter email address" type="email" />
-        ) : data.email ? (
-          <a href={`mailto:${data.email}`} className="text-primary hover:underline">{data.email}</a>
+          <EditableText value={emailValue} onSave={(v) => handleSave("email", v)} placeholder="Enter email address" type="email" />
+        ) : emailValue ? (
+          <a href={`mailto:${emailValue}`} className="text-primary hover:underline">{emailValue}</a>
         ) : (
           <span className="text-muted-foreground italic text-xs">Not provided</span>
         )}
